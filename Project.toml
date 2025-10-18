@@ -1,0 +1,13 @@
+name = "Ark"
+uuid = "56664e29-41e4-4ea5-ab0e-825499acc647"
+authors = ["Martin Lange <martin_lange_@gmx.net>"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.12"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
