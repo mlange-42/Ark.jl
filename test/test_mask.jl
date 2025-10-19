@@ -1,8 +1,6 @@
 using Ark
 using Test
 
-include("../src/mask.jl")
-
 @testset "_Mask functionality" begin
     # Test constructor and bit setting
     m1 = _Mask(UInt8(1))

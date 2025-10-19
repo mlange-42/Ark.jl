@@ -2,7 +2,6 @@ using Ark
 using Test
 
 include("TestTypes.jl")
-include("../src/registry.jl")
 
 using .TestTypes: Position
 

@@ -1,8 +1,6 @@
 using Ark
 using Test
 
-include("../src/entity.jl")
-
 @testset "_EntityPool constructor" begin
     initialCap = UInt32(10)
     pool = Ark._EntityPool(initialCap)
