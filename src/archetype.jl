@@ -1,5 +1,5 @@
 
-mutable struct _Archetype
+struct _Archetype
     entities::Vector{Entity}
     components::Vector{UInt8}  # Indices into the global ComponentStorage list
     mask::_Mask

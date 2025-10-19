@@ -1,9 +1,6 @@
 using Ark
 using Test
 
-include("TestTypes.jl")
-include("../src/Ark.jl")
-
 using .TestTypes: Position, Velocity
 
 @testset "World creation" begin
@@ -102,16 +99,17 @@ end
     pos_id = _component_id!(world, Position)
     vel_id = _component_id!(world, Velocity)
 
-    index = _find_or_create_archetype!(world, pos_id, vel_id)
-    @test index == 2
+    arch_index = _find_or_create_archetype!(world, pos_id, vel_id)
+    @test arch_index == 2
 
-    entity = _create_entity!(world, index)
+    entity, index = _create_entity!(world, arch_index)
     @test entity == _new_entity(1, 0)
-    @test world._entities == [_EntityIndex(index, UInt32(1))]
+    @test index == 1
+    @test world._entities == [_EntityIndex(arch_index, UInt32(1))]
 
     pos_storage = _get_storage(world, pos_id, Position)
     vel_storage = _get_storage(world, vel_id, Velocity)
 
-    @test length(pos_storage.data[index]) == 1
-    @test length(vel_storage.data[index]) == 1
+    @test length(pos_storage.data[arch_index]) == 1
+    @test length(vel_storage.data[arch_index]) == 1
 end

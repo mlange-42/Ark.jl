@@ -62,7 +62,7 @@ function _create_archetype!(world::World, mask::_Mask, components::UInt8...)::UI
     return index
 end
 
-function _create_entity!(world::World, archetype_index::UInt32)::Entity
+function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
     entity = _get_entity(world._entity_pool)
     archetype = world._archetypes[archetype_index]
 
@@ -79,5 +79,5 @@ function _create_entity!(world::World, archetype_index::UInt32)::Entity
     else
         world._entities[entity._id] = _EntityIndex(archetype_index, index)
     end
-    return entity
+    return entity, index
 end
