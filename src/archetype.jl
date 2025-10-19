@@ -13,5 +13,5 @@ function _Archetype()
 end
 
 function _Archetype(components::UInt8...)
-    _Archetype(Vector{Entity}(), collect(components), _Mask(components))
+    _Archetype(Vector{Entity}(), collect(components), _Mask(components...))
 end

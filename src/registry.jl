@@ -1,5 +1,4 @@
 
-
 mutable struct _ComponentRegistry
     counter::UInt8
     components::Dict{DataType,UInt8}

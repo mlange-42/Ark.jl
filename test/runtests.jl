@@ -1,4 +1,5 @@
 using Test
+using Revise
 
 include("test_archetype.jl")
 include("test_entity.jl")
