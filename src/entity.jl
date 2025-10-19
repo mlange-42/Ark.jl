@@ -4,6 +4,11 @@ struct Entity
     _gen::UInt32
 end
 
+struct _EntityIndex
+    archetype::UInt32
+    row::UInt32
+end
+
 mutable struct _EntityPool
 	entities::Vector{Entity}
 	next::UInt32

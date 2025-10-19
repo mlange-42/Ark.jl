@@ -5,13 +5,19 @@ include("registry.jl")
 include("storage.jl")
 
 mutable struct World
-    _registry::_ComponentRegistry
+    _entities::Vector{_EntityIndex}
     _storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
     _archetypes::Vector{_Archetype}
+    _registry::_ComponentRegistry
 end
 
 function World()
-    World(_ComponentRegistry(), Vector{Any}(), Vector{_Archetype}())
+    World(
+        Vector{_EntityIndex}(),
+        Vector{Any}(),
+        Vector{_Archetype}(),
+        _ComponentRegistry(),
+    )
 end
 
 function _component_id!(world::World, ::Type{C}) where C
