@@ -10,6 +10,15 @@ struct Entity
     Entity(id::UInt32, gen::UInt32) = new(id, gen)
 end
 
+"""
+    is_zero(entity::Entity)::Bool
+
+Returns whether an [`Entity`](@ref) is the zero entity.
+"""
+function is_zero(entity::Entity)::Bool
+    return entity._id == 1
+end
+
 function _new_entity(id::UInt32, gen::UInt32)
     Entity(id, gen)
 end
