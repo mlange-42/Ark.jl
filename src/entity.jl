@@ -15,7 +15,7 @@ end
 
 Returns whether an [`Entity`](@ref) is the zero entity.
 """
-function is_zero(entity::Entity)::Bool
+@inline function is_zero(entity::Entity)::Bool
     return entity._id == 1
 end
 
@@ -75,6 +75,6 @@ function _recycle(p::_EntityPool, e::Entity)
     p.available += 1
 end
 
-function _is_alive(p::_EntityPool, e::Entity)::Bool
+@inline function _is_alive(p::_EntityPool, e::Entity)::Bool
     return e._gen == p.entities[e._id]._gen
 end

@@ -34,7 +34,7 @@ function World()
     )
 end
 
-function _component_id!(world::World, ::Type{C}) where C
+@inline function _component_id!(world::World, ::Type{C}) where C
     id = _component_id!(world._registry, C)
     if id >= length(world._storages)
         push!(world._storages, _ComponentStorage{C}(length(world._archetypes)))
@@ -42,12 +42,11 @@ function _component_id!(world::World, ::Type{C}) where C
     return id
 end
 
-function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
-    storage = world._storages[id]::_ComponentStorage{C}
-    return storage
+@inline function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
+    return _cast_to(_ComponentStorage{C}, world._storages[id])
 end
 
-function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
+@inline function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
     id = _component_id!(world, C)
     return _get_storage(world, id, C)
 end
@@ -114,7 +113,7 @@ end
 
 Returns whether an [`Entity`](@ref) is alive.
 """
-function is_alive(world::World, entity::Entity)::Bool
+@inline function is_alive(world::World, entity::Entity)::Bool
     return _is_alive(world._entity_pool, entity)
 end
 
@@ -124,8 +123,6 @@ end
 Removes an [`Entity`](@ref) from the [`World`](@ref).
 """
 function remove_entity!(world::World, entity::Entity)
-    # TODO: this is probably quite slow, as we need to cast/assert types.
-
     if !is_alive(world, entity)
         error("can't remove a dead entity")
     end

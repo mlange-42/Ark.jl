@@ -18,4 +18,8 @@ using .TestTypes: Position, Velocity
     pos, vel = get_components(m, entity)
     @test pos == Position(5, 6)
     @test vel == Velocity(7, 8)
+
+    empty_entity = new_entity!(world)
+    @test_throws MethodError get_components(m, empty_entity)
+    @test_throws MethodError set_components!(m, empty_entity, Position(5, 6), Velocity(7, 8))
 end

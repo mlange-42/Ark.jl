@@ -46,7 +46,10 @@ end
 
 Get two components of an [`Entity`](@ref).
 """
-function get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B} where {A,B}
+@inline function get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B} where {A,B}
+    # TODO: currently raises MethodError of components are missing.
+    # Should we pay the cost for a more informative error,
+    # of for returning nothing?
     index = map._world._entities[entity._id]
     a = map._storage_a.data[index.archetype][index.row]
     b = map._storage_b.data[index.archetype][index.row]
@@ -59,6 +62,8 @@ end
 Set two components of an [`Entity`](@ref).
 """
 function set_components!(map::Map2{A,B}, entity::Entity, a::A, b::B) where {A,B}
+    # TODO: currently raises MethodError of components are missing.
+    # Should we pay the cost for a more informative error?
     index = map._world._entities[entity._id]
     map._storage_a.data[index.archetype][index.row] = a
     map._storage_b.data[index.archetype][index.row] = b
