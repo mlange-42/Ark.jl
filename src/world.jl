@@ -27,15 +27,6 @@ function World()
     )
 end
 
-function new_entity!(world::World)::Entity
-    entity, _ = _create_entity!(world, UInt32(1))
-    return entity
-end
-
-function is_alive(world::World, entity::Entity)::Bool
-    return _is_alive(world._entity_pool, entity)
-end
-
 function _component_id!(world::World, ::Type{C}) where C
     id = _component_id!(world._registry, C)
     if id >= length(world._storages)
@@ -99,4 +90,38 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
         world._entities[entity._id] = _EntityIndex(archetype_index, index)
     end
     return entity, index
+end
+
+function new_entity!(world::World)::Entity
+    entity, _ = _create_entity!(world, UInt32(1))
+    return entity
+end
+
+function is_alive(world::World, entity::Entity)::Bool
+    return _is_alive(world._entity_pool, entity)
+end
+
+function remove_entity!(world::World, entity::Entity)
+    # TODO: this is probably quite slow, as we need to cast/assert types.
+
+    if !is_alive(world, entity)
+        error("can't remove a dead entity")
+    end
+    index = world._entities[entity._id]
+    archetype = world._archetypes[index.archetype]
+
+    swapped = _swap_remove!(archetype.entities, index.row)
+    for comp in world._archetypes[index.archetype].components
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        vec = storage.data[index.archetype]
+        _swap_remove!(vec, index.row)
+    end
+
+    if swapped
+        swap_entity = archetype.entities[index.row]
+        world._entities[swap_entity._id] = index
+    end
+
+    _recycle(world._entity_pool, entity)
 end

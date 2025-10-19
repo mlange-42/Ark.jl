@@ -1,5 +1,6 @@
 module Ark
 
+include("util.jl")
 include("entity.jl")
 include("mask.jl")
 include("archetype.jl")
@@ -9,7 +10,8 @@ include("world.jl")
 include("map.jl")
 
 export World
-export is_alive, new_entity!, _find_or_create_archetype!, _create_entity!, _get_storage
+export is_alive, new_entity!, remove_entity!
+export _find_or_create_archetype!, _create_entity!, _get_storage
 
 export Entity
 export _new_entity, _EntityIndex, _ComponentStorage

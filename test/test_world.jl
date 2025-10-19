@@ -121,3 +121,23 @@ end
     @test entity == _new_entity(1, 0)
     @test is_alive(world, entity) == true
 end
+
+@testset "remove_entity! Tests" begin
+    world = World()
+    m = Map2{Position,Velocity}(world)
+
+    e1 = new_entity!(m, Position(1, 1), Velocity(1, 1))
+    e2 = new_entity!(m, Position(2, 2), Velocity(1, 1))
+    e3 = new_entity!(m, Position(3, 3), Velocity(1, 1))
+
+    remove_entity!(world, e2)
+    @test is_alive(world, e1) == true
+    @test is_alive(world, e2) == false
+    @test is_alive(world, e1) == true
+
+    pos, _ = get_components(m, e1)
+    @test pos == Position(1, 1)
+
+    pos, _ = get_components(m, e3)
+    @test pos == Position(3, 3)
+end
