@@ -21,4 +21,13 @@ function _component_id!(world::World, ::Type{C}) where C
     return id
 end
 
+function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
+    return world.storages[id+1]
+end
+
+function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
+    id = _component_id!(world, C)
+    return _get_storage(world, id, C)
+end
+
 end

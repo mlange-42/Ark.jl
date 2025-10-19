@@ -1,8 +1,8 @@
 using Ark
 using Test
 
-include("../src/Ark.jl")
 include("../src/registry.jl")
+include("../src/Ark.jl")
 
 struct Position
     x::Float64
@@ -36,6 +36,23 @@ end
     id_int2 = Ark._component_id!(world, Int)
     @test id_int2 == id_int
     @test length(world.storages) == 2
+end
+
+@testset "_get_storage Tests" begin
+    world = Ark.World()
+
+    # Retrieve storage using type-only version
+    storage1 = Ark._get_storage(world, Int)
+    @test storage1 isa Ark._ComponentStorage{Int}
+
+    # Retrieve storage using type + id version
+    id = Ark._component_id!(world, Int)
+    storage2 = Ark._get_storage(world, id, Int)
+    @test storage2 isa Ark._ComponentStorage{Int}
+
+    # Both retrievals should return the same object
+    @test storage1 === storage2
+
 end
 
 @testset "ComponentRegistry Tests" begin
