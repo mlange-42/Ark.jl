@@ -2,11 +2,11 @@
 
 mutable struct _ComponentRegistry
     counter::UInt8
-    components::Dict{DataType, UInt8}
+    components::Dict{DataType,UInt8}
 end
 
 function _ComponentRegistry()
-    _ComponentRegistry(0x01, Dict{DataType, UInt8}())
+    _ComponentRegistry(0x01, Dict{DataType,UInt8}())
 end
 
 function _component_id!(registry::_ComponentRegistry, ::Type{C}) where C

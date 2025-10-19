@@ -10,9 +10,9 @@ struct _EntityIndex
 end
 
 mutable struct _EntityPool
-	entities::Vector{Entity}
-	next::UInt32
-	available::UInt32
+    entities::Vector{Entity}
+    next::UInt32
+    available::UInt32
 end
 
 function _EntityPool(initialCap::UInt32)
@@ -31,13 +31,13 @@ function _get_entity(p::_EntityPool)::Entity
 
     temp = p.entities[curr]
     p.entities[curr] = Entity(curr, temp._gen)
-    
-	p.available -= 1
-	return p.entities[curr]
+
+    p.available -= 1
+    return p.entities[curr]
 end
 
 function _get_new_entity(p::_EntityPool)::Entity
-    e = Entity(length(p.entities)+1, 0)
+    e = Entity(length(p.entities) + 1, 0)
     push!(p.entities, e)
     return e
 end
@@ -48,7 +48,7 @@ function _recycle(p::_EntityPool, e::Entity)
     end
     temp = p.next
     p.next = e._id
-    p.entities[e._id] = Entity(temp, e._gen+1)
+    p.entities[e._id] = Entity(temp, e._gen + 1)
     p.available += 1
 end
 
