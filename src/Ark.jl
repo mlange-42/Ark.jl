@@ -4,9 +4,9 @@ include("registry.jl")
 include("storage.jl")
 
 mutable struct World
-    registry::_ComponentRegistry
-    storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
-    archetypes::Vector{_Archetype}
+    _registry::_ComponentRegistry
+    _storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
+    _archetypes::Vector{_Archetype}
 end
 
 function World()
@@ -14,15 +14,15 @@ function World()
 end
 
 function _component_id!(world::World, ::Type{C}) where C
-    id = _component_id!(world.registry, C)
-    if id >= length(world.storages)
-        push!(world.storages, _ComponentStorage{C}())
+    id = _component_id!(world._registry, C)
+    if id >= length(world._storages)
+        push!(world._storages, _ComponentStorage{C}())
     end
     return id
 end
 
 function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
-    storage = world.storages[id+1]::_ComponentStorage{C}
+    storage = world._storages[id+1]::_ComponentStorage{C}
     return storage
 end
 
