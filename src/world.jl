@@ -4,6 +4,7 @@ mutable struct World
     _storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
     _archetypes::Vector{_Archetype}
     _registry::_ComponentRegistry
+    _entity_pool::_EntityPool
 end
 
 function World()
@@ -12,6 +13,7 @@ function World()
         Vector{Any}(),
         [_Archetype()],
         _ComponentRegistry(),
+        _EntityPool(UInt32(1024)),
     )
 end
 
@@ -33,8 +35,19 @@ function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
     return _get_storage(world, id, C)
 end
 
-function _create_archetype!(world::World, components::UInt8...)
-    arch = _Archetype(components...)
+function _find_or_create_archetype!(world::World, components::UInt8...)::UInt32
+    # TODO: implement archetype graph for faster lookup.
+    mask = _Mask(components...)
+    for (i, arch) in enumerate(world._archetypes)
+        if arch.mask == mask
+            return i
+        end
+    end
+    return _create_archetype!(world, mask, components...)
+end
+
+function _create_archetype!(world::World, mask::_Mask, components::UInt8...)::UInt32
+    arch = _Archetype(mask, components...)
     push!(world._archetypes, arch)
     index = length(world._archetypes)
     for (i, tp) in enumerate(world._registry.types)
@@ -46,4 +59,25 @@ function _create_archetype!(world::World, components::UInt8...)
         storage = _get_storage(world, comp, tp)
         storage.data[index] = Vector{tp}()
     end
+    return index
+end
+
+function _create_entity!(world::World, archetype_index::UInt32)::Entity
+    entity = _get_entity(world._entity_pool)
+    archetype = world._archetypes[archetype_index]
+
+    index = _add_entity!(archetype, entity)
+    for comp in archetype.components
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        vec = storage.data[archetype_index]
+        resize!(vec, length(vec) + 1)
+    end
+
+    if entity._id > length(world._entities)
+        push!(world._entities, _EntityIndex(archetype_index, index))
+    else
+        world._entities[entity._id] = _EntityIndex(archetype_index, index)
+    end
+    return entity
 end

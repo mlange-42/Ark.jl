@@ -8,10 +8,13 @@ include("storage.jl")
 include("world.jl")
 
 export World
-export _create_archetype!, _get_storage
+export _find_or_create_archetype!, _create_entity!, _get_storage
 
 export Entity
-export _Archetype, _EntityIndex, _ComponentStorage
+export _new_entity, _EntityIndex, _ComponentStorage
+
+export _Archetype
+export _add_entity!
 
 export _ComponentRegistry
 export _component_id!

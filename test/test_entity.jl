@@ -51,6 +51,6 @@ end
     @test _alive(pool, e1) == false  # old generation
 
     # Test _recycle throws on reserved entity
-    reserved_entity = Entity(0, 0)
+    reserved_entity = _new_entity(0, 0)
     @test_throws ErrorException _recycle(pool, reserved_entity)
 end

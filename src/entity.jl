@@ -2,6 +2,16 @@
 struct Entity
     _id::UInt32
     _gen::UInt32
+
+    Entity(id::UInt32, gen::UInt32) = new(id, gen)
+end
+
+function _new_entity(id::UInt32, gen::UInt32)
+    Entity(id, gen)
+end
+
+function _new_entity(id::Int, gen::Int)
+    Entity(UInt32(id), UInt32(gen))
 end
 
 struct _EntityIndex
@@ -37,7 +47,7 @@ function _get_entity(p::_EntityPool)::Entity
 end
 
 function _get_new_entity(p::_EntityPool)::Entity
-    e = Entity(length(p.entities) + 1, 0)
+    e = _new_entity(length(p.entities) + 1, 0)
     push!(p.entities, e)
     return e
 end
@@ -48,7 +58,7 @@ function _recycle(p::_EntityPool, e::Entity)
     end
     temp = p.next
     p.next = e._id
-    p.entities[e._id] = Entity(temp, e._gen + 1)
+    p.entities[e._id] = _new_entity(temp, e._gen + UInt32(1))
     p.available += 1
 end
 
