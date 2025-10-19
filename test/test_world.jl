@@ -23,14 +23,18 @@ end
     # Register Int component
     id_int = Ark._component_id!(world, Int)
     @test isa(id_int, UInt8)
+    @test world._registry.types[id_int] == Int
     @test length(world._storages) == 1
     @test world._storages[id_int] isa Ark._ComponentStorage{Int}
+    @test length(world._storages[id_int].data) == 1
 
     # Register Position component
     id_pos = Ark._component_id!(world, Position)
     @test isa(id_pos, UInt8)
+    @test world._registry.types[id_pos] == Position
     @test length(world._storages) == 2
     @test world._storages[id_pos] isa Ark._ComponentStorage{Position}
+    @test length(world._storages[id_pos].data) == 1
 
     # Re-register Int component (should not add new storage)
     id_int2 = Ark._component_id!(world, Int)

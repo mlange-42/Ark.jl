@@ -6,3 +6,7 @@ end
 function _ComponentStorage{C}() where C
     _ComponentStorage{C}(Vector{Union{Nothing,Vector{C}}}())
 end
+
+function _ComponentStorage{C}(archetypes::Int) where C
+    _ComponentStorage{C}(Vector{Union{Nothing,Vector{C}}}(undef, archetypes))
+end
