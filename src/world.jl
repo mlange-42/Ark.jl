@@ -33,16 +33,17 @@ function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
     return _get_storage(world, id, C)
 end
 
-function _create_archetype(world::World, components::UInt8...)
-    arch = _Archetype(components)
+function _create_archetype!(world::World, components::UInt8...)
+    arch = _Archetype(components...)
     push!(world._archetypes, arch)
+    index = length(world._archetypes)
     for (i, tp) in enumerate(world._registry.types)
-        storage = _get_storage(world, i, tp)
-        push!(storage, undef)
+        storage = _get_storage(world, UInt8(i), tp)
+        push!(storage.data, nothing)
     end
     for comp in components
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
-        storage[comp] = Vector{tp}()
+        storage.data[index] = Vector{tp}()
     end
 end

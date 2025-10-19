@@ -7,8 +7,11 @@ include("registry.jl")
 include("storage.jl")
 include("world.jl")
 
-export World, Entity
-export _Archetype
+export World
+export _create_archetype!, _get_storage
+
+export Entity
+export _Archetype, _EntityIndex, _ComponentStorage
 
 export _ComponentRegistry
 export _component_id!

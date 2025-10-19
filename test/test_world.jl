@@ -4,7 +4,7 @@ using Test
 include("TestTypes.jl")
 include("../src/Ark.jl")
 
-using .TestTypes: Position
+using .TestTypes: Position, Velocity
 
 @testset "World creation" begin
     world = Ark.World()
@@ -54,4 +54,37 @@ end
     # Both retrievals should return the same object
     @test storage1 === storage2
 
+end
+
+@testset "_create_archetype Tests" begin
+    world = World()
+
+    pos_id = _component_id!(world, Position)
+    @test pos_id == UInt8(1)
+
+    _create_archetype!(world, pos_id)
+    @test length(world._archetypes) == 2
+
+    vel_id = _component_id!(world, Velocity)
+    @test vel_id == UInt8(2)
+
+    _create_archetype!(world, pos_id, vel_id)
+    @test length(world._archetypes) == 3
+
+    @test length(world._storages) == 2
+    @test length(world._registry.types) == 2
+
+    pos_storage = _get_storage(world, pos_id, Position)
+    vel_storage = _get_storage(world, vel_id, Velocity)
+
+    @test isa(pos_storage, _ComponentStorage{Position})
+    @test isa(vel_storage, _ComponentStorage{Velocity})
+    @test length(pos_storage.data) == 3
+    @test length(vel_storage.data) == 3
+    @test pos_storage.data[1] == nothing
+    @test vel_storage.data[1] == nothing
+    @test pos_storage.data[2] == Vector{Position}()
+    @test vel_storage.data[2] == nothing
+    @test pos_storage.data[3] == Vector{Position}()
+    @test vel_storage.data[3] == Vector{Velocity}()
 end

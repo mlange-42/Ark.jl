@@ -8,5 +8,5 @@ function _ComponentStorage{C}() where C
 end
 
 function _ComponentStorage{C}(archetypes::Int) where C
-    _ComponentStorage{C}(Vector{Union{Nothing,Vector{C}}}(undef, archetypes))
+    _ComponentStorage{C}(Vector{Union{Nothing,Vector{C}}}(nothing, archetypes))
 end
