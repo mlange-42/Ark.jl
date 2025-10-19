@@ -3,7 +3,7 @@ using Test
 
 using .TestTypes: Position, Velocity
 
-@testset "Map operations" begin
+@testset "Map new/get/set" begin
     world = World()
     m = Map2{Position,Velocity}(world)
 

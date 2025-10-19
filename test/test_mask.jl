@@ -29,3 +29,64 @@ using Test
     @test _contains_any(m1, m3) == false
     @test _contains_any(m2, m3) == false
 end
+
+@testset "_Mask bitwise operations" begin
+    m1 = _Mask(1, 2, 3)       # bits 1, 2, 3 set
+    m2 = _Mask(3, 4, 5)       # bits 3, 4, 5 set
+
+    mand = _and(m1, m2)
+    mor = _or(m1, m2)
+
+    # _and should only keep bit 3
+    @test _get_bit(mand, UInt8(3)) == true
+    @test _get_bit(mand, UInt8(1)) == false
+    @test _get_bit(mand, UInt8(4)) == false
+
+    # _or should have bits 1–5
+    for i in 1:5
+        @test _get_bit(mor, UInt8(i)) == true
+    end
+
+    # Check that no extra bits are set
+    @test _get_bit(mor, UInt8(6)) == false
+end
+
+@testset "_MutableMask bit operations" begin
+    # Create a base _Mask with bits 1, 65, 129, 193 set (one per chunk)
+    base = _Mask(1, 65, 129, 193)
+    mm = _MutableMask(base)
+
+    # Check initial state matches base mask
+    @test _get_bit(mm, UInt8(1)) == true
+    @test _get_bit(mm, UInt8(65)) == true
+    @test _get_bit(mm, UInt8(129)) == true
+    @test _get_bit(mm, UInt8(193)) == true
+
+    # Check unset bits
+    @test _get_bit(mm, UInt8(2)) == false
+    @test _get_bit(mm, UInt8(66)) == false
+    @test _get_bit(mm, UInt8(130)) == false
+    @test _get_bit(mm, UInt8(194)) == false
+
+    # Set new bits
+    _set_bit!(mm, UInt8(2))
+    _set_bit!(mm, UInt8(66))
+    _set_bit!(mm, UInt8(130))
+    _set_bit!(mm, UInt8(194))
+
+    @test _get_bit(mm, UInt8(2)) == true
+    @test _get_bit(mm, UInt8(66)) == true
+    @test _get_bit(mm, UInt8(130)) == true
+    @test _get_bit(mm, UInt8(194)) == true
+
+    # Clear original bits
+    _clear_bit!(mm, UInt8(1))
+    _clear_bit!(mm, UInt8(65))
+    _clear_bit!(mm, UInt8(129))
+    _clear_bit!(mm, UInt8(193))
+
+    @test _get_bit(mm, UInt8(1)) == false
+    @test _get_bit(mm, UInt8(65)) == false
+    @test _get_bit(mm, UInt8(129)) == false
+    @test _get_bit(mm, UInt8(193)) == false
+end

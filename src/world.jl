@@ -87,7 +87,7 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
         vec = storage.data[archetype_index]
-        resize!(vec, length(vec) + 1)
+        resize!(vec, index)
     end
 
     if entity._id > length(world._entities)
@@ -96,6 +96,45 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
         world._entities[entity._id] = _EntityIndex(archetype_index, index)
     end
     return entity, index
+end
+
+function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
+    if !is_alive(world, entity)
+        error("can't change components of a dead entity")
+    end
+    index = world._entities[entity._id]
+    old_archetype = world._archetypes[index.archetype]
+    new_archetype = world._archetypes[archetype_index]
+
+    new_row = _add_entity!(new_archetype, entity)
+    swapped = _swap_remove!(old_archetype.entities, index.row)
+    for comp in old_archetype.components
+        if !_get_bit(new_archetype.mask, comp)
+            continue
+        end
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        old_vec = storage.data[index.archetype]
+        new_vec = storage.data[archetype_index]
+        push!(new_vec, old_vec[index.row])
+        _swap_remove!(old_vec, index.row)
+    end
+    for comp in new_archetype.components
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        new_vec = storage.data[archetype_index]
+        if length(new_vec) == new_row
+            continue
+        end
+        resize!(new_vec, new_row)
+    end
+
+    if swapped
+        swap_entity = old_archetype.entities[index.row]
+        world._entities[swap_entity._id] = index
+    end
+
+    world._entities[entity._id] = _EntityIndex(archetype_index, new_row)
 end
 
 """
@@ -130,7 +169,7 @@ function remove_entity!(world::World, entity::Entity)
     archetype = world._archetypes[index.archetype]
 
     swapped = _swap_remove!(archetype.entities, index.row)
-    for comp in world._archetypes[index.archetype].components
+    for comp in archetype.components
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
         vec = storage.data[index.archetype]

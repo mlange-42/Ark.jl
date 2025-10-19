@@ -47,6 +47,9 @@ end
 Get two components of an [`Entity`](@ref).
 """
 @inline function get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B} where {A,B}
+    if !is_alive(map._world, entity)
+        error("can't get components of a dead entity")
+    end
     # TODO: currently raises MethodError of components are missing.
     # Should we pay the cost for a more informative error,
     # of for returning nothing?
@@ -62,9 +65,25 @@ end
 Set two components of an [`Entity`](@ref).
 """
 function set_components!(map::Map2{A,B}, entity::Entity, a::A, b::B) where {A,B}
+    if !is_alive(map._world, entity)
+        error("can't set components of a dead entity")
+    end
     # TODO: currently raises MethodError of components are missing.
     # Should we pay the cost for a more informative error?
     index = map._world._entities[entity._id]
     map._storage_a.data[index.archetype][index.row] = a
     map._storage_b.data[index.archetype][index.row] = b
+end
+
+"""
+    add_components!(map::Map2{A,B}, a::A, b::B)::Entity
+
+Adds two components to an [`Entity`](@ref).
+"""
+function add_components!(map::Map2{A,B}, a::A, b::B)::Entity where {A,B}
+    archetype = _find_or_create_archetype!(map._world, map._ids...)
+    entity, index = _create_entity!(map._world, archetype)
+    map._storage_a.data[archetype][index] = a
+    map._storage_b.data[archetype][index] = b
+    return entity
 end

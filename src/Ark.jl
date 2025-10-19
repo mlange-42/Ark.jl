@@ -26,7 +26,10 @@ export _ComponentRegistry
 export _component_id!
 
 export _Mask
-export _get_bit, _contains_all, _contains_any
+export _get_bit, _contains_all, _contains_any, _and, _or
+
+export _MutableMask
+export _get_bit, _set_bit!, _clear_bit!
 
 export _EntityPool
 export _get_entity, _recycle, _is_alive
