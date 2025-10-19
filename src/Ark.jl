@@ -17,7 +17,7 @@ export Entity
 export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
 export Map2
-export new_entity!, get_components, set_components!
+export new_entity!, get_components, set_components!, has_components, add_components!, remove_components!
 
 export _Archetype
 export _add_entity!

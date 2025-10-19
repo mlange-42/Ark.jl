@@ -51,6 +51,11 @@ end
     return _get_storage(world, id, C)
 end
 
+function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+    index = world._entities[entity._id]
+    return _find_or_create_archetype!(world, world._archetypes[index.archetype].mask, add, remove)
+end
+
 function _find_or_create_archetype!(world::World, start::_Mask, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
     # TODO: implement archetype graph for faster lookup.
     mask = _MutableMask(start)
@@ -156,6 +161,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
     end
 
     world._entities[entity._id] = _EntityIndex(archetype_index, new_row)
+    return new_row
 end
 
 """

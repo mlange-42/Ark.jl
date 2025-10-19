@@ -1,6 +1,6 @@
 module TestTypes
 
-export Position, Velocity
+export Position, Velocity, Altitude, Health
 
 struct Position
     x::Float64
