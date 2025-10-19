@@ -1,10 +1,14 @@
 module Ark
 
+include("entity.jl")
+include("mask.jl")
 include("archetype.jl")
 include("registry.jl")
 include("storage.jl")
 
-export World
+export World, Entity
+export _Archetype, _ComponentRegistry, _Mask
+export _get_bit, _contains_all, _contains_any
 
 mutable struct World
     _entities::Vector{_EntityIndex}

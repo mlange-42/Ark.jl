@@ -33,20 +33,20 @@ function _Mask(bits::Integer...)
     return _Mask(chunks)
 end
 
-function get_bit(mask::_Mask, i::UInt8)::Bool
+function _get_bit(mask::_Mask, i::UInt8)::Bool
     chunk = (i - 1) >>> 6        # which UInt64 (0-based)
     offset = (i - 1) & 0x3F       # which bit within that UInt64
     return (mask.bits[chunk+1] >> offset) & 0x1 == 1
 end
 
-function contains_all(mask1::_Mask, mask2::_Mask)::Bool
+function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
     return (mask1.bits[1] & mask2.bits[1]) == mask2.bits[1] &&
            (mask1.bits[2] & mask2.bits[2]) == mask2.bits[2] &&
            (mask1.bits[3] & mask2.bits[3]) == mask2.bits[3] &&
            (mask1.bits[4] & mask2.bits[4]) == mask2.bits[4]
 end
 
-function contains_any(mask1::_Mask, mask2::_Mask)::Bool
+function _contains_any(mask1::_Mask, mask2::_Mask)::Bool
     return (mask1.bits[1] & mask2.bits[1]) != 0 ||
            (mask1.bits[2] & mask2.bits[2]) != 0 ||
            (mask1.bits[3] & mask2.bits[3]) != 0 ||

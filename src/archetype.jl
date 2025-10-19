@@ -1,7 +1,4 @@
 
-include("mask.jl")
-include("entity.jl")
-
 mutable struct _Archetype
     entities::Vector{Entity}
     component_indices::Vector{UInt8}  # Indices into the global ComponentStorage list
