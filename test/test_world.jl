@@ -24,13 +24,13 @@ end
     id_int = Ark._component_id!(world, Int)
     @test isa(id_int, UInt8)
     @test length(world._storages) == 1
-    @test world._storages[id_int + 1] isa Ark._ComponentStorage{Int}
+    @test world._storages[id_int] isa Ark._ComponentStorage{Int}
 
     # Register Position component
     id_pos = Ark._component_id!(world, Position)
     @test isa(id_pos, UInt8)
     @test length(world._storages) == 2
-    @test world._storages[id_pos + 1] isa Ark._ComponentStorage{Position}
+    @test world._storages[id_pos] isa Ark._ComponentStorage{Position}
 
     # Re-register Int component (should not add new storage)
     id_int2 = Ark._component_id!(world, Int)

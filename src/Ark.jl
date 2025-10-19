@@ -1,5 +1,6 @@
 module Ark
 
+include("archetype.jl")
 include("entity.jl")
 include("registry.jl")
 include("storage.jl")
@@ -29,7 +30,7 @@ function _component_id!(world::World, ::Type{C}) where C
 end
 
 function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
-    storage = world._storages[id+1]::_ComponentStorage{C}
+    storage = world._storages[id]::_ComponentStorage{C}
     return storage
 end
 
