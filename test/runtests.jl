@@ -2,6 +2,7 @@ using Ark
 using Test
 
 include("../src/registry.jl")
+include("../src/entity.jl")
 include("../src/Ark.jl")
 
 struct Position
@@ -71,4 +72,17 @@ end
 
     # Check repeated registration returns same ID
     @test _component_id!(registry, Int) == id_int
+end
+
+@testset "_EntityPool constructor" begin
+    initialCap = UInt32(10)
+    reserved = UInt32(2)
+    pool = Ark._EntityPool(initialCap, reserved)
+
+    @test isa(pool, Ark._EntityPool)
+    @test length(pool.entities) == reserved
+    @test all(e -> e._gen == typemax(UInt32), pool.entities)
+    @test pool.next == 0
+    @test pool.available == 0
+    @test pool.reserved == reserved
 end
