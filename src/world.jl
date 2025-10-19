@@ -51,14 +51,35 @@ end
     return _get_storage(world, id, C)
 end
 
-function _find_or_create_archetype!(world::World, components::UInt8...)::UInt32
+function _find_or_create_archetype!(world::World, start::_Mask, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
     # TODO: implement archetype graph for faster lookup.
-    mask = _Mask(components...)
+    mask = _MutableMask(start)
+
+    for b in remove
+        if !_get_bit(mask, b)
+            error("entity does not have component to remove")
+        end
+        _clear_bit!(mask, b)
+    end
+    for b in add
+        if _get_bit(mask, b)
+            error("entity already has component to add, or it was added twice")
+        end
+        if _get_bit(start, b)
+            error("component added and removed in the same exchange operation")
+        end
+        _set_bit!(mask, b)
+    end
+
+    mask = _Mask(mask)
+
     for (i, arch) in enumerate(world._archetypes)
         if arch.mask == mask
             return i
         end
     end
+
+    components = _active_bit_indices(mask)
     return _create_archetype!(world, mask, components...)
 end
 

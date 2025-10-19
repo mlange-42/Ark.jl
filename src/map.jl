@@ -5,7 +5,7 @@ A component mapper for 2 components.
 """
 struct Map2{A,B}
     _world::World
-    _ids::Vector{UInt8}
+    _ids::Tuple{UInt8,UInt8}
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
 end
@@ -16,10 +16,10 @@ end
 Creates a component mapper for 2 components.
 """
 function Map2{A,B}(world::World) where {A,B}
-    ids = [
+    ids = (
         _component_id!(world, A),
         _component_id!(world, B),
-    ]
+    )
     return Map2{A,B}(
         world,
         ids,
@@ -34,7 +34,7 @@ end
 Creates a new [`Entity`](@ref) with two components.
 """
 function new_entity!(map::Map2{A,B}, a::A, b::B)::Entity where {A,B}
-    archetype = _find_or_create_archetype!(map._world, map._ids...)
+    archetype = _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b

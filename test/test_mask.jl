@@ -90,3 +90,18 @@ end
     @test _get_bit(mm, UInt8(129)) == false
     @test _get_bit(mm, UInt8(193)) == false
 end
+
+@testset "_active_bit_indices" begin
+    # Test with no bits set
+    m0 = _Mask()
+    @test _active_bit_indices(m0) == UInt8[]
+
+    # Test with one bit set in each chunk
+    m1 = _Mask(1, 65, 129, 193)
+    @test sort(_active_bit_indices(m1)) == [1, 65, 129, 193]
+
+    # Test with multiple bits set
+    m2 = _Mask(1, 2, 3, 64, 65, 66, 128, 129, 130, 192, 193, 194)
+    expected = UInt8[1, 2, 3, 64, 65, 66, 128, 129, 130, 192, 193, 194]
+    @test sort(_active_bit_indices(m2)) == expected
+end

@@ -71,6 +71,20 @@ end
     ))
 end
 
+function _active_bit_indices(mask::_Mask)::Vector{UInt8}
+    indices = UInt8[]
+    for chunk_index in 1:4
+        chunk = mask.bits[chunk_index]
+        base = UInt8((chunk_index - 1) * 64)
+        while chunk != 0
+            tz = trailing_zeros(chunk)
+            push!(indices, base + UInt8(tz + 1))
+            chunk &= chunk - 1  # clear lowest set bit
+        end
+    end
+    return indices
+end
+
 mutable struct _MutableMask
     # TODO: can we use something more efficient here that does not use if/else?
     b1::UInt64
@@ -81,6 +95,10 @@ end
 
 function _MutableMask(mask::_Mask)
     return _MutableMask(mask.bits[1], mask.bits[2], mask.bits[3], mask.bits[4])
+end
+
+function _Mask(mask::_MutableMask)
+    return _Mask((mask.b1, mask.b2, mask.b3, mask.b4))
 end
 
 @inline function _set_bit!(mask::_MutableMask, i::UInt8)
