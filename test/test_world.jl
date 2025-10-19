@@ -103,9 +103,9 @@ end
     @test arch_index == 2
 
     entity, index = _create_entity!(world, arch_index)
-    @test entity == _new_entity(1, 0)
+    @test entity == _new_entity(2, 0)
     @test index == 1
-    @test world._entities == [_EntityIndex(arch_index, UInt32(1))]
+    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(arch_index, UInt32(1))]
 
     pos_storage = _get_storage(world, pos_id, Position)
     vel_storage = _get_storage(world, vel_id, Velocity)
@@ -118,7 +118,7 @@ end
     world = World()
 
     entity = new_entity!(world)
-    @test entity == _new_entity(1, 0)
+    @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
 end
 

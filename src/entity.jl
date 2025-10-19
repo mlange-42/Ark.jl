@@ -30,7 +30,7 @@ mutable struct _EntityPool
 end
 
 function _EntityPool(initialCap::UInt32)
-    v = Vector{Entity}()
+    v = [_new_entity(UInt32(0), typemax(UInt32))]
     sizehint!(v, initialCap)
 
     return _EntityPool(v, 0, 0)
@@ -57,7 +57,7 @@ function _get_new_entity(p::_EntityPool)::Entity
 end
 
 function _recycle(p::_EntityPool, e::Entity)
-    if e._id < 1
+    if e._id < 2
         error("can't recycle reserved zero entity")
     end
     temp = p.next

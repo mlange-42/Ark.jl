@@ -1,4 +1,6 @@
 
+const zero_entity::Entity = _new_entity(1, 0)
+
 """
     World
 
@@ -19,7 +21,7 @@ Creates a new, empty world.
 """
 function World()
     World(
-        Vector{_EntityIndex}(),
+        [_EntityIndex(typemax(UInt32), 0)],
         Vector{Any}(),
         [_Archetype()],
         _ComponentRegistry(),
