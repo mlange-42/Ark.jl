@@ -113,3 +113,10 @@ end
     @test length(pos_storage.data[arch_index]) == 1
     @test length(vel_storage.data[arch_index]) == 1
 end
+
+@testset "new_entity! Tests" begin
+    world = World()
+
+    entity = new_entity!(world)
+    @test entity == _new_entity(1, 0)
+end

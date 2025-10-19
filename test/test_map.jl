@@ -8,6 +8,7 @@ using .TestTypes: Position, Velocity
     m = Map2{Position,Velocity}(world)
 
     entity = new_entity!(m, Position(1, 2), Velocity(3, 4))
+    @test entity == _new_entity(1, 0)
     pos, vel = get_components(m, entity)
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)

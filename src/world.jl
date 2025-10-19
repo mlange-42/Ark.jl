@@ -1,4 +1,9 @@
 
+"""
+    World
+
+The World is the central ECS storage.
+"""
 mutable struct World
     _entities::Vector{_EntityIndex}
     _storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
@@ -7,6 +12,11 @@ mutable struct World
     _entity_pool::_EntityPool
 end
 
+"""
+    World()
+
+Creates a new, empty world.
+"""
 function World()
     World(
         Vector{_EntityIndex}(),
@@ -15,6 +25,11 @@ function World()
         _ComponentRegistry(),
         _EntityPool(UInt32(1024)),
     )
+end
+
+function new_entity!(world::World)::Entity
+    entity, _ = _create_entity!(world, UInt32(1))
+    return entity
 end
 
 function _component_id!(world::World, ::Type{C}) where C

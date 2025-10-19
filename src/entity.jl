@@ -1,4 +1,8 @@
+"""
+    Entity
 
+Entity identifier.
+"""
 struct Entity
     _id::UInt32
     _gen::UInt32
