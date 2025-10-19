@@ -3,6 +3,10 @@ struct _Mask
     bits::NTuple{4,UInt64}
 end
 
+function _Mask()
+    return _Mask(ntuple(_ -> UInt64(0), 4))
+end
+
 function _Mask(bits::UInt8...)
     chunks = ntuple(_ -> UInt64(0), 4)
 

@@ -14,7 +14,7 @@ end
     @test isa(world, Ark.World)
     @test isa(world._registry, Ark._ComponentRegistry)
     @test world._storages == Vector{Any}()
-    @test world._archetypes == Vector{Ark._Archetype}()
+    @test length(world._archetypes) == 1
 end
 
 @testset "World Component Registration" begin

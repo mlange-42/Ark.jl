@@ -15,7 +15,7 @@ function World()
     World(
         Vector{_EntityIndex}(),
         Vector{Any}(),
-        Vector{_Archetype}(),
+        [_Archetype()],
         _ComponentRegistry(),
     )
 end
