@@ -119,4 +119,5 @@ end
 
     entity = new_entity!(world)
     @test entity == _new_entity(1, 0)
+    @test is_alive(world, entity) == true
 end

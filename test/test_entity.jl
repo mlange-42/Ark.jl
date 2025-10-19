@@ -46,9 +46,9 @@ end
     @test pool.available == 0
 
     # Test _alive
-    @test _alive(pool, e2) == true
-    @test _alive(pool, e3) == true
-    @test _alive(pool, e1) == false  # old generation
+    @test _is_alive(pool, e2) == true
+    @test _is_alive(pool, e3) == true
+    @test _is_alive(pool, e1) == false  # old generation
 
     # Test _recycle throws on reserved entity
     reserved_entity = _new_entity(0, 0)

@@ -32,6 +32,10 @@ function new_entity!(world::World)::Entity
     return entity
 end
 
+function is_alive(world::World, entity::Entity)::Bool
+    return _is_alive(world._entity_pool, entity)
+end
+
 function _component_id!(world::World, ::Type{C}) where C
     id = _component_id!(world._registry, C)
     if id >= length(world._storages)

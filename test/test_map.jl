@@ -9,6 +9,7 @@ using .TestTypes: Position, Velocity
 
     entity = new_entity!(m, Position(1, 2), Velocity(3, 4))
     @test entity == _new_entity(1, 0)
+    @test is_alive(world, entity) == true
     pos, vel = get_components(m, entity)
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
