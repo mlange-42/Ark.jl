@@ -1,17 +1,31 @@
 
+const zero_entity::Entity = _new_entity(1, 0)
+
+"""
+    World
+
+The World is the central ECS storage.
+"""
 mutable struct World
     _entities::Vector{_EntityIndex}
     _storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
     _archetypes::Vector{_Archetype}
     _registry::_ComponentRegistry
+    _entity_pool::_EntityPool
 end
 
+"""
+    World()
+
+Creates a new, empty world.
+"""
 function World()
     World(
-        Vector{_EntityIndex}(),
+        [_EntityIndex(typemax(UInt32), 0)],
         Vector{Any}(),
         [_Archetype()],
         _ComponentRegistry(),
+        _EntityPool(UInt32(1024)),
     )
 end
 
@@ -33,8 +47,19 @@ function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
     return _get_storage(world, id, C)
 end
 
-function _create_archetype!(world::World, components::UInt8...)
-    arch = _Archetype(components...)
+function _find_or_create_archetype!(world::World, components::UInt8...)::UInt32
+    # TODO: implement archetype graph for faster lookup.
+    mask = _Mask(components...)
+    for (i, arch) in enumerate(world._archetypes)
+        if arch.mask == mask
+            return i
+        end
+    end
+    return _create_archetype!(world, mask, components...)
+end
+
+function _create_archetype!(world::World, mask::_Mask, components::UInt8...)::UInt32
+    arch = _Archetype(mask, components...)
     push!(world._archetypes, arch)
     index = length(world._archetypes)
     for (i, tp) in enumerate(world._registry.types)
@@ -46,4 +71,59 @@ function _create_archetype!(world::World, components::UInt8...)
         storage = _get_storage(world, comp, tp)
         storage.data[index] = Vector{tp}()
     end
+    return index
+end
+
+function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
+    entity = _get_entity(world._entity_pool)
+    archetype = world._archetypes[archetype_index]
+
+    index = _add_entity!(archetype, entity)
+    for comp in archetype.components
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        vec = storage.data[archetype_index]
+        resize!(vec, length(vec) + 1)
+    end
+
+    if entity._id > length(world._entities)
+        push!(world._entities, _EntityIndex(archetype_index, index))
+    else
+        world._entities[entity._id] = _EntityIndex(archetype_index, index)
+    end
+    return entity, index
+end
+
+function new_entity!(world::World)::Entity
+    entity, _ = _create_entity!(world, UInt32(1))
+    return entity
+end
+
+function is_alive(world::World, entity::Entity)::Bool
+    return _is_alive(world._entity_pool, entity)
+end
+
+function remove_entity!(world::World, entity::Entity)
+    # TODO: this is probably quite slow, as we need to cast/assert types.
+
+    if !is_alive(world, entity)
+        error("can't remove a dead entity")
+    end
+    index = world._entities[entity._id]
+    archetype = world._archetypes[index.archetype]
+
+    swapped = _swap_remove!(archetype.entities, index.row)
+    for comp in world._archetypes[index.archetype].components
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        vec = storage.data[index.archetype]
+        _swap_remove!(vec, index.row)
+    end
+
+    if swapped
+        swap_entity = archetype.entities[index.row]
+        world._entities[swap_entity._id] = index
+    end
+
+    _recycle(world._entity_pool, entity)
 end

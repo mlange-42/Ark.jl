@@ -1,8 +1,6 @@
 using Ark
 using Test
 
-include("TestTypes.jl")
-
 using .TestTypes: Position
 
 @testset "ComponentRegistry Tests" begin

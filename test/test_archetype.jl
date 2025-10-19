@@ -3,10 +3,11 @@ using Test
 
 @testset "_Archetype constructor" begin
     # Create an archetype with specific components
-    arch = _Archetype(UInt8(1), UInt8(64), UInt8(128), UInt8(255))
+    comps = [UInt8(1), UInt8(64), UInt8(128), UInt8(255)]
+    arch = _Archetype(_Mask(comps...), comps...)
 
     # Check that component indices are stored correctly
-    @test arch.component_indices == [UInt8(1), UInt8(64), UInt8(128), UInt8(255)]
+    @test arch.components == [UInt8(1), UInt8(64), UInt8(128), UInt8(255)]
     @test length(arch.entities) == 0
 
     # Check that the mask has the correct bits set
