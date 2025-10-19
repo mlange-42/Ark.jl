@@ -1,4 +1,9 @@
 
+"""
+    const zero_entity::Entity
+
+The reserved zero [`Entity`](@ref) value.
+"""
 const zero_entity::Entity = _new_entity(1, 0)
 
 """
@@ -17,7 +22,7 @@ end
 """
     World()
 
-Creates a new, empty world.
+Creates a new, empty [`World`](@ref).
 """
 function World()
     World(
@@ -94,15 +99,30 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     return entity, index
 end
 
+"""
+    new_entity!(world::World)::Entity
+
+Creates a new [`Entity`](@ref) without any components.
+"""
 function new_entity!(world::World)::Entity
     entity, _ = _create_entity!(world, UInt32(1))
     return entity
 end
 
+"""
+    is_alive(world::World, entity::Entity)::Bool
+
+Returns whether an [`Entity`](@ref) is alive.
+"""
 function is_alive(world::World, entity::Entity)::Bool
     return _is_alive(world._entity_pool, entity)
 end
 
+"""
+    remove_entity!(world::World, entity::Entity)
+
+Removes an [`Entity`](@ref) from the [`World`](@ref).
+"""
 function remove_entity!(world::World, entity::Entity)
     # TODO: this is probably quite slow, as we need to cast/assert types.
 

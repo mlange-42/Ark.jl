@@ -1,4 +1,8 @@
+"""
+    Map2{A,B}
 
+A component mapper for 2 components.
+"""
 struct Map2{A,B}
     _world::World
     _ids::Vector{UInt8}
@@ -6,6 +10,11 @@ struct Map2{A,B}
     _storage_b::_ComponentStorage{B}
 end
 
+"""
+    Map2{A,B}(world::World)
+
+Creates a component mapper for 2 components.
+"""
 function Map2{A,B}(world::World) where {A,B}
     ids = [
         _component_id!(world, A),
@@ -19,6 +28,24 @@ function Map2{A,B}(world::World) where {A,B}
     )
 end
 
+"""
+    new_entity!(map::Map2{A,B}, a::A, b::B)::Entity
+
+Creates a new [`Entity`](@ref) with two components.
+"""
+function new_entity!(map::Map2{A,B}, a::A, b::B)::Entity where {A,B}
+    archetype = _find_or_create_archetype!(map._world, map._ids...)
+    entity, index = _create_entity!(map._world, archetype)
+    map._storage_a.data[archetype][index] = a
+    map._storage_b.data[archetype][index] = b
+    return entity
+end
+
+"""
+    get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B}
+
+Get two components of an [`Entity`](@ref).
+"""
 function get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B} where {A,B}
     index = map._world._entities[entity._id]
     a = map._storage_a.data[index.archetype][index.row]
@@ -26,16 +53,13 @@ function get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B} where {A,B}
     return a, b
 end
 
+"""
+    set_components!(map::Map2{A,B}, entity::Entity, a::A, b::B)
+
+Set two components of an [`Entity`](@ref).
+"""
 function set_components!(map::Map2{A,B}, entity::Entity, a::A, b::B) where {A,B}
     index = map._world._entities[entity._id]
     map._storage_a.data[index.archetype][index.row] = a
     map._storage_b.data[index.archetype][index.row] = b
-end
-
-function new_entity!(map::Map2{A,B}, a::A, b::B)::Entity where {A,B}
-    archetype = _find_or_create_archetype!(map._world, map._ids...)
-    entity, index = _create_entity!(map._world, archetype)
-    map._storage_a.data[archetype][index] = a
-    map._storage_b.data[archetype][index] = b
-    return entity
 end

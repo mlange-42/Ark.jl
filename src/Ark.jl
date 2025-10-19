@@ -14,7 +14,7 @@ export is_alive, new_entity!, remove_entity!, zero_entity
 export _find_or_create_archetype!, _create_entity!, _get_storage
 
 export Entity
-export _new_entity, _EntityIndex, _ComponentStorage
+export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
 export Map2
 export new_entity!, get_components, set_components!
