@@ -22,7 +22,8 @@ function _component_id!(world::World, ::Type{C}) where C
 end
 
 function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
-    return world.storages[id+1]
+    storage = world.storages[id+1]::_ComponentStorage{C}
+    return storage
 end
 
 function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
