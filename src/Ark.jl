@@ -17,7 +17,7 @@ export Entity
 export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
 export Map2
-export new_entity!, get_components, set_components!
+export new_entity!, get_components, set_components!, has_components, add_components!, remove_components!
 
 export _Archetype
 export _add_entity!
@@ -26,7 +26,10 @@ export _ComponentRegistry
 export _component_id!
 
 export _Mask
-export _get_bit, _contains_all, _contains_any
+export _get_bit, _contains_all, _contains_any, _and, _or, _active_bit_indices
+
+export _MutableMask
+export _get_bit, _set_bit!, _clear_bit!
 
 export _EntityPool
 export _get_entity, _recycle, _is_alive

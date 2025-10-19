@@ -51,14 +51,40 @@ end
     return _get_storage(world, id, C)
 end
 
-function _find_or_create_archetype!(world::World, components::UInt8...)::UInt32
+function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+    index = world._entities[entity._id]
+    return _find_or_create_archetype!(world, world._archetypes[index.archetype].mask, add, remove)
+end
+
+function _find_or_create_archetype!(world::World, start::_Mask, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
     # TODO: implement archetype graph for faster lookup.
-    mask = _Mask(components...)
+    mask = _MutableMask(start)
+
+    for b in remove
+        if !_get_bit(mask, b)
+            error("entity does not have component to remove")
+        end
+        _clear_bit!(mask, b)
+    end
+    for b in add
+        if _get_bit(mask, b)
+            error("entity already has component to add, or it was added twice")
+        end
+        if _get_bit(start, b)
+            error("component added and removed in the same exchange operation")
+        end
+        _set_bit!(mask, b)
+    end
+
+    mask = _Mask(mask)
+
     for (i, arch) in enumerate(world._archetypes)
         if arch.mask == mask
             return i
         end
     end
+
+    components = _active_bit_indices(mask)
     return _create_archetype!(world, mask, components...)
 end
 
@@ -87,7 +113,7 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
         vec = storage.data[archetype_index]
-        resize!(vec, length(vec) + 1)
+        resize!(vec, index)
     end
 
     if entity._id > length(world._entities)
@@ -96,6 +122,46 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
         world._entities[entity._id] = _EntityIndex(archetype_index, index)
     end
     return entity, index
+end
+
+function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
+    if !is_alive(world, entity)
+        error("can't change components of a dead entity")
+    end
+    index = world._entities[entity._id]
+    old_archetype = world._archetypes[index.archetype]
+    new_archetype = world._archetypes[archetype_index]
+
+    new_row = _add_entity!(new_archetype, entity)
+    swapped = _swap_remove!(old_archetype.entities, index.row)
+    for comp in old_archetype.components
+        if !_get_bit(new_archetype.mask, comp)
+            continue
+        end
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        old_vec = storage.data[index.archetype]
+        new_vec = storage.data[archetype_index]
+        push!(new_vec, old_vec[index.row])
+        _swap_remove!(old_vec, index.row)
+    end
+    for comp in new_archetype.components
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        new_vec = storage.data[archetype_index]
+        if length(new_vec) == new_row
+            continue
+        end
+        resize!(new_vec, new_row)
+    end
+
+    if swapped
+        swap_entity = old_archetype.entities[index.row]
+        world._entities[swap_entity._id] = index
+    end
+
+    world._entities[entity._id] = _EntityIndex(archetype_index, new_row)
+    return new_row
 end
 
 """
@@ -130,7 +196,7 @@ function remove_entity!(world::World, entity::Entity)
     archetype = world._archetypes[index.archetype]
 
     swapped = _swap_remove!(archetype.entities, index.row)
-    for comp in world._archetypes[index.archetype].components
+    for comp in archetype.components
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
         vec = storage.data[index.archetype]
