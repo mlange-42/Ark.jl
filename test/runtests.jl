@@ -1,6 +1,8 @@
-using Ark
 using Test
+using Revise
 
-@testset "Ark.jl" begin
-    # Write your tests here.
-end
+include("test_archetype.jl")
+include("test_entity.jl")
+include("test_mask.jl")
+include("test_registry.jl")
+include("test_world.jl")
