@@ -20,7 +20,7 @@ include("../src/mask.jl")
     @test get_bit(m1, UInt8(255)) == false
 
     # Test contains_all
-    m2 = _Mask(64, 128, 256)
+    m2 = _Mask(64, 128, 193)
     @test contains_all(m1, m2) == true
     @test contains_all(m2, m1) == false
 

@@ -1,7 +1,6 @@
 module Ark
 
 include("archetype.jl")
-include("entity.jl")
 include("registry.jl")
 include("storage.jl")
 
