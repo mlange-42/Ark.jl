@@ -1,15 +1,15 @@
 
 
-mutable struct ComponentRegistry
+mutable struct _ComponentRegistry
     counter::UInt8
     components::Dict{DataType, UInt8}
 end
 
-function ComponentRegistry()
-    ComponentRegistry(0x00, Dict{DataType, UInt8}())
+function _ComponentRegistry()
+    _ComponentRegistry(0x00, Dict{DataType, UInt8}())
 end
 
-function component_id!(registry::ComponentRegistry, ::Type{C}) where C
+function _component_id!(registry::_ComponentRegistry, ::Type{C}) where C
     if haskey(registry.components, C)
         return registry.components[C]
     elseif registry.counter == typemax(UInt8)
