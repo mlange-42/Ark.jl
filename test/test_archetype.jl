@@ -9,7 +9,7 @@ include("../src/archetype.jl")
 
     # Check that component indices are stored correctly
     @test arch.component_indices == [UInt8(1), UInt8(64), UInt8(128), UInt8(255)]
-    @test len(arch.entities) == 0
+    @test length(arch.entities) == 0
 
     # Check that the mask has the correct bits set
     @test get_bit(arch.mask, UInt8(1)) == true

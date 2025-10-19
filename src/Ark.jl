@@ -4,6 +4,8 @@ include("archetype.jl")
 include("registry.jl")
 include("storage.jl")
 
+export World
+
 mutable struct World
     _entities::Vector{_EntityIndex}
     _storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
@@ -41,6 +43,15 @@ end
 function _create_archetype(world::World, components::UInt8...)
     arch = _Archetype(components)
     push!(world._archetypes, arch)
+    for (i, tp) in enumerate(world._registry.types)
+        storage = _get_storage(world, i, tp)
+        push!(storage, undef)
+    end
+    for comp in components
+        tp = world._registry.types[comp]
+        storage = _get_storage(world, comp, tp)
+        storage[comp] = Vector{tp}()
+    end
 end
 
 end

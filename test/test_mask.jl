@@ -5,6 +5,7 @@ include("../src/mask.jl")
 
 @testset "_Mask functionality" begin
     # Test constructor and bit setting
+    m1 = _Mask(UInt8(1))
     m1 = _Mask(1, 64, 65, 128, 129, 192, 193)
     @test get_bit(m1, UInt8(1)) == true
     @test get_bit(m1, UInt8(64)) == true
