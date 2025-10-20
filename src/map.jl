@@ -1,7 +1,21 @@
 
-@generated function get_mapped_components(map::Map{CS}, index::Index) where {CS <: Tuple}
+@generated function get_mapped_components(map::Map{CS}, index) where {CS <: Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage[$i].data[index.archetype][index.row]) for i in 1:N]
+    expressions = [:(map._storage[$i].data[index.archetype][index]) for i in 1:N]
+    tuple_expr = Expr(:tuple, expressions...)
+    return $tuple_expr
+end
+
+@generated function set_mapped_components!(map::Map{CS}, index, comps) where {CS <: Tuple}
+    N = length(CS.parameters)
+    expressions = [:(map._storage[$i].data[index.archetype][index] = comps[$i]) for i in 1:N]
+    tuple_expr = Expr(:tuple, expressions...)
+    return $tuple_expr
+end
+
+@generated function set_entity_components!(map::Map{CS}, archetype, index, comps) where {CS <: Tuple}
+    N = length(CS.parameters)
+    expressions = [:(map._storage[$i].data[archetype][index] = comps[$i]) for i in 1:N]
     tuple_expr = Expr(:tuple, expressions...)
     return $tuple_expr
 end
@@ -33,8 +47,6 @@ function set_components!(map::Map, entity::Entity, values)
     map[entity] = values
 end
 
-#################################
-
 @inline function Base.getindex(map::Map, entity::Entity)
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
@@ -43,15 +55,14 @@ end
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
-    return a get_mapped_components(map, index)
+    return get_mapped_components(map, index.row)
 end
 
-# todo: generation
 function new_entity!(map::Map, comps::Tuple)
     archetype =
         _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
-    map._storage_a.data[archetype][index] = a
+    set_entity_components!(map, archetype, index, comps)
     return entity
 end
 
@@ -61,7 +72,7 @@ end
         error("can't set components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    map._storage_a.data[index.archetype][index.row] = value[1]
+    set_mapped_components!(map, index, value)
 end
 
 # todo: generation
