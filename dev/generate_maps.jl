@@ -25,4 +25,4 @@ end
 
 data = Dict("items" => items)
 
-println(render(template, data))
+write("src/map.jl", render(template, data))
