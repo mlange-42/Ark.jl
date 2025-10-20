@@ -101,7 +101,7 @@ end
     query = Query3{Position,Velocity,Altitude}(world, optional=(Altitude,))
 
     count = 0
-    indices = Vector{Int}
+    indices = Vector{Int}()
     for a in query
         vec_pos, vec_vel, vec_alt = query[]
         ent = entities(query)
