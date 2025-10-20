@@ -24,7 +24,7 @@ function Query(
         opt_ids = map(x -> _component_id!(world, x), optional)
         mask = _clear_bits(mask, _Mask(opt_ids...))
     end
-    return Query1{A}(
+    return Query(
         0,
         world,
         ids,
@@ -32,7 +32,7 @@ function Query(
         _Mask(without_ids...),
         length(without_ids) > 0,
         Tuple(_get_storage(world, id, C) for (id, C) in zip(ids,CompsTypes)),
-        0,
+        UInt8(0),
     )
 end
 
@@ -42,11 +42,11 @@ end
     return Expr(:tuple, expressions...)
 end
 
-@inline function get_components(q::Query)::Tuple{Union{Nothing,Column}}
+@inline function get_components(q::Query)::Tuple{Any, Union{Nothing,<:Column}}
     return q[]
 end
 
-@inline function Base.getindex(q::Query)::Tuple{Union{Nothing,Column}}
+@inline function Base.getindex(q::Query)::Tuple{Any, Union{Nothing,<:Column}}
     return get_query_components(q)
 end
 
