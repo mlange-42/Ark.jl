@@ -24,22 +24,30 @@ end
 
 Creates a query for 1 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query1{A}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A}
     ids = (_component_id!(world, A),)
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query1{A}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -48,38 +56,42 @@ function Query1{A}(
 end
 
 """
-    get_components(q::Query1{ A })::Tuple{ Column{A} }
+    get_components(q::Query1{ A })::Tuple{ Union{Nothing,Column{A}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(q::Query1{A})::Tuple{Column{A}} where {A}
+@inline function get_components(q::Query1{A})::Tuple{Union{Nothing,Column{A}}} where {A}
     return q[]
 end
 
-@inline function Base.getindex(q::Query1{A})::Tuple{Column{A}} where {A}
+@inline function Base.getindex(q::Query1{A})::Tuple{Union{Nothing,Column{A}}} where {A}
     a = q._storage_a.data[q._index]
     return a
 end
 
-@inline function Base.iterate(q::Query1, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query1, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query1)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -124,22 +136,30 @@ end
 
 Creates a query for 2 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query2{A,B}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A,B}
     ids = (_component_id!(world, A), _component_id!(world, B))
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query2{A,B}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -149,39 +169,47 @@ function Query2{A,B}(
 end
 
 """
-    get_components(q::Query2{ A,B })::Tuple{ Column{A}, Column{B} }
+    get_components(q::Query2{ A,B })::Tuple{ Union{Nothing,Column{A}}, Union{Nothing,Column{B}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(q::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
+@inline function get_components(
+    q::Query2{A,B},
+)::Tuple{Union{Nothing,Column{A}},Union{Nothing,Column{B}}} where {A,B}
     return q[]
 end
 
-@inline function Base.getindex(q::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
+@inline function Base.getindex(
+    q::Query2{A,B},
+)::Tuple{Union{Nothing,Column{A}},Union{Nothing,Column{B}}} where {A,B}
     a = q._storage_a.data[q._index]
     b = q._storage_b.data[q._index]
     return a, b
 end
 
-@inline function Base.iterate(q::Query2, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query2, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query2)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -227,22 +255,30 @@ end
 
 Creates a query for 3 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query3{A,B,C}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A,B,C}
     ids = (_component_id!(world, A), _component_id!(world, B), _component_id!(world, C))
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query3{A,B,C}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -253,44 +289,56 @@ function Query3{A,B,C}(
 end
 
 """
-    get_components(q::Query3{ A,B,C })::Tuple{ Column{A}, Column{B}, Column{C} }
+    get_components(q::Query3{ A,B,C })::Tuple{ Union{Nothing,Column{A}}, Union{Nothing,Column{B}}, Union{Nothing,Column{C}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
     q::Query3{A,B,C},
-)::Tuple{Column{A},Column{B},Column{C}} where {A,B,C}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+} where {A,B,C}
     return q[]
 end
 
 @inline function Base.getindex(
     q::Query3{A,B,C},
-)::Tuple{Column{A},Column{B},Column{C}} where {A,B,C}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+} where {A,B,C}
     a = q._storage_a.data[q._index]
     b = q._storage_b.data[q._index]
     c = q._storage_c.data[q._index]
     return a, b, c
 end
 
-@inline function Base.iterate(q::Query3, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query3, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query3)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -337,13 +385,16 @@ end
 
 Creates a query for 4 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query4{A,B,C,D}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A,B,C,D}
     ids = (
         _component_id!(world, A),
@@ -353,11 +404,16 @@ function Query4{A,B,C,D}(
     )
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query4{A,B,C,D}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -369,19 +425,29 @@ function Query4{A,B,C,D}(
 end
 
 """
-    get_components(q::Query4{ A,B,C,D })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D} }
+    get_components(q::Query4{ A,B,C,D })::Tuple{ Union{Nothing,Column{A}}, Union{Nothing,Column{B}}, Union{Nothing,Column{C}}, Union{Nothing,Column{D}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
     q::Query4{A,B,C,D},
-)::Tuple{Column{A},Column{B},Column{C},Column{D}} where {A,B,C,D}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+} where {A,B,C,D}
     return q[]
 end
 
 @inline function Base.getindex(
     q::Query4{A,B,C,D},
-)::Tuple{Column{A},Column{B},Column{C},Column{D}} where {A,B,C,D}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+} where {A,B,C,D}
     a = q._storage_a.data[q._index]
     b = q._storage_b.data[q._index]
     c = q._storage_c.data[q._index]
@@ -389,25 +455,29 @@ end
     return a, b, c, d
 end
 
-@inline function Base.iterate(q::Query4, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query4, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query4)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -455,13 +525,16 @@ end
 
 Creates a query for 5 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query5{A,B,C,D,E}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A,B,C,D,E}
     ids = (
         _component_id!(world, A),
@@ -472,11 +545,16 @@ function Query5{A,B,C,D,E}(
     )
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query5{A,B,C,D,E}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -489,19 +567,31 @@ function Query5{A,B,C,D,E}(
 end
 
 """
-    get_components(q::Query5{ A,B,C,D,E })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E} }
+    get_components(q::Query5{ A,B,C,D,E })::Tuple{ Union{Nothing,Column{A}}, Union{Nothing,Column{B}}, Union{Nothing,Column{C}}, Union{Nothing,Column{D}}, Union{Nothing,Column{E}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
     q::Query5{A,B,C,D,E},
-)::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E}} where {A,B,C,D,E}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+} where {A,B,C,D,E}
     return q[]
 end
 
 @inline function Base.getindex(
     q::Query5{A,B,C,D,E},
-)::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E}} where {A,B,C,D,E}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+} where {A,B,C,D,E}
     a = q._storage_a.data[q._index]
     b = q._storage_b.data[q._index]
     c = q._storage_c.data[q._index]
@@ -510,25 +600,29 @@ end
     return a, b, c, d, e
 end
 
-@inline function Base.iterate(q::Query5, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query5, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query5)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -577,13 +671,16 @@ end
 
 Creates a query for 6 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query6{A,B,C,D,E,F}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A,B,C,D,E,F}
     ids = (
         _component_id!(world, A),
@@ -595,11 +692,16 @@ function Query6{A,B,C,D,E,F}(
     )
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query6{A,B,C,D,E,F}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -613,19 +715,33 @@ function Query6{A,B,C,D,E,F}(
 end
 
 """
-    get_components(q::Query6{ A,B,C,D,E,F })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F} }
+    get_components(q::Query6{ A,B,C,D,E,F })::Tuple{ Union{Nothing,Column{A}}, Union{Nothing,Column{B}}, Union{Nothing,Column{C}}, Union{Nothing,Column{D}}, Union{Nothing,Column{E}}, Union{Nothing,Column{F}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
     q::Query6{A,B,C,D,E,F},
-)::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E},Column{F}} where {A,B,C,D,E,F}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+    Union{Nothing,Column{F}},
+} where {A,B,C,D,E,F}
     return q[]
 end
 
 @inline function Base.getindex(
     q::Query6{A,B,C,D,E,F},
-)::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E},Column{F}} where {A,B,C,D,E,F}
+)::Tuple{
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+    Union{Nothing,Column{F}},
+} where {A,B,C,D,E,F}
     a = q._storage_a.data[q._index]
     b = q._storage_b.data[q._index]
     c = q._storage_c.data[q._index]
@@ -635,25 +751,29 @@ end
     return a, b, c, d, e, f
 end
 
-@inline function Base.iterate(q::Query6, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query6, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query6)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -703,13 +823,16 @@ end
 
 Creates a query for 7 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query7{A,B,C,D,E,F,G}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A,B,C,D,E,F,G}
     ids = (
         _component_id!(world, A),
@@ -722,11 +845,16 @@ function Query7{A,B,C,D,E,F,G}(
     )
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query7{A,B,C,D,E,F,G}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -741,20 +869,20 @@ function Query7{A,B,C,D,E,F,G}(
 end
 
 """
-    get_components(q::Query7{ A,B,C,D,E,F,G })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F}, Column{G} }
+    get_components(q::Query7{ A,B,C,D,E,F,G })::Tuple{ Union{Nothing,Column{A}}, Union{Nothing,Column{B}}, Union{Nothing,Column{C}}, Union{Nothing,Column{D}}, Union{Nothing,Column{E}}, Union{Nothing,Column{F}}, Union{Nothing,Column{G}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
     q::Query7{A,B,C,D,E,F,G},
 )::Tuple{
-    Column{A},
-    Column{B},
-    Column{C},
-    Column{D},
-    Column{E},
-    Column{F},
-    Column{G},
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+    Union{Nothing,Column{F}},
+    Union{Nothing,Column{G}},
 } where {A,B,C,D,E,F,G}
     return q[]
 end
@@ -762,13 +890,13 @@ end
 @inline function Base.getindex(
     q::Query7{A,B,C,D,E,F,G},
 )::Tuple{
-    Column{A},
-    Column{B},
-    Column{C},
-    Column{D},
-    Column{E},
-    Column{F},
-    Column{G},
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+    Union{Nothing,Column{F}},
+    Union{Nothing,Column{G}},
 } where {A,B,C,D,E,F,G}
     a = q._storage_a.data[q._index]
     b = q._storage_b.data[q._index]
@@ -780,25 +908,29 @@ end
     return a, b, c, d, e, f, g
 end
 
-@inline function Base.iterate(q::Query7, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query7, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query7)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -849,13 +981,16 @@ end
 
 Creates a query for 8 components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query8{A,B,C,D,E,F,G,H}(
     world::World;
     with::Tuple{Vararg{DataType}} = (),
     without::Tuple{Vararg{DataType}} = (),
+    optional::Tuple{Vararg{DataType}} = (),
 ) where {A,B,C,D,E,F,G,H}
     ids = (
         _component_id!(world, A),
@@ -869,11 +1004,16 @@ function Query8{A,B,C,D,E,F,G,H}(
     )
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query8{A,B,C,D,E,F,G,H}(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         _get_storage(world, ids[1], A),
@@ -889,21 +1029,21 @@ function Query8{A,B,C,D,E,F,G,H}(
 end
 
 """
-    get_components(q::Query8{ A,B,C,D,E,F,G,H })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F}, Column{G}, Column{H} }
+    get_components(q::Query8{ A,B,C,D,E,F,G,H })::Tuple{ Union{Nothing,Column{A}}, Union{Nothing,Column{B}}, Union{Nothing,Column{C}}, Union{Nothing,Column{D}}, Union{Nothing,Column{E}}, Union{Nothing,Column{F}}, Union{Nothing,Column{G}}, Union{Nothing,Column{H}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
     q::Query8{A,B,C,D,E,F,G,H},
 )::Tuple{
-    Column{A},
-    Column{B},
-    Column{C},
-    Column{D},
-    Column{E},
-    Column{F},
-    Column{G},
-    Column{H},
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+    Union{Nothing,Column{F}},
+    Union{Nothing,Column{G}},
+    Union{Nothing,Column{H}},
 } where {A,B,C,D,E,F,G,H}
     return q[]
 end
@@ -911,14 +1051,14 @@ end
 @inline function Base.getindex(
     q::Query8{A,B,C,D,E,F,G,H},
 )::Tuple{
-    Column{A},
-    Column{B},
-    Column{C},
-    Column{D},
-    Column{E},
-    Column{F},
-    Column{G},
-    Column{H},
+    Union{Nothing,Column{A}},
+    Union{Nothing,Column{B}},
+    Union{Nothing,Column{C}},
+    Union{Nothing,Column{D}},
+    Union{Nothing,Column{E}},
+    Union{Nothing,Column{F}},
+    Union{Nothing,Column{G}},
+    Union{Nothing,Column{H}},
 } where {A,B,C,D,E,F,G,H}
     a = q._storage_a.data[q._index]
     b = q._storage_b.data[q._index]
@@ -931,25 +1071,29 @@ end
     return a, b, c, d, e, f, g, h
 end
 
-@inline function Base.iterate(q::Query8, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query8, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query8)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """

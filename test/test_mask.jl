@@ -30,6 +30,20 @@ using Test
     @test _contains_any(m2, m3) == false
 end
 
+@testset "_Mask clear_bits" begin
+    m1 = _Mask(1, 64, 65)
+    m2 = _Mask(1, 64)
+
+    @test _get_bit(m1, UInt8(1)) == true
+    @test _get_bit(m1, UInt8(64)) == true
+    @test _get_bit(m1, UInt8(65)) == true
+
+    m3 = _clear_bits(m1, m2)
+    @test _get_bit(m3, UInt8(1)) == false
+    @test _get_bit(m3, UInt8(64)) == false
+    @test _get_bit(m3, UInt8(65)) == true
+end
+
 @testset "_Mask bitwise operations" begin
     m1 = _Mask(1, 2, 3)       # bits 1, 2, 3 set
     m2 = _Mask(3, 4, 5)       # bits 3, 4, 5 set
