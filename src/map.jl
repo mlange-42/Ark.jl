@@ -1,5 +1,5 @@
 """
-    Map1{ A };
+    Map1{ A }
 
 A component mapper for 1 components.
 """
@@ -126,7 +126,7 @@ function remove_components!(map::Map1{A}, entity::Entity) where {A}
 end
 
 """
-    Map2{ A,B };
+    Map2{ A,B }
 
 A component mapper for 2 components.
 """
@@ -270,7 +270,7 @@ function remove_components!(map::Map2{A,B}, entity::Entity) where {A,B}
 end
 
 """
-    Map3{ A,B,C };
+    Map3{ A,B,C }
 
 A component mapper for 3 components.
 """
@@ -426,7 +426,7 @@ function remove_components!(map::Map3{A,B,C}, entity::Entity) where {A,B,C}
 end
 
 """
-    Map4{ A,B,C,D };
+    Map4{ A,B,C,D }
 
 A component mapper for 4 components.
 """
@@ -613,7 +613,7 @@ function remove_components!(map::Map4{A,B,C,D}, entity::Entity) where {A,B,C,D}
 end
 
 """
-    Map5{ A,B,C,D,E };
+    Map5{ A,B,C,D,E }
 
 A component mapper for 5 components.
 """
@@ -819,7 +819,7 @@ function remove_components!(map::Map5{A,B,C,D,E}, entity::Entity) where {A,B,C,D
 end
 
 """
-    Map6{ A,B,C,D,E,F };
+    Map6{ A,B,C,D,E,F }
 
 A component mapper for 6 components.
 """
@@ -1038,7 +1038,7 @@ function remove_components!(map::Map6{A,B,C,D,E,F}, entity::Entity) where {A,B,C
 end
 
 """
-    Map7{ A,B,C,D,E,F,G };
+    Map7{ A,B,C,D,E,F,G }
 
 A component mapper for 7 components.
 """
@@ -1270,7 +1270,7 @@ function remove_components!(map::Map7{A,B,C,D,E,F,G}, entity::Entity) where {A,B
 end
 
 """
-    Map8{ A,B,C,D,E,F,G,H };
+    Map8{ A,B,C,D,E,F,G,H }
 
 A component mapper for 8 components.
 """

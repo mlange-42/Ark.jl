@@ -1,6 +1,6 @@
 {{#items}}
 """
-    Map{{N}}{ {{joined}} };
+    Map{{N}}{ {{joined}} }
 
 A component mapper for {{N}} components.
 """
