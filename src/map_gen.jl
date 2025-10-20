@@ -56,7 +56,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
@@ -190,7 +190,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
@@ -340,7 +340,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
@@ -507,7 +507,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
@@ -705,7 +705,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
@@ -916,7 +916,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
@@ -1140,7 +1140,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
@@ -1377,7 +1377,7 @@ end
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
+    # TODO: currently raises MethodError if components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
