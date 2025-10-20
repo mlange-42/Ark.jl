@@ -19,7 +19,7 @@ function benchmark_iteration(n)
     bench = @benchmarkable begin
         for _ in query
             pos_column, vel_column = query[]
-            @inbounds @simd for i in eachindex(pos_column)
+            @inbounds for i in eachindex(pos_column)
                 pos = pos_column[i]
                 vel = vel_column[i]
                 pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
@@ -27,7 +27,7 @@ function benchmark_iteration(n)
         end
     end setup = (query = setup_world($n))
 
-    println("Benchmarking with $n entities...")
+    println("\nBenchmarking with $n entities...")
     tune!(bench)
     result = run(bench, seconds=10)
     println("Mean time per entity: $(time(mean(result)) / n) ns")
