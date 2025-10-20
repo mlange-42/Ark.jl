@@ -3,6 +3,8 @@
     Column{C}
 
 Archetype column storing one type of components.
+Can be iterated, indexed and updated like a Vector.
+
 Used in query iteration.
 """
 struct Column{C}
