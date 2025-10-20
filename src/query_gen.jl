@@ -13,18 +13,38 @@ mutable struct Query1{A}
     _world::World
     _ids::Tuple{UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _lock::UInt8
 end
 
 """
-    Query1{ A }(world::World)
+    Query1{ A }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 1 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query1{A}(world::World) where {A}
+function Query1{A}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A}
     ids = (_component_id!(world, A),)
-    return Query1{A}(0, world, ids, _Mask(ids...), _get_storage(world, ids[1], A), 0)
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
+    return Query1{A}(
+        0,
+        world,
+        ids,
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
+        _get_storage(world, ids[1], A),
+        0,
+    )
 end
 
 """
@@ -45,7 +65,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -72,6 +94,15 @@ function close(q::Query1)
 end
 
 """
+    entities(q::Query1)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query1)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
+end
+
+"""
     Query2{ A,B }
 
 A query for 2 components.
@@ -81,23 +112,36 @@ mutable struct Query2{A,B}
     _world::World
     _ids::Tuple{UInt8,UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _lock::UInt8
 end
 
 """
-    Query2{ A,B }(world::World)
+    Query2{ A,B }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 2 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query2{A,B}(world::World) where {A,B}
+function Query2{A,B}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A,B}
     ids = (_component_id!(world, A), _component_id!(world, B))
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query2{A,B}(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         0,
@@ -123,7 +167,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -150,6 +196,15 @@ function close(q::Query2)
 end
 
 """
+    entities(q::Query2)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query2)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
+end
+
+"""
     Query3{ A,B,C }
 
 A query for 3 components.
@@ -159,6 +214,8 @@ mutable struct Query3{A,B,C}
     _world::World
     _ids::Tuple{UInt8,UInt8,UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
@@ -166,17 +223,28 @@ mutable struct Query3{A,B,C}
 end
 
 """
-    Query3{ A,B,C }(world::World)
+    Query3{ A,B,C }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 3 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query3{A,B,C}(world::World) where {A,B,C}
+function Query3{A,B,C}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A,B,C}
     ids = (_component_id!(world, A), _component_id!(world, B), _component_id!(world, C))
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query3{A,B,C}(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
@@ -208,7 +276,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -235,6 +305,15 @@ function close(q::Query3)
 end
 
 """
+    entities(q::Query3)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query3)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
+end
+
+"""
     Query4{ A,B,C,D }
 
 A query for 4 components.
@@ -244,6 +323,8 @@ mutable struct Query4{A,B,C,D}
     _world::World
     _ids::Tuple{UInt8,UInt8,UInt8,UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
@@ -252,22 +333,33 @@ mutable struct Query4{A,B,C,D}
 end
 
 """
-    Query4{ A,B,C,D }(world::World)
+    Query4{ A,B,C,D }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 4 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query4{A,B,C,D}(world::World) where {A,B,C,D}
+function Query4{A,B,C,D}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A,B,C,D}
     ids = (
         _component_id!(world, A),
         _component_id!(world, B),
         _component_id!(world, C),
         _component_id!(world, D),
     )
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query4{A,B,C,D}(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
@@ -301,7 +393,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -328,6 +422,15 @@ function close(q::Query4)
 end
 
 """
+    entities(q::Query4)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query4)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
+end
+
+"""
     Query5{ A,B,C,D,E }
 
 A query for 5 components.
@@ -337,6 +440,8 @@ mutable struct Query5{A,B,C,D,E}
     _world::World
     _ids::Tuple{UInt8,UInt8,UInt8,UInt8,UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
@@ -346,11 +451,18 @@ mutable struct Query5{A,B,C,D,E}
 end
 
 """
-    Query5{ A,B,C,D,E }(world::World)
+    Query5{ A,B,C,D,E }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 5 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query5{A,B,C,D,E}(world::World) where {A,B,C,D,E}
+function Query5{A,B,C,D,E}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A,B,C,D,E}
     ids = (
         _component_id!(world, A),
         _component_id!(world, B),
@@ -358,11 +470,15 @@ function Query5{A,B,C,D,E}(world::World) where {A,B,C,D,E}
         _component_id!(world, D),
         _component_id!(world, E),
     )
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query5{A,B,C,D,E}(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
@@ -398,7 +514,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -425,6 +543,15 @@ function close(q::Query5)
 end
 
 """
+    entities(q::Query5)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query5)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
+end
+
+"""
     Query6{ A,B,C,D,E,F }
 
 A query for 6 components.
@@ -434,6 +561,8 @@ mutable struct Query6{A,B,C,D,E,F}
     _world::World
     _ids::Tuple{UInt8,UInt8,UInt8,UInt8,UInt8,UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
@@ -444,11 +573,18 @@ mutable struct Query6{A,B,C,D,E,F}
 end
 
 """
-    Query6{ A,B,C,D,E,F }(world::World)
+    Query6{ A,B,C,D,E,F }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 6 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query6{A,B,C,D,E,F}(world::World) where {A,B,C,D,E,F}
+function Query6{A,B,C,D,E,F}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A,B,C,D,E,F}
     ids = (
         _component_id!(world, A),
         _component_id!(world, B),
@@ -457,11 +593,15 @@ function Query6{A,B,C,D,E,F}(world::World) where {A,B,C,D,E,F}
         _component_id!(world, E),
         _component_id!(world, F),
     )
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query6{A,B,C,D,E,F}(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
@@ -499,7 +639,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -526,6 +668,15 @@ function close(q::Query6)
 end
 
 """
+    entities(q::Query6)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query6)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
+end
+
+"""
     Query7{ A,B,C,D,E,F,G }
 
 A query for 7 components.
@@ -535,6 +686,8 @@ mutable struct Query7{A,B,C,D,E,F,G}
     _world::World
     _ids::Tuple{UInt8,UInt8,UInt8,UInt8,UInt8,UInt8,UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
@@ -546,11 +699,18 @@ mutable struct Query7{A,B,C,D,E,F,G}
 end
 
 """
-    Query7{ A,B,C,D,E,F,G }(world::World)
+    Query7{ A,B,C,D,E,F,G }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 7 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query7{A,B,C,D,E,F,G}(world::World) where {A,B,C,D,E,F,G}
+function Query7{A,B,C,D,E,F,G}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A,B,C,D,E,F,G}
     ids = (
         _component_id!(world, A),
         _component_id!(world, B),
@@ -560,11 +720,15 @@ function Query7{A,B,C,D,E,F,G}(world::World) where {A,B,C,D,E,F,G}
         _component_id!(world, F),
         _component_id!(world, G),
     )
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query7{A,B,C,D,E,F,G}(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
@@ -620,7 +784,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -647,6 +813,15 @@ function close(q::Query7)
 end
 
 """
+    entities(q::Query7)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query7)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
+end
+
+"""
     Query8{ A,B,C,D,E,F,G,H }
 
 A query for 8 components.
@@ -656,6 +831,8 @@ mutable struct Query8{A,B,C,D,E,F,G,H}
     _world::World
     _ids::Tuple{UInt8,UInt8,UInt8,UInt8,UInt8,UInt8,UInt8,UInt8}
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
@@ -668,11 +845,18 @@ mutable struct Query8{A,B,C,D,E,F,G,H}
 end
 
 """
-    Query8{ A,B,C,D,E,F,G,H }(world::World)
+    Query8{ A,B,C,D,E,F,G,H }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for 8 components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query8{A,B,C,D,E,F,G,H}(world::World) where {A,B,C,D,E,F,G,H}
+function Query8{A,B,C,D,E,F,G,H}(
+    world::World;
+    with::Tuple{Vararg{DataType}} = (),
+    without::Tuple{Vararg{DataType}} = (),
+) where {A,B,C,D,E,F,G,H}
     ids = (
         _component_id!(world, A),
         _component_id!(world, B),
@@ -683,11 +867,15 @@ function Query8{A,B,C,D,E,F,G,H}(world::World) where {A,B,C,D,E,F,G,H}
         _component_id!(world, G),
         _component_id!(world, H),
     )
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query8{A,B,C,D,E,F,G,H}(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
@@ -747,7 +935,9 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 &&
+           _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -771,5 +961,14 @@ Must be called if a query is not fully iterated.
 function close(q::Query8)
     q._index = 0
     _unlock(q._world._lock, q._lock)
+end
+
+"""
+    entities(q::Query8)
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query8)::Vector{Entity}
+    return q._world._archetypes[q._index].entities
 end
 

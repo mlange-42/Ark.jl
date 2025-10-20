@@ -20,7 +20,7 @@ end
 """
     Map{{N}}{ {{joined}} }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for {{N}} components.
 """
 function Map{{N}}{ {{joined}} }(world::World) where { {{joined}} }
     ids = (
@@ -52,7 +52,7 @@ function new_entity!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity where { {{jo
 end
 
 """
-    get_components(map::Map2{{N}}{ {{joined}} }, entity::Entity)::Tuple{ {{joined}} }
+    get_components(map::Map{{N}}{ {{joined}} }, entity::Entity)::Tuple{ {{joined}} }
 
 Get {{N}} components of an [`Entity`](@ref).
 

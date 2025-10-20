@@ -1,5 +1,5 @@
 
-@testset "Filter" begin
+@testset "Query basic functionality" begin
     world = World()
 
     m1 = Map2{Altitude,Health}(world)
@@ -31,4 +31,56 @@
         @test count == 10
         @test is_locked(world) == false
     end
+end
+
+@testset "Query with" begin
+    world = World()
+
+    m1 = Map2{Position,Velocity}(world)
+    m2 = Map3{Position,Velocity,Altitude}(world)
+
+    for i in 1:10
+        new_entity!(m1, Position(i, i * 2), Velocity(1, 1))
+        new_entity!(m2, Position(i, i * 2), Velocity(1, 1), Altitude(5))
+    end
+
+    query = Query2{Position,Velocity}(world, with=(Altitude,))
+
+    count = 0
+    for _ in query
+        vec_pos, vec_vel = query[]
+        ent = entities(query)
+        for i in eachindex(ent)
+            e = ent[i]
+            @test has_components(m2, e) == true
+            count += 1
+        end
+    end
+    @test count == 10
+end
+
+@testset "Query without" begin
+    world = World()
+
+    m1 = Map2{Position,Velocity}(world)
+    m2 = Map3{Position,Velocity,Altitude}(world)
+
+    for i in 1:10
+        new_entity!(m1, Position(i, i * 2), Velocity(1, 1))
+        new_entity!(m2, Position(i, i * 2), Velocity(1, 1), Altitude(5))
+    end
+
+    query = Query2{Position,Velocity}(world, without=(Altitude,))
+
+    count = 0
+    for _ in query
+        vec_pos, vec_vel = query[]
+        ent = entities(query)
+        for i in eachindex(ent)
+            e = ent[i]
+            @test has_components(m2, e) == false
+            count += 1
+        end
+    end
+    @test count == 10
 end
