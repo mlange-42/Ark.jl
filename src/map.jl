@@ -1,7 +1,19 @@
 
+struct Map{CS<:Tuple, N}
+    _world::World
+    _ids::NTuple{N, UInt8}
+    _storage::CS
+end
+
+# TODO: this can also be generated for performance
+function Map(world::World, CompsTypes::Tuple)
+    ids = Tuple(_component_id!(world, C) for C in CompsTypes)
+    return Map(world, ids, Tuple(_get_storage(world, id, C) for (id, C) in zip(ids,CompsTypes)))
+end
+
 @generated function get_mapped_components(map::Map{CS}, index) where {CS <: Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage[$i].data[index.archetype][index]) for i in 1:N]
+    expressions = [:(map._storage[$i].data[index.archetype][index.row]) for i in 1:N]
     return Expr(:tuple, expressions...)
 end
 
@@ -25,17 +37,6 @@ end
         $(expressions...)
         return true
     end
-end
-
-struct Map{CS<:Tuple, N}
-    _world::World
-    _ids::NTuple{N, UInt8}
-    _storage::CS
-end
-
-function Map(world::World, comps::Tuple)
-    ids = _component_id!.(world, comps)
-    return Map(world, ids, _get_storage.(world, ids, comps))
 end
 
 function get_components(map::Map, entity::Entity)
@@ -62,7 +63,7 @@ end
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
-    return get_mapped_components(map, index.row)
+    return get_mapped_components(map, index)
 end
 
 function new_entity!(map::Map, comps::Tuple)
@@ -97,5 +98,3 @@ function has_components(map::Map, entity::Entity)
     index = map._world._entities[entity._id]
     return has_entity_components(map, entity)
 end
-
-
