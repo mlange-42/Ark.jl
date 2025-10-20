@@ -7,6 +7,7 @@ include("storage.jl")
 include("archetype.jl")
 include("registry.jl")
 include("pool.jl")
+include("lock.jl")
 include("world.jl")
 include("map_gen.jl")
 include("query_gen.jl")
@@ -43,6 +44,9 @@ export _get_entity, _recycle, _is_alive
 
 export _BitPool
 export _get_bit
+
+export _Lock
+export _lock, _unlock, _is_locked
 
 export _ComponentStorage
 
