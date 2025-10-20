@@ -45,7 +45,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
@@ -123,7 +123,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
@@ -208,7 +208,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
@@ -301,7 +301,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
@@ -398,7 +398,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
@@ -499,7 +499,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
@@ -620,7 +620,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
@@ -747,7 +747,7 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
             return q._index, q._index + 1
         end
         q._index += 1
