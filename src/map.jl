@@ -2,22 +2,29 @@
 @generated function get_mapped_components(map::Map{CS}, index) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[index.archetype][index]) for i in 1:N]
-    tuple_expr = Expr(:tuple, expressions...)
-    return $tuple_expr
+    return Expr(:tuple, expressions...)
 end
 
 @generated function set_mapped_components!(map::Map{CS}, index, comps) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[index.archetype][index] = comps[$i]) for i in 1:N]
-    tuple_expr = Expr(:tuple, expressions...)
-    return $tuple_expr
+    return quote $(expressions...) end
 end
 
 @generated function set_entity_components!(map::Map{CS}, archetype, index, comps) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[archetype][index] = comps[$i]) for i in 1:N]
-    tuple_expr = Expr(:tuple, expressions...)
-    return $tuple_expr
+    return quote $(expressions...) end
+end
+
+@generated function has_entity_components(map::Map{CS}, index) where {CS <: Tuple}
+    N = length(CS.parameters)
+    expressions = [:(if map._storage[$i].data[index.archetype] == nothing return false end) 
+                   for i in 1:N]
+    return quote 
+        $(expressions...)
+        return true
+    end
 end
 
 struct Map{CS<:Tuple, N}
@@ -66,7 +73,15 @@ function new_entity!(map::Map, comps::Tuple)
     return entity
 end
 
-# todo: generation
+function add_components!(map::Map, entity::Entity, value)
+    if !is_alive(map._world, entity)
+        error("can't add components to a dead entity")
+    end
+    archetype = _find_or_create_archetype!(map._world, entity, map._ids, ())
+    row = _move_entity!(map._world, entity, archetype)
+    set_entity_components!(map, archetype, index, comps)
+end
+
 @inline function Base.setindex!(map::Map, value, entity::Entity)
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
@@ -75,24 +90,12 @@ end
     set_mapped_components!(map, index, value)
 end
 
-# todo: generation
 function has_components(map::Map, entity::Entity)
     if !is_alive(map._world, entity)
         error("can't check components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    if map._storage_a.data[index.archetype] == nothing
-        return false
-    end
-    return true
+    return has_entity_components(map, entity)
 end
 
-# todo: generation
-function add_components!(map::Map, entity::Entity, value)
-    if !is_alive(map._world, entity)
-        error("can't add components to a dead entity")
-    end
-    archetype = _find_or_create_archetype!(map._world, entity, map._ids, ())
-    row = _move_entity!(map._world, entity, archetype)
-    map._storage_a.data[archetype][row] = a
-end
+
