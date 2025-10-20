@@ -1,3 +1,8 @@
+# ------------------------------------------------------------------------
+# ⚠️ This file is auto-generated. DO NOT EDIT.
+# Changes will be overwritten by the code generation process.
+# ------------------------------------------------------------------------
+
 """
     Query1{ A }
 
