@@ -14,6 +14,7 @@ mutable struct Query1{A}
     _ids::Tuple{UInt8}
     _mask::_Mask
     _storage_a::_ComponentStorage{A}
+    _lock::UInt8
 end
 
 """
@@ -23,39 +24,51 @@ Creates a query for 1 components.
 """
 function Query1{A}(world::World) where {A}
     ids = (_component_id!(world, A),)
-    return Query1{A}(0, world, ids, _Mask(ids...), _get_storage(world, ids[1], A))
+    return Query1{A}(0, world, ids, _Mask(ids...), _get_storage(world, ids[1], A), 0)
 end
 
 """
-    get_components(f::Query1{ A })::Tuple{ Column{A} }
+    get_components(q::Query1{ A })::Tuple{ Column{A} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(f::Query1{A})::Tuple{Column{A}} where {A}
-    return f[]
+@inline function get_components(q::Query1{A})::Tuple{Column{A}} where {A}
+    return q[]
 end
 
-@inline function Base.getindex(f::Query1{A})::Tuple{Column{A}} where {A}
-    a = f._storage_a.data[f._index]
+@inline function Base.getindex(q::Query1{A})::Tuple{Column{A}} where {A}
+    a = q._storage_a.data[q._index]
     return a
 end
 
-@inline function Base.iterate(f::Query1, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query1, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query1)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query1)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query1)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query1)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 """
@@ -70,6 +83,7 @@ mutable struct Query2{A,B}
     _mask::_Mask
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
+    _lock::UInt8
 end
 
 """
@@ -86,40 +100,53 @@ function Query2{A,B}(world::World) where {A,B}
         _Mask(ids...),
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
+        0,
     )
 end
 
 """
-    get_components(f::Query2{ A,B })::Tuple{ Column{A}, Column{B} }
+    get_components(q::Query2{ A,B })::Tuple{ Column{A}, Column{B} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(f::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
-    return f[]
+@inline function get_components(q::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
+    return q[]
 end
 
-@inline function Base.getindex(f::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
-    a = f._storage_a.data[f._index]
-    b = f._storage_b.data[f._index]
+@inline function Base.getindex(q::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
+    a = q._storage_a.data[q._index]
+    b = q._storage_b.data[q._index]
     return a, b
 end
 
-@inline function Base.iterate(f::Query2, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query2, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query2)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query2)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query2)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query2)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 """
@@ -135,6 +162,7 @@ mutable struct Query3{A,B,C}
     _storage_a::_ComponentStorage{A}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
+    _lock::UInt8
 end
 
 """
@@ -152,45 +180,58 @@ function Query3{A,B,C}(world::World) where {A,B,C}
         _get_storage(world, ids[1], A),
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
+        0,
     )
 end
 
 """
-    get_components(f::Query3{ A,B,C })::Tuple{ Column{A}, Column{B}, Column{C} }
+    get_components(q::Query3{ A,B,C })::Tuple{ Column{A}, Column{B}, Column{C} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
-    f::Query3{A,B,C},
+    q::Query3{A,B,C},
 )::Tuple{Column{A},Column{B},Column{C}} where {A,B,C}
-    return f[]
+    return q[]
 end
 
 @inline function Base.getindex(
-    f::Query3{A,B,C},
+    q::Query3{A,B,C},
 )::Tuple{Column{A},Column{B},Column{C}} where {A,B,C}
-    a = f._storage_a.data[f._index]
-    b = f._storage_b.data[f._index]
-    c = f._storage_c.data[f._index]
+    a = q._storage_a.data[q._index]
+    b = q._storage_b.data[q._index]
+    c = q._storage_c.data[q._index]
     return a, b, c
 end
 
-@inline function Base.iterate(f::Query3, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query3, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query3)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query3)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query3)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query3)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 """
@@ -207,6 +248,7 @@ mutable struct Query4{A,B,C,D}
     _storage_b::_ComponentStorage{B}
     _storage_c::_ComponentStorage{C}
     _storage_d::_ComponentStorage{D}
+    _lock::UInt8
 end
 
 """
@@ -230,46 +272,59 @@ function Query4{A,B,C,D}(world::World) where {A,B,C,D}
         _get_storage(world, ids[2], B),
         _get_storage(world, ids[3], C),
         _get_storage(world, ids[4], D),
+        0,
     )
 end
 
 """
-    get_components(f::Query4{ A,B,C,D })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D} }
+    get_components(q::Query4{ A,B,C,D })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
-    f::Query4{A,B,C,D},
+    q::Query4{A,B,C,D},
 )::Tuple{Column{A},Column{B},Column{C},Column{D}} where {A,B,C,D}
-    return f[]
+    return q[]
 end
 
 @inline function Base.getindex(
-    f::Query4{A,B,C,D},
+    q::Query4{A,B,C,D},
 )::Tuple{Column{A},Column{B},Column{C},Column{D}} where {A,B,C,D}
-    a = f._storage_a.data[f._index]
-    b = f._storage_b.data[f._index]
-    c = f._storage_c.data[f._index]
-    d = f._storage_d.data[f._index]
+    a = q._storage_a.data[q._index]
+    b = q._storage_b.data[q._index]
+    c = q._storage_c.data[q._index]
+    d = q._storage_d.data[q._index]
     return a, b, c, d
 end
 
-@inline function Base.iterate(f::Query4, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query4, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query4)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query4)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query4)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query4)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 """
@@ -287,6 +342,7 @@ mutable struct Query5{A,B,C,D,E}
     _storage_c::_ComponentStorage{C}
     _storage_d::_ComponentStorage{D}
     _storage_e::_ComponentStorage{E}
+    _lock::UInt8
 end
 
 """
@@ -312,47 +368,60 @@ function Query5{A,B,C,D,E}(world::World) where {A,B,C,D,E}
         _get_storage(world, ids[3], C),
         _get_storage(world, ids[4], D),
         _get_storage(world, ids[5], E),
+        0,
     )
 end
 
 """
-    get_components(f::Query5{ A,B,C,D,E })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E} }
+    get_components(q::Query5{ A,B,C,D,E })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
-    f::Query5{A,B,C,D,E},
+    q::Query5{A,B,C,D,E},
 )::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E}} where {A,B,C,D,E}
-    return f[]
+    return q[]
 end
 
 @inline function Base.getindex(
-    f::Query5{A,B,C,D,E},
+    q::Query5{A,B,C,D,E},
 )::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E}} where {A,B,C,D,E}
-    a = f._storage_a.data[f._index]
-    b = f._storage_b.data[f._index]
-    c = f._storage_c.data[f._index]
-    d = f._storage_d.data[f._index]
-    e = f._storage_e.data[f._index]
+    a = q._storage_a.data[q._index]
+    b = q._storage_b.data[q._index]
+    c = q._storage_c.data[q._index]
+    d = q._storage_d.data[q._index]
+    e = q._storage_e.data[q._index]
     return a, b, c, d, e
 end
 
-@inline function Base.iterate(f::Query5, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query5, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query5)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query5)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query5)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query5)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 """
@@ -371,6 +440,7 @@ mutable struct Query6{A,B,C,D,E,F}
     _storage_d::_ComponentStorage{D}
     _storage_e::_ComponentStorage{E}
     _storage_f::_ComponentStorage{F}
+    _lock::UInt8
 end
 
 """
@@ -398,48 +468,61 @@ function Query6{A,B,C,D,E,F}(world::World) where {A,B,C,D,E,F}
         _get_storage(world, ids[4], D),
         _get_storage(world, ids[5], E),
         _get_storage(world, ids[6], F),
+        0,
     )
 end
 
 """
-    get_components(f::Query6{ A,B,C,D,E,F })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F} }
+    get_components(q::Query6{ A,B,C,D,E,F })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
-    f::Query6{A,B,C,D,E,F},
+    q::Query6{A,B,C,D,E,F},
 )::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E},Column{F}} where {A,B,C,D,E,F}
-    return f[]
+    return q[]
 end
 
 @inline function Base.getindex(
-    f::Query6{A,B,C,D,E,F},
+    q::Query6{A,B,C,D,E,F},
 )::Tuple{Column{A},Column{B},Column{C},Column{D},Column{E},Column{F}} where {A,B,C,D,E,F}
-    a = f._storage_a.data[f._index]
-    b = f._storage_b.data[f._index]
-    c = f._storage_c.data[f._index]
-    d = f._storage_d.data[f._index]
-    e = f._storage_e.data[f._index]
-    f = f._storage_f.data[f._index]
+    a = q._storage_a.data[q._index]
+    b = q._storage_b.data[q._index]
+    c = q._storage_c.data[q._index]
+    d = q._storage_d.data[q._index]
+    e = q._storage_e.data[q._index]
+    f = q._storage_f.data[q._index]
     return a, b, c, d, e, f
 end
 
-@inline function Base.iterate(f::Query6, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query6, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query6)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query6)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query6)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query6)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 """
@@ -459,6 +542,7 @@ mutable struct Query7{A,B,C,D,E,F,G}
     _storage_e::_ComponentStorage{E}
     _storage_f::_ComponentStorage{F}
     _storage_g::_ComponentStorage{G}
+    _lock::UInt8
 end
 
 """
@@ -488,16 +572,17 @@ function Query7{A,B,C,D,E,F,G}(world::World) where {A,B,C,D,E,F,G}
         _get_storage(world, ids[5], E),
         _get_storage(world, ids[6], F),
         _get_storage(world, ids[7], G),
+        0,
     )
 end
 
 """
-    get_components(f::Query7{ A,B,C,D,E,F,G })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F}, Column{G} }
+    get_components(q::Query7{ A,B,C,D,E,F,G })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F}, Column{G} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
-    f::Query7{A,B,C,D,E,F,G},
+    q::Query7{A,B,C,D,E,F,G},
 )::Tuple{
     Column{A},
     Column{B},
@@ -507,11 +592,11 @@ Returns the component columns of the archetype at the current cursor position.
     Column{F},
     Column{G},
 } where {A,B,C,D,E,F,G}
-    return f[]
+    return q[]
 end
 
 @inline function Base.getindex(
-    f::Query7{A,B,C,D,E,F,G},
+    q::Query7{A,B,C,D,E,F,G},
 )::Tuple{
     Column{A},
     Column{B},
@@ -521,32 +606,44 @@ end
     Column{F},
     Column{G},
 } where {A,B,C,D,E,F,G}
-    a = f._storage_a.data[f._index]
-    b = f._storage_b.data[f._index]
-    c = f._storage_c.data[f._index]
-    d = f._storage_d.data[f._index]
-    e = f._storage_e.data[f._index]
-    f = f._storage_f.data[f._index]
-    g = f._storage_g.data[f._index]
+    a = q._storage_a.data[q._index]
+    b = q._storage_b.data[q._index]
+    c = q._storage_c.data[q._index]
+    d = q._storage_d.data[q._index]
+    e = q._storage_e.data[q._index]
+    f = q._storage_f.data[q._index]
+    g = q._storage_g.data[q._index]
     return a, b, c, d, e, f, g
 end
 
-@inline function Base.iterate(f::Query7, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query7, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query7)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query7)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query7)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query7)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 """
@@ -567,6 +664,7 @@ mutable struct Query8{A,B,C,D,E,F,G,H}
     _storage_f::_ComponentStorage{F}
     _storage_g::_ComponentStorage{G}
     _storage_h::_ComponentStorage{H}
+    _lock::UInt8
 end
 
 """
@@ -598,16 +696,17 @@ function Query8{A,B,C,D,E,F,G,H}(world::World) where {A,B,C,D,E,F,G,H}
         _get_storage(world, ids[6], F),
         _get_storage(world, ids[7], G),
         _get_storage(world, ids[8], H),
+        0,
     )
 end
 
 """
-    get_components(f::Query8{ A,B,C,D,E,F,G,H })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F}, Column{G}, Column{H} }
+    get_components(q::Query8{ A,B,C,D,E,F,G,H })::Tuple{ Column{A}, Column{B}, Column{C}, Column{D}, Column{E}, Column{F}, Column{G}, Column{H} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
 @inline function get_components(
-    f::Query8{A,B,C,D,E,F,G,H},
+    q::Query8{A,B,C,D,E,F,G,H},
 )::Tuple{
     Column{A},
     Column{B},
@@ -618,11 +717,11 @@ Returns the component columns of the archetype at the current cursor position.
     Column{G},
     Column{H},
 } where {A,B,C,D,E,F,G,H}
-    return f[]
+    return q[]
 end
 
 @inline function Base.getindex(
-    f::Query8{A,B,C,D,E,F,G,H},
+    q::Query8{A,B,C,D,E,F,G,H},
 )::Tuple{
     Column{A},
     Column{B},
@@ -633,31 +732,44 @@ end
     Column{G},
     Column{H},
 } where {A,B,C,D,E,F,G,H}
-    a = f._storage_a.data[f._index]
-    b = f._storage_b.data[f._index]
-    c = f._storage_c.data[f._index]
-    d = f._storage_d.data[f._index]
-    e = f._storage_e.data[f._index]
-    f = f._storage_f.data[f._index]
-    g = f._storage_g.data[f._index]
-    h = f._storage_h.data[f._index]
+    a = q._storage_a.data[q._index]
+    b = q._storage_b.data[q._index]
+    c = q._storage_c.data[q._index]
+    d = q._storage_d.data[q._index]
+    e = q._storage_e.data[q._index]
+    f = q._storage_f.data[q._index]
+    g = q._storage_g.data[q._index]
+    h = q._storage_h.data[q._index]
     return a, b, c, d, e, f, g, h
 end
 
-@inline function Base.iterate(f::Query8, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query8, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query8)
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query8)
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
 end
+
+"""
+    close(q::Query8)
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query8)
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
+end
+

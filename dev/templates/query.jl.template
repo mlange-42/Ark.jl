@@ -17,6 +17,7 @@ mutable struct Query{{N}}{ {{joined}} }
     {{#types}}
     _storage_{{lower}}::_ComponentStorage{ {{upper}} }
     {{/types}}
+    _lock::UInt8
 end
 
 """
@@ -38,41 +39,54 @@ function Query{{N}}{ {{joined}} }(world::World) where { {{joined}} }
         {{#types}}
         _get_storage(world, ids[{{n}}], {{upper}}),
         {{/types}}
+        0,
     )
 end
 
 """
-    get_components(f::Query{{N}}{ {{joined}} })::Tuple{ {{columns}} }
+    get_components(q::Query{{N}}{ {{joined}} })::Tuple{ {{columns}} }
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(f::Query{{N}}{ {{joined}} })::Tuple{ {{columns}} } where { {{joined}} }
-    return f[]
+@inline function get_components(q::Query{{N}}{ {{joined}} })::Tuple{ {{columns}} } where { {{joined}} }
+    return q[]
 end
 
-@inline function Base.getindex(f::Query{{N}}{ {{joined}} })::Tuple{ {{columns}} } where { {{joined}} }
+@inline function Base.getindex(q::Query{{N}}{ {{joined}} })::Tuple{ {{columns}} } where { {{joined}} }
     {{#types}}
-    {{lower}} = f._storage_{{lower}}.data[f._index]
+    {{lower}} = q._storage_{{lower}}.data[q._index]
     {{/types}}
     return {{values}}
 end
 
-@inline function Base.iterate(f::Query{{N}}, state::Int)
-    f._index = state
-    while f._index <= length(f._world._archetypes)
-        archetype = f._world._archetypes[f._index]
-        if _contains_all(archetype.mask, f._mask)
-            return f._index, f._index + 1
+@inline function Base.iterate(q::Query{{N}}, state::Int)
+    q._index = state
+    while q._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._index]
+        if _contains_all(archetype.mask, q._mask)
+            return q._index, q._index + 1
         end
-        f._index += 1
+        q._index += 1
     end
-    f._index = 0
+    close(q)
     return nothing
 end
 
-@inline function Base.iterate(f::Query{{N}})
-    f._index = 1
-    return Base.iterate(f, f._index)
+@inline function Base.iterate(q::Query{{N}})
+    q._lock = _lock(q._world._lock)
+    q._index = 1
+    return Base.iterate(q, q._index)
+end
+
+"""
+    close(q::Query{{N}})
+
+Closes the query and unlocks the world.
+Must be called if a query is not fully iterated.
+"""
+function close(q::Query{{N}})
+    q._index = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 {{/items}}

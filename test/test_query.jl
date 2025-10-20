@@ -24,6 +24,9 @@
                 pos = Position(pos.x + vel.dx, pos.y + vel.dy)
                 vec_pos[i] = pos
             end
+            @test_throws ErrorException new_entity!(m1, Altitude(1), Health(2))
+            @test is_locked(world) == true
         end
+        @test is_locked(world) == false
     end
 end
