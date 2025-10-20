@@ -14,6 +14,8 @@ mutable struct Query{{N}}{ {{joined}} }
     _world::World
     _ids::Tuple{ {{tuple}} }
     _mask::_Mask
+    _exclude_mask::_Mask
+    _has_excluded::Bool
     {{#types}}
     _storage_{{lower}}::_ComponentStorage{ {{upper}} }
     {{/types}}
@@ -21,21 +23,28 @@ mutable struct Query{{N}}{ {{joined}} }
 end
 
 """
-    Query{{N}}{ {{joined}} }(world::World)
+    Query{{N}}{ {{joined}} }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
 
 Creates a query for {{N}} components.
+
+Keyword arguments `with` and `without` can be used to add further components
+the entities must have and must not have, respectively.
 """
-function Query{{N}}{ {{joined}} }(world::World) where { {{joined}} }
+function Query{{N}}{ {{joined}} }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=()) where { {{joined}} }
     ids = (
         {{#types}}
         _component_id!(world, {{upper}}),
         {{/types}}
     )
+    with_ids = map(x -> _component_id!(world, x), with)
+    without_ids = map(x -> _component_id!(world, x), without)
     return Query{{N}}{ {{joined}} }(
         0,
         world,
         ids,
-        _Mask(ids...),
+        _Mask(ids..., with_ids...),
+        _Mask(without_ids...),
+        length(without_ids) > 0,
         {{#types}}
         _get_storage(world, ids[{{n}}], {{upper}}),
         {{/types}}
@@ -63,7 +72,8 @@ end
     q._index = state
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
-        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask)
+        if length(archetype.entities) > 0 && _contains_all(archetype.mask, q._mask) &&
+                !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             return q._index, q._index + 1
         end
         q._index += 1
@@ -87,6 +97,15 @@ Must be called if a query is not fully iterated.
 function close(q::Query{{N}})
     q._index = 0
     _unlock(q._world._lock, q._lock)
+end
+
+"""
+    entities(q::Query{{N}})
+
+Returns the entities of the current archetype
+"""
+function entities(q::Query{{N}})::Vector{Entity}
+    return q._world._archetypes[q._index].entities
 end
 
 {{/items}}

@@ -17,7 +17,7 @@ end
 """
     Map1{ A }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for 1 components.
 """
 function Map1{A}(world::World) where {A}
     ids = (_component_id!(world, A),)
@@ -38,7 +38,7 @@ function new_entity!(map::Map1{A}, a::A)::Entity where {A}
 end
 
 """
-    get_components(map::Map21{ A }, entity::Entity)::Tuple{ A }
+    get_components(map::Map1{ A }, entity::Entity)::Tuple{ A }
 
 Get 1 components of an [`Entity`](@ref).
 
@@ -172,7 +172,7 @@ function new_entity!(map::Map2{A,B}, a::A, b::B)::Entity where {A,B}
 end
 
 """
-    get_components(map::Map22{ A,B }, entity::Entity)::Tuple{ A,B }
+    get_components(map::Map2{ A,B }, entity::Entity)::Tuple{ A,B }
 
 Get 2 components of an [`Entity`](@ref).
 
@@ -290,7 +290,7 @@ end
 """
     Map3{ A,B,C }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for 3 components.
 """
 function Map3{A,B,C}(world::World) where {A,B,C}
     ids = (_component_id!(world, A), _component_id!(world, B), _component_id!(world, C))
@@ -319,7 +319,7 @@ function new_entity!(map::Map3{A,B,C}, a::A, b::B, c::C)::Entity where {A,B,C}
 end
 
 """
-    get_components(map::Map23{ A,B,C }, entity::Entity)::Tuple{ A,B,C }
+    get_components(map::Map3{ A,B,C }, entity::Entity)::Tuple{ A,B,C }
 
 Get 3 components of an [`Entity`](@ref).
 
@@ -447,7 +447,7 @@ end
 """
     Map4{ A,B,C,D }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for 4 components.
 """
 function Map4{A,B,C,D}(world::World) where {A,B,C,D}
     ids = (
@@ -483,7 +483,7 @@ function new_entity!(map::Map4{A,B,C,D}, a::A, b::B, c::C, d::D)::Entity where {
 end
 
 """
-    get_components(map::Map24{ A,B,C,D }, entity::Entity)::Tuple{ A,B,C,D }
+    get_components(map::Map4{ A,B,C,D }, entity::Entity)::Tuple{ A,B,C,D }
 
 Get 4 components of an [`Entity`](@ref).
 
@@ -635,7 +635,7 @@ end
 """
     Map5{ A,B,C,D,E }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for 5 components.
 """
 function Map5{A,B,C,D,E}(world::World) where {A,B,C,D,E}
     ids = (
@@ -681,7 +681,7 @@ function new_entity!(
 end
 
 """
-    get_components(map::Map25{ A,B,C,D,E }, entity::Entity)::Tuple{ A,B,C,D,E }
+    get_components(map::Map5{ A,B,C,D,E }, entity::Entity)::Tuple{ A,B,C,D,E }
 
 Get 5 components of an [`Entity`](@ref).
 
@@ -842,7 +842,7 @@ end
 """
     Map6{ A,B,C,D,E,F }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for 6 components.
 """
 function Map6{A,B,C,D,E,F}(world::World) where {A,B,C,D,E,F}
     ids = (
@@ -892,7 +892,7 @@ function new_entity!(
 end
 
 """
-    get_components(map::Map26{ A,B,C,D,E,F }, entity::Entity)::Tuple{ A,B,C,D,E,F }
+    get_components(map::Map6{ A,B,C,D,E,F }, entity::Entity)::Tuple{ A,B,C,D,E,F }
 
 Get 6 components of an [`Entity`](@ref).
 
@@ -1062,7 +1062,7 @@ end
 """
     Map7{ A,B,C,D,E,F,G }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for 7 components.
 """
 function Map7{A,B,C,D,E,F,G}(world::World) where {A,B,C,D,E,F,G}
     ids = (
@@ -1116,7 +1116,7 @@ function new_entity!(
 end
 
 """
-    get_components(map::Map27{ A,B,C,D,E,F,G }, entity::Entity)::Tuple{ A,B,C,D,E,F,G }
+    get_components(map::Map7{ A,B,C,D,E,F,G }, entity::Entity)::Tuple{ A,B,C,D,E,F,G }
 
 Get 7 components of an [`Entity`](@ref).
 
@@ -1295,7 +1295,7 @@ end
 """
     Map8{ A,B,C,D,E,F,G,H }(world::World)
 
-Creates a component mapper for 2 components.
+Creates a component mapper for 8 components.
 """
 function Map8{A,B,C,D,E,F,G,H}(world::World) where {A,B,C,D,E,F,G,H}
     ids = (
@@ -1353,7 +1353,7 @@ function new_entity!(
 end
 
 """
-    get_components(map::Map28{ A,B,C,D,E,F,G,H }, entity::Entity)::Tuple{ A,B,C,D,E,F,G,H }
+    get_components(map::Map8{ A,B,C,D,E,F,G,H }, entity::Entity)::Tuple{ A,B,C,D,E,F,G,H }
 
 Get 8 components of an [`Entity`](@ref).
 
@@ -1521,3 +1521,4 @@ function remove_components!(
     archetype = _find_or_create_archetype!(map._world, entity, (), map._ids)
     _move_entity!(map._world, entity, archetype)
 end
+
