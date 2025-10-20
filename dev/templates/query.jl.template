@@ -27,10 +27,15 @@ end
 
 Creates a query for {{N}} components.
 
-Keyword arguments `with` and `without` can be used to add further components
-the entities must have and must not have, respectively.
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
-function Query{{N}}{ {{joined}} }(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=()) where { {{joined}} }
+function Query{{N}}{ {{joined}} }(world::World;
+        with::Tuple{Vararg{DataType}}=(),
+        without::Tuple{Vararg{DataType}}=(),
+        optional::Tuple{Vararg{DataType}}=()) where { {{joined}} }
     ids = (
         {{#types}}
         _component_id!(world, {{upper}}),
@@ -38,11 +43,16 @@ function Query{{N}}{ {{joined}} }(world::World; with::Tuple{Vararg{DataType}}=()
     )
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
+    mask = _Mask(ids..., with_ids...)
+    if length(optional) > 0
+        opt_ids = map(x -> _component_id!(world, x), optional)
+        mask = _clear_bits(mask, _Mask(opt_ids...))
+    end
     return Query{{N}}{ {{joined}} }(
         0,
         world,
         ids,
-        _Mask(ids..., with_ids...),
+        mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
         {{#types}}

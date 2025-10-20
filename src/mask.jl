@@ -71,6 +71,15 @@ function _or(a::_Mask, b::_Mask)::_Mask
     ))
 end
 
+@inline function _clear_bits(a::_Mask, b::_Mask)::_Mask
+    return _Mask((
+        a.bits[1] & ~b.bits[1],
+        a.bits[2] & ~b.bits[2],
+        a.bits[3] & ~b.bits[3],
+        a.bits[4] & ~b.bits[4],
+    ))
+end
+
 function _active_bit_indices(mask::_Mask)::Vector{UInt8}
     indices = UInt8[]
     for chunk_index in 1:4

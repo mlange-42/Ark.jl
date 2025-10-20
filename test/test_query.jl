@@ -84,3 +84,33 @@ end
     end
     @test count == 10
 end
+
+@testset "Query optional" begin
+    world = World()
+
+    m1 = Map2{Position,Velocity}(world)
+    m2 = Map3{Position,Velocity,Altitude}(world)
+
+    for i in 1:10
+        new_entity!(m1, Position(i, i * 2), Velocity(1, 1))
+        new_entity!(m2, Position(i, i * 2), Velocity(1, 1), Altitude(5))
+    end
+
+    query = Query3{Position,Velocity,Altitude}(world, optional=(Altitude,))
+
+    count = 0
+    for a in query
+        vec_pos, vec_vel, vec_alt = query[]
+        ent = entities(query)
+        if a == 2
+            @test vec_alt == nothing
+        else
+            @test vec_alt != nothing
+        end
+        for i in eachindex(ent)
+            e = ent[i]
+            count += 1
+        end
+    end
+    @test count == 20
+end
