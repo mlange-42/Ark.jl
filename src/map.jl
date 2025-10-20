@@ -22,7 +22,7 @@ end
 """
     new_entity!(map::Map1{ A }, a::A)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 1 components.
 """
 function new_entity!(map::Map1{A}, a::A)::Entity where {A}
     archetype =
@@ -35,7 +35,7 @@ end
 """
     get_components(map::Map21{ A }, entity::Entity)::Tuple{ A }
 
-Get two components of an [`Entity`](@ref).
+Get 1 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -62,7 +62,7 @@ end
 """
     set_components!(map::Map1{ A }, entity::Entity, a::A)
 
-Set two components of an [`Entity`](@ref).
+Set 1 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -101,7 +101,7 @@ end
 """
     add_components!(map::Map1{ A }, a::A)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 1 components to an [`Entity`](@ref).
 """
 function add_components!(map::Map1{A}, entity::Entity, a::A) where {A}
     if !is_alive(map._world, entity)
@@ -115,7 +115,7 @@ end
 """
     remove_components!(map::Map1{ A }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 1 components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map1{A}, entity::Entity) where {A}
     if !is_alive(map._world, entity)
@@ -155,7 +155,7 @@ end
 """
     new_entity!(map::Map2{ A,B }, a::A, b::B)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 2 components.
 """
 function new_entity!(map::Map2{A,B}, a::A, b::B)::Entity where {A,B}
     archetype =
@@ -169,7 +169,7 @@ end
 """
     get_components(map::Map22{ A,B }, entity::Entity)::Tuple{ A,B }
 
-Get two components of an [`Entity`](@ref).
+Get 2 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -197,7 +197,7 @@ end
 """
     set_components!(map::Map2{ A,B }, entity::Entity, a::A, b::B)
 
-Set two components of an [`Entity`](@ref).
+Set 2 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -244,7 +244,7 @@ end
 """
     add_components!(map::Map2{ A,B }, a::A, b::B)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 2 components to an [`Entity`](@ref).
 """
 function add_components!(map::Map2{A,B}, entity::Entity, a::A, b::B) where {A,B}
     if !is_alive(map._world, entity)
@@ -259,7 +259,7 @@ end
 """
     remove_components!(map::Map2{ A,B }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 2 components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map2{A,B}, entity::Entity) where {A,B}
     if !is_alive(map._world, entity)
@@ -301,7 +301,7 @@ end
 """
     new_entity!(map::Map3{ A,B,C }, a::A, b::B, c::C)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 3 components.
 """
 function new_entity!(map::Map3{A,B,C}, a::A, b::B, c::C)::Entity where {A,B,C}
     archetype =
@@ -316,7 +316,7 @@ end
 """
     get_components(map::Map23{ A,B,C }, entity::Entity)::Tuple{ A,B,C }
 
-Get two components of an [`Entity`](@ref).
+Get 3 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -348,7 +348,7 @@ end
 """
     set_components!(map::Map3{ A,B,C }, entity::Entity, a::A, b::B, c::C)
 
-Set two components of an [`Entity`](@ref).
+Set 3 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -399,7 +399,7 @@ end
 """
     add_components!(map::Map3{ A,B,C }, a::A, b::B, c::C)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 3 components to an [`Entity`](@ref).
 """
 function add_components!(map::Map3{A,B,C}, entity::Entity, a::A, b::B, c::C) where {A,B,C}
     if !is_alive(map._world, entity)
@@ -415,7 +415,7 @@ end
 """
     remove_components!(map::Map3{ A,B,C }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 3 components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map3{A,B,C}, entity::Entity) where {A,B,C}
     if !is_alive(map._world, entity)
@@ -464,7 +464,7 @@ end
 """
     new_entity!(map::Map4{ A,B,C,D }, a::A, b::B, c::C, d::D)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 4 components.
 """
 function new_entity!(map::Map4{A,B,C,D}, a::A, b::B, c::C, d::D)::Entity where {A,B,C,D}
     archetype =
@@ -480,7 +480,7 @@ end
 """
     get_components(map::Map24{ A,B,C,D }, entity::Entity)::Tuple{ A,B,C,D }
 
-Get two components of an [`Entity`](@ref).
+Get 4 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -516,7 +516,7 @@ end
 """
     set_components!(map::Map4{ A,B,C,D }, entity::Entity, a::A, b::B, c::C, d::D)
 
-Set two components of an [`Entity`](@ref).
+Set 4 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -578,7 +578,7 @@ end
 """
     add_components!(map::Map4{ A,B,C,D }, a::A, b::B, c::C, d::D)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 4 components to an [`Entity`](@ref).
 """
 function add_components!(
     map::Map4{A,B,C,D},
@@ -602,7 +602,7 @@ end
 """
     remove_components!(map::Map4{ A,B,C,D }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 4 components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map4{A,B,C,D}, entity::Entity) where {A,B,C,D}
     if !is_alive(map._world, entity)
@@ -654,7 +654,7 @@ end
 """
     new_entity!(map::Map5{ A,B,C,D,E }, a::A, b::B, c::C, d::D, e::E)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 5 components.
 """
 function new_entity!(
     map::Map5{A,B,C,D,E},
@@ -678,7 +678,7 @@ end
 """
     get_components(map::Map25{ A,B,C,D,E }, entity::Entity)::Tuple{ A,B,C,D,E }
 
-Get two components of an [`Entity`](@ref).
+Get 5 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -715,7 +715,7 @@ end
 """
     set_components!(map::Map5{ A,B,C,D,E }, entity::Entity, a::A, b::B, c::C, d::D, e::E)
 
-Set two components of an [`Entity`](@ref).
+Set 5 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -782,7 +782,7 @@ end
 """
     add_components!(map::Map5{ A,B,C,D,E }, a::A, b::B, c::C, d::D, e::E)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 5 components to an [`Entity`](@ref).
 """
 function add_components!(
     map::Map5{A,B,C,D,E},
@@ -808,7 +808,7 @@ end
 """
     remove_components!(map::Map5{ A,B,C,D,E }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 5 components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map5{A,B,C,D,E}, entity::Entity) where {A,B,C,D,E}
     if !is_alive(map._world, entity)
@@ -863,7 +863,7 @@ end
 """
     new_entity!(map::Map6{ A,B,C,D,E,F }, a::A, b::B, c::C, d::D, e::E, f::F)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 6 components.
 """
 function new_entity!(
     map::Map6{A,B,C,D,E,F},
@@ -889,7 +889,7 @@ end
 """
     get_components(map::Map26{ A,B,C,D,E,F }, entity::Entity)::Tuple{ A,B,C,D,E,F }
 
-Get two components of an [`Entity`](@ref).
+Get 6 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -927,7 +927,7 @@ end
 """
     set_components!(map::Map6{ A,B,C,D,E,F }, entity::Entity, a::A, b::B, c::C, d::D, e::E, f::F)
 
-Set two components of an [`Entity`](@ref).
+Set 6 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -999,7 +999,7 @@ end
 """
     add_components!(map::Map6{ A,B,C,D,E,F }, a::A, b::B, c::C, d::D, e::E, f::F)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 6 components to an [`Entity`](@ref).
 """
 function add_components!(
     map::Map6{A,B,C,D,E,F},
@@ -1027,7 +1027,7 @@ end
 """
     remove_components!(map::Map6{ A,B,C,D,E,F }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 6 components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map6{A,B,C,D,E,F}, entity::Entity) where {A,B,C,D,E,F}
     if !is_alive(map._world, entity)
@@ -1085,7 +1085,7 @@ end
 """
     new_entity!(map::Map7{ A,B,C,D,E,F,G }, a::A, b::B, c::C, d::D, e::E, f::F, g::G)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 7 components.
 """
 function new_entity!(
     map::Map7{A,B,C,D,E,F,G},
@@ -1113,7 +1113,7 @@ end
 """
     get_components(map::Map27{ A,B,C,D,E,F,G }, entity::Entity)::Tuple{ A,B,C,D,E,F,G }
 
-Get two components of an [`Entity`](@ref).
+Get 7 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -1152,7 +1152,7 @@ end
 """
     set_components!(map::Map7{ A,B,C,D,E,F,G }, entity::Entity, a::A, b::B, c::C, d::D, e::E, f::F, g::G)
 
-Set two components of an [`Entity`](@ref).
+Set 7 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -1229,7 +1229,7 @@ end
 """
     add_components!(map::Map7{ A,B,C,D,E,F,G }, a::A, b::B, c::C, d::D, e::E, f::F, g::G)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 7 components to an [`Entity`](@ref).
 """
 function add_components!(
     map::Map7{A,B,C,D,E,F,G},
@@ -1259,7 +1259,7 @@ end
 """
     remove_components!(map::Map7{ A,B,C,D,E,F,G }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 7 components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map7{A,B,C,D,E,F,G}, entity::Entity) where {A,B,C,D,E,F,G}
     if !is_alive(map._world, entity)
@@ -1320,7 +1320,7 @@ end
 """
     new_entity!(map::Map8{ A,B,C,D,E,F,G,H }, a::A, b::B, c::C, d::D, e::E, f::F, g::G, h::H)::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with 8 components.
 """
 function new_entity!(
     map::Map8{A,B,C,D,E,F,G,H},
@@ -1350,7 +1350,7 @@ end
 """
     get_components(map::Map28{ A,B,C,D,E,F,G,H }, entity::Entity)::Tuple{ A,B,C,D,E,F,G,H }
 
-Get two components of an [`Entity`](@ref).
+Get 8 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -1390,7 +1390,7 @@ end
 """
     set_components!(map::Map8{ A,B,C,D,E,F,G,H }, entity::Entity, a::A, b::B, c::C, d::D, e::E, f::F, g::G, h::H)
 
-Set two components of an [`Entity`](@ref).
+Set 8 components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -1472,7 +1472,7 @@ end
 """
     add_components!(map::Map8{ A,B,C,D,E,F,G,H }, a::A, b::B, c::C, d::D, e::E, f::F, g::G, h::H)::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds 8 components to an [`Entity`](@ref).
 """
 function add_components!(
     map::Map8{A,B,C,D,E,F,G,H},
@@ -1504,7 +1504,7 @@ end
 """
     remove_components!(map::Map8{ A,B,C,D,E,F,G,H }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes 8 components from an [`Entity`](@ref).
 """
 function remove_components!(
     map::Map8{A,B,C,D,E,F,G,H},

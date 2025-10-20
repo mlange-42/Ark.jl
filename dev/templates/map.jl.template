@@ -35,7 +35,7 @@ end
 """
     new_entity!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity
 
-Creates a new [`Entity`](@ref) with two components.
+Creates a new [`Entity`](@ref) with {{N}} components.
 """
 function new_entity!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity where { {{joined}} }
     archetype = _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
@@ -49,7 +49,7 @@ end
 """
     get_components(map::Map2{{N}}{ {{joined}} }, entity::Entity)::Tuple{ {{joined}} }
 
-Get two components of an [`Entity`](@ref).
+Get {{N}} components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -78,7 +78,7 @@ end
 """
     set_components!(map::Map{{N}}{ {{joined}} }, entity::Entity, {{args}})
 
-Set two components of an [`Entity`](@ref).
+Set {{N}} components of an [`Entity`](@ref).
 
 Alternatively, use indexing:
 
@@ -121,7 +121,7 @@ end
 """
     add_components!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity
 
-Adds two components to an [`Entity`](@ref).
+Adds {{N}} components to an [`Entity`](@ref).
 """
 function add_components!(map::Map{{N}}{ {{joined}} }, entity::Entity, {{args}}) where { {{joined}} }
     if !is_alive(map._world, entity)
@@ -137,7 +137,7 @@ end
 """
     remove_components!(map::Map{{N}}{ {{joined}} }, entity::Entity)
 
-Removes two components from an [`Entity`](@ref).
+Removes {{N}} components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map{{N}}{ {{joined}} }, entity::Entity) where { {{joined}} }
     if !is_alive(map._world, entity)
