@@ -43,7 +43,7 @@ end
 Creates a new [`Entity`](@ref) with {{N}} components.
 """
 function new_entity!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity where { {{joined}} }
-    archetype = _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+    archetype = _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     {{#types}}
     map._storage_{{lower}}.data[archetype][index] = {{lower}}

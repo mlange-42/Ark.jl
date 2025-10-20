@@ -31,7 +31,7 @@ Creates a new [`Entity`](@ref) with 1 components.
 """
 function new_entity!(map::Map1{A}, a::A)::Entity where {A}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     return entity
@@ -164,7 +164,7 @@ Creates a new [`Entity`](@ref) with 2 components.
 """
 function new_entity!(map::Map2{A,B}, a::A, b::B)::Entity where {A,B}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b
@@ -310,7 +310,7 @@ Creates a new [`Entity`](@ref) with 3 components.
 """
 function new_entity!(map::Map3{A,B,C}, a::A, b::B, c::C)::Entity where {A,B,C}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b
@@ -473,7 +473,7 @@ Creates a new [`Entity`](@ref) with 4 components.
 """
 function new_entity!(map::Map4{A,B,C,D}, a::A, b::B, c::C, d::D)::Entity where {A,B,C,D}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b
@@ -670,7 +670,7 @@ function new_entity!(
     e::E,
 )::Entity where {A,B,C,D,E}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b
@@ -880,7 +880,7 @@ function new_entity!(
     f::F,
 )::Entity where {A,B,C,D,E,F}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b
@@ -1103,7 +1103,7 @@ function new_entity!(
     g::G,
 )::Entity where {A,B,C,D,E,F,G}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b
@@ -1339,7 +1339,7 @@ function new_entity!(
     h::H,
 )::Entity where {A,B,C,D,E,F,G,H}
     archetype =
-        _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+        _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
     map._storage_a.data[archetype][index] = a
     map._storage_b.data[archetype][index] = b
