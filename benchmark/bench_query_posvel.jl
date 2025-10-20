@@ -19,10 +19,10 @@ function benchmark_iteration(n)
     bench = @benchmarkable begin
         for _ in query
             pos_column, vel_column = query[]
-            @inbounds for i in eachindex(pos_column)
-                pos = pos_column[i]
-                vel = vel_column[i]
-                pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+            for i in eachindex(pos_column)
+                @inbounds pos = pos_column[i]
+                @inbounds vel = vel_column[i]
+                @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
             end
         end
     end setup = (query = setup_world($n))
