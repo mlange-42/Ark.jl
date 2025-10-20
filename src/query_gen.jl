@@ -69,25 +69,29 @@ end
     return a
 end
 
-@inline function Base.iterate(q::Query1, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query1, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query1)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -183,25 +187,29 @@ end
     return a, b
 end
 
-@inline function Base.iterate(q::Query2, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query2, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query2)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -308,25 +316,29 @@ end
     return a, b, c
 end
 
-@inline function Base.iterate(q::Query3, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query3, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query3)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -443,25 +455,29 @@ end
     return a, b, c, d
 end
 
-@inline function Base.iterate(q::Query4, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query4, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query4)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -584,25 +600,29 @@ end
     return a, b, c, d, e
 end
 
-@inline function Base.iterate(q::Query5, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query5, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query5)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -731,25 +751,29 @@ end
     return a, b, c, d, e, f
 end
 
-@inline function Base.iterate(q::Query6, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query6, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query6)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -884,25 +908,29 @@ end
     return a, b, c, d, e, f, g
 end
 
-@inline function Base.iterate(q::Query7, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query7, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query7)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """
@@ -1043,25 +1071,29 @@ end
     return a, b, c, d, e, f, g, h
 end
 
-@inline function Base.iterate(q::Query8, state::Int)
-    q._index = state
+@inline function Base.iterate(q::Query8, state::Tuple{Int,Int})
+    logical_index, physical_index = state
+    q._index = physical_index
+
     while q._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            return q._index, q._index + 1
+            result = logical_index
+            next_state = (logical_index + 1, q._index + 1)
+            return result, next_state
         end
         q._index += 1
     end
+
     close(q)
     return nothing
 end
 
 @inline function Base.iterate(q::Query8)
     q._lock = _lock(q._world._lock)
-    q._index = 1
-    return Base.iterate(q, q._index)
+    return Base.iterate(q, (1, 1))
 end
 
 """

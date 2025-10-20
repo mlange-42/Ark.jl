@@ -47,9 +47,10 @@ end
     query = Query2{Position,Velocity}(world, with=(Altitude,))
 
     count = 0
-    for _ in query
+    for a in query
         vec_pos, vec_vel = query[]
         ent = entities(query)
+        @test a == 1
         for i in eachindex(ent)
             e = ent[i]
             @test has_components(m2, e) == true
@@ -73,9 +74,10 @@ end
     query = Query2{Position,Velocity}(world, without=(Altitude,))
 
     count = 0
-    for _ in query
+    for a in query
         vec_pos, vec_vel = query[]
         ent = entities(query)
+        @test a == 1
         for i in eachindex(ent)
             e = ent[i]
             @test has_components(m2, e) == false
@@ -99,18 +101,21 @@ end
     query = Query3{Position,Velocity,Altitude}(world, optional=(Altitude,))
 
     count = 0
+    indices = Vector{Int}
     for a in query
         vec_pos, vec_vel, vec_alt = query[]
         ent = entities(query)
-        if a == 2
+        if a == 1
             @test vec_alt == nothing
         else
             @test vec_alt != nothing
         end
+        push!(indices, a)
         for i in eachindex(ent)
             e = ent[i]
             count += 1
         end
     end
     @test count == 20
+    @test indices == [1, 2]
 end
