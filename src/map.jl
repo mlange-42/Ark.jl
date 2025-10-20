@@ -45,8 +45,18 @@ end
     get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B}
 
 Get two components of an [`Entity`](@ref).
+
+Alternatively, use indexing:
+
+```julia
+pos, vel = map[entity]
+```
 """
 @inline function get_components(map::Map2{A,B}, entity::Entity)::Tuple{A,B} where {A,B}
+    return map[entity]
+end
+
+@inline function Base.getindex(map::Map2{A,B}, entity::Entity)::Tuple{A,B} where {A,B}
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
@@ -63,16 +73,24 @@ end
     set_components!(map::Map2{A,B}, entity::Entity, a::A, b::B)
 
 Set two components of an [`Entity`](@ref).
+
+Alternatively, use indexing:
+
+```julia
+map[entity] = (Position(0, 0), Velocity(1, 1))
+```
 """
 function set_components!(map::Map2{A,B}, entity::Entity, a::A, b::B) where {A,B}
+    map[entity] = (a, b)
+end
+
+@inline function Base.setindex!(map::Map2{A,B}, value::Tuple{A,B}, entity::Entity) where {A,B}
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
-    # TODO: currently raises MethodError of components are missing.
-    # Should we pay the cost for a more informative error?
     index = map._world._entities[entity._id]
-    map._storage_a.data[index.archetype][index.row] = a
-    map._storage_b.data[index.archetype][index.row] = b
+    map._storage_a.data[index.archetype][index.row] = value[1]
+    map._storage_b.data[index.archetype][index.row] = value[2]
 end
 
 """
