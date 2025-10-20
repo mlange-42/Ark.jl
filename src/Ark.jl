@@ -9,6 +9,7 @@ include("archetype.jl")
 include("registry.jl")
 include("pool.jl")
 include("lock.jl")
+include("graph.jl")
 include("world.jl")
 include("map_gen.jl")
 include("query_gen.jl")
@@ -54,5 +55,8 @@ export _ComponentStorage
 
 export _VecMap
 export _get_map, _set_map!
+
+export _Graph, _GraphNode
+export _find_node, _find_or_create
 
 end
