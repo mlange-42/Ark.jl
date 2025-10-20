@@ -1,5 +1,7 @@
 module Ark
 
+using StaticArrays
+
 include("util.jl")
 include("entity.jl")
 include("mask.jl")
@@ -11,8 +13,10 @@ include("registry.jl")
 include("pool.jl")
 include("lock.jl")
 include("world.jl")
+include("map.jl")
 include("map_gen.jl")
 include("query_gen.jl")
+include("query.jl")
 
 export World
 export is_alive, new_entity!, remove_entity!, zero_entity, is_locked
