@@ -21,9 +21,11 @@
             for i in eachindex(vec_pos)
                 pos = vec_pos[i]
                 vel = vec_vel[i]
-                pos = Position(pos.x + vel.dx, pos.y + vel.dy)
-                vec_pos[i] = pos
+                vec_pos[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
             end
+            @test_throws ErrorException new_entity!(m1, Altitude(1), Health(2))
+            @test is_locked(world) == true
         end
+        @test is_locked(world) == false
     end
 end

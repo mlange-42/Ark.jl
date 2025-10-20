@@ -17,6 +17,7 @@ mutable struct World
     _archetypes::Vector{_Archetype}
     _registry::_ComponentRegistry
     _entity_pool::_EntityPool
+    _lock::_Lock
 end
 
 """
@@ -31,6 +32,7 @@ function World()
         [_Archetype()],
         _ComponentRegistry(),
         _EntityPool(UInt32(1024)),
+        _Lock(),
     )
 end
 
@@ -105,6 +107,8 @@ function _create_archetype!(world::World, mask::_Mask, components::UInt8...)::UI
 end
 
 function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
+    _check_locked(world)
+
     entity = _get_entity(world._entity_pool)
     archetype = world._archetypes[archetype_index]
 
@@ -125,9 +129,8 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
 end
 
 function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
-    if !is_alive(world, entity)
-        error("can't change components of a dead entity")
-    end
+    _check_locked(world)
+
     index = world._entities[entity._id]
     old_archetype = world._archetypes[index.archetype]
     new_archetype = world._archetypes[archetype_index]
@@ -192,6 +195,8 @@ function remove_entity!(world::World, entity::Entity)
     if !is_alive(world, entity)
         error("can't remove a dead entity")
     end
+    _check_locked(world)
+
     index = world._entities[entity._id]
     archetype = world._archetypes[index.archetype]
 
@@ -209,4 +214,14 @@ function remove_entity!(world::World, entity::Entity)
     end
 
     _recycle(world._entity_pool, entity)
+end
+
+function is_locked(world::World)::Bool
+    return _is_locked(world._lock)
+end
+
+function _check_locked(world::World)
+    if _is_locked(world._lock)
+        error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
+    end
 end
