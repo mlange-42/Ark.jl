@@ -15,7 +15,7 @@ end
 
 Returns whether an [`Entity`](@ref) is the zero entity.
 """
-@inline function is_zero(entity::Entity)::Bool
+function is_zero(entity::Entity)::Bool
     return entity._id == 1
 end
 

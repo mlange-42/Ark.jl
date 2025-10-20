@@ -42,7 +42,7 @@ function _recycle(p::_EntityPool, e::Entity)
     p.available += 1
 end
 
-@inline function _is_alive(p::_EntityPool, e::Entity)::Bool
+function _is_alive(p::_EntityPool, e::Entity)::Bool
     return e._gen == p.entities[e._id]._gen
 end
 

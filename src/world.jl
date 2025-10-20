@@ -44,11 +44,11 @@ end
     return id
 end
 
-@inline function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
+function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
     return _cast_to(_ComponentStorage{C}, world._storages[id])
 end
 
-@inline function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
+function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
     id = _component_id!(world, C)
     return _get_storage(world, id, C)
 end
@@ -182,7 +182,7 @@ end
 
 Returns whether an [`Entity`](@ref) is alive.
 """
-@inline function is_alive(world::World, entity::Entity)::Bool
+function is_alive(world::World, entity::Entity)::Bool
     return _is_alive(world._entity_pool, entity)
 end
 
