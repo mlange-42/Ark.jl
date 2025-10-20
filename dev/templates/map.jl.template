@@ -70,7 +70,7 @@ end
     # or for returning nothing?
     index = map._world._entities[entity._id]
     {{#types}}
-    b = map._storage_{{lower}}.data[index.archetype][index.row]
+    {{lower}} = map._storage_{{lower}}.data[index.archetype][index.row]
     {{/types}}
     return {{values}}
 end
