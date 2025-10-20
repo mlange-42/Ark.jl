@@ -1,0 +1,35 @@
+{{#items}}
+"""
+    Map{{N}}{ {{joined}} };
+
+A component mapper for {{N}} components.
+"""
+struct Map{{N}}{ {{joined}} }
+    _world::World
+    _ids::Tuple{ {{tuple}} }
+    {{#types}}
+    _storage_{{lower}}::_ComponentStorage{ {{upper}} }
+    {{/types}}
+end
+
+"""
+    Map{{N}}{ {{joined}} }(world::World)
+
+Creates a component mapper for 2 components.
+"""
+function Map{{N}}{ {{joined}} }(world::World) where { {{joined}} }
+    ids = (
+        {{#types}}
+        _component_id!(world, {{upper}}),
+        {{/types}}
+    )
+    return Map{{N}}{ {{joined}} }(
+        world,
+        ids,
+        {{#types}}
+        _get_storage(world, ids[{{n}}], {{upper}}),
+        {{/types}}
+    )
+end
+
+{{/items}}
