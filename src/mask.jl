@@ -102,8 +102,19 @@ mutable struct _MutableMask
     b4::UInt64
 end
 
+function _MutableMask()
+    return _MutableMask(0, 0, 0, 0)
+end
+
 function _MutableMask(mask::_Mask)
     return _MutableMask(mask.bits[1], mask.bits[2], mask.bits[3], mask.bits[4])
+end
+
+function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
+    return mask1.b1 == mask2.bits[1] &&
+           mask1.b2 == mask2.bits[2] &&
+           mask1.b3 == mask2.bits[3] &&
+           mask1.b4 == mask2.bits[4]
 end
 
 function _Mask(mask::_MutableMask)

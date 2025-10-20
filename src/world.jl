@@ -18,6 +18,7 @@ mutable struct World
     _registry::_ComponentRegistry
     _entity_pool::_EntityPool
     _lock::_Lock
+    _graph::_Graph
 end
 
 """
@@ -26,13 +27,15 @@ end
 Creates a new, empty [`World`](@ref).
 """
 function World()
+    graph = _Graph()
     World(
         [_EntityIndex(typemax(UInt32), 0)],
         Vector{Any}(),
-        [_Archetype()],
+        [_Archetype(graph.nodes[1])],
         _ComponentRegistry(),
         _EntityPool(UInt32(1024)),
         _Lock(),
+        graph,
     )
 end
 
@@ -55,44 +58,25 @@ end
 
 function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
     index = world._entities[entity._id]
-    return _find_or_create_archetype!(world, world._archetypes[index.archetype].mask, add, remove)
+    return _find_or_create_archetype!(world, world._archetypes[index.archetype].node, add, remove)
 end
 
-function _find_or_create_archetype!(world::World, start::_Mask, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
-    # TODO: implement archetype graph for faster lookup.
-    mask = _MutableMask(start)
+function _find_or_create_archetype!(world::World, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+    node = _find_node(world._graph, start, add, remove)
 
-    for b in remove
-        if !_get_bit(mask, b)
-            error("entity does not have component to remove")
-        end
-        _clear_bit!(mask, b)
-    end
-    for b in add
-        if _get_bit(mask, b)
-            error("entity already has component to add, or it was added twice")
-        end
-        if _get_bit(start, b)
-            error("component added and removed in the same exchange operation")
-        end
-        _set_bit!(mask, b)
-    end
+    archetype = (node.archetype == typemax(UInt32)) ?
+                _create_archetype!(world, node) :
+                node.archetype
 
-    mask = _Mask(mask)
-
-    for (i, arch) in enumerate(world._archetypes)
-        if arch.mask == mask
-            return i
-        end
-    end
-
-    components = _active_bit_indices(mask)
-    return _create_archetype!(world, mask, components...)
+    return archetype
 end
 
-function _create_archetype!(world::World, mask::_Mask, components::UInt8...)::UInt32
-    arch = _Archetype(mask, components...)
+function _create_archetype!(world::World, node::_GraphNode)::UInt32
+    components = _active_bit_indices(node.mask)
+    arch = _Archetype(node, components...)
     push!(world._archetypes, arch)
+    node.archetype = length(world._archetypes)
+
     index = length(world._archetypes)
     for (i, tp) in enumerate(world._registry.types)
         storage = _get_storage(world, UInt8(i), tp)
