@@ -14,6 +14,7 @@
 
     query = Query2{Position,Velocity}(world)
     for i in 1:10
+        count = 0
         for _ in query
             vec_pos, vec_vel = query[]
             # Alternatively:
@@ -22,10 +23,12 @@
                 pos = vec_pos[i]
                 vel = vec_vel[i]
                 vec_pos[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+                count += 1
             end
             @test_throws ErrorException new_entity!(m1, Altitude(1), Health(2))
             @test is_locked(world) == true
         end
+        @test count == 10
         @test is_locked(world) == false
     end
 end
