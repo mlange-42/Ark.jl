@@ -9,6 +9,6 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     return swapped
 end
 
-@generated function _cast_to(::Type{T}, x::Any) where T
+@generated function _cast_to(::Type{T}, x::Any)::T where T
     :(x::T)
 end

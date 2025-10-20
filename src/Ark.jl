@@ -8,6 +8,7 @@ include("registry.jl")
 include("storage.jl")
 include("world.jl")
 include("map.jl")
+include("query.jl")
 
 export World
 export is_alive, new_entity!, remove_entity!, zero_entity
@@ -18,6 +19,8 @@ export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
 export Map2
 export new_entity!, get_components, set_components!, has_components, add_components!, remove_components!
+
+export Filter2
 
 export _Archetype
 export _add_entity!
