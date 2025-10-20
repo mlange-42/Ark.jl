@@ -1,0 +1,155 @@
+# ------------------------------------------------------------------------
+# ⚠️ This file is auto-generated. DO NOT EDIT.
+# Changes will be overwritten by the code generation process.
+# ------------------------------------------------------------------------
+
+{{#items}}
+"""
+    Map{{N}}{ {{joined}} }
+
+A component mapper for {{N}} components.
+"""
+struct Map{{N}}{ {{joined}} }
+    _world::World
+    _ids::Tuple{ {{tuple}} }
+    {{#types}}
+    _storage_{{lower}}::_ComponentStorage{ {{upper}} }
+    {{/types}}
+end
+
+"""
+    Map{{N}}{ {{joined}} }(world::World)
+
+Creates a component mapper for 2 components.
+"""
+function Map{{N}}{ {{joined}} }(world::World) where { {{joined}} }
+    ids = (
+        {{#types}}
+        _component_id!(world, {{upper}}),
+        {{/types}}
+    )
+    return Map{{N}}{ {{joined}} }(
+        world,
+        ids,
+        {{#types}}
+        _get_storage(world, ids[{{n}}], {{upper}}),
+        {{/types}}
+    )
+end
+
+"""
+    new_entity!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity
+
+Creates a new [`Entity`](@ref) with {{N}} components.
+"""
+function new_entity!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity where { {{joined}} }
+    archetype = _find_or_create_archetype!(map._world, map._world._archetypes[1].mask, map._ids, ())
+    entity, index = _create_entity!(map._world, archetype)
+    {{#types}}
+    map._storage_{{lower}}.data[archetype][index] = {{lower}}
+    {{/types}}
+    return entity
+end
+
+"""
+    get_components(map::Map2{{N}}{ {{joined}} }, entity::Entity)::Tuple{ {{joined}} }
+
+Get {{N}} components of an [`Entity`](@ref).
+
+Alternatively, use indexing:
+
+```julia
+pos, vel = map[entity]
+```
+"""
+@inline function get_components(map::Map{{N}}{ {{joined}} }, entity::Entity)::Tuple{ {{joined}} } where { {{joined}} }
+    return map[entity]
+end
+
+@inline function Base.getindex(map::Map{{N}}{ {{joined}} }, entity::Entity)::Tuple{ {{joined}} } where { {{joined}} }
+    if !is_alive(map._world, entity)
+        error("can't get components of a dead entity")
+    end
+    # TODO: currently raises MethodError of components are missing.
+    # Should we pay the cost for a more informative error,
+    # or for returning nothing?
+    index = map._world._entities[entity._id]
+    {{#types}}
+    {{lower}} = map._storage_{{lower}}.data[index.archetype][index.row]
+    {{/types}}
+    return {{values}}
+end
+
+"""
+    set_components!(map::Map{{N}}{ {{joined}} }, entity::Entity, {{args}})
+
+Set {{N}} components of an [`Entity`](@ref).
+
+Alternatively, use indexing:
+
+```julia
+map[entity] = (Position(0, 0), Velocity(1, 1))
+```
+"""
+function set_components!(map::Map{{N}}{ {{joined}} }, entity::Entity, {{args}}) where { {{joined}} }
+    map[entity] = ({{values}})
+end
+
+@inline function Base.setindex!(map::Map{{N}}{ {{joined}} }, value::Tuple{ {{joined}} }, entity::Entity) where { {{joined}} }
+    if !is_alive(map._world, entity)
+        error("can't set components of a dead entity")
+    end
+    index = map._world._entities[entity._id]
+    {{#types}}
+    map._storage_{{lower}}.data[index.archetype][index.row] = value[{{n}}]
+    {{/types}}
+end
+
+"""
+    has_components!(map::Map{{N}}{ {{joined}} }, entity::Entity)
+
+Returns whether an [`Entity`](@ref) has the given components.
+"""
+function has_components(map::Map{{N}}{ {{joined}} }, entity::Entity) where { {{joined}} }
+    if !is_alive(map._world, entity)
+        error("can't check components of a dead entity")
+    end
+    index = map._world._entities[entity._id]
+    {{#types}}
+    if map._storage_{{lower}}.data[index.archetype] == nothing
+        return false
+    end
+    {{/types}}
+    return true
+end
+
+"""
+    add_components!(map::Map{{N}}{ {{joined}} }, {{args}})::Entity
+
+Adds {{N}} components to an [`Entity`](@ref).
+"""
+function add_components!(map::Map{{N}}{ {{joined}} }, entity::Entity, {{args}}) where { {{joined}} }
+    if !is_alive(map._world, entity)
+        error("can't add components to a dead entity")
+    end
+    archetype = _find_or_create_archetype!(map._world, entity, map._ids, ())
+    row = _move_entity!(map._world, entity, archetype)
+    {{#types}}
+    map._storage_{{lower}}.data[archetype][row] = {{lower}}
+    {{/types}}
+end
+
+"""
+    remove_components!(map::Map{{N}}{ {{joined}} }, entity::Entity)
+
+Removes {{N}} components from an [`Entity`](@ref).
+"""
+function remove_components!(map::Map{{N}}{ {{joined}} }, entity::Entity) where { {{joined}} }
+    if !is_alive(map._world, entity)
+        error("can't remove components from a dead entity")
+    end
+    archetype = _find_or_create_archetype!(map._world, entity, (), map._ids)
+    _move_entity!(map._world, entity, archetype)
+end
+
+{{/items}}
