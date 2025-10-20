@@ -32,7 +32,7 @@ function Filter2{A,B}(world::World) where {A,B}
     )
 end
 
-@inline function get_components(f::Filter2{A,B})::Tuple{Vector{A},Vector{B}} where {A,B}
+@inline function get_components(f::Filter2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
     a = f._storage_a.data[f._index]
     b = f._storage_b.data[f._index]
     return a, b

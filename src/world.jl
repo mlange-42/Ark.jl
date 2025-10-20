@@ -99,7 +99,7 @@ function _create_archetype!(world::World, mask::_Mask, components::UInt8...)::UI
     for comp in components
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
-        storage.data[index] = Vector{tp}()
+        storage.data[index] = _new_column(tp)
     end
     return index
 end
@@ -113,7 +113,7 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
         vec = storage.data[archetype_index]
-        resize!(vec, index)
+        resize!(vec._data, index)
     end
 
     if entity._id > length(world._entities)
@@ -142,8 +142,8 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         storage = _get_storage(world, comp, tp)
         old_vec = storage.data[index.archetype]
         new_vec = storage.data[archetype_index]
-        push!(new_vec, old_vec[index.row])
-        _swap_remove!(old_vec, index.row)
+        push!(new_vec._data, old_vec[index.row])
+        _swap_remove!(old_vec._data, index.row)
     end
     for comp in new_archetype.components
         tp = world._registry.types[comp]
@@ -152,7 +152,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         if length(new_vec) == new_row
             continue
         end
-        resize!(new_vec, new_row)
+        resize!(new_vec._data, new_row)
     end
 
     if swapped
@@ -200,7 +200,7 @@ function remove_entity!(world::World, entity::Entity)
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
         vec = storage.data[index.archetype]
-        _swap_remove!(vec, index.row)
+        _swap_remove!(vec._data, index.row)
     end
 
     if swapped

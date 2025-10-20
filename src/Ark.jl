@@ -3,9 +3,9 @@ module Ark
 include("util.jl")
 include("entity.jl")
 include("mask.jl")
+include("storage.jl")
 include("archetype.jl")
 include("registry.jl")
-include("storage.jl")
 include("world.jl")
 include("map.jl")
 include("query.jl")
@@ -21,6 +21,9 @@ export Map2
 export new_entity!, get_components, set_components!, has_components, add_components!, remove_components!
 
 export Filter2
+
+export Column
+export _new_column
 
 export _Archetype
 export _add_entity!

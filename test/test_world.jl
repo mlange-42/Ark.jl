@@ -88,10 +88,10 @@ end
     @test length(vel_storage.data) == 3
     @test pos_storage.data[1] == nothing
     @test vel_storage.data[1] == nothing
-    @test pos_storage.data[2] == Vector{Position}()
+    @test pos_storage.data[2]._data == Vector{Position}()
     @test vel_storage.data[2] == nothing
-    @test pos_storage.data[3] == Vector{Position}()
-    @test vel_storage.data[3] == Vector{Velocity}()
+    @test pos_storage.data[3]._data == Vector{Position}()
+    @test vel_storage.data[3]._data == Vector{Velocity}()
 end
 
 @testset "_create_entity! Tests" begin

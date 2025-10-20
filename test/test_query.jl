@@ -21,7 +21,6 @@
                 vel = vec_vel[i]
                 pos = Position(pos.x + vel.dx, pos.y + vel.dy)
                 vec_pos[i] = pos
-                println(vec_pos[i])
             end
         end
     end
