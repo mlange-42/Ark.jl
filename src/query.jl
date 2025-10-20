@@ -32,11 +32,26 @@ function Filter2{A,B}(world::World) where {A,B}
     )
 end
 
-function Base.iterate(r::Filter2, state::Int)
-    state <= 10 ? (state, state + 1) : nothing
+@inline function get_components(f::Filter2{A,B})::Tuple{Vector{A},Vector{B}} where {A,B}
+    a = f._storage_a.data[f._index]
+    b = f._storage_b.data[f._index]
+    return a, b
 end
 
-function Base.iterate(f::Filter2)
+@inline function Base.iterate(f::Filter2, state::Int)
+    f._index = state
+    while f._index <= length(f._world._archetypes)
+        archetype = f._world._archetypes[f._index]
+        if _contains_all(archetype.mask, f._mask)
+            return f._index, f._index + 1
+        end
+        f._index += 1
+    end
+    f._index = 0
+    return nothing
+end
+
+@inline function Base.iterate(f::Filter2)
     f._index = 1
     return Base.iterate(f, f._index)
 end
