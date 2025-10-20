@@ -7,8 +7,8 @@ include("storage.jl")
 include("archetype.jl")
 include("registry.jl")
 include("world.jl")
-include("map.jl")
-include("query.jl")
+include("map_gen.jl")
+include("query_gen.jl")
 
 export World
 export is_alive, new_entity!, remove_entity!, zero_entity

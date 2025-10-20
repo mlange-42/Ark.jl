@@ -28,5 +28,5 @@ end
 
 data = Dict("items" => items)
 
-write("src/query.jl", render(template, data))
-format_file("src/query.jl")
+write("src/query_gen.jl", render(template, data))
+format_file("src/query_gen.jl")

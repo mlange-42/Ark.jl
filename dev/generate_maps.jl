@@ -26,5 +26,5 @@ end
 
 data = Dict("items" => items)
 
-write("src/map.jl", render(template, data))
-format_file("src/map.jl")
+write("src/map_gen.jl", render(template, data))
+format_file("src/map_gen.jl")
