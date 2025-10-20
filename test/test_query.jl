@@ -12,12 +12,12 @@
         new_entity!(m3, Position(i, i * 2), Health(3))
     end
 
-    filter = Filter2{Position,Velocity}(world)
+    query = Query2{Position,Velocity}(world)
     for i in 1:10
-        for _ in filter
-            vec_pos, vec_vel = filter[]
+        for _ in query
+            vec_pos, vec_vel = query[]
             # Alternatively:
-            #vec_pos, vec_vel = get_components(filter)
+            #vec_pos, vec_vel = get_components(query)
             for i in eachindex(vec_pos)
                 pos = vec_pos[i]
                 vel = vec_vel[i]

@@ -20,7 +20,7 @@ export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 export Map2
 export new_entity!, get_components, set_components!, has_components, add_components!, remove_components!
 
-export Filter2
+export Query2
 
 export Column
 export _new_column

@@ -1,9 +1,9 @@
 """
-    Filter2{A,B}
+    Query2{A,B}
 
-A filter for 2 components.
+A query for 2 components.
 """
-mutable struct Filter2{A,B}
+mutable struct Query2{A,B}
     _index::Int
     _world::World
     _ids::Tuple{UInt8,UInt8}
@@ -13,16 +13,16 @@ mutable struct Filter2{A,B}
 end
 
 """
-    Filter2{A,B}(world::World)
+    Query2{A,B}(world::World)
 
-Creates a filter for 2 components.
+Creates a query for 2 components.
 """
-function Filter2{A,B}(world::World) where {A,B}
+function Query2{A,B}(world::World) where {A,B}
     ids = (
         _component_id!(world, A),
         _component_id!(world, B),
     )
-    return Filter2{A,B}(
+    return Query2{A,B}(
         0,
         world,
         ids,
@@ -33,21 +33,21 @@ function Filter2{A,B}(world::World) where {A,B}
 end
 
 """
-    get_components(f::Filter2{A,B})::Tuple{Column{A},Column{B}}
+    get_components(f::Query2{A,B})::Tuple{Column{A},Column{B}}
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(f::Filter2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
+@inline function get_components(f::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
     return f[]
 end
 
-@inline function Base.getindex(f::Filter2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
+@inline function Base.getindex(f::Query2{A,B})::Tuple{Column{A},Column{B}} where {A,B}
     a = f._storage_a.data[f._index]
     b = f._storage_b.data[f._index]
     return a, b
 end
 
-@inline function Base.iterate(f::Filter2, state::Int)
+@inline function Base.iterate(f::Query2, state::Int)
     f._index = state
     while f._index <= length(f._world._archetypes)
         archetype = f._world._archetypes[f._index]
@@ -60,7 +60,7 @@ end
     return nothing
 end
 
-@inline function Base.iterate(f::Filter2)
+@inline function Base.iterate(f::Query2)
     f._index = 1
     return Base.iterate(f, f._index)
 end
