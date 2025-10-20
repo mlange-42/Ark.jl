@@ -136,7 +136,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
     new_archetype = world._archetypes[archetype_index]
 
     new_row = _add_entity!(new_archetype, entity)
-    swapped = _swap_remove!(old_archetype.entities, index.row)
+    swapped = _swap_remove!(old_archetype.entities._data, index.row)
     for comp in old_archetype.components
         if !_get_bit(new_archetype.mask, comp)
             continue
@@ -200,7 +200,7 @@ function remove_entity!(world::World, entity::Entity)
     index = world._entities[entity._id]
     archetype = world._archetypes[index.archetype]
 
-    swapped = _swap_remove!(archetype.entities, index.row)
+    swapped = _swap_remove!(archetype.entities._data, index.row)
     for comp in archetype.components
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)

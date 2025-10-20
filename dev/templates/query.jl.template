@@ -104,7 +104,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query{{N}})::Vector{Entity}
+function entities(q::Query{{N}})::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 

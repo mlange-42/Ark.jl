@@ -98,7 +98,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query1)::Vector{Entity}
+function entities(q::Query1)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
@@ -200,7 +200,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query2)::Vector{Entity}
+function entities(q::Query2)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
@@ -309,7 +309,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query3)::Vector{Entity}
+function entities(q::Query3)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
@@ -426,7 +426,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query4)::Vector{Entity}
+function entities(q::Query4)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
@@ -547,7 +547,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query5)::Vector{Entity}
+function entities(q::Query5)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
@@ -672,7 +672,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query6)::Vector{Entity}
+function entities(q::Query6)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
@@ -817,7 +817,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query7)::Vector{Entity}
+function entities(q::Query7)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
@@ -968,7 +968,7 @@ end
 
 Returns the entities of the current archetype
 """
-function entities(q::Query8)::Vector{Entity}
+function entities(q::Query8)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
