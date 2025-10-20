@@ -29,19 +29,19 @@ function _ComponentStorage{C}(archetypes::Int) where C
     _ComponentStorage{C}(Vector{Union{Nothing,Column{C}}}(nothing, archetypes))
 end
 
-@inline function Base.getindex(c::Column, i::Integer)
+function Base.getindex(c::Column, i::Integer)
     return c._data[i]
 end
 
-@inline function Base.setindex!(c::Column, value, i::Integer)
+function Base.setindex!(c::Column, value, i::Integer)
     c._data[i] = value
 end
 
-@inline function Base.length(c::Column)
+function Base.length(c::Column)
     return length(c._data)
 end
 
-@inline Base.eachindex(c::Column) = eachindex(c._data)
-@inline Base.enumerate(c::Column) = enumerate(c._data)
-@inline Base.iterate(c::Column) = iterate(c._data)
-@inline Base.iterate(c::Column, state) = iterate(c._data, state)
+Base.eachindex(c::Column) = eachindex(c._data)
+Base.enumerate(c::Column) = enumerate(c._data)
+Base.iterate(c::Column) = iterate(c._data)
+Base.iterate(c::Column, state) = iterate(c._data, state)
