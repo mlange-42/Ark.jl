@@ -3,6 +3,7 @@ module Ark
 include("util.jl")
 include("entity.jl")
 include("mask.jl")
+include("vec_map.jl")
 include("storage.jl")
 include("archetype.jl")
 include("registry.jl")
@@ -50,5 +51,8 @@ export _Lock
 export _lock, _unlock, _is_locked
 
 export _ComponentStorage
+
+export _VecMap
+export _get_map, _set_map!
 
 end

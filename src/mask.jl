@@ -102,6 +102,10 @@ mutable struct _MutableMask
     b4::UInt64
 end
 
+function _MutableMask()
+    return _MutableMask(0, 0, 0, 0)
+end
+
 function _MutableMask(mask::_Mask)
     return _MutableMask(mask.bits[1], mask.bits[2], mask.bits[3], mask.bits[4])
 end
