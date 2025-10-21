@@ -4,21 +4,21 @@
 
 A component mapper for N components.
 """
-struct Map{CS<:Tuple, N}
+struct Map{CS<:Tuple,N}
     _world::World
-    _ids::NTuple{N, UInt8}
+    _ids::NTuple{N,UInt8}
     _storage::CS
 end
 
 # TODO: this could also be generated
 """
-    Map(world::World, CompsTypes)
+    Map(world::World, comp_types::Tuple{Vararg{DataType}}
 
 Creates a component mapper.
 """
-function Map(world::World, CompsTypes::Tuple)
-    ids = Tuple(_component_id!(world, C) for C in CompsTypes)
-    return Map(world, ids, Tuple(_get_storage(world, id, C) for (id, C) in zip(ids,CompsTypes)))
+function Map(world::World, comp_types::Tuple{Vararg{DataType}})
+    ids = Tuple(_component_id!(world, C) for C in comp_types)
+    return Map(world, ids, Tuple(_get_storage(world, id, C) for (id, C) in zip(ids, comp_types)))
 end
 
 """
@@ -89,12 +89,12 @@ end
 
 Returns whether an [`Entity`](@ref) has the given components.
 """
-function has_components(map::Map, entity::Entity)
+@inline function has_components(map::Map, entity::Entity)
     if !is_alive(map._world, entity)
         error("can't check components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    return _has_entity_components(map, index)
+    return @inline _has_entity_components(map, index)
 end
 
 """
@@ -124,23 +124,29 @@ function remove_components!(map::Map, entity::Entity)
     _move_entity!(map._world, entity, archetype)
 end
 
-@generated function _get_mapped_components(map::Map{CS}, index) where {CS <: Tuple}
+@generated function _get_mapped_components(map::Map{CS}, index) where {CS<:Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[index.archetype][index.row]) for i in 1:N]
     return Expr(:tuple, expressions...)
 end
 
-@generated function _set_entity_values!(map::Map{CS}, archetype, index, comps) where {CS <: Tuple}
+@generated function _set_entity_values!(map::Map{CS}, archetype, index, comps) where {CS<:Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[archetype][index] = comps[$i]) for i in 1:N]
-    return quote $(expressions...) end
+    return quote
+        $(expressions...)
+    end
 end
 
-@generated function _has_entity_components(map::Map{CS}, index) where {CS <: Tuple}
+@generated function _has_entity_components(map::Map{CS}, index) where {CS<:Tuple}
     N = length(CS.parameters)
-    expressions = [:(if map._storage[$i].data[index.archetype] == nothing return false end) 
+    expressions = [:(
+        if map._storage[$i].data[index.archetype] == nothing
+            return false
+        end
+    )
                    for i in 1:N]
-    return quote 
+    return quote
         $(expressions...)
         return true
     end

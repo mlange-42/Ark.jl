@@ -4,10 +4,10 @@
 
 A query for N components.
 """
-mutable struct Query{CS<:Tuple, N}
+mutable struct Query{CS<:Tuple,N}
     _index::Int
     _world::World
-    _ids::NTuple{N, UInt8}
+    _ids::NTuple{N,UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
@@ -17,22 +17,31 @@ end
 
 # TODO: this could also be generated
 """
-    Query(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
+    Query(
+        world::World,
+        comp_types::Tuple{Vararg{DataType}};
+        with::Tuple{Vararg{DataType}}=(),
+        without::Tuple{Vararg{DataType}}=(),
+        optional::Tuple{Vararg{DataType}}=(),
+    )
 
 Creates a query.
 
 # Arguments
+- `world::World`: The world to use for this query.
+- `comp_types::Tuple{Vararg{DataType}}`: Components the query filters for and that it provides access to.
 - `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
 - `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
 - `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query(
-    world::World, CompsTypes::Tuple;
-    with::Tuple{Vararg{DataType}} = (),
-    without::Tuple{Vararg{DataType}} = (),
-    optional::Tuple{Vararg{DataType}} = (),
+    world::World,
+    comp_types::Tuple{Vararg{DataType}};
+    with::Tuple{Vararg{DataType}}=(),
+    without::Tuple{Vararg{DataType}}=(),
+    optional::Tuple{Vararg{DataType}}=(),
 )
-    ids = Tuple(_component_id!(world, C) for C in CompsTypes)
+    ids = Tuple(_component_id!(world, C) for C in comp_types)
     with_ids = map(x -> _component_id!(world, x), with)
     without_ids = map(x -> _component_id!(world, x), without)
     mask = _Mask(ids..., with_ids...)
@@ -47,7 +56,7 @@ function Query(
         mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
-        Tuple(_get_storage(world, id, C) for (id, C) in zip(ids,CompsTypes)),
+        Tuple(_get_storage(world, id, C) for (id, C) in zip(ids, comp_types)),
         UInt8(0),
     )
 end
@@ -111,7 +120,7 @@ function entities(q::Query)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
-@generated function _get_query_archetypes(q::Query{CS}) where {CS <: Tuple}
+@generated function _get_query_archetypes(q::Query{CS}) where {CS<:Tuple}
     N = length(CS.parameters)
     expressions = [:(q._storage[$i].data[q._index]) for i in 1:N]
     return Expr(:tuple, expressions...)
