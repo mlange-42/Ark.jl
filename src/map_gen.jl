@@ -61,7 +61,7 @@ end
     # or for returning nothing?
     index = map._world._entities[entity._id]
     a = map._storage_a.data[index.archetype][index.row]
-    return a
+    return (a,)
 end
 
 """
@@ -76,7 +76,7 @@ map[entity] = (Position(0, 0), Velocity(1, 1))
 ```
 """
 function set_components!(map::Map1{A}, entity::Entity, a::A) where {A}
-    map[entity] = (a)
+    map[entity] = (a,)
 end
 
 @inline function Base.setindex!(map::Map1{A}, value::Tuple{A}, entity::Entity) where {A}
@@ -196,7 +196,7 @@ end
     index = map._world._entities[entity._id]
     a = map._storage_a.data[index.archetype][index.row]
     b = map._storage_b.data[index.archetype][index.row]
-    return a, b
+    return (a, b)
 end
 
 """
@@ -347,7 +347,7 @@ end
     a = map._storage_a.data[index.archetype][index.row]
     b = map._storage_b.data[index.archetype][index.row]
     c = map._storage_c.data[index.archetype][index.row]
-    return a, b, c
+    return (a, b, c)
 end
 
 """
@@ -515,7 +515,7 @@ end
     b = map._storage_b.data[index.archetype][index.row]
     c = map._storage_c.data[index.archetype][index.row]
     d = map._storage_d.data[index.archetype][index.row]
-    return a, b, c, d
+    return (a, b, c, d)
 end
 
 """
@@ -714,7 +714,7 @@ end
     c = map._storage_c.data[index.archetype][index.row]
     d = map._storage_d.data[index.archetype][index.row]
     e = map._storage_e.data[index.archetype][index.row]
-    return a, b, c, d, e
+    return (a, b, c, d, e)
 end
 
 """
@@ -926,7 +926,7 @@ end
     d = map._storage_d.data[index.archetype][index.row]
     e = map._storage_e.data[index.archetype][index.row]
     f = map._storage_f.data[index.archetype][index.row]
-    return a, b, c, d, e, f
+    return (a, b, c, d, e, f)
 end
 
 """
@@ -1151,7 +1151,7 @@ end
     e = map._storage_e.data[index.archetype][index.row]
     f = map._storage_f.data[index.archetype][index.row]
     g = map._storage_g.data[index.archetype][index.row]
-    return a, b, c, d, e, f, g
+    return (a, b, c, d, e, f, g)
 end
 
 """
@@ -1389,7 +1389,7 @@ end
     f = map._storage_f.data[index.archetype][index.row]
     g = map._storage_g.data[index.archetype][index.row]
     h = map._storage_h.data[index.archetype][index.row]
-    return a, b, c, d, e, f, g, h
+    return (a, b, c, d, e, f, g, h)
 end
 
 """
