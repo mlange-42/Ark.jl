@@ -101,7 +101,9 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
         tp = world._registry.types[comp]
         storage = _get_storage(world, comp, tp)
         vec = storage.data[archetype_index]
-        resize!(vec._data, index)
+        if index > length(vec._data)
+            resize!(vec._data, max(length(vec._data)*2, index))
+        end
     end
 
     if entity._id > length(world._entities)
@@ -139,7 +141,9 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         if length(new_vec) == new_row
             continue
         end
-        resize!(new_vec._data, new_row)
+        if new_row > length(vec._data)
+            resize!(vec._data, max(length(vec._data)*2, new_row))
+        end
     end
 
     if swapped
