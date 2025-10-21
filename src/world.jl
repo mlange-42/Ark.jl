@@ -1,12 +1,5 @@
 
 """
-    const zero_entity::Entity
-
-The reserved zero [`Entity`](@ref) value.
-"""
-const zero_entity::Entity = _new_entity(1, 0)
-
-"""
     World
 
 The World is the central ECS storage.

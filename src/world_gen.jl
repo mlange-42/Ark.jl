@@ -1,4 +1,16 @@
 
+"""
+    const zero_entity::Entity
+
+The reserved zero [`Entity`](@ref) value.
+"""
+const zero_entity::Entity = _new_entity(1, 0)
+
+"""
+    World{CS<:Tuple,CT<:Tuple,N}
+
+The World is the central ECS storage.
+"""
 mutable struct WorldGen{CS<:Tuple,CT<:Tuple,N}
     _entities::Vector{_EntityIndex}
     _storages::CS
@@ -9,40 +21,12 @@ mutable struct WorldGen{CS<:Tuple,CT<:Tuple,N}
     _graph::_Graph
 end
 
-@generated function _worldgen_from_types(::Val{CS}) where {CS<:Tuple}
-    types = CS.parameters
+"""
+    World(types::Type...)
 
-    component_types = map(T -> :(Type{$(QuoteNode(T))}), types)
-    component_tuple_type = :(Tuple{$(component_types...)})
-
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
-
-    # storage tuple value
-    storage_exprs = [:(_ComponentStorage{$(QuoteNode(T))}(1)) for T in types]
-    storage_tuple = Expr(:tuple, storage_exprs...)
-
-    # id registration tuple value
-    id_exprs = [:(_register_component!(registry, $(QuoteNode(T)))) for T in types]
-    id_tuple = Expr(:tuple, id_exprs...)
-
-    return quote
-        registry = _ComponentRegistry()
-        ids = $id_tuple
-        graph = _Graph()
-        WorldGen{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
-            [_EntityIndex(typemax(UInt32), 0)],
-            $storage_tuple,
-            [_Archetype(graph.nodes[1])],
-            registry,
-            _EntityPool(UInt32(1024)),
-            _Lock(),
-            graph,
-        )
-    end
-end
-
-WorldGen(types::Type...) = _worldgen_from_types(Val{Tuple{types...}}())
+Creates a new, empty [`World`](@ref).
+"""
+WorldGen(comp_types::Type...) = _worldgen_from_types(Val{Tuple{comp_types...}}())
 
 @generated function _component_id(world::WorldGen{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     storage_types = CS.parameters
@@ -229,6 +213,39 @@ Returns whether the world is currently locked for modifications.
 """
 function is_locked(world::WorldGen)::Bool
     return _is_locked(world._lock)
+end
+
+@generated function _worldgen_from_types(::Val{CS}) where {CS<:Tuple}
+    types = CS.parameters
+
+    component_types = map(T -> :(Type{$(QuoteNode(T))}), types)
+    component_tuple_type = :(Tuple{$(component_types...)})
+
+    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
+    storage_tuple_type = :(Tuple{$(storage_types...)})
+
+    # storage tuple value
+    storage_exprs = [:(_ComponentStorage{$(QuoteNode(T))}(1)) for T in types]
+    storage_tuple = Expr(:tuple, storage_exprs...)
+
+    # id registration tuple value
+    id_exprs = [:(_register_component!(registry, $(QuoteNode(T)))) for T in types]
+    id_tuple = Expr(:tuple, id_exprs...)
+
+    return quote
+        registry = _ComponentRegistry()
+        ids = $id_tuple
+        graph = _Graph()
+        WorldGen{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
+            [_EntityIndex(typemax(UInt32), 0)],
+            $storage_tuple,
+            [_Archetype(graph.nodes[1])],
+            registry,
+            _EntityPool(UInt32(1024)),
+            _Lock(),
+            graph,
+        )
+    end
 end
 
 @generated function _push_nothing_to_all!(world::WorldGen{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
