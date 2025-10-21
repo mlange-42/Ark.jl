@@ -9,7 +9,7 @@ function _ComponentRegistry()
     _ComponentRegistry(0x01, Dict{DataType,UInt8}(), Vector{DataType}())
 end
 
-@inline function _component_id!(registry::_ComponentRegistry, ::Type{C}) where C
+@inline function _component_id!(registry::_ComponentRegistry, ::Type{C})::UInt8 where C
     if haskey(registry.components, C)
         return registry.components[C]
     elseif registry.counter == typemax(UInt8)
@@ -18,7 +18,7 @@ end
     _register_component!(registry, C)
 end
 
-function _register_component!(registry::_ComponentRegistry, ::Type{C}) where C
+function _register_component!(registry::_ComponentRegistry, ::Type{C})::UInt8 where C
     id = registry.counter
     registry.components[C] = id
     push!(registry.types, C)
