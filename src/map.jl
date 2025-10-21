@@ -57,7 +57,7 @@ end
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
-    return _get_mapped_components(map, index)
+    return @inline _get_mapped_components(map, index)
 end
 
 """
