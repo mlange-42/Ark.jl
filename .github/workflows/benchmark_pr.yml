@@ -2,7 +2,7 @@ name: Benchmark a pull request
 # Keep this in sync with benchmark_push.yml
 
 on:
-  pull_request:
+  pull_request_target:
 concurrency:
   # Skip and cancel intermediate builds:
   group: ${{ github.workflow }}-${{ github.ref }}
