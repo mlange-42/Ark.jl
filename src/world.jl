@@ -39,7 +39,7 @@ function World()
     )
 end
 
-@inline function _component_id!(world::World, ::Type{C}) where C
+@inline function _component_id!(world::World, ::Type{C})::UInt8 where C
     id = _component_id!(world._registry, C)
     if id > length(world._storages)
         push!(world._storages, _ComponentStorage{C}(length(world._archetypes)))
