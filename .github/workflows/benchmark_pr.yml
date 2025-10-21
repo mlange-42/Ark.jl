@@ -2,7 +2,7 @@ name: Benchmark a pull request
 # Keep this in sync with benchmark_push.yml
 
 on:
-  pull_request_target:
+  pull_request:
 concurrency:
   # Skip and cancel intermediate builds:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,8 +17,6 @@ jobs:
 
         steps:
             - uses: actions/checkout@v5
-              with:
-                ref: ${{ github.event.pull_request.head.sha }}
             - uses: julia-actions/setup-julia@v2
             - uses: julia-actions/cache@v2
             - name: Extract Package Name from Project.toml
