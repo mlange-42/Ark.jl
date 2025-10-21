@@ -57,7 +57,7 @@ end
 world = World()
 
 # Create a component mapper
-map = Map2{Position,Velocity}(world)
+map = Map(world, (Position,Velocity))
 
 for i in 1:1000
     # Create an entity with components
@@ -67,7 +67,7 @@ for i in 1:1000
 end
 
 # Create a query
-query = Query2{Position,Velocity}(world)
+query = Query(world, (Position, Velocity))
 
 # Time loop
 for i in 1:10
