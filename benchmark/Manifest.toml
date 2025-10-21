@@ -2,7 +2,13 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "693be2a303d4b9e9dafa7887e3ae131cef369fa2"
+project_hash = "3574119f4971a5228b0090d421078602c2c044e7"
+
+[[deps.ArgParse]]
+deps = ["Logging", "TextWrap"]
+git-tree-sha1 = "22cf435ac22956a7b45b0168abbc871176e7eecc"
+uuid = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+version = "1.2.0"
 
 [[deps.Ark]]
 deps = ["StaticArrays"]
@@ -160,6 +166,11 @@ version = "1.11.0"
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
+
+[[deps.TextWrap]]
+git-tree-sha1 = "43044b737fa70bc12f6105061d3da38f881a3e3c"
+uuid = "b718987f-49a8-5099-9789-dcd902bef87d"
+version = "1.0.2"
 
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
