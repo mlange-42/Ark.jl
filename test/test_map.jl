@@ -30,7 +30,7 @@ end
 @testset "Map add/remove" begin
     world = World()
     m1 = Map(world, (Position, Velocity))
-    m2 = Map2(world, (Altitude, Health))
+    m2 = Map(world, (Altitude, Health))
 
     e1 = new_entity!(world)
     add_components!(m1, e1, (Position(1, 2), Velocity(3, 4)))

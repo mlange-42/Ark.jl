@@ -124,11 +124,11 @@ end
 
 @testset "remove_entity! Tests" begin
     world = World()
-    m = Map2{Position,Velocity}(world)
+    m = Map(world, (Position,Velocity))
 
-    e1 = new_entity!(m, Position(1, 1), Velocity(1, 1))
-    e2 = new_entity!(m, Position(2, 2), Velocity(1, 1))
-    e3 = new_entity!(m, Position(3, 3), Velocity(1, 1))
+    e1 = new_entity!(m, (Position(1, 1), Velocity(1, 1)))
+    e2 = new_entity!(m, (Position(2, 2), Velocity(1, 1)))
+    e3 = new_entity!(m, (Position(3, 3), Velocity(1, 1)))
 
     remove_entity!(world, e2)
     @test is_alive(world, e1) == true

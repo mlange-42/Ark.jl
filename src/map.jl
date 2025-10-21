@@ -19,7 +19,7 @@ end
 
 @generated function set_mapped_components!(map::Map{CS}, index, comps) where {CS <: Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage[$i].data[index.archetype][index] = comps[$i]) for i in 1:N]
+    expressions = [:(map._storage[$i].data[index.archetype][index.row] = comps[$i]) for i in 1:N]
     return quote $(expressions...) end
 end
 
@@ -80,7 +80,7 @@ function add_components!(map::Map, entity::Entity, value)
     end
     archetype = _find_or_create_archetype!(map._world, entity, map._ids, ())
     row = _move_entity!(map._world, entity, archetype)
-    set_entity_components!(map, archetype, index, comps)
+    set_entity_components!(map, archetype, row, value)
 end
 
 @inline function Base.setindex!(map::Map, value, entity::Entity)
@@ -96,5 +96,5 @@ function has_components(map::Map, entity::Entity)
         error("can't check components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    return has_entity_components(map, entity)
+    return has_entity_components(map, index)
 end

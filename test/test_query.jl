@@ -12,7 +12,7 @@
         new_entity!(m3, (Position(i, i * 2), Health(3)))
     end
 
-    query = Query2{Position,Velocity}(world)
+    query = Query(world, (Position,Velocity))
     for i in 1:10
         count = 0
         for _ in query
@@ -37,7 +37,7 @@ end
     world = World()
 
     m1 = Map(world, (Position,Velocity))
-    m2 = Map3(world, (Position,Velocity,Altitude))
+    m2 = Map(world, (Position,Velocity,Altitude))
 
     for i in 1:10
         new_entity!(m1, (Position(i, i * 2), Velocity(1, 1)))
@@ -71,7 +71,7 @@ end
         new_entity!(m2, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query2{Position,Velocity}(world, without=(Altitude,))
+    query = Query(world, (Position,Velocity); without=(Altitude,))
 
     count = 0
     for a in query
