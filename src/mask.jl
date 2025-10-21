@@ -94,73 +94,45 @@ function _active_bit_indices(mask::_Mask)::Vector{UInt8}
     return indices
 end
 
-mutable struct _MutableMask
-    # TODO: can we use something more efficient here that does not use if/else?
-    b1::UInt64
-    b2::UInt64
-    b3::UInt64
-    b4::UInt64
+struct _MutableMask
+    bits::MVector{4, UInt64}
 end
 
 function _MutableMask()
-    return _MutableMask(0, 0, 0, 0)
+    return _MutableMask(MVector{4, UInt64}(0, 0, 0, 0))
 end
 
 function _MutableMask(mask::_Mask)
-    return _MutableMask(mask.bits[1], mask.bits[2], mask.bits[3], mask.bits[4])
+    return _MutableMask(MVector{4, UInt64}(mask.bits))
 end
 
 function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
-    return mask1.b1 == mask2.bits[1] &&
-           mask1.b2 == mask2.bits[2] &&
-           mask1.b3 == mask2.bits[3] &&
-           mask1.b4 == mask2.bits[4]
+    return mask1.bits[1] == mask2.bits[1] &&
+           mask1.bits[2] == mask2.bits[2] &&
+           mask1.bits[3] == mask2.bits[3] &&
+           mask1.bits[4] == mask2.bits[4]
 end
 
 function _Mask(mask::_MutableMask)
-    return _Mask((mask.b1, mask.b2, mask.b3, mask.b4))
+    return _Mask(Tuple(mask.bits))
 end
 
 @inline function _set_bit!(mask::_MutableMask, i::UInt8)
-    chunk = (i - 1) >>> 6
-    offset = (i - 1) & 0x3F
-    val = UInt64(1) << offset
-    if chunk == 0
-        mask.b1 |= val
-    elseif chunk == 1
-        mask.b2 |= val
-    elseif chunk == 2
-        mask.b3 |= val
-    else
-        mask.b4 |= val
-    end
+    chunk = (i - UInt8(1)) >>> 6
+    offset = (i - UInt8(1)) & 0x3F
+    val = UInt64(1) << (offset%UInt64)
+    mask.bits[chunk+1] |= val
 end
 
 @inline function _clear_bit!(mask::_MutableMask, i::UInt8)
-    chunk = (i - 1) >>> 6
-    offset = (i - 1) & 0x3F
-    val = ~(UInt64(1) << offset)
-    if chunk == 0
-        mask.b1 &= val
-    elseif chunk == 1
-        mask.b2 &= val
-    elseif chunk == 2
-        mask.b3 &= val
-    else
-        mask.b4 &= val
-    end
+    chunk = (i - UInt8(1)) >>> 6
+    offset = (i - UInt8(1)) & 0x3F
+    val = ~(UInt64(1) << (offset%UInt64))
+    mask.bits[chunk+1] &= val
 end
 
 @inline function _get_bit(mask::_MutableMask, i::UInt8)::Bool
-    chunk = (i - 1) >>> 6
-    offset = (i - 1) & 0x3F
-    if chunk == 0
-        return (mask.b1 >> offset) & 0x1 == 1
-    elseif chunk == 1
-        return (mask.b2 >> offset) & 0x1 == 1
-    elseif chunk == 2
-        return (mask.b3 >> offset) & 0x1 == 1
-    else
-        return (mask.b4 >> offset) & 0x1 == 1
-    end
+    chunk = (i - UInt8(1)) >>> 6
+    offset = (i - UInt8(1)) & 0x3F
+    return (mask.bits[chunk+1] >> (offset%UInt64)) & UInt64(1) == 1
 end
