@@ -17,11 +17,19 @@ end
 
 # TODO: this could also be generated
 """
-    Query(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
+    Query(
+        world::World,
+        comp_types::Tuple{Vararg{DataType}};
+        with::Tuple{Vararg{DataType}}=(),
+        without::Tuple{Vararg{DataType}}=(),
+        optional::Tuple{Vararg{DataType}}=(),
+    )
 
 Creates a query.
 
 # Arguments
+- `world::World`: The world to use for this query.
+- `comp_types::Tuple{Vararg{DataType}}`: Components the query filters for and that it provides access to.
 - `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
 - `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
 - `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
