@@ -4,5 +4,6 @@
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
+/statprof/
 
 .vscode
