@@ -1,8 +1,4 @@
 
-println("-----------------------------------------------")
-println("                Map get 5")
-println("-----------------------------------------------")
-
 function setup_map_get_5(n_entities::Int)
     world = World()
     map = Map(world, (Position, Velocity, CompA, CompB, CompC))
@@ -16,20 +12,16 @@ function setup_map_get_5(n_entities::Int)
     return (entities, map)
 end
 
-function benchmark_map_get_5(n)
-    bench = @benchmarkable begin
-        sum = 0.0
-        for e in entities
-            pos, vel, a, b, c = map[e]
-            sum += pos.x + vel.dx + a.x + b.x + c.x
-        end
-    end setup = ((entities, map) = setup_map_get_5($n))
-
-    tune!(bench)
-    result = run(bench, seconds=seconds)
-    print_result(result, n)
+function benchmark_map_get_5(args)
+    entities, map = args
+    sum = 0.0
+    for e in entities
+        pos, vel, a, b, c = map[e]
+        sum += pos.x + vel.dx + a.x + b.x + c.x
+    end
+    return sum
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_map_get_5(n)
+    SUITE["benchmark_map_get_5 n=$n"] = setup_map_get_5($n) setup_map_get_5(_)
 end
