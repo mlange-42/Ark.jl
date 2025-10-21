@@ -39,7 +39,7 @@ function World()
     )
 end
 
-@inline function _component_id!(world::World, ::Type{C}) where C
+@inline function _component_id!(world::World, ::Type{C})::UInt8 where C
     id = _component_id!(world._registry, C)
     if id > length(world._storages)
         push!(world._storages, _ComponentStorage{C}(length(world._archetypes)))
@@ -90,19 +90,28 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return index
 end
 
-function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
+@generated function _resize_each_comp!(world::World, archetype, archetype_index, index, comps::CS) where CS
+    N = length(CS.parameters)
+    expressions = [
+        quote 
+            storage = _get_storage(world, archetype.components[$i], typeof(comps[$i]))
+            vec = storage.data[archetype_index]
+            resize!(vec._data, index)
+        end for i in 1:N
+    ]
+    return quote
+        $(expressions...)
+    end
+end
+
+function _create_entity!(world::World, archetype_index::UInt32, comps)::Tuple{Entity,UInt32}
     _check_locked(world)
 
     entity = _get_entity(world._entity_pool)
     archetype = world._archetypes[archetype_index]
 
     index = _add_entity!(archetype, entity)
-    for comp in archetype.components
-        tp = world._registry.types[comp]
-        storage = _get_storage(world, comp, tp)
-        vec = storage.data[archetype_index]
-        resize!(vec._data, index)
-    end
+    _resize_each_comp!(world, archetype, archetype_index, index, comps)
 
     if entity._id > length(world._entities)
         push!(world._entities, _EntityIndex(archetype_index, index))
@@ -157,7 +166,7 @@ end
 Creates a new [`Entity`](@ref) without any components.
 """
 function new_entity!(world::World)::Entity
-    entity, _ = _create_entity!(world, UInt32(1))
+    entity, _ = _create_entity!(world, UInt32(1), tuple())
     return entity
 end
 
