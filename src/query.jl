@@ -122,6 +122,6 @@ end
 
 @generated function _get_query_archetypes(q::Query{CS}) where {CS<:Tuple}
     N = length(CS.parameters)
-    expressions = [:(q._storage[$i].data[q._index]) for i in 1:N]
+    expressions = [:(q._storage.$i.data[q._index]) for i in 1:N]
     return Expr(:tuple, expressions...)
 end

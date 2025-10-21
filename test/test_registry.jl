@@ -19,4 +19,5 @@ using .TestTypes: Position
 
     # Check repeated registration returns same ID
     @test _component_id!(registry, Int) == id_int
+    @test _get_id!(registry, Int) == id_int
 end

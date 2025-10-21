@@ -126,13 +126,13 @@ end
 
 @generated function _get_mapped_components(map::Map{CS}, index) where {CS<:Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage[$i].data[index.archetype][index.row]) for i in 1:N]
+    expressions = [:(map._storage.$i.data[index.archetype][index.row]) for i in 1:N]
     return Expr(:tuple, expressions...)
 end
 
 @generated function _set_entity_values!(map::Map{CS}, archetype, index, comps) where {CS<:Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage[$i].data[archetype][index] = comps[$i]) for i in 1:N]
+    expressions = [:(map._storage.$i.data[archetype][index] = comps[$i]) for i in 1:N]
     return quote
         $(expressions...)
     end
@@ -141,7 +141,7 @@ end
 @generated function _has_entity_components(map::Map{CS}, index) where {CS<:Tuple}
     N = length(CS.parameters)
     expressions = [:(
-        if map._storage[$i].data[index.archetype] == nothing
+        if map._storage.$i.data[index.archetype] == nothing
             return false
         end
     )
