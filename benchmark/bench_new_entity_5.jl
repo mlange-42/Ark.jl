@@ -1,8 +1,4 @@
 
-println("-----------------------------------------------")
-println("                New entity 5")
-println("-----------------------------------------------")
-
 function setup_new_entity_5(n::Int)
     world = World()
     map = Map(world, (Position, Velocity, CompA, CompB, CompC))
@@ -21,18 +17,13 @@ function setup_new_entity_5(n::Int)
     return map
 end
 
-function benchmark_new_entity_5(n::Int)
-    bench = @benchmarkable begin
-        for _ in 1:$n
-            new_entity!(map, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
-        end
-    end setup = (map = setup_new_entity_5($n))
-
-    tune!(bench)
-    result = run(bench, seconds=seconds)
-    print_result(result, n)
+function benchmark_new_entity_5(args, n)
+    map = args
+    for _ in 1:n
+        new_entity!(map, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
+    end
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_new_entity_5(n)
+    SUITE["benchmark_new_entity_5 n=$n"] = setup_new_entity_5($n) benchmark_new_entity_5(_, $n)
 end

@@ -1,8 +1,4 @@
 
-println("-----------------------------------------------")
-println("                Map get 1")
-println("-----------------------------------------------")
-
 function setup_map_get_1(n_entities::Int)
     world = World()
     map = Map(world, (Position,))
@@ -16,20 +12,16 @@ function setup_map_get_1(n_entities::Int)
     return (entities, map)
 end
 
-function benchmark_map_get_1(n)
-    bench = @benchmarkable begin
-        sum = 0.0
-        for e in entities
-            pos, = map[e]
-            sum += pos.x
-        end
-    end setup = ((entities, map) = setup_map_get_1($n))
-
-    tune!(bench)
-    result = run(bench, seconds=seconds)
-    print_result(result, n)
+function benchmark_map_get_1(args)
+    entities, map = args
+    sum = 0.0
+    for e in entities
+        pos, = map[e]
+        sum += pos.x
+    end
+    return sum
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_map_get_1(n)
+    SUITE["benchmark_map_get_1 n=$n"] = setup_map_get_1($n) setup_map_get_1(_)
 end
