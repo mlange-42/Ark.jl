@@ -6,7 +6,7 @@ println("-----------------------------------------------")
 function setup_world(n_entities::Int)
     world = World()
     map1 = Map(world, (Position,))
-    map2 = Map(world, (Position,Velocity))
+    map2 = Map(world, (Position, Velocity))
 
     entities = Vector{Entity}()
     for i in 1:n_entities
@@ -26,7 +26,7 @@ function benchmark_iteration(n)
     end setup = ((entities, map1, map2) = setup_world($n))
 
     tune!(bench)
-    result = run(bench, seconds=10)
+    result = run(bench, seconds=seconds)
     print_result(result, n)
 end
 

@@ -28,7 +28,7 @@ function benchmark_iteration(n)
     end setup = (query = setup_world($n))
 
     tune!(bench)
-    result = run(bench, seconds=10)
+    result = run(bench, seconds=seconds)
     print_result(result, n)
 end
 

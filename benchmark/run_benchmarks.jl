@@ -1,8 +1,24 @@
 using BenchmarkTools
 using Ark
+using ArgParse
 using Printf
 
-const full_output = !("--short" in ARGS)
+s = ArgParseSettings()
+@add_arg_table s begin
+    "--short"
+    help = "Enable short output"
+    arg_type = Bool
+    action = :store_true
+    "--seconds"
+    help = "another option with an argument"
+    arg_type = Float64
+    default = 1
+end
+
+args = parse_args(ARGS, s)
+
+full_output = !args["short"]
+seconds = args["seconds"]
 
 include("BenchTypes.jl")
 include("bench_query_posvel.jl")
