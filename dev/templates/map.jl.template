@@ -77,7 +77,7 @@ end
     {{#types}}
     {{lower}} = map._storage_{{lower}}.data[index.archetype][index.row]
     {{/types}}
-    return {{values}}
+    return ({{values}})
 end
 
 """
