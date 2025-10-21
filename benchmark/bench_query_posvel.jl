@@ -8,7 +8,7 @@ function setup_world(n_entities::Int)
     map = Map(world, (Position, Velocity))
 
     for i in 1:n_entities
-        new_entity!(map, Position(i, i * 2), Velocity(1, 1))
+        new_entity!(map, (Position(i, i * 2), Velocity(1, 1)))
     end
 
     query = Query(world, (Position, Velocity))
