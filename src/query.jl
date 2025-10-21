@@ -42,11 +42,11 @@ end
     return Expr(:tuple, expressions...)
 end
 
-@inline function get_components(q::Query)::Tuple{Any, Union{Nothing,<:Column}}
+@inline function get_components(q::Query)
     return q[]
 end
 
-@inline function Base.getindex(q::Query)::Tuple{Any, Union{Nothing,<:Column}}
+@inline function Base.getindex(q::Query)
     return get_query_components(q)
 end
 
