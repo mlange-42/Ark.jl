@@ -17,8 +17,8 @@ end
 Creates a component mapper.
 """
 function Map(world::World, comp_types::Tuple{Vararg{DataType}})
-    ids = Tuple(_component_id!(world, C) for C in comp_types)
-    return Map(world, ids, Tuple(_get_storage(world, id, C) for (id, C) in zip(ids, comp_types)))
+    ids = Tuple(_component_id(world, C) for C in comp_types)
+    return Map(world, ids, Tuple(_get_storage(world, C) for C in comp_types))
 end
 
 """

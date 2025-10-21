@@ -4,7 +4,7 @@ println("                Map get 5")
 println("-----------------------------------------------")
 
 function setup_map_get_5(n_entities::Int)
-    world = World()
+    world = World(Position, Velocity, CompA, CompB, CompC)
     map = Map(world, (Position, Velocity, CompA, CompB, CompC))
 
     entities = Vector{Entity}()

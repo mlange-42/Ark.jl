@@ -8,7 +8,7 @@ include("BenchTypes.jl")
 function profile_add_remove()
     n = 10_000
     iter = 100
-    world = World()
+    world = World(Position, Velocity)
     map1 = Map(world, (Position,))
     map2 = Map(world, (Velocity,))
 

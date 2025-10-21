@@ -4,7 +4,7 @@ println("                New entity 5")
 println("-----------------------------------------------")
 
 function setup_new_entity_5(n::Int)
-    world = World()
+    world = World(Position, Velocity, CompA, CompB, CompC)
     map = Map(world, (Position, Velocity, CompA, CompB, CompC))
 
     # Run once to allocate memory

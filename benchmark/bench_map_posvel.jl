@@ -4,7 +4,7 @@ println("                Map Pos/Vel")
 println("-----------------------------------------------")
 
 function setup_map_posvel(n_entities::Int)
-    world = World()
+    world = World(Position, Velocity)
     map1 = Map(world, (Position,))
     map2 = Map(world, (Position, Velocity))
 

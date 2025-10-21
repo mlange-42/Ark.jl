@@ -1,10 +1,10 @@
 
 @testset "Query basic functionality" begin
-    world = World()
+    world = World(Position, Velocity, Altitude, Health)
 
-    m1 = Map(world, (Altitude,Health))
-    m2 = Map(world, (Position,Velocity))
-    m3 = Map(world, (Position,Health))
+    m1 = Map(world, (Altitude, Health))
+    m2 = Map(world, (Position, Velocity))
+    m3 = Map(world, (Position, Health))
 
     for i in 1:10
         new_entity!(m1, (Altitude(1), Health(2)))
@@ -12,7 +12,7 @@
         new_entity!(m3, (Position(i, i * 2), Health(3)))
     end
 
-    query = Query(world, (Position,Velocity))
+    query = Query(world, (Position, Velocity))
     for i in 1:10
         count = 0
         for _ in query
@@ -34,17 +34,17 @@
 end
 
 @testset "Query with" begin
-    world = World()
+    world = World(Position, Velocity, Altitude)
 
-    m1 = Map(world, (Position,Velocity))
-    m2 = Map(world, (Position,Velocity,Altitude))
+    m1 = Map(world, (Position, Velocity))
+    m2 = Map(world, (Position, Velocity, Altitude))
 
     for i in 1:10
         new_entity!(m1, (Position(i, i * 2), Velocity(1, 1)))
         new_entity!(m2, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position,Velocity); with=(Altitude,))
+    query = Query(world, (Position, Velocity); with=(Altitude,))
 
     count = 0
     for a in query
@@ -61,17 +61,17 @@ end
 end
 
 @testset "Query without" begin
-    world = World()
+    world = World(Position, Velocity, Altitude)
 
-    m1 = Map(world, (Position,Velocity))
-    m2 = Map(world, (Position,Velocity,Altitude))
+    m1 = Map(world, (Position, Velocity))
+    m2 = Map(world, (Position, Velocity, Altitude))
 
     for i in 1:10
         new_entity!(m1, (Position(i, i * 2), Velocity(1, 1)))
         new_entity!(m2, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position,Velocity); without=(Altitude,))
+    query = Query(world, (Position, Velocity); without=(Altitude,))
 
     count = 0
     for a in query
@@ -88,17 +88,17 @@ end
 end
 
 @testset "Query optional" begin
-    world = World()
+    world = World(Position, Velocity, Altitude)
 
-    m1 = Map(world, (Position,Velocity))
-    m2 = Map(world, (Position,Velocity,Altitude))
+    m1 = Map(world, (Position, Velocity))
+    m2 = Map(world, (Position, Velocity, Altitude))
 
     for i in 1:10
         new_entity!(m1, (Position(i, i * 2), Velocity(1, 1)))
         new_entity!(m2, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position,Velocity,Altitude); optional=(Altitude,))
+    query = Query(world, (Position, Velocity, Altitude); optional=(Altitude,))
 
     count = 0
     indices = Vector{Int}()

@@ -53,8 +53,8 @@ struct Velocity
     dy::Float64
 end
 
-# Create a world
-world = World()
+# Create a world with the required components
+world = World(Position, Velocity)
 
 # Create a component mapper
 map = Map(world, (Position,Velocity))

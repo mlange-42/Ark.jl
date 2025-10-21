@@ -4,8 +4,8 @@ using Test
 using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Map new/get/set/has" begin
-    world = World()
-    m = Map(world, (Position,Velocity))
+    world = World(Position, Velocity)
+    m = Map(world, (Position, Velocity))
 
     entity = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(2, 0)
@@ -28,7 +28,7 @@ using .TestTypes: Position, Velocity, Altitude, Health
 end
 
 @testset "Map add/remove" begin
-    world = World()
+    world = World(Position, Velocity, Altitude, Health)
     m1 = Map(world, (Position, Velocity))
     m2 = Map(world, (Altitude, Health))
 

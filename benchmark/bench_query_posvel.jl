@@ -4,7 +4,7 @@ println("              Query Pos/Vel")
 println("-----------------------------------------------")
 
 function setup_query_posvel(n_entities::Int)
-    world = World()
+    world = World(Position, Velocity)
     map = Map(world, (Position, Velocity))
 
     for i in 1:n_entities

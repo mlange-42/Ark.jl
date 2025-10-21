@@ -3,9 +3,9 @@ using Test
 
 @testset "_EntityPool constructor" begin
     initialCap = UInt32(10)
-    pool = Ark._EntityPool(initialCap)
+    pool = _EntityPool(initialCap)
 
-    @test isa(pool, Ark._EntityPool)
+    @test isa(pool, _EntityPool)
     @test length(pool.entities) == 1
     @test all(e -> e._gen == typemax(UInt32), pool.entities)
     @test pool.next == 0

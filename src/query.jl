@@ -41,12 +41,12 @@ function Query(
     without::Tuple{Vararg{DataType}}=(),
     optional::Tuple{Vararg{DataType}}=(),
 )
-    ids = Tuple(_component_id!(world, C) for C in comp_types)
-    with_ids = map(x -> _component_id!(world, x), with)
-    without_ids = map(x -> _component_id!(world, x), without)
+    ids = Tuple(_component_id(world, C) for C in comp_types)
+    with_ids = map(x -> _component_id(world, x), with)
+    without_ids = map(x -> _component_id(world, x), without)
     mask = _Mask(ids..., with_ids...)
     if length(optional) > 0
-        opt_ids = map(x -> _component_id!(world, x), optional)
+        opt_ids = map(x -> _component_id(world, x), optional)
         mask = _clear_bits(mask, _Mask(opt_ids...))
     end
     return Query(
@@ -56,7 +56,7 @@ function Query(
         mask,
         _Mask(without_ids...),
         length(without_ids) > 0,
-        Tuple(_get_storage(world, id, C) for (id, C) in zip(ids, comp_types)),
+        Tuple(_get_storage(world, C) for C in comp_types),
         UInt8(0),
     )
 end

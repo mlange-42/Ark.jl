@@ -4,7 +4,6 @@ using Revise
 
 include("TestTypes.jl")
 
-include("test_world_gen.jl")
 include("test_entity.jl")
 include("test_pool.jl")
 include("test_lock.jl")

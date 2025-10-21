@@ -13,11 +13,10 @@ include("registry.jl")
 include("pool.jl")
 include("lock.jl")
 include("world.jl")
-include("world_gen.jl")
 include("map.jl")
 include("query.jl")
 
-export World, WorldGen
+export World
 export is_alive, new_entity!, remove_entity!, zero_entity, is_locked
 export _find_or_create_archetype!, _create_entity!, _move_entity!, _get_storage, _get_storage_by_id, _component_id
 
