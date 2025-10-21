@@ -96,6 +96,7 @@ end
 
 mutable struct _MutableMask
     # TODO: can we use something more efficient here that does not use if/else?
+    # already tried but slower: NTuple{4, UInt64}, StaticArrays.MVector{4, UInt64} 
     b1::UInt64
     b2::UInt64
     b3::UInt64
