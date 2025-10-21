@@ -29,7 +29,7 @@ Creates a new [`Entity`](@ref) with `length(comps)` components.
 function new_entity!(map::Map, comps::Tuple)
     archetype =
         _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
-    entity, index = _create_entity!(map._world, archetype)
+    entity, index = _create_entity!(map._world, archetype, comps)
     _set_entity_values!(map, archetype, index, comps)
     return entity
 end
