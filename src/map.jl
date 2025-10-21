@@ -10,15 +10,29 @@ struct Map{CS<:Tuple,N}
     _storage::CS
 end
 
-# TODO: this could also be generated
 """
     Map(world::World, comp_types::Tuple{Vararg{DataType}}
 
 Creates a component mapper.
 """
-function Map(world::World, comp_types::Tuple{Vararg{DataType}})
-    ids = Tuple(_component_id(world, C) for C in comp_types)
-    return Map(world, ids, Tuple(_get_storage(world, C) for C in comp_types))
+Map(world::World, comp_types::Type...) = _Map_from_types(world, Val{Tuple{comp_types...}}())
+
+Map(world::World, comp_types::Tuple) = Map(world, comp_types...)
+
+@generated function _Map_from_types(world::World, ::Val{CS}) where {CS<:Tuple}
+    types = CS.parameters
+
+    # id tuple value: (_component_id(world, T1), _component_id(world, T2), ...)
+    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    ids_tuple = Expr(:tuple, id_exprs...)
+
+    # storage tuple value: (_get_storage(world, T1), _get_storage(world, T2), ...)
+    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in types]
+    storages_tuple = Expr(:tuple, storage_exprs...)
+
+    return quote
+        Map(world, $ids_tuple, $storages_tuple)
+    end
 end
 
 """
@@ -80,8 +94,7 @@ end
         error("can't set components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    archetype, row = index.archetype, index.row
-    @inline _set_entity_values!(map, archetype, row, value)
+    @inline _set_entity_values!(map, index.archetype, index.row, value)
 end
 
 """
@@ -124,21 +137,24 @@ function remove_components!(map::Map, entity::Entity)
     _move_entity!(map._world, entity, archetype)
 end
 
-@generated function _get_mapped_components(map::Map{CS}, index) where {CS<:Tuple}
+@generated function _get_mapped_components(map::Map{CS}, index::_EntityIndex) where {CS<:Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage.$i.data[index.archetype][index.row]) for i in 1:N]
-    return Expr(:tuple, expressions...)
+    exprs = Expr[]
+    for i in 1:N
+        push!(exprs, :((map._storage).$i.data[Int(index.archetype)][index.row]))
+    end
+    return Expr(:tuple, exprs...)
 end
 
-@generated function _set_entity_values!(map::Map{CS}, archetype, index, comps) where {CS<:Tuple}
+@generated function _set_entity_values!(map::Map{CS}, archetype::UInt32, row::UInt32, comps) where {CS<:Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage.$i.data[archetype][index] = comps[$i]) for i in 1:N]
+    expressions = [:(map._storage.$i.data[Int(archetype)][Int(row)] = comps[$i]) for i in 1:N]
     return quote
         $(expressions...)
     end
 end
 
-@generated function _has_entity_components(map::Map{CS}, index) where {CS<:Tuple}
+@generated function _has_entity_components(map::Map{CS}, index::_EntityIndex) where {CS<:Tuple}
     N = length(CS.parameters)
     expressions = [:(
         if map._storage.$i.data[index.archetype] == nothing
