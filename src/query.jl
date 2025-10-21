@@ -62,7 +62,7 @@ Returns the component columns of the archetype at the current cursor position.
 end
 
 @inline function Base.getindex(q::Query)
-    return get_query_components(q)
+    return _get_query_archetypes(q)
 end
 
 @inline function Base.iterate(q::Query, state::Tuple{Int,Int})
@@ -111,7 +111,7 @@ function entities(q::Query)::Column{Entity}
     return q._world._archetypes[q._index].entities
 end
 
-@generated function get_query_components(q::Query{CS}) where {CS <: Tuple}
+@generated function _get_query_archetypes(q::Query{CS}) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(q._storage[$i].data[q._index]) for i in 1:N]
     return Expr(:tuple, expressions...)

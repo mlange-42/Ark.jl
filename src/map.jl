@@ -30,7 +30,7 @@ function new_entity!(map::Map, comps::Tuple)
     archetype =
         _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
-    set_entity_components!(map, archetype, index, comps)
+    _set_entity_values!(map, archetype, index, comps)
     return entity
 end
 
@@ -57,7 +57,7 @@ end
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
     index = map._world._entities[entity._id]
-    return get_mapped_components(map, index)
+    return _get_mapped_components(map, index)
 end
 
 """
@@ -80,7 +80,7 @@ end
         error("can't set components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    set_mapped_components!(map, index, value)
+    _set_mapped_components!(map, index, value)
 end
 
 """
@@ -93,7 +93,7 @@ function has_components(map::Map, entity::Entity)
         error("can't check components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    return has_entity_components(map, index)
+    return _has_entity_components(map, index)
 end
 
 """
@@ -107,7 +107,7 @@ function add_components!(map::Map, entity::Entity, value)
     end
     archetype = _find_or_create_archetype!(map._world, entity, map._ids, ())
     row = _move_entity!(map._world, entity, archetype)
-    set_entity_components!(map, archetype, row, value)
+    _set_entity_values!(map, archetype, row, value)
 end
 
 """
@@ -123,25 +123,25 @@ function remove_components!(map::Map, entity::Entity)
     _move_entity!(map._world, entity, archetype)
 end
 
-@generated function get_mapped_components(map::Map{CS}, index) where {CS <: Tuple}
+@generated function _get_mapped_components(map::Map{CS}, index) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[index.archetype][index.row]) for i in 1:N]
     return Expr(:tuple, expressions...)
 end
 
-@generated function set_mapped_components!(map::Map{CS}, index, comps) where {CS <: Tuple}
+@generated function _set_mapped_components!(map::Map{CS}, index, comps) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[index.archetype][index.row] = comps[$i]) for i in 1:N]
     return quote $(expressions...) end
 end
 
-@generated function set_entity_components!(map::Map{CS}, archetype, index, comps) where {CS <: Tuple}
+@generated function _set_entity_values!(map::Map{CS}, archetype, index, comps) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[archetype][index] = comps[$i]) for i in 1:N]
     return quote $(expressions...) end
 end
 
-@generated function has_entity_components(map::Map{CS}, index) where {CS <: Tuple}
+@generated function _has_entity_components(map::Map{CS}, index) where {CS <: Tuple}
     N = length(CS.parameters)
     expressions = [:(if map._storage[$i].data[index.archetype] == nothing return false end) 
                    for i in 1:N]
