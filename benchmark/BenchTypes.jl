@@ -26,9 +26,9 @@ end
 
 function print_result(result, entities)
     if full_output
-        @printf "\nEntities: %7d, mean: %7.4f\n" entities (time(mean(result)) / entities)
+        @printf "\nEntities: %7d, per entity: %7.4fns ± %7.4fns\n" entities (time(mean(result)) / entities) (time(std(result)) / entities)
         display(result)
     else
-        @printf "Entities: %7d, mean: %7.4f\n" entities (time(mean(result)) / entities)
+        @printf "Entities: %7d, per entity: %7.4fns ± %7.4fns\n" entities (time(mean(result)) / entities) (time(std(result)) / entities)
     end
 end
