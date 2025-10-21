@@ -3,7 +3,7 @@ println("-----------------------------------------------")
 println("              Query Pos/Vel")
 println("-----------------------------------------------")
 
-function setup_world(n_entities::Int)
+function setup_query_posvel(n_entities::Int)
     world = World()
     map = Map(world, (Position, Velocity))
 
@@ -15,7 +15,7 @@ function setup_world(n_entities::Int)
     return query
 end
 
-function benchmark_iteration(n)
+function benchmark_query_posvel(n)
     bench = @benchmarkable begin
         for _ in query
             pos_column, vel_column = query[]
@@ -25,7 +25,7 @@ function benchmark_iteration(n)
                 @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
             end
         end
-    end setup = (query = setup_world($n))
+    end setup = (query = setup_query_posvel($n))
 
     tune!(bench)
     result = run(bench, seconds=seconds)
@@ -33,5 +33,5 @@ function benchmark_iteration(n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_iteration(n)
+    benchmark_query_posvel(n)
 end
