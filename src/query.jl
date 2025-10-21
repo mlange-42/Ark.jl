@@ -1,4 +1,9 @@
 
+"""
+    Query{CS,N}
+
+A query for N components.
+"""
 mutable struct Query{CS<:Tuple, N}
     _index::Int
     _world::World
@@ -10,6 +15,17 @@ mutable struct Query{CS<:Tuple, N}
     _lock::UInt8
 end
 
+# TODO: this could also be generated
+"""
+    Query(world::World; with::Tuple{Vararg{DataType}}=(), without::Tuple{Vararg{DataType}}=())
+
+Creates a query.
+
+# Arguments
+- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
+- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
+- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
+"""
 function Query(
     world::World, CompsTypes::Tuple;
     with::Tuple{Vararg{DataType}} = (),
@@ -36,12 +52,11 @@ function Query(
     )
 end
 
-@generated function get_query_components(q::Query{CS}) where {CS <: Tuple}
-    N = length(CS.parameters)
-    expressions = [:(q._storage[$i].data[q._index]) for i in 1:N]
-    return Expr(:tuple, expressions...)
-end
+"""
+    get_components(q::Query)
 
+Returns the component columns of the archetype at the current cursor position.
+"""
 @inline function get_components(q::Query)
     return q[]
 end
@@ -75,11 +90,29 @@ end
     return Base.iterate(q, (1, 1))
 end
 
+"""
+    close(q::Query)
+
+Closes the query and unlocks the world.
+
+Must be called if a query is not fully iterated.
+"""
 function close(q::Query)
     q._index = 0
     _unlock(q._world._lock, q._lock)
 end
 
+"""
+    entities(q::Query)
+
+Returns the entities of the current archetype.
+"""
 function entities(q::Query)::Column{Entity}
     return q._world._archetypes[q._index].entities
+end
+
+@generated function get_query_components(q::Query{CS}) where {CS <: Tuple}
+    N = length(CS.parameters)
+    expressions = [:(q._storage[$i].data[q._index]) for i in 1:N]
+    return Expr(:tuple, expressions...)
 end
