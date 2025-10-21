@@ -1,6 +1,7 @@
 
-mutable struct WorldGen{CS<:Tuple,N}
+mutable struct WorldGen{CS<:Tuple,CT<:Tuple,N}
     _entities::Vector{_EntityIndex}
+    _components::CT
     _storages::CS
     _archetypes::Vector{_Archetype}
     _registry::_ComponentRegistry
@@ -11,6 +12,12 @@ end
 
 @generated function _worldgen_from_types(::Val{CS}) where {CS<:Tuple}
     types = CS.parameters  # e.g., (Position, Velocity)
+
+    component_types = map(T -> :(Type{$(QuoteNode(T))}), types)
+    component_tuple_type = :(Tuple{$(component_types...)})
+
+    component_exprs = map(QuoteNode, types)
+    component_tuple = :($component_tuple_type($(component_exprs...)))
 
     # Generate storage types: Tuple{_ComponentStorage{Position}, _ComponentStorage{Velocity}}
     storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
@@ -28,8 +35,9 @@ end
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph()
-        WorldGen{$storage_tuple_type,$(length(types))}(
+        WorldGen{$storage_tuple_type,$component_tuple_type,$(length(types))}(
             [_EntityIndex(typemax(UInt32), 0)],
+            $component_tuple,
             $storage_tuple,
             [_Archetype(graph.nodes[1])],
             registry,
@@ -77,3 +85,48 @@ end
     T = S.parameters[1]
     return :(world._storages[$id]::_ComponentStorage{$(QuoteNode(T))})
 end
+
+"""
+function _find_or_create_archetype!(world::WorldGen, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+    index = world._entities[entity._id]
+    return _find_or_create_archetype!(world, world._archetypes[index.archetype].node, add, remove)
+end
+
+function _find_or_create_archetype!(world::WorldGen, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+    node = _find_node(world._graph, start, add, remove)
+
+    archetype = (node.archetype == typemax(UInt32)) ?
+                _create_archetype!(world, node) :
+                node.archetype
+
+    return archetype
+end
+
+function _create_archetype!(world::WorldGen, node::_GraphNode)::UInt32
+    components = _active_bit_indices(node.mask)
+    arch = _Archetype(node, components...)
+    push!(world._archetypes, arch)
+    node.archetype = length(world._archetypes)
+
+    index = length(world._archetypes)
+
+    # Get component types from the World type parameter
+    storage_types = typeof(world).parameters[1].parameters  # Tuple{_ComponentStorage{T}...}
+    component_types = map(t -> t.parameters[1], storage_types)
+
+    # Initialize all storages with `nothing`
+    for T in component_types
+        storage = _get_storage(world, T)
+        push!(storage.data, nothing)
+    end
+
+    # Fill in actual columns for active components
+    for comp in components
+        T = component_types[comp]
+        storage = _get_storage(world, T)
+        storage.data[index] = _new_column(T)
+    end
+
+    return index
+end
+"""
