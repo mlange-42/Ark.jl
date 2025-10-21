@@ -80,7 +80,8 @@ end
         error("can't set components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    _set_mapped_components!(map, index, value)
+    archetype, row = index.archetype, index.row
+    _set_entity_values!(map, archetype, row, value)
 end
 
 """
@@ -127,12 +128,6 @@ end
     N = length(CS.parameters)
     expressions = [:(map._storage[$i].data[index.archetype][index.row]) for i in 1:N]
     return Expr(:tuple, expressions...)
-end
-
-@generated function _set_mapped_components!(map::Map{CS}, index, comps) where {CS <: Tuple}
-    N = length(CS.parameters)
-    expressions = [:(map._storage[$i].data[index.archetype][index.row] = comps[$i]) for i in 1:N]
-    return quote $(expressions...) end
 end
 
 @generated function _set_entity_values!(map::Map{CS}, archetype, index, comps) where {CS <: Tuple}
