@@ -123,7 +123,7 @@ function _create_entity!(world::WorldGen, archetype_index::UInt32)::Tuple{Entity
     index = _add_entity!(archetype, entity)
 
     for comp::UInt8 in archetype.components
-        _resize_column_for_comp!(world, comp, archetype_index, index)
+        _ensure_column_size_for_comp!(world, comp, archetype_index, index)
     end
 
     if entity._id > length(world._entities)
@@ -132,6 +132,39 @@ function _create_entity!(world::WorldGen, archetype_index::UInt32)::Tuple{Entity
         world._entities[entity._id] = _EntityIndex(archetype_index, index)
     end
     return entity, index
+end
+
+function _move_entity!(world::WorldGen, entity::Entity, archetype_index::UInt32)::UInt32
+    _check_locked(world)
+
+    index = world._entities[entity._id]
+    old_archetype = world._archetypes[index.archetype]
+    new_archetype = world._archetypes[archetype_index]
+
+    new_row = _add_entity!(new_archetype, entity)
+    swapped = _swap_remove!(old_archetype.entities._data, index.row)
+
+    # Move component data only for components present in old_archetype that are also present in new_archetype
+    for comp in old_archetype.components
+        if !_get_bit(new_archetype.mask, comp)
+            continue
+        end
+        # comp casting to match generated helper signature
+        _move_component_data!(world, UInt8(comp), UInt32(index.archetype), archetype_index, index.row)
+    end
+
+    # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
+    for comp in new_archetype.components
+        _ensure_column_size_for_comp!(world, UInt8(comp), archetype_index, new_row)
+    end
+
+    if swapped
+        swap_entity = old_archetype.entities[index.row]
+        world._entities[swap_entity._id] = index
+    end
+
+    world._entities[entity._id] = _EntityIndex(archetype_index, new_row)
+    return new_row
 end
 
 function _check_locked(world::WorldGen)
@@ -187,7 +220,7 @@ end
     return expr
 end
 
-@generated function _resize_column_for_comp!(world::WorldGen{CS,CT,N}, comp::UInt8, archetype_index::UInt32, index::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _ensure_column_size_for_comp!(world::WorldGen{CS,CT,N}, comp::UInt8, slot::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     if n == 0
         return :(nothing)
@@ -195,8 +228,51 @@ end
 
     expr = nothing
     for i in n:-1:1
-        # build statement that resizes the inner _data buffer for storage field i at slot archetype_index
-        stmt = :(resize!(((world._storages).$i).data[Int(archetype_index)]._data, index))
+        stmt = :(
+            begin
+                col = ((world._storages).$i).data[Int(slot)]
+                if length(col) < needed
+                    resize!(col._data, needed)
+                end
+            end
+        )
+        if expr === nothing
+            expr = :(
+                if comp == $i
+                    $stmt
+                end
+            )
+        else
+            expr = :(
+                if comp == $i
+                    $stmt
+                else
+                    $expr
+                end
+            )
+        end
+    end
+    return expr
+end
+
+@generated function _move_component_data!(world::WorldGen{CS,CT,N}, comp::UInt8, old_slot::UInt32, new_slot::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    if n == 0
+        return :(nothing)
+    end
+
+    expr = nothing
+    for i in n:-1:1
+        # build statement using concrete storage field $i
+        # Note: do not interpolate runtime names old_slot/new_slot/row; leave them as runtime vars
+        stmt = quote
+            begin
+                old_vec = ((world._storages).$i).data[Int(old_slot)]
+                new_vec = ((world._storages).$i).data[Int(new_slot)]
+                push!(new_vec._data, old_vec[row])
+                _swap_remove!(old_vec._data, row)
+            end
+        end
         if expr === nothing
             expr = :(
                 if comp == $i
