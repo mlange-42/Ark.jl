@@ -11,13 +11,18 @@ struct Map{CS<:Tuple,N}
 end
 
 """
-    Map(world::World, comp_types::Tuple{Vararg{DataType}}
+    Map(world::World, comp_types::Tuple)
 
-Creates a component mapper.
+Creates a component mapper from a tuple of component types.
+"""
+Map(world::World, comp_types::Tuple) = Map(world, comp_types...)
+
+"""
+    Map(world::World, comp_types::Type...)
+
+Creates a component mapper from component types varargs.
 """
 Map(world::World, comp_types::Type...) = _Map_from_types(world, Val{Tuple{comp_types...}}())
-
-Map(world::World, comp_types::Tuple) = Map(world, comp_types...)
 
 @generated function _Map_from_types(world::World, ::Val{CS}) where {CS<:Tuple}
     types = CS.parameters
@@ -141,7 +146,7 @@ end
     N = length(CS.parameters)
     exprs = Expr[]
     for i in 1:N
-        push!(exprs, :((map._storage).$i.data[Int(index.archetype)][index.row]))
+        push!(exprs, :((map._storage).$i.data[Int(index.archetype)][Int(index.row)]))
     end
     return Expr(:tuple, exprs...)
 end

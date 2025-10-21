@@ -25,6 +25,7 @@ export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
 export Map
 export new_entity!, get_components, set_components!, has_components, add_components!, remove_components!
+export _get_mapped_components
 
 export Query
 export entities, close
