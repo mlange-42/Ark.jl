@@ -36,7 +36,7 @@ export _Archetype
 export _add_entity!
 
 export _ComponentRegistry
-export _component_id!
+export _component_id!, _get_id!
 
 export _Mask
 export _get_bit, _contains_all, _contains_any, _and, _or, _clear_bits, _active_bit_indices
