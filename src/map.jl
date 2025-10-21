@@ -81,7 +81,7 @@ end
     end
     index = map._world._entities[entity._id]
     archetype, row = index.archetype, index.row
-    _set_entity_values!(map, archetype, row, value)
+    @inline _set_entity_values!(map, archetype, row, value)
 end
 
 """
