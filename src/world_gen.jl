@@ -42,10 +42,6 @@ end
 
 WorldGen(types::Type...) = _worldgen_from_types(Val{Tuple{types...}}())
 
-#@inline function _component_id!(world::WorldGen, ::Type{C})::UInt8 where C
-#return _get_id!(world._registry, C)
-#end
-
 @generated function _component_id(world::WorldGen{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
@@ -54,4 +50,30 @@ WorldGen(types::Type...) = _worldgen_from_types(Val{Tuple{types...}}())
         end
     end
     return :(error("Component type $(string(C)) not found in the World"))
+end
+
+@generated function _get_storage(world::WorldGen{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return :(world._storages[$i])
+        end
+    end
+    return :(error("Component type $(string(C)) not found in the World"))
+end
+
+@generated function _get_storage(world::WorldGen{CS}, ::Val{C})::_ComponentStorage{C} where {CS<:Tuple,C}
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return :(world._storages[$i])
+        end
+    end
+    return :(error("Component type $(string(C)) not found in the World"))
+end
+
+@generated function _get_storage_by_id(world::WorldGen{CS}, ::Val{id}) where {CS<:Tuple,id}
+    S = CS.parameters[id]
+    T = S.parameters[1]
+    return :(world._storages[$id]::_ComponentStorage{$(QuoteNode(T))})
 end
