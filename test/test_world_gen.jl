@@ -24,4 +24,6 @@ end
 
     arch3 = _find_or_create_archetype!(world, world._graph.nodes[1], (UInt8(1),), ())
     @test arch3 == arch1
+
+    _create_entity!(world, arch1)
 end

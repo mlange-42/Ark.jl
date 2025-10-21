@@ -114,6 +114,32 @@ function _create_archetype!(world::WorldGen, node::_GraphNode)::UInt32
     return index
 end
 
+function _create_entity!(world::WorldGen, archetype_index::UInt32)::Tuple{Entity,UInt32}
+    _check_locked(world)
+
+    entity = _get_entity(world._entity_pool)
+    archetype = world._archetypes[archetype_index]
+
+    index = _add_entity!(archetype, entity)
+
+    for comp::UInt8 in archetype.components
+        _resize_column_for_comp!(world, comp, archetype_index, index)
+    end
+
+    if entity._id > length(world._entities)
+        push!(world._entities, _EntityIndex(archetype_index, index))
+    else
+        world._entities[entity._id] = _EntityIndex(archetype_index, index)
+    end
+    return entity, index
+end
+
+function _check_locked(world::WorldGen)
+    if _is_locked(world._lock)
+        error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
+    end
+end
+
 @generated function _push_nothing_to_all!(world::WorldGen{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     if n == 0
@@ -152,6 +178,35 @@ end
             expr = :(
                 if comp == $i
                     $assign
+                else
+                    $expr
+                end
+            )
+        end
+    end
+    return expr
+end
+
+@generated function _resize_column_for_comp!(world::WorldGen{CS,CT,N}, comp::UInt8, archetype_index::UInt32, index::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    if n == 0
+        return :(nothing)
+    end
+
+    expr = nothing
+    for i in n:-1:1
+        # build statement that resizes the inner _data buffer for storage field i at slot archetype_index
+        stmt = :(resize!(((world._storages).$i).data[Int(archetype_index)]._data, index))
+        if expr === nothing
+            expr = :(
+                if comp == $i
+                    $stmt
+                end
+            )
+        else
+            expr = :(
+                if comp == $i
+                    $stmt
                 else
                     $expr
                 end
