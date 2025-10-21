@@ -27,4 +27,5 @@ end
 
     entity, _ = _create_entity!(world, arch1)
     _move_entity!(world, entity, arch2)
+    remove_entity!(world, entity)
 end

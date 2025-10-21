@@ -145,17 +145,17 @@ function _move_entity!(world::WorldGen, entity::Entity, archetype_index::UInt32)
     swapped = _swap_remove!(old_archetype.entities._data, index.row)
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
-    for comp in old_archetype.components
+    for comp::UInt8 in old_archetype.components
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
         # comp casting to match generated helper signature
-        _move_component_data!(world, UInt8(comp), UInt32(index.archetype), archetype_index, index.row)
+        _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
-    for comp in new_archetype.components
-        _ensure_column_size_for_comp!(world, UInt8(comp), archetype_index, new_row)
+    for comp::UInt8 in new_archetype.components
+        _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
     end
 
     if swapped
@@ -167,10 +167,68 @@ function _move_entity!(world::WorldGen, entity::Entity, archetype_index::UInt32)
     return new_row
 end
 
+"""
+    new_entity!(world::World)::Entity
+
+Creates a new [`Entity`](@ref) without any components.
+"""
+function new_entity!(world::WorldGen)::Entity
+    entity, _ = _create_entity!(world, UInt32(1))
+    return entity
+end
+
+"""
+    remove_entity!(world::World, entity::Entity)
+
+Removes an [`Entity`](@ref) from the [`World`](@ref).
+"""
+function remove_entity!(world::WorldGen, entity::Entity)
+    if !is_alive(world, entity)
+        error("can't remove a dead entity")
+    end
+    _check_locked(world)
+
+    index = world._entities[entity._id]
+    archetype = world._archetypes[index.archetype]
+
+    swapped = _swap_remove!(archetype.entities._data, index.row)
+
+    # Only operate on storages for components present in this archetype
+    for comp::UInt8 in archetype.components
+        # ensure comp has the integer kind expected by the generated helper
+        _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
+    end
+
+    if swapped
+        swap_entity = archetype.entities[index.row]
+        world._entities[swap_entity._id] = index
+    end
+
+    _recycle(world._entity_pool, entity)
+end
+
+"""
+    is_alive(world::World, entity::Entity)::Bool
+
+Returns whether an [`Entity`](@ref) is alive.
+"""
+function is_alive(world::WorldGen, entity::Entity)::Bool
+    return _is_alive(world._entity_pool, entity)
+end
+
 function _check_locked(world::WorldGen)
     if _is_locked(world._lock)
         error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
     end
+end
+
+"""
+    is_locked(world::World)::Bool
+
+Returns whether the world is currently locked for modifications.
+"""
+function is_locked(world::WorldGen)::Bool
+    return _is_locked(world._lock)
 end
 
 @generated function _push_nothing_to_all!(world::WorldGen{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
@@ -273,6 +331,39 @@ end
                 _swap_remove!(old_vec._data, row)
             end
         end
+        if expr === nothing
+            expr = :(
+                if comp == $i
+                    $stmt
+                end
+            )
+        else
+            expr = :(
+                if comp == $i
+                    $stmt
+                else
+                    $expr
+                end
+            )
+        end
+    end
+    return expr
+end
+
+@generated function _swap_remove_in_column_for_comp!(world::WorldGen{CS,CT,N}, comp::UInt8, slot::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    if n == 0
+        return :(nothing)
+    end
+
+    expr = nothing
+    for i in n:-1:1
+        stmt = :(
+            begin
+                col = ((world._storages).$i).data[Int(slot)]
+                _swap_remove!(col._data, row)
+            end
+        )
         if expr === nothing
             expr = :(
                 if comp == $i
