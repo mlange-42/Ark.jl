@@ -7,7 +7,6 @@ s = ArgParseSettings()
 @add_arg_table s begin
     "--short"
     help = "Enable short output"
-    arg_type = Bool
     action = :store_true
     "--seconds"
     help = "another option with an argument"
