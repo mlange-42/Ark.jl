@@ -12,8 +12,6 @@ include("pool.jl")
 include("lock.jl")
 include("world.jl")
 include("map.jl")
-include("map_gen.jl")
-include("query_gen.jl")
 include("query.jl")
 
 export World
