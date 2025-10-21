@@ -5,13 +5,13 @@ println("-----------------------------------------------")
 
 function setup_world(n_entities::Int)
     world = World()
-    map = Map2{Position,Velocity}(world)
+    map = Map(world, (Position, Velocity))
 
     for i in 1:n_entities
         new_entity!(map, Position(i, i * 2), Velocity(1, 1))
     end
 
-    query = Query2{Position,Velocity}(world)
+    query = Query(world, (Position, Velocity))
     return query
 end
 
