@@ -1,6 +1,6 @@
 
 println("-----------------------------------------------")
-println("                Map get")
+println("                Map get 1")
 println("-----------------------------------------------")
 
 function setup_world(n_entities::Int)
@@ -25,11 +25,9 @@ function benchmark_iteration(n)
         end
     end setup = ((entities, map) = setup_world($n))
 
-    println("\nBenchmarking with $n entities...")
     tune!(bench)
     result = run(bench, seconds=10)
-    println("Mean time per entity: $(time(mean(result)) / n) ns")
-    display(result)
+    print_result(result, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)

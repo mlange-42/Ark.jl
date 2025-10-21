@@ -27,4 +27,4 @@ jobs:
     - name: Run benchmarks
       run: |
         cd benchmark
-        julia --project=. run_benchmarks.jl
+        julia --project=. run_benchmarks.jl --short

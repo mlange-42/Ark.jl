@@ -1,29 +1,29 @@
 
 println("-----------------------------------------------")
-println("                Map Pos/Vel")
+println("                Map get 5")
 println("-----------------------------------------------")
 
 function setup_world(n_entities::Int)
     world = World()
-    map1 = Map(world, (Position,))
-    map2 = Map(world, (Position,Velocity))
+    map = Map(world, (Position, Velocity, CompA, CompB, CompC))
 
     entities = Vector{Entity}()
     for i in 1:n_entities
-        e = new_entity!(map2, (Position(i, i * 2), Velocity(1, 1)))
+        e = new_entity!(map, (Position(i, i * 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
         push!(entities, e)
     end
 
-    return (entities, map1, map2)
+    return (entities, map)
 end
 
 function benchmark_iteration(n)
     bench = @benchmarkable begin
+        sum = 0.0
         for e in entities
-            pos, vel = map2[e]
-            map1[e] = (Position(pos.x + vel.dx, pos.y + vel.dy),)
+            pos, vel, a, b, c = map[e]
+            sum += pos.x + vel.dx + a.x + b.x + c.x
         end
-    end setup = ((entities, map1, map2) = setup_world($n))
+    end setup = ((entities, map) = setup_world($n))
 
     tune!(bench)
     result = run(bench, seconds=10)
