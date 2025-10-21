@@ -5,12 +5,12 @@ println("-----------------------------------------------")
 
 function setup_world(n_entities::Int)
     world = World()
-    map1 = Map1{Position}(world)
-    map2 = Map2{Position,Velocity}(world)
+    map1 = Map(world, (Position,))
+    map2 = Map(world, (Position,Velocity))
 
     entities = Vector{Entity}()
     for i in 1:n_entities
-        e = new_entity!(map2, Position(i, i * 2), Velocity(1, 1))
+        e = new_entity!(map2, (Position(i, i * 2), Velocity(1, 1)))
         push!(entities, e)
     end
 
