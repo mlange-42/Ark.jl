@@ -20,7 +20,13 @@ struct Query{W<:World,CS<:Tuple,N}
 end
 
 """
-    @Query(world, comp_types; with=(...), without=(...), optional=(...))
+    @Query(
+        world::World,
+        comp_types::Tuple,
+        with::Tuple=(),
+        without::Tuple=(),
+        optional::Tuple=()
+    )
 
 Macro version of [`Query`](@ref) that allows ergonomic construction of queries using simulated keyword arguments.
 

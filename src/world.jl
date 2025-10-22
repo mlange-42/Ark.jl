@@ -206,9 +206,38 @@ function _check_locked(world::World)
 end
 
 """
+    @get_components(world::World, entity::Entity, comp_types::Tuple)
+
+Get the given components for an [`Entity`](@ref).
+
+Macro version of [`get_components`](@ref) for ergonomic construction of component mappers.
+
+# Example
+```julia
+pos, vel = @get_components(world, entity, (Position, Velocity))
+```
+"""
+macro get_components(world_expr, entity_expr, comp_types_expr)
+    quote
+        get_components(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
     get_components(world::World, entity::Entity, comp_types::Tuple)
 
 Get the given components for an [`Entity`](@ref).
+
+For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provided.
+
+# Example
+```julia
+pos, vel = get_components(world, entity, Val.((Position, Velocity)))
+```
 """
 function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
@@ -254,9 +283,38 @@ end
 end
 
 """
+    @has_components(world::World, entity::Entity, comp_types::Tuple)
+
+Returns whether an [`Entity`](@ref) has all given components.
+
+Macro version of [`has_components`](@ref) for ergonomic construction of component mappers.
+
+# Example
+```julia
+has = @has_components(world, entity, (Position, Velocity))
+```
+"""
+macro has_components(world_expr, entity_expr, comp_types_expr)
+    quote
+        has_components(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
     has_components(world::World, entity::Entity, comp_types::Tuple)
 
 Returns whether an [`Entity`](@ref) has all given components.
+
+For a more convenient tuple syntax, the macro [`@has_components`](@ref) is provided.
+
+# Example
+```julia
+has = has_components(world, entity, Val.((Position, Velocity)))
+```
 """
 @inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
@@ -432,9 +490,38 @@ end
 end
 
 """
+    @remove_components!(world::World, entity::Entity, comp_types::Tuple)
+
+Removes the given components from an [`Entity`](@ref).
+
+Macro version of [`remove_components!`](@ref) for ergonomic construction of component mappers.
+
+# Example
+```julia
+@remove_components!(world, entity, (Position, Velocity))
+```
+"""
+macro remove_components!(world_expr, entity_expr, comp_types_expr)
+    quote
+        remove_components!(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
     remove_components!(world::World, entity::Entity, comp_types::Tuple)
 
 Removes the given components from an [`Entity`](@ref).
+
+For a more convenient tuple syntax, the macro [`@remove_components!`](@ref) is provided.
+
+# Example
+```julia
+remove_components!(world, entity, Val.((Position, Velocity)))
+```
 """
 function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)

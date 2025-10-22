@@ -18,14 +18,15 @@ include("map.jl")
 include("query.jl")
 
 export World
-export is_alive, new_entity!, remove_entity!, get_components, set_components!, zero_entity, is_locked
+export is_alive, new_entity!, remove_entity!, zero_entity, is_locked
+export get_components, @get_components, set_components!, has_components, @has_components
+export add_components!, remove_components!, @remove_components!
 export _find_or_create_archetype!, _create_entity!, _move_entity!, _get_storage, _get_storage_by_id, _component_id
 
 export Entity
 export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
 export Map, @Map
-export new_entity!, has_components, add_components!, remove_components!
 export _get_mapped_components
 
 export Query, @Query

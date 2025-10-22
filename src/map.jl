@@ -11,7 +11,7 @@ struct Map{W<:World,CS<:Tuple,N}
 end
 
 """
-    @Map(world, comp_types)
+    @Map(world::World, comp_types::Tuple)
 
 Macro version of [`Map`](@ref) for ergonomic construction of component mappers.
 
