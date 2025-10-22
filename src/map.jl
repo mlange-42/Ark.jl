@@ -11,21 +11,44 @@ struct Map{W<:World,CS<:Tuple,N}
 end
 
 """
+    @Map(world::World, comp_types::Tuple)
+
+Macro version of [`Map`](@ref) for ergonomic construction of component mappers.
+
+# Arguments
+- `world`: The `World` instance to map components from.
+- `comp_types::Tuple`: A tuple of component types, e.g. `(Position, Velocity)`.
+
+# Example
+```julia
+@Map(world, (Position, Velocity))
+```
+"""
+macro Map(world_expr, comp_types_expr)
+    quote
+        Map(
+            $(esc(world_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
     Map(world::World, comp_types::Tuple)
 
 Creates a component mapper from a tuple of component types.
-"""
-Map(world::W, comp_types::Tuple) where {W<:World} = Map(world, comp_types...)
 
-"""
-    Map(world::World, comp_types::Type...)
+For a more convenient tuple syntax, the macro [`@Map`](@ref) is provided.
 
-Creates a component mapper from component types varargs.
+# Example
+```julia
+Map(world, Val.((Position, Velocity)))
+```
 """
-Map(world::W, comp_types::Type...) where {W<:World} = _Map_from_types(world, Val{Tuple{comp_types...}}())
+Map(world::W, comp_types::Tuple) where {W<:World} = _Map_from_types(world, comp_types)
 
-@generated function _Map_from_types(world::W, ::Val{CT}) where {W<:World,CT<:Tuple}
-    types = CT.parameters
+@generated function _Map_from_types(world::W, ::CT) where {W<:World,CT<:Tuple}
+    types = [x.parameters[1] for x in CT.parameters]
 
     id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in types]
     ids_tuple = Expr(:tuple, id_exprs...)
@@ -55,9 +78,9 @@ function new_entity!(map::Map{W,CS}, comps::Tuple) where {W<:World,CS<:Tuple}
 end
 
 """
-    Base.getindex(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
+    Base.getindex(map::Map, entity::Entity)
 
-Get components of an [`Entity`](@ref).
+Get the Map's components for an [`Entity`](@ref).
 """
 @inline function Base.getindex(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
@@ -71,22 +94,23 @@ Get components of an [`Entity`](@ref).
 end
 
 """
-    Base.setindex!(map::Map{W,CS,N}, value, entity::Entity) where {W<:World,CS<:Tuple,N}
+    Base.setindex!(map::Map, values::Tuple, entity::Entity)
 
-Set components of an [`Entity`](@ref).
+Sets the values of the Map's components for an [`Entity`](@ref).
+The entity must already have all these components.
 """
-@inline function Base.setindex!(map::Map{W,CS,N}, value, entity::Entity) where {W<:World,CS<:Tuple,N}
+@inline function Base.setindex!(map::Map{W,CS,N}, values::Tuple, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    @inline _set_entity_values!(map, index.archetype, index.row, value)
+    @inline _set_entity_values!(map, index.archetype, index.row, values)
 end
 
 """
     has_components(map::Map, entity::Entity)
 
-Returns whether an [`Entity`](@ref) has the given components.
+Returns whether an [`Entity`](@ref) has all the Map's components.
 """
 @inline function has_components(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
@@ -97,23 +121,23 @@ Returns whether an [`Entity`](@ref) has the given components.
 end
 
 """
-    add_components!(map::Map{CS,1}, entity::Entity, value)::Entity
+    add_components!(map::Map, entity::Entity, value::Tuple)
 
-Adds 1 components to an [`Entity`](@ref).
+Adds the values of the Map's components to an [`Entity`](@ref).
 """
-function add_components!(map::Map{W,CS}, entity::Entity, value) where {W<:World,CS<:Tuple}
+function add_components!(map::Map{W,CS}, entity::Entity, values::Tuple) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
         error("can't add components to a dead entity")
     end
     archetype = _find_or_create_archetype!(map._world, entity, map._ids, ())
     row = _move_entity!(map._world, entity, archetype)
-    _set_entity_values!(map, archetype, row, value)
+    _set_entity_values!(map, archetype, row, values)
 end
 
 """
-    remove_components!(map::Map{CS,1}, entity::Entity)
+    remove_components!(map::Map, entity::Entity)
 
-Removes 1 components from an [`Entity`](@ref).
+Removes the Map's components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
@@ -142,7 +166,7 @@ end
     end
 end
 
-@generated function _set_entity_values!(map::Map{W,CS,N}, archetype::UInt32, row::UInt32, comps) where {W<:World,CS<:Tuple,N}
+@generated function _set_entity_values!(map::Map{W,CS,N}, archetype::UInt32, row::UInt32, comps::Tuple) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
         stor = Symbol("stor", i)

@@ -1,85 +1,171 @@
 
+mutable struct _Cursor
+    _index::Int
+    _lock::UInt8
+end
+
 """
     Query{W,CS,N}
 
 A query for N components.
 """
-mutable struct Query{W<:World,CS<:Tuple,N}
-    _index::Int
+struct Query{W<:World,CS<:Tuple,N}
     _world::W
+    _cursor::_Cursor
     _ids::NTuple{N,UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
     _storage::CS
-    _lock::UInt8
 end
 
-# TODO: this could also be generated
+"""
+    @Query(
+        world::World,
+        comp_types::Tuple,
+        with::Tuple=(),
+        without::Tuple=(),
+        optional::Tuple=()
+    )
+
+Macro version of [`Query`](@ref) that allows ergonomic construction of queries using simulated keyword arguments.
+
+# Arguments
+- `world`: The `World` instance to query.
+- `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
+- `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
+- `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
+- `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
+
+# Example
+```julia
+@Query(world, (Position, Velocity), with=(Health,), without=(Altitude,))
+```
+"""
+macro Query(args...)
+    if length(args) < 2
+        error("@Query requires at least a world and component tuple")
+    end
+
+    world_expr = args[1]
+    comp_types_expr = args[2]
+
+    # Default values
+    with_expr = :(())
+    without_expr = :(())
+    optional_expr = :(())
+
+    # Parse simulated keyword arguments
+    for arg in args[3:end]
+        if Base.isexpr(arg, :(=), 2)
+            name, value = arg.args
+            if name == :with
+                with_expr = value
+            elseif name == :without
+                without_expr = value
+            elseif name == :optional
+                optional_expr = value
+            else
+                error("Unknown keyword argument: $name")
+            end
+        else
+            error("Unexpected argument format: $arg")
+        end
+    end
+
+    quote
+        Query(
+            $(esc(world_expr)),
+            Val.($(esc(comp_types_expr)));
+            with=Val.($(esc(with_expr))),
+            without=Val.($(esc(without_expr))),
+            optional=Val.($(esc(optional_expr)))
+        )
+    end
+end
+
 """
     Query(
         world::World,
-        comp_types::Tuple{Vararg{DataType}};
-        with::Tuple{Vararg{DataType}}=(),
-        without::Tuple{Vararg{DataType}}=(),
-        optional::Tuple{Vararg{DataType}}=(),
+        comp_types::Tuple;
+        with::Tuple=(),
+        without::Tuple=(),
+        optional::Tuple=()
     )
 
 Creates a query.
 
+For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
+
 # Arguments
 - `world::World`: The world to use for this query.
-- `comp_types::Tuple{Vararg{DataType}}`: Components the query filters for and that it provides access to.
-- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
-- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
-- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
+- `comp_types::Tuple`: Components the query filters for and that it provides access to.
+- `with::Tuple`: Additional components the entities must have.
+- `without::Tuple`: Components the entities must not have.
+- `optional::Tuple`: Makes components of the parameters optional.
+
+# Example
+```julia
+Query(world, Val.((Position, Velocity)), with=Val.((Health,)), without=Val.((Altitude,)))
+```
 """
 function Query(
     world::W,
-    comp_types::Tuple{Vararg{DataType}};
-    with::Tuple{Vararg{DataType}}=(),
-    without::Tuple{Vararg{DataType}}=(),
-    optional::Tuple{Vararg{DataType}}=(),
+    comp_types::Tuple;
+    with::Tuple=(),
+    without::Tuple=(),
+    optional::Tuple=()
 ) where {W<:World}
-    ids = Tuple(_component_id(world, C) for C in comp_types)
-    with_ids = Tuple(_component_id(world, C) for C in with)
-    without_ids = Tuple(_component_id(world, C) for C in without)
-    optional_ids = Tuple(_component_id(world, C) for C in optional)
-
-    mask = _Mask(ids..., with_ids...)
-    if !isempty(optional)
-        mask = _clear_bits(mask, _Mask(optional_ids...))
-    end
-
-    return _Query_from_types(world, Val{Tuple{comp_types...}}(), ids, mask, _Mask(without_ids...), !isempty(without))
+    return _Query_from_types(world, comp_types, with, without, optional)
 end
 
 @generated function _Query_from_types(
     world::W,
-    ::Val{CT},
-    ids::NTuple{N,UInt8},
-    mask::_Mask,
-    exclude_mask::_Mask,
-    has_excluded::Bool,
-) where {W<:World,CT<:Tuple,N}
-    types = CT.parameters
+    ::CT,
+    ::WT,
+    ::WO,
+    ::OT
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple}
+    # Extract actual types from each tuple
+    comp_types = [x.parameters[1] for x in CT.parameters]
+    with_types = [x.parameters[1] for x in WT.parameters]
+    without_types = [x.parameters[1] for x in WO.parameters]
+    optional_types = [x.parameters[1] for x in OT.parameters]
 
-    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in types]
+    # Component IDs
+    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in comp_types]
+    ids_tuple = Expr(:tuple, id_exprs...)
+
+    with_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
+    without_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
+    optional_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in optional_types]
+
+    # Mask construction
+    mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
+    if !isempty(optional_types)
+        clear_expr = :(_clear_bits($mask_expr, _Mask($(optional_ids_exprs...))))
+        mask_expr = clear_expr
+    end
+
+    exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
+    has_excluded_expr = :($(length(without_types) > 0))
+
+    # Storage construction
+    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
+    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in comp_types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
-        Query{$W,$storage_tuple_type,$N}(
-            0,
+        Query{$W,$storage_tuple_type,$(length(comp_types))}(
             world,
-            ids,
-            mask,
-            exclude_mask,
-            has_excluded,
+            _Cursor(0, UInt8(0)),
+            $ids_tuple,
+            $mask_expr,
+            $exclude_mask_expr,
+            $has_excluded_expr,
             $storages_tuple,
-            UInt8(0),
         )
     end
 end
@@ -95,18 +181,18 @@ end
 
 @inline function Base.iterate(q::Query{W,CS}, state::Tuple{Int,Int}) where {W<:World,CS<:Tuple}
     logical_index, physical_index = state
-    q._index = physical_index
+    q._cursor._index = physical_index
 
-    while q._index <= length(q._world._archetypes)
-        archetype = q._world._archetypes[q._index]
+    while q._cursor._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._cursor._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             result = logical_index
-            next_state = (logical_index + 1, q._index + 1)
+            next_state = (logical_index + 1, q._cursor._index + 1)
             return result, next_state
         end
-        q._index += 1
+        q._cursor._index += 1
     end
 
     close(q)
@@ -114,7 +200,7 @@ end
 end
 
 @inline function Base.iterate(q::Query{W,CS}) where {W<:World,CS<:Tuple}
-    q._lock = _lock(q._world._lock)
+    q._cursor._lock = _lock(q._world._lock)
     return Base.iterate(q, (1, 1))
 end
 
@@ -126,18 +212,18 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close(q::Query{W,CS}) where {W<:World,CS<:Tuple}
-    q._index = 0
-    _unlock(q._world._lock, q._lock)
+    q._cursor._index = 0
+    _unlock(q._world._lock, q._cursor._lock)
 end
 
 @generated function _get_query_archetypes(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
-    push!(exprs, :(entities = q._world._archetypes[q._index].entities))
+    push!(exprs, :(entities = q._world._archetypes[q._cursor._index].entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
-        push!(exprs, :($col_sym = $stor_sym.data[q._index]))
+        push!(exprs, :($col_sym = $stor_sym.data[q._cursor._index]))
     end
     result_exprs = [:entities]
     for i in 1:N

@@ -1,18 +1,18 @@
+using Ark
+using Test
+
+using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Query basic functionality" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    m1 = Map(world, (Altitude, Health))
-    m2 = Map(world, (Position, Velocity))
-    m3 = Map(world, (Position, Health))
-
     for i in 1:10
-        new_entity!(m1, (Altitude(1), Health(2)))
-        new_entity!(m2, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(m3, (Position(i, i * 2), Health(3)))
+        new_entity!(world, (Altitude(1), Health(2)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
-    query = Query(world, (Position, Velocity))
+    query = @Query(world, (Position, Velocity))
     for i in 1:10
         count = 0
         for _ in query
@@ -25,7 +25,7 @@
                 vec_pos[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
                 count += 1
             end
-            @test_throws ErrorException new_entity!(m1, (Altitude(1), Health(2)))
+            @test_throws ErrorException new_entity!(world, (Altitude(1), Health(2)))
             @test is_locked(world) == true
         end
         @test count == 10
@@ -36,15 +36,12 @@ end
 @testset "Query with" begin
     world = World(Position, Velocity, Altitude)
 
-    m1 = Map(world, (Position, Velocity))
-    m2 = Map(world, (Position, Velocity, Altitude))
-
     for i in 1:10
-        new_entity!(m1, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(m2, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity); with=(Altitude,))
+    query = @Query(world, (Position, Velocity), with = (Altitude,))
 
     count = 0
     for a in query
@@ -52,7 +49,7 @@ end
         @test a == 1
         for i in eachindex(ent)
             e = ent[i]
-            @test has_components(m2, e) == true
+            @test has_components(world, e, Val.((Altitude,))) == true
             count += 1
         end
     end
@@ -62,15 +59,12 @@ end
 @testset "Query without" begin
     world = World(Position, Velocity, Altitude)
 
-    m1 = Map(world, (Position, Velocity))
-    m2 = Map(world, (Position, Velocity, Altitude))
-
     for i in 1:10
-        new_entity!(m1, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(m2, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity); without=(Altitude,))
+    query = @Query(world, (Position, Velocity), without = (Altitude,))
 
     count = 0
     for a in query
@@ -78,7 +72,7 @@ end
         @test a == 1
         for i in eachindex(ent)
             e = ent[i]
-            @test has_components(m2, e) == false
+            @test has_components(world, e, Val.((Altitude,))) == false
             count += 1
         end
     end
@@ -88,15 +82,12 @@ end
 @testset "Query optional" begin
     world = World(Position, Velocity, Altitude)
 
-    m1 = Map(world, (Position, Velocity))
-    m2 = Map(world, (Position, Velocity, Altitude))
-
     for i in 1:10
-        new_entity!(m1, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(m2, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity, Altitude); optional=(Altitude,))
+    query = @Query(world, (Position, Velocity, Altitude), optional = (Altitude,))
 
     count = 0
     indices = Vector{Int}()
@@ -115,4 +106,19 @@ end
     end
     @test count == 20
     @test indices == [1, 2]
+end
+
+@testset "Query macro missing argument" begin
+    ex = Meta.parse("@Query(world)")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "Query macro unknown argument" begin
+    ex = Meta.parse("@Query(world, (Position,), abc = 2)")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "Query macro invalid syntax" begin
+    ex = Meta.parse("@Query(world, (Position,), xyz)")
+    @test_throws LoadError eval(ex)
 end

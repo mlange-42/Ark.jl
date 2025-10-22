@@ -22,9 +22,9 @@ mutable struct World{CS<:Tuple,CT<:Tuple,N}
 end
 
 """
-    World(types::Type...)
+    World(comp_types::Type...)
 
-Creates a new, empty [`World`](@ref).
+Creates a new, empty [`World`](@ref) for the given component types.
 """
 World(comp_types::Type...) = _World_from_types(Val{Tuple{comp_types...}}())
 
@@ -190,12 +190,6 @@ function is_alive(world::World, entity::Entity)::Bool
     return _is_alive(world._entity_pool, entity)
 end
 
-function _check_locked(world::World)
-    if _is_locked(world._lock)
-        error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
-    end
-end
-
 """
     is_locked(world::World)::Bool
 
@@ -205,20 +199,55 @@ function is_locked(world::World)::Bool
     return _is_locked(world._lock)
 end
 
-"""
-    get_components(world::World, entity::Entity, comp_types::Type...)
+function _check_locked(world::World)
+    if _is_locked(world._lock)
+        error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
+    end
+end
 
-Get the given components for an entity.
 """
-function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    @get_components(world::World, entity::Entity, comp_types::Tuple)
+
+Get the given components for an [`Entity`](@ref).
+
+Macro version of [`get_components`](@ref) for ergonomic construction of component mappers.
+
+# Example
+```julia
+pos, vel = @get_components(world, entity, (Position, Velocity))
+```
+"""
+macro get_components(world_expr, entity_expr, comp_types_expr)
+    quote
+        get_components(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
+    get_components(world::World, entity::Entity, comp_types::Tuple)
+
+Get the given components for an [`Entity`](@ref).
+
+For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provided.
+
+# Example
+```julia
+pos, vel = get_components(world, entity, Val.((Position, Velocity)))
+```
+"""
+function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
-    return _get_components(world, entity, Val{Tuple{comp_types...}}())
+    return _get_components(world, entity, comp_types)
 end
 
-@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
+@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
     if length(types) == 0
         return :(())
     end
@@ -254,16 +283,88 @@ end
 end
 
 """
-    set_components(world::World, entity::Entity, values...)
+    @has_components(world::World, entity::Entity, comp_types::Tuple)
 
-Sets the given component values for an entity. Types are inferred from the values.
+Returns whether an [`Entity`](@ref) has all given components.
+
+Macro version of [`has_components`](@ref) for ergonomic construction of component mappers.
+
+# Example
+```julia
+has = @has_components(world, entity, (Position, Velocity))
+```
 """
-function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN}
-    types = Tuple{map(typeof, values)...}
-    return _set_components!(world, entity, Val{types}(), values...)
+macro has_components(world_expr, entity_expr, comp_types_expr)
+    quote
+        has_components(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
 end
 
-@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+"""
+    has_components(world::World, entity::Entity, comp_types::Tuple)
+
+Returns whether an [`Entity`](@ref) has all given components.
+
+For a more convenient tuple syntax, the macro [`@has_components`](@ref) is provided.
+
+# Example
+```julia
+has = has_components(world, entity, Val.((Position, Velocity)))
+```
+"""
+@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't check components of a dead entity")
+    end
+    index = world._entities[entity._id]
+    return _has_components(world, index, comp_types)
+end
+
+@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
+    exprs = []
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
+        push!(exprs, :(
+            if $col_sym === nothing
+                return false
+            end
+        ))
+    end
+
+    push!(exprs, :(return true))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    set_components!(world::World, entity::Entity, values::Tuple)
+
+Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
+The entity must already have all these components.
+"""
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+    if !is_alive(world, entity)
+        error("can't set components of a dead entity")
+    end
+    return _set_components!(world, entity, Val{typeof(values)}(), values)
+end
+
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
     types = TS.parameters
     exprs = [:(idx = world._entities[entity._id])]
 
@@ -271,12 +372,14 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_sym = :(values[$i])  # Type-stable because TS is known
+        val_expr = :(values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
-        push!(exprs, :($col_sym._data[idx.row] = $val_sym))
+        push!(exprs, :($col_sym._data[idx.row] = $val_expr))
     end
+
+    push!(exprs, Expr(:return, :nothing))
 
     return quote
         @inbounds begin
@@ -288,14 +391,23 @@ end
 """
     new_entity!(world::World, comps::Vararg{Any})::Entity
 
-Creates a new [`Entity`](@ref) with the given components.
+Creates a new [`Entity`](@ref) without any components.
 """
-function new_entity!(world::World{CS,CT,N}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
-    types = Tuple{map(typeof, comps)...}
-    return _new_entity!(world, Val{types}(), comps...)
+function new_entity!(world::World)::Entity
+    entity, _ = _create_entity!(world, UInt32(1))
+    return entity
 end
 
-@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+"""
+    new_entity!(world::World, values::Tuple)::Entity
+
+Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
+"""
+function new_entity!(world::World{CS,CT,N}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entity!(world, Val{typeof(values)}(), values)
+end
+
+@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -314,7 +426,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(comps[$i])
+        val_expr = :(values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
@@ -330,15 +442,19 @@ end
     end
 end
 
-function add_components!(world::World{CS,CT,N}, entity::Entity, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
+"""
+    add_components!(world::World, entity::Entity, values::Tuple)
+
+Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
+"""
+function add_components!(world::World{CS,CT,N}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't add components to a dead entity")
     end
-    types = Tuple{map(typeof, comps)...}
-    return _add_components!(world, entity, Val{types}(), comps...)
+    return _add_components!(world, entity, Val{typeof(values)}(), values)
 end
 
-@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -357,7 +473,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(comps[$i])
+        val_expr = :(values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
@@ -373,15 +489,49 @@ end
     end
 end
 
-function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+"""
+    @remove_components!(world::World, entity::Entity, comp_types::Tuple)
+
+Removes the given components from an [`Entity`](@ref).
+
+Macro version of [`remove_components!`](@ref) for ergonomic construction of component mappers.
+
+# Example
+```julia
+@remove_components!(world, entity, (Position, Velocity))
+```
+"""
+macro remove_components!(world_expr, entity_expr, comp_types_expr)
+    quote
+        remove_components!(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
+    remove_components!(world::World, entity::Entity, comp_types::Tuple)
+
+Removes the given components from an [`Entity`](@ref).
+
+For a more convenient tuple syntax, the macro [`@remove_components!`](@ref) is provided.
+
+# Example
+```julia
+remove_components!(world, entity, Val.((Position, Velocity)))
+```
+"""
+function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't remove components from a dead entity")
     end
-    return _remove_components!(world, entity, Val{Tuple{comp_types...}}())
+    return _remove_components!(world, entity, comp_types)
 end
 
-@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
+@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
     exprs = []
 
     # Generate component IDs to remove
@@ -395,41 +545,6 @@ end
     push!(exprs, :(_move_entity!(world, entity, archetype)))
 
     push!(exprs, Expr(:return, :nothing))
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
-end
-
-@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
-    if !is_alive(world, entity)
-        error("can't check components of a dead entity")
-    end
-    index = world._entities[entity._id]
-    return _has_components(world, index, Val{Tuple{comp_types...}}())
-end
-
-@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
-    exprs = []
-
-    for i in 1:length(types)
-        T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
-        push!(exprs, :(
-            if $col_sym === nothing
-                return false
-            end
-        ))
-    end
-
-    push!(exprs, :(return true))
 
     return quote
         @inbounds begin
