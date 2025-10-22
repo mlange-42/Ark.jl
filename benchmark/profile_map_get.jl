@@ -6,23 +6,27 @@ using StatProfilerHTML
 include("BenchTypes.jl")
 
 function profile_add_remove()
-    n = 10_000
-    iter = 100
+    n = 100_000
+    iter = 10000
     world = World(Position, Velocity)
     map1 = Map(world, (Position,))
-    map2 = Map(world, (Velocity,))
 
     entities = Vector{Entity}()
     for i in 1:n
-        e = new_entity!(map1, (Position(i, i * 2),))
+        e = new_entity!(map1, (Position(1, 1),))
         push!(entities, e)
     end
 
-    for _ in 1:iter
+    sum = 0.0
+    t = @elapsed for _ in 1:iter
         for e in entities
-            add_components!(map2, e, (Velocity(0, 0),))
-            remove_components!(map2, e)
+            pos, = map1[e]
+            sum += pos.x
         end
+    end
+    println("elapsed time per entity (ns): ", t * 1e9 / (iter * n))
+    if sum != iter * n
+        error("wrong sum: ", sum)
     end
 end
 

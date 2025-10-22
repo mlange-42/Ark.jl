@@ -4,7 +4,7 @@ println("                Add/remove 1 of 2")
 println("-----------------------------------------------")
 
 function setup_add_remove(n_entities::Int)
-    world = World()
+    world = World(Position, Velocity)
     map1 = Map(world, (Position,))
     map2 = Map(world, (Velocity,))
 

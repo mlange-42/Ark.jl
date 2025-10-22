@@ -4,7 +4,7 @@ println("                Map Pos/Vel")
 println("-----------------------------------------------")
 
 function setup_map_posvel(n_entities::Int)
-    world = World()
+    world = World(Position, Velocity)
     map1 = Map(world, (Position,))
     map2 = Map(world, (Position, Velocity))
 
@@ -12,6 +12,11 @@ function setup_map_posvel(n_entities::Int)
     for i in 1:n_entities
         e = new_entity!(map2, (Position(i, i * 2), Velocity(1, 1)))
         push!(entities, e)
+    end
+
+    for e in entities
+        pos, vel = map2[e]
+        map1[e] = (Position(pos.x + vel.dx, pos.y + vel.dy),)
     end
 
     return (entities, map1, map2)

@@ -18,13 +18,14 @@ include("query.jl")
 
 export World
 export is_alive, new_entity!, remove_entity!, zero_entity, is_locked
-export _find_or_create_archetype!, _create_entity!, _get_storage
+export _find_or_create_archetype!, _create_entity!, _move_entity!, _get_storage, _get_storage_by_id, _component_id
 
 export Entity
 export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
 export Map
 export new_entity!, get_components, set_components!, has_components, add_components!, remove_components!
+export _get_mapped_components
 
 export Query
 export entities, close
@@ -36,7 +37,7 @@ export _Archetype
 export _add_entity!
 
 export _ComponentRegistry
-export _component_id!
+export _get_id!, _register_component!
 
 export _Mask
 export _get_bit, _contains_all, _contains_any, _and, _or, _clear_bits, _active_bit_indices

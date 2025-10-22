@@ -4,8 +4,10 @@ using Test
 using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Map new/get/set/has" begin
-    world = World()
-    m = Map(world, (Position,Velocity))
+    world = World(Position, Velocity)
+    m = Map(world, (Position, Velocity))
+
+    @test_throws ErrorException Map(world, (Position, Velocity, Altitude))
 
     entity = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(2, 0)
@@ -20,15 +22,18 @@ using .TestTypes: Position, Velocity, Altitude, Health
     @test vel == Velocity(7, 8)
 
     empty_entity = new_entity!(world)
-    @test_throws MethodError m[empty_entity]
-    @test_throws MethodError m[empty_entity] = (Position(5, 6), Velocity(7, 8))
+    # TODO: do we want that, or do we want it to return `nothing`?
+    @test_throws FieldError m[empty_entity]
+    @test_throws FieldError m[empty_entity] = (Position(5, 6), Velocity(7, 8))
+
+    @test_throws ErrorException m[zero_entity]
 
     @test has_components(m, entity) == true
     @test has_components(m, empty_entity) == false
 end
 
 @testset "Map add/remove" begin
-    world = World()
+    world = World(Position, Velocity, Altitude, Health)
     m1 = Map(world, (Position, Velocity))
     m2 = Map(world, (Altitude, Health))
 
