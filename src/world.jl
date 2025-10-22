@@ -411,15 +411,15 @@ end
 #end
 
 # TODO: experimental for now.
-function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
-    return _get_components(world, entity, Val{Tuple{comp_types...}}())
+    return _get_components(world, entity, comp_types)
 end
 
-@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
+@generated function _get_components(world::World{CS,CT,N}, entity::Entity, comp_types::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
     if length(types) == 0
         return :(())
     end
