@@ -399,3 +399,57 @@ end
     end
     return expr
 end
+
+
+#@generated function get_components(world::World{CS,CT,N}, entity::Entity, ::Type{C})::C where {CS<:Tuple,CT<:Tuple,N,C}
+#    return quote
+#        @inbounds begin
+#            idx = world._entities[entity._id]
+#            stor = _get_storage(world, Val{$(QuoteNode(C))}())
+#            col = stor.data[Int(idx.archetype)]
+#            return col._data[Int(idx.row)]
+#        end
+#    end
+#end
+
+# TODO: experimental for now.
+function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    return _get_components(world, entity, Val{Tuple{comp_types...}}())
+end
+
+@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    if length(types) == 0
+        return :(())
+    end
+
+    exprs = Expr[]
+    push!(exprs, :(idx = world._entities[entity._id]))
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = Symbol("v", i)
+
+        push!(exprs, :(
+            $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
+        ))
+        push!(exprs, :(
+            $(col_sym) = $(stor_sym).data[Int(idx.archetype)]
+        ))
+        push!(exprs, :(
+            $(val_sym) = $(col_sym)._data[Int(idx.row)]
+        ))
+    end
+
+    vals = [:($(Symbol("v", i))) for i in 1:length(types)]
+    push!(exprs, :(return ($(vals...))))
+
+    body = Expr(:block, exprs...)
+    return quote
+        @inbounds begin
+            $(body)
+        end
+    end
+end
