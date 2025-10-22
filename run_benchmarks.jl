@@ -1,5 +1,4 @@
-
-# run with julia run_benchmarks.jl dev-branch-name
+# run with: julia run_benchmarks.jl dev-branch-name
 using Pkg
 
 if !("AirspeedVelocity" in keys(Pkg.project().dependencies))
