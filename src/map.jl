@@ -147,14 +147,14 @@ end
     N = length(CS.parameters)
     exprs = Expr[]
     for i in 1:N
-        push!(exprs, :((map._storage).$i.data[Int(index.archetype)][Int(index.row)]))
+        push!(exprs, :((map._storage).$i.data[index.archetype][index.row]))
     end
     return Expr(:tuple, exprs...)
 end
 
 @generated function _set_entity_values!(map::Map{W,CS}, archetype::UInt32, row::UInt32, comps) where {W<:World,CS<:Tuple}
     N = length(CS.parameters)
-    expressions = [:(map._storage.$i.data[Int(archetype)][Int(row)] = comps[$i]) for i in 1:N]
+    expressions = [:(map._storage.$i.data[archetype][row] = comps[$i]) for i in 1:N]
     return quote
         $(expressions...)
     end
