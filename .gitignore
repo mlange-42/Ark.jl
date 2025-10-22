@@ -1,9 +1,10 @@
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
+*.json
+*.json.tmp
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
 /statprof/
-
 .vscode
