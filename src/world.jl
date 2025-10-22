@@ -270,13 +270,8 @@ end
 
     expr = nothing
     for i in n:-1:1
-        T = CT.parameters[i] # e.g. Type{Position} or Position
-        # unwrap Type{X} -> X so _new_column receives X (not Type{X})
-        if T <: Type
-            elt = T.parameters[1]
-        else
-            elt = T
-        end
+        T = CT.parameters[i]
+        elt = T.parameters[1]
         assign = :((world._storages).$i.data[index] = _new_column($(QuoteNode(elt))))
         if expr === nothing
             expr = :(
