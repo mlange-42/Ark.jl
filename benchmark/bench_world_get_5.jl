@@ -20,18 +20,11 @@ function setup_world_get_5(n_entities::Int)
 end
 
 function benchmark_world_get_5(n)
-    bench = @benchmarkable begin
-        sum = 0.0
-        for e in entities
-            pos, vel, a, b, c = get_components(world, e, Val.((Position, Velocity, CompA, CompB, CompC)))
-            sum += pos.x + vel.dx + a.x + b.x + c.x
-        end
-        sum
-    end setup = ((entities, world) = setup_world_get_5($n))
-
-    tune!(bench)
-    result = run(bench, seconds=seconds)
-    print_result(result, n)
+    sum = 0.0
+    for e in entities
+        pos, vel, a, b, c = get_components(world, e, Val.((Position, Velocity, CompA, CompB, CompC)))
+        sum += pos.x + vel.dx + a.x + b.x + c.x
+    end
 end
 
 for n in (100, 1_000, 10_000, 100_000)
