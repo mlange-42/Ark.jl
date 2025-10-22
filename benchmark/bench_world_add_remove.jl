@@ -19,7 +19,7 @@ end
 function benchmark_world_add_remove(args, n)
     entities, world = args
     for e in entities
-        add_components!(world, e, Velocity(0, 0))
+        add_components!(world, e, (Velocity(0, 0),))
         remove_components!(world, e, Val.((Velocity,)))
     end
 end
