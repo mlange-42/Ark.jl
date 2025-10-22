@@ -13,7 +13,7 @@ end
 """
     @Map(world, comp_types)
 
-Macro version of `Map(...)` for ergonomic construction of component mappers.
+Macro version of [`Map`](@ref) for ergonomic construction of component mappers.
 
 # Arguments
 - `world`: The `World` instance to map components from.
@@ -37,6 +37,13 @@ end
     Map(world::World, comp_types::Tuple)
 
 Creates a component mapper from a tuple of component types.
+
+For a more convenient tuple syntax, the macro [`@Map`](@ref) is provided.
+
+# Example
+```julia
+Map(world, Val.((Position, Velocity)))
+```
 """
 Map(world::W, comp_types::Tuple) where {W<:World} = _Map_from_types(world, comp_types)
 

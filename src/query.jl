@@ -22,7 +22,7 @@ end
 """
     @Query(world, comp_types; with=(...), without=(...), optional=(...))
 
-Macro version of `Query(...)` that allows ergonomic construction of queries using simulated keyword arguments.
+Macro version of [`Query`](@ref) that allows ergonomic construction of queries using simulated keyword arguments.
 
 # Arguments
 - `world`: The `World` instance to query.
@@ -89,12 +89,19 @@ end
 
 Creates a query.
 
+For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
+
 # Arguments
 - `world::World`: The world to use for this query.
 - `comp_types::Tuple`: Components the query filters for and that it provides access to.
 - `with::Tuple`: Additional components the entities must have.
 - `without::Tuple`: Components the entities must not have.
 - `optional::Tuple`: Makes components of the parameters optional.
+
+# Example
+```julia
+Query(world, Val.((Position, Velocity)), with=Val.((Health,)), without=Val.((Altitude,)))
+```
 """
 function Query(
     world::W,
