@@ -4,8 +4,8 @@
 
 A component mapper for N components.
 """
-struct Map{CS<:Tuple,N}
-    _world::World
+struct Map{W<:World,CS<:Tuple,N}
+    _world::W
     _ids::NTuple{N,UInt8}
     _storage::CS
 end
@@ -15,28 +15,29 @@ end
 
 Creates a component mapper from a tuple of component types.
 """
-Map(world::World, comp_types::Tuple) = Map(world, comp_types...)
+Map(world::W, comp_types::Tuple) where {W<:World} = Map(world, comp_types...)
 
 """
     Map(world::World, comp_types::Type...)
 
 Creates a component mapper from component types varargs.
 """
-Map(world::World, comp_types::Type...) = _Map_from_types(world, Val{Tuple{comp_types...}}())
+Map(world::W, comp_types::Type...) where {W<:World} = _Map_from_types(world, Val{Tuple{comp_types...}}())
 
-@generated function _Map_from_types(world::World, ::Val{CS}) where {CS<:Tuple}
-    types = CS.parameters
+@generated function _Map_from_types(world::W, ::Val{CT}) where {W<:World,CT<:Tuple}
+    types = CT.parameters
 
-    # id tuple value: (_component_id(world, T1), _component_id(world, T2), ...)
     id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in types]
     ids_tuple = Expr(:tuple, id_exprs...)
 
-    # storage tuple value: (_get_storage(world, T1), _get_storage(world, T2), ...)
     storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
+    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
+    storage_tuple_type = :(Tuple{$(storage_types...)})
+
     return quote
-        Map(world, $ids_tuple, $storages_tuple)
+        Map{$W,$storage_tuple_type,$(length(types))}(world, $ids_tuple, $storages_tuple)
     end
 end
 
@@ -45,7 +46,7 @@ end
 
 Creates a new [`Entity`](@ref) with `length(comps)` components.
 """
-function new_entity!(map::Map, comps::Tuple)
+function new_entity!(map::Map{W,CS}, comps::Tuple) where {W<:World,CS<:Tuple}
     archetype =
         _find_or_create_archetype!(map._world, map._world._archetypes[1].node, map._ids, ())
     entity, index = _create_entity!(map._world, archetype)
@@ -64,11 +65,11 @@ Alternatively, use indexing:
 pos, vel = map[entity]
 ```
 """
-function get_components(map::Map, entity::Entity)
+function get_components(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
     return map[entity]
 end
 
-@inline function Base.getindex(map::Map, entity::Entity)
+@inline function Base.getindex(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
@@ -90,11 +91,11 @@ Alternatively, use indexing:
 map[entity] = (Position(0, 0), Velocity(1, 1))
 ```
 """
-function set_components!(map::Map, entity::Entity, comps)
+function set_components!(map::Map{W,CS}, entity::Entity, comps) where {W<:World,CS<:Tuple}
     map[entity] = comps
 end
 
-@inline function Base.setindex!(map::Map, value, entity::Entity)
+@inline function Base.setindex!(map::Map{W,CS}, value, entity::Entity) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
@@ -107,7 +108,7 @@ end
 
 Returns whether an [`Entity`](@ref) has the given components.
 """
-@inline function has_components(map::Map, entity::Entity)
+@inline function has_components(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
         error("can't check components of a dead entity")
     end
@@ -120,7 +121,7 @@ end
 
 Adds 1 components to an [`Entity`](@ref).
 """
-function add_components!(map::Map, entity::Entity, value)
+function add_components!(map::Map{W,CS}, entity::Entity, value) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
         error("can't add components to a dead entity")
     end
@@ -134,7 +135,7 @@ end
 
 Removes 1 components from an [`Entity`](@ref).
 """
-function remove_components!(map::Map, entity::Entity)
+function remove_components!(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
         error("can't remove components from a dead entity")
     end
@@ -142,7 +143,7 @@ function remove_components!(map::Map, entity::Entity)
     _move_entity!(map._world, entity, archetype)
 end
 
-@generated function _get_mapped_components(map::Map{CS}, index::_EntityIndex) where {CS<:Tuple}
+@generated function _get_mapped_components(map::Map{W,CS}, index::_EntityIndex) where {W<:World,CS<:Tuple}
     N = length(CS.parameters)
     exprs = Expr[]
     for i in 1:N
@@ -151,7 +152,7 @@ end
     return Expr(:tuple, exprs...)
 end
 
-@generated function _set_entity_values!(map::Map{CS}, archetype::UInt32, row::UInt32, comps) where {CS<:Tuple}
+@generated function _set_entity_values!(map::Map{W,CS}, archetype::UInt32, row::UInt32, comps) where {W<:World,CS<:Tuple}
     N = length(CS.parameters)
     expressions = [:(map._storage.$i.data[Int(archetype)][Int(row)] = comps[$i]) for i in 1:N]
     return quote
@@ -159,7 +160,7 @@ end
     end
 end
 
-@generated function _has_entity_components(map::Map{CS}, index::_EntityIndex) where {CS<:Tuple}
+@generated function _has_entity_components(map::Map{W,CS}, index::_EntityIndex) where {W<:World,CS<:Tuple}
     N = length(CS.parameters)
     expressions = [:(
         if map._storage.$i.data[index.archetype] == nothing
