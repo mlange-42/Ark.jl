@@ -64,7 +64,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, Val.((Position, Velocity)); without=Val.((Altitude,)))
+    query = @Query(world, (Position, Velocity), without = (Altitude,))
 
     count = 0
     for a in query
@@ -87,7 +87,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, Val.((Position, Velocity, Altitude)); optional=Val.((Altitude,)))
+    query = @Query(world, (Position, Velocity, Altitude), optional = (Altitude,))
 
     count = 0
     indices = Vector{Int}()
@@ -106,4 +106,19 @@ end
     end
     @test count == 20
     @test indices == [1, 2]
+end
+
+@testset "Query macro missing argument" begin
+    ex = Meta.parse("@Query(world)")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "Query macro unknown argument" begin
+    ex = Meta.parse("@Query(world, (Position,), abc = 2)")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "Query macro invalid syntax" begin
+    ex = Meta.parse("@Query(world, (Position,), xyz)")
+    @test_throws LoadError eval(ex)
 end

@@ -212,7 +212,7 @@ end
 
 @generated function _get_query_archetypes(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
-    push!(exprs, :(entities = q._world._archetypes[q._index].entities))
+    push!(exprs, :(entities = q._world._archetypes[q._cursor._index].entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
