@@ -323,14 +323,23 @@ end
 """
     new_entity!(world::World, comps::Vararg{Any})::Entity
 
-Creates a new [`Entity`](@ref) with the given components.
+Creates a new [`Entity`](@ref) without any components.
 """
-function new_entity!(world::World{CS,CT,N}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
-    types = Tuple{map(typeof, comps)...}
-    return _new_entity!(world, Val{types}(), comps...)
+function new_entity!(world::World)::Entity
+    entity, _ = _create_entity!(world, UInt32(1))
+    return entity
 end
 
-@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+"""
+    new_entity!(world::World, comps::Vararg{Any})::Entity
+
+Creates a new [`Entity`](@ref) with the given components.
+"""
+function new_entity!(world::World{CS,CT,N}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entity!(world, Val{typeof(comps)}(), comps)
+end
+
+@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
     types = TS.parameters
     exprs = []
 

@@ -179,7 +179,7 @@ end
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
 
-    entity = new_entity!(world, Position(1, 2), Velocity(3, 4))
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(3, 0)
     @test is_alive(world, entity) == true
 
@@ -194,7 +194,7 @@ end
     e1 = new_entity!(world)
     add_components!(world, e1, Position(1, 2), Velocity(3, 4))
 
-    e2 = new_entity!(world, Position(5, 6), Velocity(7, 8))
+    e2 = new_entity!(world, (Position(5, 6), Velocity(7, 8)))
 
     add_components!(world, e1, Altitude(1), Health(2))
     add_components!(world, e2, Altitude(3), Health(4))
