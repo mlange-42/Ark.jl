@@ -157,6 +157,9 @@ end
 
     # TODO: do we want that, or do we want it to return `nothing`?
     @test_throws FieldError get_components(world, e2, Position, Velocity)
+
+    @test_throws ErrorException get_components(world, zero_entity, Position, Velocity)
+    @test_throws ErrorException get_components(world, e2, Altitude)
 end
 
 @testset "new_entity! Tests" begin
