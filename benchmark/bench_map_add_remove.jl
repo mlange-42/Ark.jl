@@ -1,6 +1,6 @@
 
 println("-----------------------------------------------")
-println("                Add/remove 1 of 2")
+println("                Map add/remove 1 of 2")
 println("-----------------------------------------------")
 
 function setup_map_add_remove(n_entities::Int)

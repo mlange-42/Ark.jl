@@ -1,6 +1,6 @@
 
 println("-----------------------------------------------")
-println("                Add/remove 1 of 2")
+println("                World add/remove 1 of 2")
 println("-----------------------------------------------")
 
 function setup_world_add_remove(n_entities::Int)
