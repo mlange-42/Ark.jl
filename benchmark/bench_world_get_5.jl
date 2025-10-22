@@ -27,9 +27,8 @@ end
 function benchmark_world_get_5(n)
     bench = @benchmarkable begin
         sum = 0.0
-        compstypes = Val.((Position, Velocity, CompA, CompB, CompC))
         for e in entities
-            pos, vel, a, b, c = get_components(world, e, compstypes)
+            pos, vel, a, b, c = get_components(world, e, Val.((Position, Velocity, CompA, CompB, CompC)))
             sum += pos.x + vel.dx + a.x + b.x + c.x
         end
         sum
