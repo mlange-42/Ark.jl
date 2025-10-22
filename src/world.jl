@@ -378,15 +378,14 @@ end
     end
 end
 
-function add_components!(world::World{CS,CT,N}, entity::Entity, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
+function add_components!(world::World{CS,CT,N}, entity::Entity, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't add components to a dead entity")
     end
-    types = Tuple{map(typeof, comps)...}
-    return _add_components!(world, entity, Val{types}(), comps...)
+    return _add_components!(world, entity, Val{typeof(comps)}(), comps)
 end
 
-@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
     types = TS.parameters
     exprs = []
 

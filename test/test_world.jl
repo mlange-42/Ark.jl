@@ -192,12 +192,12 @@ end
     world = World(Position, Velocity, Altitude, Health)
 
     e1 = new_entity!(world)
-    add_components!(world, e1, Position(1, 2), Velocity(3, 4))
+    add_components!(world, e1, (Position(1, 2), Velocity(3, 4)))
 
     e2 = new_entity!(world, (Position(5, 6), Velocity(7, 8)))
 
-    add_components!(world, e1, Altitude(1), Health(2))
-    add_components!(world, e2, Altitude(3), Health(4))
+    add_components!(world, e1, (Altitude(1), Health(2)))
+    add_components!(world, e2, (Altitude(3), Health(4)))
 
     pos, vel, a, h = get_components(world, e1, Val.((Position, Velocity, Altitude, Health)))
     @test pos == Position(1, 2)
@@ -216,7 +216,7 @@ end
     remove_components!(world, e1, Val.((Position, Velocity)))
     @test has_components(world, e1, Val.((Position, Velocity))) == false
 
-    @test_throws ErrorException add_components!(world, zero_entity, Position(1, 2), Velocity(3, 4))
+    @test_throws ErrorException add_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4)))
     @test_throws ErrorException remove_components!(world, zero_entity, Val.((Position, Velocity)))
     @test_throws ErrorException has_components(world, zero_entity, Val.((Position, Velocity)))
 end

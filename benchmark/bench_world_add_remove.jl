@@ -13,7 +13,7 @@ function setup_world_add_remove(n_entities::Int)
     end
 
     for e in entities
-        add_components!(world, e, Velocity(0, 0))
+        add_components!(world, e, (Velocity(0, 0),))
         remove_components!(world, e, Val.((Velocity,)))
     end
 
@@ -23,7 +23,7 @@ end
 function benchmark_world_add_remove(n)
     bench = @benchmarkable begin
         for e in entities
-            add_components!(world, e, Velocity(0, 0))
+            add_components!(world, e, (Velocity(0, 0),))
             remove_components!(world, e, Val.((Velocity,)))
         end
     end setup = ((entities, world) = setup_world_add_remove($n))
