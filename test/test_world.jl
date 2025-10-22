@@ -144,6 +144,21 @@ end
     @test length(vel_storage.data[arch_index]) == 1
 end
 
+@testset "get_components Tests" begin
+    world = World(Position, Velocity)
+    m = Map(world, (Position, Velocity))
+
+    e1 = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
+    e2 = new_entity!(world)
+
+    pos, vel = get_components(world, e1, Position, Velocity)
+    @test pos == Position(1, 2)
+    @test vel == Velocity(3, 4)
+
+    # TODO: do we want that, or do we want it to return `nothing`?
+    @test_throws FieldError get_components(world, e2, Position, Velocity)
+end
+
 @testset "new_entity! Tests" begin
     world = World()
 

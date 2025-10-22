@@ -65,11 +65,11 @@ Alternatively, use indexing:
 pos, vel = map[entity]
 ```
 """
-function get_components(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
+function get_components(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     return map[entity]
 end
 
-@inline function Base.getindex(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
+@inline function Base.getindex(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
     end
@@ -91,11 +91,11 @@ Alternatively, use indexing:
 map[entity] = (Position(0, 0), Velocity(1, 1))
 ```
 """
-function set_components!(map::Map{W,CS}, entity::Entity, comps) where {W<:World,CS<:Tuple}
+function set_components!(map::Map{W,CS,N}, entity::Entity, comps) where {W<:World,CS<:Tuple,N}
     map[entity] = comps
 end
 
-@inline function Base.setindex!(map::Map{W,CS}, value, entity::Entity) where {W<:World,CS<:Tuple}
+@inline function Base.setindex!(map::Map{W,CS,N}, value, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
@@ -108,7 +108,7 @@ end
 
 Returns whether an [`Entity`](@ref) has the given components.
 """
-@inline function has_components(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
+@inline function has_components(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't check components of a dead entity")
     end
@@ -143,33 +143,59 @@ function remove_components!(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:
     _move_entity!(map._world, entity, archetype)
 end
 
-@generated function _get_mapped_components(map::Map{W,CS}, index::_EntityIndex) where {W<:World,CS<:Tuple}
-    N = length(CS.parameters)
+@generated function _get_mapped_components(map::Map{W,CS,N}, index::_EntityIndex) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
-        push!(exprs, :((map._storage).$i.data[index.archetype][index.row]))
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        val = Symbol("v", i)
+        push!(exprs, :($stor = map._storage[$i]))
+        push!(exprs, :($col = $stor.data[index.archetype]))
+        push!(exprs, :($val = $col._data[index.row]))
     end
-    return Expr(:tuple, exprs...)
-end
-
-@generated function _set_entity_values!(map::Map{W,CS}, archetype::UInt32, row::UInt32, comps) where {W<:World,CS<:Tuple}
-    N = length(CS.parameters)
-    expressions = [:(map._storage.$i.data[archetype][row] = comps[$i]) for i in 1:N]
+    vals = [Symbol("v", i) for i in 1:N]
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
     return quote
-        $(expressions...)
-    end
-end
-
-@generated function _has_entity_components(map::Map{W,CS}, index::_EntityIndex) where {W<:World,CS<:Tuple}
-    N = length(CS.parameters)
-    expressions = [:(
-        if map._storage.$i.data[index.archetype] == nothing
-            return false
+        @inbounds begin
+            $(Expr(:block, exprs...))
         end
-    )
-                   for i in 1:N]
-    return quote
-        $(expressions...)
-        return true
     end
 end
+
+@generated function _set_entity_values!(map::Map{W,CS,N}, archetype::UInt32, row::UInt32, comps) where {W<:World,CS<:Tuple,N}
+    exprs = Expr[]
+    for i in 1:N
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        push!(exprs, :($stor = map._storage[$i]))
+        push!(exprs, :($col = $stor.data[archetype]))
+        push!(exprs, :($col._data[row] = comps[$i]))
+    end
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@generated function _has_entity_components(map::Map{W,CS,N}, index::_EntityIndex) where {W<:World,CS<:Tuple,N}
+    exprs = Expr[]
+    for i in 1:N
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        push!(exprs, :($stor = map._storage[$i]))
+        push!(exprs, :($col = $stor.data[index.archetype]))
+        push!(exprs, :(
+            if $col === nothing
+                return false
+            end
+        ))
+    end
+    push!(exprs, :(return true))
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+

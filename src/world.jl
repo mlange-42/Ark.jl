@@ -414,6 +414,9 @@ end
 
 # TODO: experimental for now.
 function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't get components of a dead entity")
+    end
     return _get_components(world, entity, Val{Tuple{comp_types...}}())
 end
 
@@ -436,10 +439,10 @@ end
             $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
         ))
         push!(exprs, :(
-            $(col_sym) = $(stor_sym).data[Int(idx.archetype)]
+            $(col_sym) = $(stor_sym).data[idx.archetype]
         ))
         push!(exprs, :(
-            $(val_sym) = $(col_sym)._data[Int(idx.row)]
+            $(val_sym) = $(col_sym)._data[idx.row]
         ))
     end
 

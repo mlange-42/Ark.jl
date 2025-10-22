@@ -20,8 +20,9 @@ using .TestTypes: Position, Velocity, Altitude, Health
     @test vel == Velocity(7, 8)
 
     empty_entity = new_entity!(world)
-    @test_throws MethodError m[empty_entity]
-    @test_throws MethodError m[empty_entity] = (Position(5, 6), Velocity(7, 8))
+    # TODO: do we want that, or do we want it to return `nothing`?
+    @test_throws FieldError m[empty_entity]
+    @test_throws FieldError m[empty_entity] = (Position(5, 6), Velocity(7, 8))
 
     @test has_components(m, entity) == true
     @test has_components(m, empty_entity) == false
