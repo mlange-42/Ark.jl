@@ -1,16 +1,15 @@
 
 println("-----------------------------------------------")
-println("                New entity 1")
+println("                World new entity 5")
 println("-----------------------------------------------")
 
-function setup_new_entity_1(n::Int)
-    world = World(Position, Velocity)
-    map = Map(world, (Position,))
+function setup_world_new_entity_5(n::Int)
+    world = World(Position, Velocity, CompA, CompB, CompC)
 
     # Run once to allocate memory
     entities = Vector{Entity}()
     for _ in 1:n
-        e = new_entity!(map, (Position(0, 0),))
+        e = new_entity!(world, Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0))
         push!(entities, e)
     end
 
@@ -18,15 +17,15 @@ function setup_new_entity_1(n::Int)
         remove_entity!(world, e)
     end
 
-    return map
+    return world
 end
 
-function benchmark_new_entity_1(n::Int)
+function benchmark_world_new_entity_5(n::Int)
     bench = @benchmarkable begin
         for _ in 1:$n
-            new_entity!(map, (Position(0, 0),))
+            new_entity!(world, Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0))
         end
-    end setup = (map = setup_new_entity_1($n))
+    end setup = (world = setup_world_new_entity_5($n))
 
     tune!(bench)
     result = run(bench, seconds=seconds)
@@ -34,5 +33,5 @@ function benchmark_new_entity_1(n::Int)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_new_entity_1(n)
+    benchmark_world_new_entity_5(n)
 end
