@@ -210,15 +210,15 @@ end
 
 Get the given components for an entity.
 """
-function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
-    return _get_components(world, entity, Val{Tuple{comp_types...}}())
+    return _get_components(world, entity, comp_types)
 end
 
-@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
+@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
     if length(types) == 0
         return :(())
     end
@@ -245,6 +245,41 @@ end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't check components of a dead entity")
+    end
+    index = world._entities[entity._id]
+    return _has_components(world, index, comp_types)
+end
+
+@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
+    exprs = []
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
+        push!(exprs, :(
+            if $col_sym === nothing
+                return false
+            end
+        ))
+    end
+
+    push!(exprs, :(return true))
 
     return quote
         @inbounds begin
@@ -373,15 +408,15 @@ end
     end
 end
 
-function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't remove components from a dead entity")
     end
-    return _remove_components!(world, entity, Val{Tuple{comp_types...}}())
+    return _remove_components!(world, entity, comp_types)
 end
 
-@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
+@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
     exprs = []
 
     # Generate component IDs to remove
@@ -395,41 +430,6 @@ end
     push!(exprs, :(_move_entity!(world, entity, archetype)))
 
     push!(exprs, Expr(:return, :nothing))
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
-end
-
-@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
-    if !is_alive(world, entity)
-        error("can't check components of a dead entity")
-    end
-    index = world._entities[entity._id]
-    return _has_components(world, index, Val{Tuple{comp_types...}}())
-end
-
-@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
-    exprs = []
-
-    for i in 1:length(types)
-        T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
-        push!(exprs, :(
-            if $col_sym === nothing
-                return false
-            end
-        ))
-    end
-
-    push!(exprs, :(return true))
 
     return quote
         @inbounds begin
