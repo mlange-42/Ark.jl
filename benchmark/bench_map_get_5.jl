@@ -13,6 +13,13 @@ function setup_map_get_5(n_entities::Int)
         push!(entities, e)
     end
 
+    sum = 0.0
+    for e in entities
+        pos, vel, a, b, c = map[e]
+        sum += pos.x + vel.dx + a.x + b.x + c.x
+    end
+    sum
+
     return (entities, map)
 end
 
@@ -23,6 +30,7 @@ function benchmark_map_get_5(n)
             pos, vel, a, b, c = map[e]
             sum += pos.x + vel.dx + a.x + b.x + c.x
         end
+        sum
     end setup = ((entities, map) = setup_map_get_5($n))
 
     tune!(bench)

@@ -14,6 +14,11 @@ function setup_map_posvel(n_entities::Int)
         push!(entities, e)
     end
 
+    for e in entities
+        pos, vel = map2[e]
+        map1[e] = (Position(pos.x + vel.dx, pos.y + vel.dy),)
+    end
+
     return (entities, map1, map2)
 end
 
