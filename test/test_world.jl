@@ -166,7 +166,7 @@ end
     t = get_components(world, e1, Val.(()))
     @test t == ()
 
-    set_components!(world, e1, Position(5, 6), Velocity(7, 8))
+    set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
     pos, vel = get_components(world, e1, Val.((Position, Velocity)))
     @test pos == Position(5, 6)
     @test vel == Velocity(7, 8)

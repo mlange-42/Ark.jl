@@ -293,12 +293,14 @@ end
 
 Sets the given component values for an entity. Types are inferred from the values.
 """
-function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN}
-    types = Tuple{map(typeof, values)...}
-    return _set_components!(world, entity, Val{types}(), values...)
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+    if !is_alive(world, entity)
+        error("can't check components of a dead entity")
+    end
+    return _set_components!(world, entity, Val{typeof(values)}(), values)
 end
 
-@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
     types = TS.parameters
     exprs = [:(idx = world._entities[entity._id])]
 
@@ -306,12 +308,14 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_sym = :(values[$i])  # Type-stable because TS is known
+        val_expr = :(values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
-        push!(exprs, :($col_sym._data[idx.row] = $val_sym))
+        push!(exprs, :($col_sym._data[idx.row] = $val_expr))
     end
+
+    push!(exprs, Expr(:return, :nothing))
 
     return quote
         @inbounds begin
