@@ -1,5 +1,5 @@
 
-function setup_map_get_1(n_entities::Int)
+function setup_world_get_1(n_entities::Int)
     world = World(Position, Velocity)
     map = Map(world, (Position,))
 
@@ -11,24 +11,23 @@ function setup_map_get_1(n_entities::Int)
 
     sum = 0.0
     for e in entities
-        pos, = map[e]
+        pos, = get_components(world, e, Position)
         sum += pos.x
     end
     sum
 
-    return (entities, map)
+    return (entities, world)
 end
 
-function benchmark_map_get_1(args)
-    entities, map = args
+function benchmark_world_get_1(args, n)
+    entities, world = args
     sum = 0.0
     for e in entities
-        pos, = map[e]
+        pos, = get_components(world, e, Position)
         sum += pos.x
     end
-    return sum
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_map_get_1 n=$n"] = @benchmarkable setup_map_get_1($n) benchmark_map_get_1(_)
+    SUITE["benchmark_world_get_1 n=$n"] = @benchmarkable setup_world_get_1($n) benchmark_world_get_1(_, $n)
 end

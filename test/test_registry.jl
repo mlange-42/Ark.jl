@@ -7,9 +7,9 @@ using .TestTypes: Position
     registry = _ComponentRegistry()
 
     # Register new types
-    id_int = _component_id!(registry, Int)
-    id_float = _component_id!(registry, Float64)
-    id_pos = _component_id!(registry, Position)
+    id_int = _register_component!(registry, Int)
+    id_float = _register_component!(registry, Float64)
+    id_pos = _register_component!(registry, Position)
 
     # Check that IDs are UInt8 and unique
     @test isa(id_int, UInt8)
@@ -17,6 +17,7 @@ using .TestTypes: Position
     @test isa(id_pos, UInt8)
     @test id_int != id_float != id_pos
 
-    # Check repeated registration returns same ID
-    @test _component_id!(registry, Int) == id_int
+    @test _get_id!(registry, Int) == id_int
+
+    @test_throws ErrorException _get_id!(registry, String)
 end

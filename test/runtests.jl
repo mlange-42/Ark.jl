@@ -1,3 +1,4 @@
+using Ark
 using Test
 using Revise
 
@@ -10,7 +11,7 @@ include("test_mask.jl")
 include("test_map.jl")
 include("test_query.jl")
 include("test_registry.jl")
-include("test_storage.jl")
+include("test_column.jl")
 include("test_vec_map.jl")
 include("test_graph.jl")
 include("test_world.jl")

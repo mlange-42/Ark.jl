@@ -1,6 +1,6 @@
 
-function setup_add_remove(n_entities::Int)
-    world = World()
+function setup_map_add_remove(n_entities::Int)
+    world = World(Position, Velocity)
     map1 = Map(world, (Position,))
     map2 = Map(world, (Velocity,))
 

@@ -7,13 +7,13 @@ The reserved zero [`Entity`](@ref) value.
 const zero_entity::Entity = _new_entity(1, 0)
 
 """
-    World
+    World{CS<:Tuple,CT<:Tuple,N}
 
 The World is the central ECS storage.
 """
-mutable struct World
+mutable struct World{CS<:Tuple,CT<:Tuple,N}
     _entities::Vector{_EntityIndex}
-    _storages::Vector{Any}  # List of ComponentStorage{C}, stored as `Any`
+    _storages::CS
     _archetypes::Vector{_Archetype}
     _registry::_ComponentRegistry
     _entity_pool::_EntityPool
@@ -22,38 +22,46 @@ mutable struct World
 end
 
 """
-    World()
+    World(types::Type...)
 
 Creates a new, empty [`World`](@ref).
 """
-function World()
-    graph = _Graph()
-    World(
-        [_EntityIndex(typemax(UInt32), 0)],
-        Vector{Any}(),
-        [_Archetype(graph.nodes[1])],
-        _ComponentRegistry(),
-        _EntityPool(UInt32(1024)),
-        _Lock(),
-        graph,
-    )
-end
+World(comp_types::Type...) = _World_from_types(Val{Tuple{comp_types...}}())
 
-@inline function _component_id!(world::World, ::Type{C})::UInt8 where C
-    id = _component_id!(world._registry, C)
-    if id > length(world._storages)
-        push!(world._storages, _ComponentStorage{C}(length(world._archetypes)))
+@generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return :(UInt8($i))
+        end
     end
-    return id
+    return :(error("Component type $(string(C)) not found in the World"))
 end
 
-function _get_storage(world::World, id::UInt8, ::Type{C})::_ComponentStorage{C} where C
-    return _cast_to(_ComponentStorage{C}, world._storages[id])
+@generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return :(world._storages[$i])
+        end
+    end
+    return :(error("Component type $(string(C)) not found in the World"))
 end
 
-function _get_storage(world::World, ::Type{C})::_ComponentStorage{C} where C
-    id = _component_id!(world, C)
-    return _get_storage(world, id, C)
+@generated function _get_storage(world::World{CS}, ::Val{C})::_ComponentStorage{C} where {CS<:Tuple,C}
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return :(world._storages[$i])
+        end
+    end
+    return :(error("Component type $(string(C)) not found in the World"))
+end
+
+@generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
+    S = CS.parameters[id]
+    T = S.parameters[1]
+    return :(world._storages[$id]::_ComponentStorage{$(QuoteNode(T))})
 end
 
 function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
@@ -77,16 +85,16 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     push!(world._archetypes, arch)
     node.archetype = length(world._archetypes)
 
-    index = length(world._archetypes)
-    for (i, tp) in enumerate(world._registry.types)
-        storage = _get_storage(world, UInt8(i), tp)
-        push!(storage.data, nothing)
+    index::UInt32 = length(world._archetypes)
+
+    # type-stable: expand pushes to concrete storage fields
+    _push_nothing_to_all!(world)
+
+    # type-stable: assign new column to each component's storage with concrete accesses
+    for comp::UInt8 in components
+        _assign_new_column_for_comp!(world, comp, index)
     end
-    for comp in components
-        tp = world._registry.types[comp]
-        storage = _get_storage(world, comp, tp)
-        storage.data[index] = _new_column(tp)
-    end
+
     return index
 end
 
@@ -97,11 +105,9 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     archetype = world._archetypes[archetype_index]
 
     index = _add_entity!(archetype, entity)
-    for comp in archetype.components
-        tp = world._registry.types[comp]
-        storage = _get_storage(world, comp, tp)
-        vec = storage.data[archetype_index]
-        resize!(vec._data, index)
+
+    for comp::UInt8 in archetype.components
+        _ensure_column_size_for_comp!(world, comp, archetype_index, index)
     end
 
     if entity._id > length(world._entities)
@@ -121,25 +127,19 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
 
     new_row = _add_entity!(new_archetype, entity)
     swapped = _swap_remove!(old_archetype.entities._data, index.row)
-    for comp in old_archetype.components
+
+    # Move component data only for components present in old_archetype that are also present in new_archetype
+    for comp::UInt8 in old_archetype.components
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        tp = world._registry.types[comp]
-        storage = _get_storage(world, comp, tp)
-        old_vec = storage.data[index.archetype]
-        new_vec = storage.data[archetype_index]
-        push!(new_vec._data, old_vec[index.row])
-        _swap_remove!(old_vec._data, index.row)
+        # comp casting to match generated helper signature
+        _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
     end
-    for comp in new_archetype.components
-        tp = world._registry.types[comp]
-        storage = _get_storage(world, comp, tp)
-        new_vec = storage.data[archetype_index]
-        if length(new_vec) == new_row
-            continue
-        end
-        resize!(new_vec._data, new_row)
+
+    # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
+    for comp::UInt8 in new_archetype.components
+        _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
     end
 
     if swapped
@@ -149,25 +149,6 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
 
     world._entities[entity._id] = _EntityIndex(archetype_index, new_row)
     return new_row
-end
-
-"""
-    new_entity!(world::World)::Entity
-
-Creates a new [`Entity`](@ref) without any components.
-"""
-function new_entity!(world::World)::Entity
-    entity, _ = _create_entity!(world, UInt32(1))
-    return entity
-end
-
-"""
-    is_alive(world::World, entity::Entity)::Bool
-
-Returns whether an [`Entity`](@ref) is alive.
-"""
-function is_alive(world::World, entity::Entity)::Bool
-    return _is_alive(world._entity_pool, entity)
 end
 
 """
@@ -185,11 +166,11 @@ function remove_entity!(world::World, entity::Entity)
     archetype = world._archetypes[index.archetype]
 
     swapped = _swap_remove!(archetype.entities._data, index.row)
-    for comp in archetype.components
-        tp = world._registry.types[comp]
-        storage = _get_storage(world, comp, tp)
-        vec = storage.data[index.archetype]
-        _swap_remove!(vec._data, index.row)
+
+    # Only operate on storages for components present in this archetype
+    for comp::UInt8 in archetype.components
+        # ensure comp has the integer kind expected by the generated helper
+        _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
     end
 
     if swapped
@@ -200,12 +181,442 @@ function remove_entity!(world::World, entity::Entity)
     _recycle(world._entity_pool, entity)
 end
 
-function is_locked(world::World)::Bool
-    return _is_locked(world._lock)
+"""
+    is_alive(world::World, entity::Entity)::Bool
+
+Returns whether an [`Entity`](@ref) is alive.
+"""
+function is_alive(world::World, entity::Entity)::Bool
+    return _is_alive(world._entity_pool, entity)
 end
 
 function _check_locked(world::World)
     if _is_locked(world._lock)
         error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
     end
+end
+
+"""
+    is_locked(world::World)::Bool
+
+Returns whether the world is currently locked for modifications.
+"""
+function is_locked(world::World)::Bool
+    return _is_locked(world._lock)
+end
+
+"""
+    get_components(world::World, entity::Entity, comp_types::Type...)
+
+Get the given components for an entity.
+"""
+function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't get components of a dead entity")
+    end
+    return _get_components(world, entity, Val{Tuple{comp_types...}}())
+end
+
+@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    if length(types) == 0
+        return :(())
+    end
+
+    exprs = Expr[]
+    push!(exprs, :(idx = world._entities[entity._id]))
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = Symbol("v", i)
+
+        push!(exprs, :(
+            $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
+        ))
+        push!(exprs, :(
+            $(col_sym) = $(stor_sym).data[idx.archetype]
+        ))
+        push!(exprs, :(
+            $(val_sym) = $(col_sym)._data[idx.row]
+        ))
+    end
+
+    vals = [:($(Symbol("v", i))) for i in 1:length(types)]
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    set_components(world::World, entity::Entity, values...)
+
+Sets the given component values for an entity. Types are inferred from the values.
+"""
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN}
+    types = Tuple{map(typeof, values)...}
+    return _set_components!(world, entity, Val{types}(), values...)
+end
+
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+    types = TS.parameters
+    exprs = [:(idx = world._entities[entity._id])]
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = :(values[$i])  # Type-stable because TS is known
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
+        push!(exprs, :($col_sym._data[idx.row] = $val_sym))
+    end
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    new_entity!(world::World, comps::Vararg{Any})::Entity
+
+Creates a new [`Entity`](@ref) with the given components.
+"""
+function new_entity!(world::World{CS,CT,N}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
+    types = Tuple{map(typeof, comps)...}
+    return _new_entity!(world, Val{types}(), comps...)
+end
+
+@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs as a tuple
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(ids = ($(id_exprs...),)))  # Tuple, not Vector
+
+    # Create archetype and entity
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(tmp = _create_entity!(world, archetype)))
+    push!(exprs, :(entity = tmp[1]))
+    push!(exprs, :(index = tmp[2]))
+
+    # Set each component
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(comps[$i])
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :($col_sym._data[index] = $val_expr))
+    end
+
+    push!(exprs, Expr(:return, :entity))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+function add_components!(world::World{CS,CT,N}, entity::Entity, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't add components to a dead entity")
+    end
+    types = Tuple{map(typeof, comps)...}
+    return _add_components!(world, entity, Val{types}(), comps...)
+end
+
+@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs as a tuple
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(ids = ($(id_exprs...),)))
+
+    # Find or create new archetype
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, ids, ())))
+
+    # Move entity to new archetype
+    push!(exprs, :(row = _move_entity!(world, entity, archetype)))
+
+    # Set each new component
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(comps[$i])
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :($col_sym._data[row] = $val_expr))
+    end
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't remove components from a dead entity")
+    end
+    return _remove_components!(world, entity, Val{Tuple{comp_types...}}())
+end
+
+@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs to remove
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(remove_ids = ($(id_exprs...),)))
+
+    # Find or create new archetype without those components
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, (), remove_ids)))
+
+    # Move entity to new archetype
+    push!(exprs, :(_move_entity!(world, entity, archetype)))
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't check components of a dead entity")
+    end
+    index = world._entities[entity._id]
+    return _has_components(world, index, Val{Tuple{comp_types...}}())
+end
+
+@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
+        push!(exprs, :(
+            if $col_sym === nothing
+                return false
+            end
+        ))
+    end
+
+    push!(exprs, :(return true))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@generated function _World_from_types(::Val{CS}) where {CS<:Tuple}
+    types = CS.parameters
+
+    component_types = map(T -> :(Type{$(QuoteNode(T))}), types)
+    component_tuple_type = :(Tuple{$(component_types...)})
+
+    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
+    storage_tuple_type = :(Tuple{$(storage_types...)})
+
+    # storage tuple value
+    storage_exprs = [:(_ComponentStorage{$(QuoteNode(T))}(1)) for T in types]
+    storage_tuple = Expr(:tuple, storage_exprs...)
+
+    # id registration tuple value
+    id_exprs = [:(_register_component!(registry, $(QuoteNode(T)))) for T in types]
+    id_tuple = Expr(:tuple, id_exprs...)
+
+    return quote
+        registry = _ComponentRegistry()
+        ids = $id_tuple
+        graph = _Graph()
+        World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
+            [_EntityIndex(typemax(UInt32), 0)],
+            $storage_tuple,
+            [_Archetype(graph.nodes[1])],
+            registry,
+            _EntityPool(UInt32(1024)),
+            _Lock(),
+            graph,
+        )
+    end
+end
+
+@generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    # TODO: check! but should not be possible
+    #if n == 0
+    #    return :(nothing)
+    #end
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(push!((world._storages).$i.data, nothing)))
+    end
+    return Expr(:block, exprs...)
+end
+
+@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    # TODO: check! but should not be possible
+    #if n == 0
+    #    return :(nothing)
+    #end
+
+    expr = nothing
+    for i in n:-1:1
+        T = CT.parameters[i]
+        elt = T.parameters[1]
+        assign = :((world._storages).$i.data[index] = _new_column($(QuoteNode(elt))))
+        if expr === nothing
+            expr = :(
+                if comp == $i
+                    $assign
+                end
+            )
+        else
+            expr = :(
+                if comp == $i
+                    $assign
+                else
+                    $expr
+                end
+            )
+        end
+    end
+    return expr
+end
+
+@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, slot::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    # TODO: check! but should not be possible
+    #if n == 0
+    #    return :(nothing)
+    #end
+
+    expr = nothing
+    for i in n:-1:1
+        stmt = :(
+            begin
+                col = ((world._storages).$i).data[Int(slot)]
+                if length(col) < needed
+                    resize!(col._data, needed)
+                end
+            end
+        )
+        if expr === nothing
+            expr = :(
+                if comp == $i
+                    $stmt
+                end
+            )
+        else
+            expr = :(
+                if comp == $i
+                    $stmt
+                else
+                    $expr
+                end
+            )
+        end
+    end
+    return expr
+end
+
+@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_slot::UInt32, new_slot::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    if n == 0
+        return :(nothing)
+    end
+
+    expr = nothing
+    for i in n:-1:1
+        # build statement using concrete storage field $i
+        # Note: do not interpolate runtime names old_slot/new_slot/row; leave them as runtime vars
+        stmt = quote
+            begin
+                old_vec = ((world._storages).$i).data[Int(old_slot)]
+                new_vec = ((world._storages).$i).data[Int(new_slot)]
+                push!(new_vec._data, old_vec[row])
+                _swap_remove!(old_vec._data, row)
+            end
+        end
+        if expr === nothing
+            expr = :(
+                if comp == $i
+                    $stmt
+                end
+            )
+        else
+            expr = :(
+                if comp == $i
+                    $stmt
+                else
+                    $expr
+                end
+            )
+        end
+    end
+    return expr
+end
+
+@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, slot::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    n = length(CS.parameters)
+    if n == 0
+        return :(nothing)
+    end
+
+    expr = nothing
+    for i in n:-1:1
+        stmt = :(
+            begin
+                col = ((world._storages).$i).data[Int(slot)]
+                _swap_remove!(col._data, row)
+            end
+        )
+        if expr === nothing
+            expr = :(
+                if comp == $i
+                    $stmt
+                end
+            )
+        else
+            expr = :(
+                if comp == $i
+                    $stmt
+                else
+                    $expr
+                end
+            )
+        end
+    end
+    return expr
 end

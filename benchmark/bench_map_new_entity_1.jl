@@ -1,6 +1,6 @@
 
-function setup_new_entity_1(n::Int)
-    world = World()
+function setup_map_new_entity_1(n::Int)
+    world = World(Position, Velocity)
     map = Map(world, (Position,))
 
     # Run once to allocate memory

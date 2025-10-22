@@ -1,6 +1,6 @@
 
 function setup_query_posvel(n_entities::Int)
-    world = World()
+    world = World(Position, Velocity)
     map = Map(world, (Position, Velocity))
 
     for i in 1:n_entities
@@ -8,13 +8,23 @@ function setup_query_posvel(n_entities::Int)
     end
 
     query = Query(world, (Position, Velocity))
+
+    for _ in query
+        _, pos_column, vel_column = query[]
+        for i in eachindex(pos_column)
+            @inbounds pos = pos_column[i]
+            @inbounds vel = vel_column[i]
+            @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        end
+    end
+
     return query
 end
 
 function benchmark_query_posvel(args, n)
     query = args
     for _ in query
-        pos_column, vel_column = query[]
+        _, pos_column, vel_column = query[]
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]

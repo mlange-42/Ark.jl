@@ -53,8 +53,8 @@ struct Velocity
     dy::Float64
 end
 
-# Create a world
-world = World()
+# Create a world with the required components
+world = World(Position, Velocity)
 
 # Create a component mapper
 map = Map(world, (Position,Velocity))
@@ -73,8 +73,8 @@ query = Query(world, (Position, Velocity))
 for i in 1:10
     # Iterate the query (archetypes)
     for _ in query
-        # Get component columns of the current archetype
-        pos_column, vel_column = query[]
+        # Get entities and component columns of the current archetype
+        entities, pos_column, vel_column = query[]
         # Iterate entities in the current archetype
         for i in eachindex(pos_column)
             # Get components of the current entity

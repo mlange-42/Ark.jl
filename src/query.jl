@@ -1,12 +1,12 @@
 
 """
-    Query{CS,N}
+    Query{W,CS,N}
 
 A query for N components.
 """
-mutable struct Query{CS<:Tuple,N}
+mutable struct Query{W<:World,CS<:Tuple,N}
     _index::Int
-    _world::World
+    _world::W
     _ids::NTuple{N,UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
@@ -35,46 +35,65 @@ Creates a query.
 - `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
 """
 function Query(
-    world::World,
+    world::W,
     comp_types::Tuple{Vararg{DataType}};
     with::Tuple{Vararg{DataType}}=(),
     without::Tuple{Vararg{DataType}}=(),
     optional::Tuple{Vararg{DataType}}=(),
-)
-    ids = Tuple(_component_id!(world, C) for C in comp_types)
-    with_ids = map(x -> _component_id!(world, x), with)
-    without_ids = map(x -> _component_id!(world, x), without)
+) where {W<:World}
+    ids = Tuple(_component_id(world, C) for C in comp_types)
+    with_ids = Tuple(_component_id(world, C) for C in with)
+    without_ids = Tuple(_component_id(world, C) for C in without)
+    optional_ids = Tuple(_component_id(world, C) for C in optional)
+
     mask = _Mask(ids..., with_ids...)
-    if length(optional) > 0
-        opt_ids = map(x -> _component_id!(world, x), optional)
-        mask = _clear_bits(mask, _Mask(opt_ids...))
+    if !isempty(optional)
+        mask = _clear_bits(mask, _Mask(optional_ids...))
     end
-    return Query(
-        0,
-        world,
-        ids,
-        mask,
-        _Mask(without_ids...),
-        length(without_ids) > 0,
-        Tuple(_get_storage(world, id, C) for (id, C) in zip(ids, comp_types)),
-        UInt8(0),
-    )
+
+    return _Query_from_types(world, Val{Tuple{comp_types...}}(), ids, mask, _Mask(without_ids...), !isempty(without))
+end
+
+@generated function _Query_from_types(
+    world::W,
+    ::Val{CT},
+    ids::NTuple{N,UInt8},
+    mask::_Mask,
+    exclude_mask::_Mask,
+    has_excluded::Bool,
+) where {W<:World,CT<:Tuple,N}
+    types = CT.parameters
+
+    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in types]
+    storages_tuple = Expr(:tuple, storage_exprs...)
+
+    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
+    storage_tuple_type = :(Tuple{$(storage_types...)})
+
+    return quote
+        Query{$W,$storage_tuple_type,$N}(
+            0,
+            world,
+            ids,
+            mask,
+            exclude_mask,
+            has_excluded,
+            $storages_tuple,
+            UInt8(0),
+        )
+    end
 end
 
 """
-    get_components(q::Query)
+    Base.getindex(q::Query)
 
-Returns the component columns of the archetype at the current cursor position.
+Returns entities and component columns of the archetype at the current cursor position.
 """
-@inline function get_components(q::Query)
-    return q[]
-end
-
-@inline function Base.getindex(q::Query)
+@inline function Base.getindex(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     return _get_query_archetypes(q)
 end
 
-@inline function Base.iterate(q::Query, state::Tuple{Int,Int})
+@inline function Base.iterate(q::Query{W,CS}, state::Tuple{Int,Int}) where {W<:World,CS<:Tuple}
     logical_index, physical_index = state
     q._index = physical_index
 
@@ -94,7 +113,7 @@ end
     return nothing
 end
 
-@inline function Base.iterate(q::Query)
+@inline function Base.iterate(q::Query{W,CS}) where {W<:World,CS<:Tuple}
     q._lock = _lock(q._world._lock)
     return Base.iterate(q, (1, 1))
 end
@@ -106,22 +125,29 @@ Closes the query and unlocks the world.
 
 Must be called if a query is not fully iterated.
 """
-function close(q::Query)
+function close(q::Query{W,CS}) where {W<:World,CS<:Tuple}
     q._index = 0
     _unlock(q._world._lock, q._lock)
 end
 
-"""
-    entities(q::Query)
-
-Returns the entities of the current archetype.
-"""
-function entities(q::Query)::Column{Entity}
-    return q._world._archetypes[q._index].entities
-end
-
-@generated function _get_query_archetypes(q::Query{CS}) where {CS<:Tuple}
-    N = length(CS.parameters)
-    expressions = [:(q._storage[$i].data[q._index]) for i in 1:N]
-    return Expr(:tuple, expressions...)
+@generated function _get_query_archetypes(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
+    exprs = Expr[]
+    push!(exprs, :(entities = q._world._archetypes[q._index].entities))
+    for i in 1:N
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
+        push!(exprs, :($col_sym = $stor_sym.data[q._index]))
+    end
+    result_exprs = [:entities]
+    for i in 1:N
+        push!(result_exprs, Symbol("col", i))
+    end
+    result_exprs = map(x -> :($x), result_exprs)
+    push!(exprs, Expr(:return, Expr(:tuple, result_exprs...)))
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
 end
