@@ -11,7 +11,7 @@ function setup_query_posvel(n_entities::Int)
         new_entity!(map, (Position(i, i * 2), Velocity(1, 1)))
     end
 
-    query = Query(world, (Position, Velocity))
+    query = Query(world, Val.((Position, Velocity)))
 
     for _ in query
         _, pos_column, vel_column = query[]

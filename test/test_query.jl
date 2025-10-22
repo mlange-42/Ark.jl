@@ -8,7 +8,7 @@
         new_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
-    query = Query(world, (Position, Velocity))
+    query = Query(world, Val.((Position, Velocity)))
     for i in 1:10
         count = 0
         for _ in query
@@ -37,7 +37,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity); with=(Altitude,))
+    query = Query(world, Val.((Position, Velocity)); with=Val.((Altitude,)))
 
     count = 0
     for a in query
@@ -60,7 +60,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity); without=(Altitude,))
+    query = Query(world, Val.((Position, Velocity)); without=Val.((Altitude,)))
 
     count = 0
     for a in query
@@ -83,7 +83,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity, Altitude); optional=(Altitude,))
+    query = Query(world, Val.((Position, Velocity, Altitude)); optional=Val.((Altitude,)))
 
     count = 0
     indices = Vector{Int}()

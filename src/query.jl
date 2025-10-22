@@ -22,65 +22,77 @@ end
 """
     Query(
         world::World,
-        comp_types::Tuple{Vararg{DataType}};
-        with::Tuple{Vararg{DataType}}=(),
-        without::Tuple{Vararg{DataType}}=(),
-        optional::Tuple{Vararg{DataType}}=(),
+        comp_types::Tuple;
+        with::Tuple=(),
+        without::Tuple=(),
+        optional::Tuple=()
     )
 
 Creates a query.
 
 # Arguments
 - `world::World`: The world to use for this query.
-- `comp_types::Tuple{Vararg{DataType}}`: Components the query filters for and that it provides access to.
-- `with::Tuple{Vararg{DataType}}`: Additional components the entities must have.
-- `without::Tuple{Vararg{DataType}}`: Components the entities must not have.
-- `optional::Tuple{Vararg{DataType}}`: Makes components of the parameters optional.
+- `comp_types::Tuple`: Components the query filters for and that it provides access to.
+- `with::Tuple`: Additional components the entities must have.
+- `without::Tuple`: Components the entities must not have.
+- `optional::Tuple`: Makes components of the parameters optional.
 """
 function Query(
     world::W,
-    comp_types::Tuple{Vararg{DataType}};
-    with::Tuple{Vararg{DataType}}=(),
-    without::Tuple{Vararg{DataType}}=(),
-    optional::Tuple{Vararg{DataType}}=(),
+    comp_types::Tuple;
+    with::Tuple=(),
+    without::Tuple=(),
+    optional::Tuple=()
 ) where {W<:World}
-    ids = Tuple(_component_id(world, C) for C in comp_types)
-    with_ids = Tuple(_component_id(world, C) for C in with)
-    without_ids = Tuple(_component_id(world, C) for C in without)
-    optional_ids = Tuple(_component_id(world, C) for C in optional)
-
-    mask = _Mask(ids..., with_ids...)
-    if !isempty(optional)
-        mask = _clear_bits(mask, _Mask(optional_ids...))
-    end
-
-    return _Query_from_types(world, Val{Tuple{comp_types...}}(), ids, mask, _Mask(without_ids...), !isempty(without))
+    return _Query_from_types(world, comp_types, with, without, optional)
 end
 
 @generated function _Query_from_types(
     world::W,
-    ::Val{CT},
-    ids::NTuple{N,UInt8},
-    mask::_Mask,
-    exclude_mask::_Mask,
-    has_excluded::Bool,
-) where {W<:World,CT<:Tuple,N}
-    types = CT.parameters
+    ::CT,
+    ::WT,
+    ::WO,
+    ::OT
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple}
+    # Extract actual types from each tuple
+    comp_types = [x.parameters[1] for x in CT.parameters]
+    with_types = [x.parameters[1] for x in WT.parameters]
+    without_types = [x.parameters[1] for x in WO.parameters]
+    optional_types = [x.parameters[1] for x in OT.parameters]
 
-    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in types]
+    # Component IDs
+    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in comp_types]
+    ids_tuple = Expr(:tuple, id_exprs...)
+
+    with_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
+    without_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
+    optional_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in optional_types]
+
+    # Mask construction
+    mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
+    if !isempty(optional_types)
+        clear_expr = :(_clear_bits($mask_expr, _Mask($(optional_ids_exprs...))))
+        mask_expr = clear_expr
+    end
+
+    exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
+    has_excluded_expr = :($(length(without_types) > 0))
+
+    # Storage construction
+    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
+    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in comp_types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
-        Query{$W,$storage_tuple_type,$N}(
+        Query{$W,$storage_tuple_type,$(length(comp_types))}(
             world,
             _Cursor(0, UInt8(0)),
-            ids,
-            mask,
-            exclude_mask,
-            has_excluded,
+            $ids_tuple,
+            $mask_expr,
+            $exclude_mask_expr,
+            $has_excluded_expr,
             $storages_tuple,
         )
     end
