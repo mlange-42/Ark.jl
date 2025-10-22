@@ -444,12 +444,11 @@ end
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
-    push!(exprs, :(return ($(vals...))))
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
 
-    body = Expr(:block, exprs...)
     return quote
         @inbounds begin
-            $(body)
+            $(Expr(:block, exprs...))
         end
     end
 end
