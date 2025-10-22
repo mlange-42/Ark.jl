@@ -5,7 +5,7 @@ println("-----------------------------------------------")
 
 function setup_world_get_1(n_entities::Int)
     world = World(Position, Velocity)
-    map = Map(world, (Position,))
+    map = Map(world, Val.((Position,)))
 
     entities = Vector{Entity}()
     for i in 1:n_entities

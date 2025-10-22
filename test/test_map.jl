@@ -5,9 +5,9 @@ using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Map new/get/set/has" begin
     world = World(Position, Velocity)
-    m = Map(world, (Position, Velocity))
+    m = Map(world, Val.((Position, Velocity)))
 
-    @test_throws ErrorException Map(world, (Position, Velocity, Altitude))
+    @test_throws ErrorException Map(world, Val.((Position, Velocity, Altitude)))
 
     entity = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(2, 0)
@@ -34,8 +34,8 @@ end
 
 @testset "Map add/remove" begin
     world = World(Position, Velocity, Altitude, Health)
-    m1 = Map(world, (Position, Velocity))
-    m2 = Map(world, (Altitude, Health))
+    m1 = Map(world, Val.((Position, Velocity)))
+    m2 = Map(world, Val.((Altitude, Health)))
 
     e1 = new_entity!(world)
     add_components!(m1, e1, (Position(1, 2), Velocity(3, 4)))

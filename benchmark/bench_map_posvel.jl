@@ -5,8 +5,8 @@ println("-----------------------------------------------")
 
 function setup_map_posvel(n_entities::Int)
     world = World(Position, Velocity)
-    map1 = Map(world, (Position,))
-    map2 = Map(world, (Position, Velocity))
+    map1 = Map(world, Val.((Position,)))
+    map2 = Map(world, Val.((Position, Velocity)))
 
     entities = Vector{Entity}()
     for i in 1:n_entities

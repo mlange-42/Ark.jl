@@ -148,9 +148,8 @@ end
 
 @testset "World get/set components" begin
     world = World(Position, Velocity)
-    m = Map(world, (Position, Velocity))
 
-    e1 = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     e2 = new_entity!(world)
 
     pos, vel = get_components(world, e1, Val.((Position, Velocity)))
@@ -224,20 +223,19 @@ end
 
 @testset "remove_entity! Tests" begin
     world = World(Position, Velocity)
-    m = Map(world, (Position, Velocity))
 
-    e1 = new_entity!(m, (Position(1, 1), Velocity(1, 1)))
-    e2 = new_entity!(m, (Position(2, 2), Velocity(1, 1)))
-    e3 = new_entity!(m, (Position(3, 3), Velocity(1, 1)))
+    e1 = new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+    e2 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
+    e3 = new_entity!(world, (Position(3, 3), Velocity(1, 1)))
 
     remove_entity!(world, e2)
     @test is_alive(world, e1) == true
     @test is_alive(world, e2) == false
     @test is_alive(world, e1) == true
 
-    pos, _ = m[e1]
+    pos, = get_components(world, e1, Val.((Position,)))
     @test pos == Position(1, 1)
 
-    pos, _ = m[e3]
+    pos, = get_components(world, e3, Val.((Position,)))
     @test pos == Position(3, 3)
 end

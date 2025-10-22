@@ -15,17 +15,10 @@ end
 
 Creates a component mapper from a tuple of component types.
 """
-Map(world::W, comp_types::Tuple) where {W<:World} = Map(world, comp_types...)
+Map(world::W, comp_types::Tuple) where {W<:World} = _Map_from_types(world, comp_types)
 
-"""
-    Map(world::World, comp_types::Type...)
-
-Creates a component mapper from component types varargs.
-"""
-Map(world::W, comp_types::Type...) where {W<:World} = _Map_from_types(world, Val{Tuple{comp_types...}}())
-
-@generated function _Map_from_types(world::W, ::Val{CT}) where {W<:World,CT<:Tuple}
-    types = CT.parameters
+@generated function _Map_from_types(world::W, ::CT) where {W<:World,CT<:Tuple}
+    types = [x.parameters[1] for x in CT.parameters]
 
     id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in types]
     ids_tuple = Expr(:tuple, id_exprs...)

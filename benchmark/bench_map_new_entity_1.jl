@@ -5,7 +5,7 @@ println("-----------------------------------------------")
 
 function setup_map_new_entity_1(n::Int)
     world = World(Position, Velocity)
-    map = Map(world, (Position,))
+    map = Map(world, Val.((Position,)))
 
     # Run once to allocate memory
     entities = Vector{Entity}()

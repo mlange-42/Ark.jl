@@ -56,14 +56,9 @@ end
 # Create a world with the required components
 world = World(Position, Velocity)
 
-# Create a component mapper
-map = Map(world, (Position,Velocity))
-
 for i in 1:1000
     # Create an entity with components
-    entity = new_entity!(map, Position(i, i * 2), Velocity(1, 1))
-    # Access components of an entity (just to show...)
-    pos, vel = map[entity]
+    entity = new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
 end
 
 # Create a query
