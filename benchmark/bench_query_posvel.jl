@@ -14,7 +14,7 @@ function setup_query_posvel(n_entities::Int)
     query = Query(world, (Position, Velocity))
 
     for _ in query
-        pos_column, vel_column = query[]
+        _, pos_column, vel_column = query[]
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
@@ -28,7 +28,7 @@ end
 function benchmark_query_posvel(n)
     bench = @benchmarkable begin
         for _ in query
-            pos_column, vel_column = query[]
+            _, pos_column, vel_column = query[]
             for i in eachindex(pos_column)
                 @inbounds pos = pos_column[i]
                 @inbounds vel = vel_column[i]

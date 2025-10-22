@@ -6,6 +6,7 @@ include("util.jl")
 include("entity.jl")
 include("mask.jl")
 include("vec_map.jl")
+include("column.jl")
 include("storage.jl")
 include("graph.jl")
 include("archetype.jl")
@@ -28,10 +29,10 @@ export new_entity!, has_components, add_components!, remove_components!
 export _get_mapped_components
 
 export Query
-export entities, close
+export close
 
-export Column
-export _new_column
+export Column, Entities
+export _new_column, _new_entities_column
 
 export _Archetype
 export _add_entity!
