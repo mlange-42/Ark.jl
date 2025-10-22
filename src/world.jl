@@ -373,6 +373,71 @@ end
     end
 end
 
+function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't remove components from a dead entity")
+    end
+    return _remove_components!(world, entity, Val{Tuple{comp_types...}}())
+end
+
+@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs to remove
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(remove_ids = ($(id_exprs...),)))
+
+    # Find or create new archetype without those components
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, (), remove_ids)))
+
+    # Move entity to new archetype
+    push!(exprs, :(_move_entity!(world, entity, archetype)))
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't check components of a dead entity")
+    end
+    index = world._entities[entity._id]
+    return _has_components(world, index, Val{Tuple{comp_types...}}())
+end
+
+@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
+        push!(exprs, :(
+            if $col_sym === nothing
+                return false
+            end
+        ))
+    end
+
+    push!(exprs, :(return true))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
 @generated function _World_from_types(::Val{CS}) where {CS<:Tuple}
     types = CS.parameters
 

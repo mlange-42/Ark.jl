@@ -188,7 +188,7 @@ end
     @test vel == Velocity(3, 4)
 end
 
-@testset "add_components! Tests" begin
+@testset "World ad/remove components" begin
     world = World(Position, Velocity, Altitude, Health)
 
     e1 = new_entity!(world)
@@ -205,11 +205,16 @@ end
     @test a == Altitude(1)
     @test h == Health(2)
 
+    @test has_components(world, e1, Position, Velocity) == true
+
     pos, vel, a, h = get_components(world, e2, Position, Velocity, Altitude, Health)
     @test pos == Position(5, 6)
     @test vel == Velocity(7, 8)
     @test a == Altitude(3)
     @test h == Health(4)
+
+    remove_components!(world, e1, Position, Velocity)
+    @test has_components(world, e1, Position, Velocity) == false
 end
 
 @testset "remove_entity! Tests" begin
