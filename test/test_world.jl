@@ -173,11 +173,19 @@ end
 end
 
 @testset "new_entity! Tests" begin
-    world = World()
+    world = World(Position, Velocity)
 
     entity = new_entity!(world)
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
+
+    entity = new_entity!(world, Position(1, 2), Velocity(3, 4))
+    @test entity == _new_entity(3, 0)
+    @test is_alive(world, entity) == true
+
+    pos, vel = get_components(world, entity, Position, Velocity)
+    @test pos == Position(1, 2)
+    @test vel == Velocity(3, 4)
 end
 
 @testset "remove_entity! Tests" begin

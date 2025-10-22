@@ -152,16 +152,6 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
 end
 
 """
-    new_entity!(world::World)::Entity
-
-Creates a new [`Entity`](@ref) without any components.
-"""
-function new_entity!(world::World)::Entity
-    entity, _ = _create_entity!(world, UInt32(1))
-    return entity
-end
-
-"""
     remove_entity!(world::World, entity::Entity)
 
 Removes an [`Entity`](@ref) from the [`World`](@ref).
@@ -287,6 +277,51 @@ end
         push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
         push!(exprs, :($col_sym._data[idx.row] = $val_sym))
     end
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    new_entity!(world::World, comps::Vararg{Any})::Entity
+
+Creates a new [`Entity`](@ref) with the given components.
+"""
+function new_entity!(world::World{CS,CT,N}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
+    types = Tuple{map(typeof, comps)...}
+    return _new_entity!(world, Val{types}(), comps...)
+end
+
+@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs as a tuple
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(ids = ($(id_exprs...),)))  # Tuple, not Vector
+
+    # Create archetype and entity
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(tmp = _create_entity!(world, archetype)))
+    push!(exprs, :(entity = tmp[1]))
+    push!(exprs, :(index = tmp[2]))
+
+    # Set each component
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(comps[$i])
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :($col_sym._data[index] = $val_expr))
+    end
+
+    push!(exprs, Expr(:return, :entity))
 
     return quote
         @inbounds begin
