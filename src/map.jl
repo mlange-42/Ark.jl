@@ -101,13 +101,13 @@ end
 
 Adds 1 components to an [`Entity`](@ref).
 """
-function add_components!(map::Map{W,CS}, entity::Entity, value) where {W<:World,CS<:Tuple}
+function add_components!(map::Map{W,CS}, entity::Entity, values::Tuple) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
         error("can't add components to a dead entity")
     end
     archetype = _find_or_create_archetype!(map._world, entity, map._ids, ())
     row = _move_entity!(map._world, entity, archetype)
-    _set_entity_values!(map, archetype, row, value)
+    _set_entity_values!(map, archetype, row, values)
 end
 
 """
@@ -142,7 +142,7 @@ end
     end
 end
 
-@generated function _set_entity_values!(map::Map{W,CS,N}, archetype::UInt32, row::UInt32, comps) where {W<:World,CS<:Tuple,N}
+@generated function _set_entity_values!(map::Map{W,CS,N}, archetype::UInt32, row::UInt32, comps::Tuple) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
         stor = Symbol("stor", i)
