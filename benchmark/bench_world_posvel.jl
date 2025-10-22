@@ -1,6 +1,6 @@
 
 println("-----------------------------------------------")
-println("                Map Pos/Vel")
+println("                World Pos/Vel")
 println("-----------------------------------------------")
 
 function setup_world_posvel(n_entities::Int)
@@ -15,7 +15,7 @@ function setup_world_posvel(n_entities::Int)
     end
 
     for e in entities
-        pos, vel = get_components(world, e, (Position, Velocity))
+        pos, vel = get_components(world, e, Position, Velocity)
         set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
     end
 
@@ -25,7 +25,7 @@ end
 function benchmark_world_posvel(n)
     bench = @benchmarkable begin
         for e in entities
-            pos, vel = get_components(world, e, (Position, Velocity))
+            pos, vel = get_components(world, e, Position, Velocity)
             set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
         end
     end setup = ((entities, world) = setup_world_posvel($n))

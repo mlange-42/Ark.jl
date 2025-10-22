@@ -407,7 +407,7 @@ function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type.
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
-    return _get_components(world, entity, Val{TS}())
+    return _get_components(world, entity, Val{Tuple{comp_types...}}())
 end
 
 @generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
