@@ -1,21 +1,24 @@
 
+mutable struct _Cursor
+    _index::Int
+    _lock::UInt8
+end
+
 """
     Query{W,CS,N}
 
 A query for N components.
 """
-mutable struct Query{W<:World,CS<:Tuple,N}
-    _index::Int
+struct Query{W<:World,CS<:Tuple,N}
     _world::W
+    _cursor::_Cursor
     _ids::NTuple{N,UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
     _storage::CS
-    _lock::UInt8
 end
 
-# TODO: this could also be generated
 """
     Query(
         world::World,
@@ -72,14 +75,13 @@ end
 
     return quote
         Query{$W,$storage_tuple_type,$N}(
-            0,
             world,
+            _Cursor(0, UInt8(0)),
             ids,
             mask,
             exclude_mask,
             has_excluded,
             $storages_tuple,
-            UInt8(0),
         )
     end
 end
@@ -95,18 +97,18 @@ end
 
 @inline function Base.iterate(q::Query{W,CS}, state::Tuple{Int,Int}) where {W<:World,CS<:Tuple}
     logical_index, physical_index = state
-    q._index = physical_index
+    q._cursor._index = physical_index
 
-    while q._index <= length(q._world._archetypes)
-        archetype = q._world._archetypes[q._index]
+    while q._cursor._index <= length(q._world._archetypes)
+        archetype = q._world._archetypes[q._cursor._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             result = logical_index
-            next_state = (logical_index + 1, q._index + 1)
+            next_state = (logical_index + 1, q._cursor._index + 1)
             return result, next_state
         end
-        q._index += 1
+        q._cursor._index += 1
     end
 
     close(q)
@@ -114,7 +116,7 @@ end
 end
 
 @inline function Base.iterate(q::Query{W,CS}) where {W<:World,CS<:Tuple}
-    q._lock = _lock(q._world._lock)
+    q._cursor._lock = _lock(q._world._lock)
     return Base.iterate(q, (1, 1))
 end
 
@@ -126,8 +128,8 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close(q::Query{W,CS}) where {W<:World,CS<:Tuple}
-    q._index = 0
-    _unlock(q._world._lock, q._lock)
+    q._cursor._index = 0
+    _unlock(q._world._lock, q._cursor._lock)
 end
 
 @generated function _get_query_archetypes(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
@@ -137,7 +139,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
-        push!(exprs, :($col_sym = $stor_sym.data[q._index]))
+        push!(exprs, :($col_sym = $stor_sym.data[q._cursor._index]))
     end
     result_exprs = [:entities]
     for i in 1:N
