@@ -64,6 +64,8 @@ end
     id_int2 = _component_id(world, Int)
     @test id_int2 == id_int
     @test length(world._storages) == 2
+
+    @test_throws ErrorException _component_id(world, Velocity)
 end
 
 @testset "_get_storage Tests" begin
