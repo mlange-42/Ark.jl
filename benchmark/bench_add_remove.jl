@@ -1,8 +1,4 @@
 
-println("-----------------------------------------------")
-println("                Add/remove 1 of 2")
-println("-----------------------------------------------")
-
 function setup_add_remove(n_entities::Int)
     world = World()
     map1 = Map(world, (Position,))
@@ -22,19 +18,14 @@ function setup_add_remove(n_entities::Int)
     return (entities, map2)
 end
 
-function benchmark_add_remove(n)
-    bench = @benchmarkable begin
-        for e in entities
-            add_components!(map2, e, (Velocity(0, 0),))
-            remove_components!(map2, e)
-        end
-    end setup = ((entities, map2) = setup_add_remove($n))
-
-    tune!(bench)
-    result = run(bench, seconds=seconds)
-    print_result(result, n)
+function benchmark_add_remove(args, n)
+    entities, map2 = args
+    for e in entities
+        add_components!(map2, e, (Velocity(0, 0),))
+        remove_components!(map2, e)
+    end
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_add_remove(n)
+    SUITE["benchmark_add_remove $n"] = @benchmarkable setup_add_remove($n) benchmark_add_remove(_, $n)
 end
