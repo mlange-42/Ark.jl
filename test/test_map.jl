@@ -27,6 +27,10 @@ using .TestTypes: Position, Velocity, Altitude, Health
     @test_throws FieldError m[empty_entity] = (Position(5, 6), Velocity(7, 8))
 
     @test_throws ErrorException m[zero_entity]
+    @test_throws ErrorException m[zero_entity] = (Position(5, 6), Velocity(7, 8))
+    @test_throws ErrorException has_components(m, zero_entity)
+    @test_throws ErrorException add_components!(m, zero_entity, (Position(0, 0),))
+    @test_throws ErrorException remove_components!(m, zero_entity)
 
     @test has_components(m, entity) == true
     @test has_components(m, empty_entity) == false

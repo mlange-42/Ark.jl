@@ -8,7 +8,3 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     pop!(v)
     return swapped
 end
-
-@generated function _cast_to(::Type{T}, x::Any)::T where T
-    :(x::T)
-end
