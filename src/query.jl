@@ -67,7 +67,6 @@ macro Query(args...)
         end
     end
 
-    # Build Val{Tuple{...}} expressions with esc inside the macro return
     quote
         Query(
             $(esc(world_expr)),

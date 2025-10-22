@@ -24,7 +24,7 @@ export _find_or_create_archetype!, _create_entity!, _move_entity!, _get_storage,
 export Entity
 export is_zero, _new_entity, _EntityIndex, _ComponentStorage
 
-export Map
+export Map, @Map
 export new_entity!, has_components, add_components!, remove_components!
 export _get_mapped_components
 

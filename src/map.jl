@@ -11,6 +11,29 @@ struct Map{W<:World,CS<:Tuple,N}
 end
 
 """
+    @Map(world, comp_types)
+
+Macro version of `Map(...)` for ergonomic construction of component mappers.
+
+# Arguments
+- `world`: The `World` instance to map components from.
+- `comp_types::Tuple`: A tuple of component types, e.g. `(Position, Velocity)`.
+
+# Example
+```julia
+@Map(world, (Position, Velocity))
+```
+"""
+macro Map(world_expr, comp_types_expr)
+    quote
+        Map(
+            $(esc(world_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
     Map(world::World, comp_types::Tuple)
 
 Creates a component mapper from a tuple of component types.

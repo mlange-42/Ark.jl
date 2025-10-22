@@ -5,7 +5,7 @@ using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Map new/get/set/has" begin
     world = World(Position, Velocity)
-    m = Map(world, Val.((Position, Velocity)))
+    m = @Map(world, (Position, Velocity))
 
     @test_throws ErrorException Map(world, Val.((Position, Velocity, Altitude)))
 
