@@ -158,10 +158,10 @@ end
     @test vel == Velocity(3, 4)
 
     # TODO: do we want that, or do we want it to return `nothing`?
-    @test_throws FieldError get_components(world, e2, Position, Velocity)
+    @test_throws FieldError get_components(world, e2, (Val(Position), Val(Velocity),))
 
-    @test_throws ErrorException get_components(world, zero_entity, Position, Velocity)
-    @test_throws ErrorException get_components(world, e2, Altitude)
+    @test_throws ErrorException get_components(world, zero_entity, (Val(Position), Val(Velocity),))
+    @test_throws ErrorException get_components(world, e2, (Val(Altitude),))
 
     t = get_components(world, e1)
     @test t == ()
