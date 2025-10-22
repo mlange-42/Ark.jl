@@ -152,16 +152,6 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
 end
 
 """
-    new_entity!(world::World)::Entity
-
-Creates a new [`Entity`](@ref) without any components.
-"""
-function new_entity!(world::World)::Entity
-    entity, _ = _create_entity!(world, UInt32(1))
-    return entity
-end
-
-"""
     remove_entity!(world::World, entity::Entity)
 
 Removes an [`Entity`](@ref) from the [`World`](@ref).
@@ -213,6 +203,239 @@ Returns whether the world is currently locked for modifications.
 """
 function is_locked(world::World)::Bool
     return _is_locked(world._lock)
+end
+
+"""
+    get_components(world::World, entity::Entity, comp_types::Type...)
+
+Get the given components for an entity.
+"""
+function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't get components of a dead entity")
+    end
+    return _get_components(world, entity, Val{Tuple{comp_types...}}())
+end
+
+@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    if length(types) == 0
+        return :(())
+    end
+
+    exprs = Expr[]
+    push!(exprs, :(idx = world._entities[entity._id]))
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = Symbol("v", i)
+
+        push!(exprs, :(
+            $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
+        ))
+        push!(exprs, :(
+            $(col_sym) = $(stor_sym).data[idx.archetype]
+        ))
+        push!(exprs, :(
+            $(val_sym) = $(col_sym)._data[idx.row]
+        ))
+    end
+
+    vals = [:($(Symbol("v", i))) for i in 1:length(types)]
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    set_components(world::World, entity::Entity, values...)
+
+Sets the given component values for an entity. Types are inferred from the values.
+"""
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN}
+    types = Tuple{map(typeof, values)...}
+    return _set_components!(world, entity, Val{types}(), values...)
+end
+
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+    types = TS.parameters
+    exprs = [:(idx = world._entities[entity._id])]
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = :(values[$i])  # Type-stable because TS is known
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
+        push!(exprs, :($col_sym._data[idx.row] = $val_sym))
+    end
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    new_entity!(world::World, comps::Vararg{Any})::Entity
+
+Creates a new [`Entity`](@ref) with the given components.
+"""
+function new_entity!(world::World{CS,CT,N}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
+    types = Tuple{map(typeof, comps)...}
+    return _new_entity!(world, Val{types}(), comps...)
+end
+
+@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs as a tuple
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(ids = ($(id_exprs...),)))  # Tuple, not Vector
+
+    # Create archetype and entity
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(tmp = _create_entity!(world, archetype)))
+    push!(exprs, :(entity = tmp[1]))
+    push!(exprs, :(index = tmp[2]))
+
+    # Set each component
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(comps[$i])
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :($col_sym._data[index] = $val_expr))
+    end
+
+    push!(exprs, Expr(:return, :entity))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+function add_components!(world::World{CS,CT,N}, entity::Entity, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't add components to a dead entity")
+    end
+    types = Tuple{map(typeof, comps)...}
+    return _add_components!(world, entity, Val{types}(), comps...)
+end
+
+@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, comps::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs as a tuple
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(ids = ($(id_exprs...),)))
+
+    # Find or create new archetype
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, ids, ())))
+
+    # Move entity to new archetype
+    push!(exprs, :(row = _move_entity!(world, entity, archetype)))
+
+    # Set each new component
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(comps[$i])
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :($col_sym._data[row] = $val_expr))
+    end
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't remove components from a dead entity")
+    end
+    return _remove_components!(world, entity, Val{Tuple{comp_types...}}())
+end
+
+@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs to remove
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(remove_ids = ($(id_exprs...),)))
+
+    # Find or create new archetype without those components
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, (), remove_ids)))
+
+    # Move entity to new archetype
+    push!(exprs, :(_move_entity!(world, entity, archetype)))
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't check components of a dead entity")
+    end
+    index = world._entities[entity._id]
+    return _has_components(world, index, Val{Tuple{comp_types...}}())
+end
+
+@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
+        push!(exprs, :(
+            if $col_sym === nothing
+                return false
+            end
+        ))
+    end
+
+    push!(exprs, :(return true))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
 end
 
 @generated function _World_from_types(::Val{CS}) where {CS<:Tuple}
@@ -397,18 +620,6 @@ end
     end
     return expr
 end
-
-
-#@generated function get_components(world::World{CS,CT,N}, entity::Entity, ::Type{C})::C where {CS<:Tuple,CT<:Tuple,N,C}
-#    return quote
-#        @inbounds begin
-#            idx = world._entities[entity._id]
-#            stor = _get_storage(world, Val{$(QuoteNode(C))}())
-#            col = stor.data[Int(idx.archetype)]
-#            return col._data[Int(idx.row)]
-#        end
-#    end
-#end
 
 # TODO: experimental for now.
 function get_components(world::World{CS,CT,N}, entity::Entity) where {CS<:Tuple,CT<:Tuple,N}

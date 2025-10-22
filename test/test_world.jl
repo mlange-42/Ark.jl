@@ -146,7 +146,7 @@ end
     @test length(vel_storage.data[arch_index]) == 1
 end
 
-@testset "get_components Tests" begin
+@testset "World get/set components" begin
     world = World(Position, Velocity)
     m = Map(world, (Position, Velocity))
 
@@ -165,14 +165,60 @@ end
 
     t = get_components(world, e1)
     @test t == ()
+
+    set_components!(world, e1, Position(5, 6), Velocity(7, 8))
+    pos, vel = get_components(world, e1, Position, Velocity)
+    @test pos == Position(5, 6)
+    @test vel == Velocity(7, 8)
 end
 
 @testset "new_entity! Tests" begin
-    world = World()
+    world = World(Position, Velocity)
 
     entity = new_entity!(world)
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
+
+    entity = new_entity!(world, Position(1, 2), Velocity(3, 4))
+    @test entity == _new_entity(3, 0)
+    @test is_alive(world, entity) == true
+
+    pos, vel = get_components(world, entity, Position, Velocity)
+    @test pos == Position(1, 2)
+    @test vel == Velocity(3, 4)
+end
+
+@testset "World add/remove components" begin
+    world = World(Position, Velocity, Altitude, Health)
+
+    e1 = new_entity!(world)
+    add_components!(world, e1, Position(1, 2), Velocity(3, 4))
+
+    e2 = new_entity!(world, Position(5, 6), Velocity(7, 8))
+
+    add_components!(world, e1, Altitude(1), Health(2))
+    add_components!(world, e2, Altitude(3), Health(4))
+
+    pos, vel, a, h = get_components(world, e1, Position, Velocity, Altitude, Health)
+    @test pos == Position(1, 2)
+    @test vel == Velocity(3, 4)
+    @test a == Altitude(1)
+    @test h == Health(2)
+
+    @test has_components(world, e1, Position, Velocity) == true
+
+    pos, vel, a, h = get_components(world, e2, Position, Velocity, Altitude, Health)
+    @test pos == Position(5, 6)
+    @test vel == Velocity(7, 8)
+    @test a == Altitude(3)
+    @test h == Health(4)
+
+    remove_components!(world, e1, Position, Velocity)
+    @test has_components(world, e1, Position, Velocity) == false
+
+    @test_throws ErrorException add_components!(world, zero_entity, Position(1, 2), Velocity(3, 4))
+    @test_throws ErrorException remove_components!(world, zero_entity, Position, Velocity)
+    @test_throws ErrorException has_components(world, zero_entity, Position, Velocity)
 end
 
 @testset "remove_entity! Tests" begin
