@@ -19,7 +19,7 @@ function setup_world_posvel(n_entities::Int)
         set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
     end
 
-    return (entities, map1, map2)
+    return (entities, world)
 end
 
 function benchmark_world_posvel(n)
@@ -28,7 +28,7 @@ function benchmark_world_posvel(n)
             pos, vel = get_components(world, e, (Position, Velocity))
             set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
         end
-    end setup = ((entities, map1, map2) = setup_map_posvel($n))
+    end setup = ((entities, world) = setup_world_posvel($n))
 
     tune!(bench)
     result = run(bench, seconds=seconds)
@@ -36,5 +36,5 @@ function benchmark_world_posvel(n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_map_posvel(n)
+    benchmark_world_posvel(n)
 end
