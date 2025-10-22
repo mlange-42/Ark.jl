@@ -1,8 +1,8 @@
 
 function setup_world_posvel(n_entities::Int)
     world = World(Position, Velocity)
-    map1 = Map(world, (Position,))
-    map2 = Map(world, (Position, Velocity))
+    map1 = Map(world, Val.((Position,)))
+    map2 = Map(world, Val.((Position, Velocity)))
 
     entities = Vector{Entity}()
     for i in 1:n_entities
@@ -11,8 +11,8 @@ function setup_world_posvel(n_entities::Int)
     end
 
     for e in entities
-        pos, vel = get_components(world, e, Position, Velocity)
-        set_components!(world, e, Position(pos.x + vel.dx, pos.y + vel.dy))
+        pos, vel = get_components(world, e, Val.((Position, Velocity)))
+        set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
     end
 
     return (entities, world)
@@ -21,8 +21,8 @@ end
 function benchmark_world_posvel(args, n)
     entities, world = args
     for e in entities
-        pos, vel = get_components(world, e, Position, Velocity)
-        set_components!(world, e, Position(pos.x + vel.dx, pos.y + vel.dy))
+        pos, vel = get_components(world, e, Val.((Position, Velocity)))
+        set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
     end
 end
 

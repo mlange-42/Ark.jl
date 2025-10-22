@@ -1,7 +1,7 @@
 
 function setup_map_new_entity_5(n::Int)
     world = World(Position, Velocity, CompA, CompB, CompC)
-    map = Map(world, (Position, Velocity, CompA, CompB, CompC))
+    map = Map(world, Val.((Position, Velocity, CompA, CompB, CompC)))
 
     # Run once to allocate memory
     entities = Vector{Entity}()

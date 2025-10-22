@@ -9,7 +9,7 @@ function profile_add_remove()
     n = 100_000
     iter = 10000
     world = World(Position, Velocity)
-    map1 = Map(world, (Position,))
+    map1 = Map(world, Val.((Position,)))
 
     entities = Vector{Entity}()
     for i in 1:n

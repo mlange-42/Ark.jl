@@ -148,26 +148,25 @@ end
 
 @testset "World get/set components" begin
     world = World(Position, Velocity)
-    m = Map(world, (Position, Velocity))
 
-    e1 = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     e2 = new_entity!(world)
 
-    pos, vel = get_components(world, e1, Position, Velocity)
+    pos, vel = @get_components(world, e1, (Position, Velocity))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
 
     # TODO: do we want that, or do we want it to return `nothing`?
-    @test_throws FieldError get_components(world, e2, Position, Velocity)
+    @test_throws FieldError get_components(world, e2, Val.((Position, Velocity)))
 
-    @test_throws ErrorException get_components(world, zero_entity, Position, Velocity)
-    @test_throws ErrorException get_components(world, e2, Altitude)
+    @test_throws ErrorException get_components(world, zero_entity, Val.((Position, Velocity)))
+    @test_throws ErrorException get_components(world, e2, Val.((Altitude,)))
 
-    t = get_components(world, e1)
+    t = get_components(world, e1, Val.(()))
     @test t == ()
 
-    set_components!(world, e1, Position(5, 6), Velocity(7, 8))
-    pos, vel = get_components(world, e1, Position, Velocity)
+    set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
+    pos, vel = get_components(world, e1, Val.((Position, Velocity)))
     @test pos == Position(5, 6)
     @test vel == Velocity(7, 8)
 end
@@ -179,11 +178,11 @@ end
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
 
-    entity = new_entity!(world, Position(1, 2), Velocity(3, 4))
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(3, 0)
     @test is_alive(world, entity) == true
 
-    pos, vel = get_components(world, entity, Position, Velocity)
+    pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
 end
@@ -192,51 +191,51 @@ end
     world = World(Position, Velocity, Altitude, Health)
 
     e1 = new_entity!(world)
-    add_components!(world, e1, Position(1, 2), Velocity(3, 4))
+    add_components!(world, e1, (Position(1, 2), Velocity(3, 4)))
 
-    e2 = new_entity!(world, Position(5, 6), Velocity(7, 8))
+    e2 = new_entity!(world, (Position(5, 6), Velocity(7, 8)))
 
-    add_components!(world, e1, Altitude(1), Health(2))
-    add_components!(world, e2, Altitude(3), Health(4))
+    add_components!(world, e1, (Altitude(1), Health(2)))
+    add_components!(world, e2, (Altitude(3), Health(4)))
 
-    pos, vel, a, h = get_components(world, e1, Position, Velocity, Altitude, Health)
+    pos, vel, a, h = get_components(world, e1, Val.((Position, Velocity, Altitude, Health)))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
     @test a == Altitude(1)
     @test h == Health(2)
 
-    @test has_components(world, e1, Position, Velocity) == true
+    @test @has_components(world, e1, (Position, Velocity)) == true
 
-    pos, vel, a, h = get_components(world, e2, Position, Velocity, Altitude, Health)
+    pos, vel, a, h = get_components(world, e2, Val.((Position, Velocity, Altitude, Health)))
     @test pos == Position(5, 6)
     @test vel == Velocity(7, 8)
     @test a == Altitude(3)
     @test h == Health(4)
 
-    remove_components!(world, e1, Position, Velocity)
-    @test has_components(world, e1, Position, Velocity) == false
+    @remove_components!(world, e1, (Position, Velocity))
+    @test has_components(world, e1, Val.((Position, Velocity))) == false
 
-    @test_throws ErrorException add_components!(world, zero_entity, Position(1, 2), Velocity(3, 4))
-    @test_throws ErrorException remove_components!(world, zero_entity, Position, Velocity)
-    @test_throws ErrorException has_components(world, zero_entity, Position, Velocity)
+    @test_throws ErrorException set_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4)))
+    @test_throws ErrorException add_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4)))
+    @test_throws ErrorException remove_components!(world, zero_entity, Val.((Position, Velocity)))
+    @test_throws ErrorException has_components(world, zero_entity, Val.((Position, Velocity)))
 end
 
 @testset "remove_entity! Tests" begin
     world = World(Position, Velocity)
-    m = Map(world, (Position, Velocity))
 
-    e1 = new_entity!(m, (Position(1, 1), Velocity(1, 1)))
-    e2 = new_entity!(m, (Position(2, 2), Velocity(1, 1)))
-    e3 = new_entity!(m, (Position(3, 3), Velocity(1, 1)))
+    e1 = new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+    e2 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
+    e3 = new_entity!(world, (Position(3, 3), Velocity(1, 1)))
 
     remove_entity!(world, e2)
     @test is_alive(world, e1) == true
     @test is_alive(world, e2) == false
     @test is_alive(world, e1) == true
 
-    pos, _ = m[e1]
+    pos, = get_components(world, e1, Val.((Position,)))
     @test pos == Position(1, 1)
 
-    pos, _ = m[e3]
+    pos, = get_components(world, e3, Val.((Position,)))
     @test pos == Position(3, 3)
 end

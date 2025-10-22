@@ -1,7 +1,7 @@
 
 function setup_map_get_5(n_entities::Int)
     world = World(Position, Velocity, CompA, CompB, CompC)
-    map = Map(world, (Position, Velocity, CompA, CompB, CompC))
+    map = Map(world, Val.((Position, Velocity, CompA, CompB, CompC)))
 
     entities = Vector{Entity}()
     for i in 1:n_entities
