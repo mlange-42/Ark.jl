@@ -188,6 +188,30 @@ end
     @test vel == Velocity(3, 4)
 end
 
+@testset "add_components! Tests" begin
+    world = World(Position, Velocity, Altitude, Health)
+
+    e1 = new_entity!(world)
+    add_components!(world, e1, Position(1, 2), Velocity(3, 4))
+
+    e2 = new_entity!(world, Position(5, 6), Velocity(7, 8))
+
+    add_components!(world, e1, Altitude(1), Health(2))
+    add_components!(world, e2, Altitude(3), Health(4))
+
+    pos, vel, a, h = get_components(world, e1, Position, Velocity, Altitude, Health)
+    @test pos == Position(1, 2)
+    @test vel == Velocity(3, 4)
+    @test a == Altitude(1)
+    @test h == Health(2)
+
+    pos, vel, a, h = get_components(world, e2, Position, Velocity, Altitude, Health)
+    @test pos == Position(5, 6)
+    @test vel == Velocity(7, 8)
+    @test a == Altitude(3)
+    @test h == Health(4)
+end
+
 @testset "remove_entity! Tests" begin
     world = World(Position, Velocity)
     m = Map(world, (Position, Velocity))
