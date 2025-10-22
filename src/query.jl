@@ -89,11 +89,11 @@ end
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(q::Query{W,CS}) where {W<:World,CS<:Tuple}
-    return q[]
+@inline function get_components(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
+    return _get_query_archetypes(q)
 end
 
-@inline function Base.getindex(q::Query{W,CS}) where {W<:World,CS<:Tuple}
+@inline function Base.getindex(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     return _get_query_archetypes(q)
 end
 
@@ -143,8 +143,19 @@ function entities(q::Query{W,CS})::Column{Entity} where {W<:World,CS<:Tuple}
     return q._world._archetypes[q._index].entities
 end
 
-@generated function _get_query_archetypes(q::Query{W,CS}) where {W<:World,CS<:Tuple}
-    N = length(CS.parameters)
-    expressions = [:(q._storage.$i.data[q._index]) for i in 1:N]
-    return Expr(:tuple, expressions...)
+@generated function _get_query_archetypes(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
+    exprs = Expr[]
+    for i in 1:N
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
+        push!(exprs, :($col_sym = $stor_sym.data[q._index]))
+    end
+    result_syms = [Symbol("col", i) for i in 1:N]
+    push!(exprs, Expr(:return, Expr(:tuple, result_syms...)))
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
 end
