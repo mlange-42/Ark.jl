@@ -215,6 +215,86 @@ function is_locked(world::World)::Bool
     return _is_locked(world._lock)
 end
 
+"""
+    get_components(world::World, entity::Entity, comp_types::Type...)
+
+Get the given components for an entity.
+"""
+function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't get components of a dead entity")
+    end
+    return _get_components(world, entity, Val{Tuple{comp_types...}}())
+end
+
+@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    if length(types) == 0
+        return :(())
+    end
+
+    exprs = Expr[]
+    push!(exprs, :(idx = world._entities[entity._id]))
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = Symbol("v", i)
+
+        push!(exprs, :(
+            $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
+        ))
+        push!(exprs, :(
+            $(col_sym) = $(stor_sym).data[idx.archetype]
+        ))
+        push!(exprs, :(
+            $(val_sym) = $(col_sym)._data[idx.row]
+        ))
+    end
+
+    vals = [:($(Symbol("v", i))) for i in 1:length(types)]
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    set_components(world::World, entity::Entity, values...)
+
+Sets the given component values for an entity. Types are inferred from the values.
+"""
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN}
+    types = Tuple{map(typeof, values)...}
+    return _set_components!(world, entity, Val{types}(), values...)
+end
+
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+    types = TS.parameters
+    exprs = [:(idx = world._entities[entity._id])]
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = :(values[$i])  # Type-stable because TS is known
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
+        push!(exprs, :($col_sym._data[idx.row] = $val_sym))
+    end
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
 @generated function _World_from_types(::Val{CS}) where {CS<:Tuple}
     types = CS.parameters
 
@@ -396,84 +476,4 @@ end
         end
     end
     return expr
-end
-
-"""
-    get_components(world::World, entity::Entity, comp_types::Type...)
-
-Get the given components for an entity.
-"""
-function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
-    if !is_alive(world, entity)
-        error("can't get components of a dead entity")
-    end
-    return _get_components(world, entity, Val{Tuple{comp_types...}}())
-end
-
-@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
-    if length(types) == 0
-        return :(())
-    end
-
-    exprs = Expr[]
-    push!(exprs, :(idx = world._entities[entity._id]))
-
-    for i in 1:length(types)
-        T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_sym = Symbol("v", i)
-
-        push!(exprs, :(
-            $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
-        ))
-        push!(exprs, :(
-            $(col_sym) = $(stor_sym).data[idx.archetype]
-        ))
-        push!(exprs, :(
-            $(val_sym) = $(col_sym)._data[idx.row]
-        ))
-    end
-
-    vals = [:($(Symbol("v", i))) for i in 1:length(types)]
-    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
-end
-
-"""
-    set_components(world::World, entity::Entity, values...)
-
-Sets the given component values for an entity. Types are inferred from the values.
-"""
-function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN}
-    types = Tuple{map(typeof, values)...}
-    return _set_components!(world, entity, Val{types}(), values...)
-end
-
-@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
-    types = TS.parameters
-    exprs = [:(idx = world._entities[entity._id])]
-
-    for i in 1:length(types)
-        T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_sym = :(values[$i])  # Type-stable because TS is known
-
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
-        push!(exprs, :($col_sym._data[idx.row] = $val_sym))
-    end
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
 end
