@@ -668,9 +668,10 @@ end
 
 @generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_slot::UInt32, new_slot::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    if n == 0
-        return :(nothing)
-    end
+    # TODO: check! but should not be possible
+    #if n == 0
+    #    return :(nothing)
+    #end
 
     expr = nothing
     for i in n:-1:1
