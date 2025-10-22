@@ -71,18 +71,16 @@ end
 @testset "_get_storage Tests" begin
     world = World(Int)
 
-    # Retrieve storage using type-only version
     storage1 = _get_storage(world, Int)
     @test storage1 isa _ComponentStorage{Int}
 
-    # Retrieve storage using type + id version
     id = _component_id(world, Int)
     storage2 = _get_storage(world, Int)
     @test storage2 isa _ComponentStorage{Int}
 
-    # Both retrievals should return the same object
     @test storage1 === storage2
 
+    @test_throws ErrorException _get_storage(world, Float64)
 end
 
 @testset "_find_or_create_archetype! Tests" begin
@@ -138,6 +136,10 @@ end
     @test entity == _new_entity(2, 0)
     @test index == 1
     @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(arch_index, UInt32(1))]
+
+    remove_entity!(world, entity)
+    entity, index = _create_entity!(world, arch_index)
+    @test entity == _new_entity(2, 1)
 
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
