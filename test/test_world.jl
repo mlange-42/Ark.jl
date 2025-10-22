@@ -160,6 +160,9 @@ end
 
     @test_throws ErrorException get_components(world, zero_entity, Position, Velocity)
     @test_throws ErrorException get_components(world, e2, Altitude)
+
+    t = get_components(world, e1)
+    @test t == ()
 end
 
 @testset "new_entity! Tests" begin

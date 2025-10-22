@@ -7,6 +7,8 @@ using .TestTypes: Position, Velocity, Altitude, Health
     world = World(Position, Velocity)
     m = Map(world, (Position, Velocity))
 
+    @test_throws ErrorException Map(world, (Position, Velocity, Altitude))
+
     entity = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true

@@ -250,9 +250,10 @@ end
 
 @generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    if n == 0
-        return :(nothing)
-    end
+    # TODO: check! but should not be possible
+    #if n == 0
+    #    return :(nothing)
+    #end
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(push!((world._storages).$i.data, nothing)))
@@ -262,9 +263,10 @@ end
 
 @generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    if n == 0
-        return :(nothing)
-    end
+    # TODO: check! but should not be possible
+    #if n == 0
+    #    return :(nothing)
+    #end
 
     expr = nothing
     for i in n:-1:1
@@ -297,9 +299,10 @@ end
 
 @generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, slot::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    if n == 0
-        return :(nothing)
-    end
+    # TODO: check! but should not be possible
+    #if n == 0
+    #    return :(nothing)
+    #end
 
     expr = nothing
     for i in n:-1:1
