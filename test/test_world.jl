@@ -240,4 +240,6 @@ end
 
     pos, = get_components(world, e3, Val.((Position,)))
     @test pos == Position(3, 3)
+
+    @test_throws ErrorException remove_entity!(world, zero_entity)
 end

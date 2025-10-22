@@ -40,5 +40,5 @@ using Test
     @test_throws ErrorException _find_node(graph, node3, (UInt8(5),), ())
 
     # Test add and remove same
-    @test_throws ErrorException _find_node(graph, node3, (UInt8(1),), (UInt8(1),))
+    @test_throws ErrorException _find_node(graph, node3, (UInt8(5),), (UInt8(5),))
 end
