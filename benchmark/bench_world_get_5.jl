@@ -19,7 +19,8 @@ function setup_world_get_5(n_entities::Int)
     return (entities, world)
 end
 
-function benchmark_world_get_5(n)
+function benchmark_world_get_5(args, n)
+    entities, world = args
     sum = 0.0
     for e in entities
         pos, vel, a, b, c = get_components(world, e, Val.((Position, Velocity, CompA, CompB, CompC)))
