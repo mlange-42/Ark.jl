@@ -183,9 +183,9 @@ end
     @test is_alive(world, e2) == false
     @test is_alive(world, e1) == true
 
-    pos, _ = get_components(m, e1)
+    pos, _ = m[e1]
     @test pos == Position(1, 1)
 
-    pos, _ = get_components(m, e3)
+    pos, _ = m[e3]
     @test pos == Position(3, 3)
 end

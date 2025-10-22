@@ -55,20 +55,10 @@ function new_entity!(map::Map{W,CS}, comps::Tuple) where {W<:World,CS<:Tuple}
 end
 
 """
-    get_components(map::Map, entity::Entity)
+    Base.getindex(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
 
 Get components of an [`Entity`](@ref).
-
-Alternatively, use indexing:
-
-```julia
-pos, vel = map[entity]
-```
 """
-function get_components(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
-    return map[entity]
-end
-
 @inline function Base.getindex(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't get components of a dead entity")
@@ -81,20 +71,10 @@ end
 end
 
 """
-    set_components!(map::Map, entity::Entity, comps::Tuple)
+    Base.setindex!(map::Map{W,CS,N}, value, entity::Entity) where {W<:World,CS<:Tuple,N}
 
 Set components of an [`Entity`](@ref).
-
-Alternatively, use indexing:
-
-```julia
-map[entity] = (Position(0, 0), Velocity(1, 1))
-```
 """
-function set_components!(map::Map{W,CS,N}, entity::Entity, comps) where {W<:World,CS<:Tuple,N}
-    map[entity] = comps
-end
-
 @inline function Base.setindex!(map::Map{W,CS,N}, value, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")

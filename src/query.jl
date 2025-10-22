@@ -85,14 +85,10 @@ end
 end
 
 """
-    get_components(q::Query)
+    Base.getindex(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
 
 Returns the component columns of the archetype at the current cursor position.
 """
-@inline function get_components(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
-    return _get_query_archetypes(q)
-end
-
 @inline function Base.getindex(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     return _get_query_archetypes(q)
 end
