@@ -153,7 +153,7 @@ end
     e1 = new_entity!(m, (Position(1, 2), Velocity(3, 4)))
     e2 = new_entity!(world)
 
-    pos, vel = get_components(world, e1, Position, Velocity)
+    pos, vel = get_components(world, e1, (Val(Position), Val(Velocity)))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
 
