@@ -294,19 +294,19 @@ end
 end
 
 """
-    set_components!(world::World, entity::Entity, comps::Tuple)
+    set_components!(world::World, entity::Entity, values::Tuple)
 
 Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
 The entity must already have all these components.
 """
-function set_components!(world::World{CS,CT,WN}, entity::Entity, comps::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
     if !is_alive(world, entity)
         error("can't set components of a dead entity")
     end
-    return _set_components!(world, entity, Val{typeof(comps)}(), comps)
+    return _set_components!(world, entity, Val{typeof(values)}(), values)
 end
 
-@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
     types = TS.parameters
     exprs = [:(idx = world._entities[entity._id])]
 
@@ -314,7 +314,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(comps[$i])
+        val_expr = :(values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
@@ -341,15 +341,15 @@ function new_entity!(world::World)::Entity
 end
 
 """
-    new_entity!(world::World, comps::Vararg{Any})::Entity
+    new_entity!(world::World, values::Tuple)::Entity
 
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
 """
-function new_entity!(world::World{CS,CT,N}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N}
-    return _new_entity!(world, Val{typeof(comps)}(), comps)
+function new_entity!(world::World{CS,CT,N}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entity!(world, Val{typeof(values)}(), values)
 end
 
-@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -368,7 +368,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(comps[$i])
+        val_expr = :(values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
@@ -385,18 +385,18 @@ end
 end
 
 """
-    add_components!(world::World, entity::Entity, comps::Tuple)
+    add_components!(world::World, entity::Entity, values::Tuple)
 
 Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
 """
-function add_components!(world::World{CS,CT,N}, entity::Entity, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+function add_components!(world::World{CS,CT,N}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't add components to a dead entity")
     end
-    return _add_components!(world, entity, Val{typeof(comps)}(), comps)
+    return _add_components!(world, entity, Val{typeof(values)}(), values)
 end
 
-@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -415,7 +415,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(comps[$i])
+        val_expr = :(values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))

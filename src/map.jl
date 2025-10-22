@@ -94,17 +94,17 @@ Get the Map's components for an [`Entity`](@ref).
 end
 
 """
-    Base.setindex!(map::Map, value::Tuple, entity::Entity)
+    Base.setindex!(map::Map, values::Tuple, entity::Entity)
 
 Sets the values of the Map's components for an [`Entity`](@ref).
 The entity must already have all these components.
 """
-@inline function Base.setindex!(map::Map{W,CS,N}, value::Tuple, entity::Entity) where {W<:World,CS<:Tuple,N}
+@inline function Base.setindex!(map::Map{W,CS,N}, values::Tuple, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
     index = map._world._entities[entity._id]
-    @inline _set_entity_values!(map, index.archetype, index.row, value)
+    @inline _set_entity_values!(map, index.archetype, index.row, values)
 end
 
 """
