@@ -25,7 +25,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 - [ ] Extensible [event system](https://mlange-42.github.io/ark/events/) with filtering and custom event types.
 - [ ] Fast [batch operations](https://mlange-42.github.io/ark/batch/) for mass manipulation.
 - [x] No systems. Just queries. Use your own structure.
-- [x] Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), ~~100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).~~
+- [x] Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
 
 ## Installation
 
