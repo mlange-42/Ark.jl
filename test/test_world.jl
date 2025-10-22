@@ -188,7 +188,7 @@ end
     @test vel == Velocity(3, 4)
 end
 
-@testset "World ad/remove components" begin
+@testset "World add/remove components" begin
     world = World(Position, Velocity, Altitude, Health)
 
     e1 = new_entity!(world)
@@ -215,6 +215,10 @@ end
 
     remove_components!(world, e1, Position, Velocity)
     @test has_components(world, e1, Position, Velocity) == false
+
+    @test_throws ErrorException add_components!(world, zero_entity, Position(1, 2), Velocity(3, 4))
+    @test_throws ErrorException remove_components!(world, zero_entity, Position, Velocity)
+    @test_throws ErrorException has_components(world, zero_entity, Position, Velocity)
 end
 
 @testset "remove_entity! Tests" begin
