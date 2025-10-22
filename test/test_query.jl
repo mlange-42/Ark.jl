@@ -16,9 +16,9 @@
     for i in 1:10
         count = 0
         for _ in query
-            vec_pos, vec_vel = query[]
-            # Alternatively:
-            #vec_pos, vec_vel = get_components(query)
+            entities, vec_pos, vec_vel = query[]
+            @test length(entities) == length(vec_pos)
+            @test length(entities) == length(vec_vel)
             for i in eachindex(vec_pos)
                 pos = vec_pos[i]
                 vel = vec_vel[i]
@@ -48,8 +48,7 @@ end
 
     count = 0
     for a in query
-        vec_pos, vec_vel = query[]
-        ent = entities(query)
+        ent, vec_pos, vec_vel = query[]
         @test a == 1
         for i in eachindex(ent)
             e = ent[i]
@@ -75,8 +74,7 @@ end
 
     count = 0
     for a in query
-        vec_pos, vec_vel = query[]
-        ent = entities(query)
+        ent, vec_pos, vec_vel = query[]
         @test a == 1
         for i in eachindex(ent)
             e = ent[i]
@@ -103,8 +101,7 @@ end
     count = 0
     indices = Vector{Int}()
     for a in query
-        vec_pos, vec_vel, vec_alt = query[]
-        ent = entities(query)
+        ent, vec_pos, vec_vel, vec_alt = query[]
         if a == 1
             @test vec_alt == nothing
         else

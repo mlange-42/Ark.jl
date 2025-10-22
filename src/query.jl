@@ -130,25 +130,21 @@ function close(q::Query{W,CS}) where {W<:World,CS<:Tuple}
     _unlock(q._world._lock, q._lock)
 end
 
-"""
-    entities(q::Query)
-
-Returns the entities of the current archetype.
-"""
-function entities(q::Query{W,CS})::Column{Entity} where {W<:World,CS<:Tuple}
-    return q._world._archetypes[q._index].entities
-end
-
 @generated function _get_query_archetypes(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
+    push!(exprs, :(entities = q._world._archetypes[q._index].entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
         push!(exprs, :($col_sym = $stor_sym.data[q._index]))
     end
-    result_syms = [Symbol("col", i) for i in 1:N]
-    push!(exprs, Expr(:return, Expr(:tuple, result_syms...)))
+    result_exprs = [:entities]
+    for i in 1:N
+        push!(result_exprs, Symbol("col", i))
+    end
+    result_exprs = map(x -> :($x), result_exprs)
+    push!(exprs, Expr(:return, Expr(:tuple, result_exprs...)))
     return quote
         @inbounds begin
             $(Expr(:block, exprs...))
