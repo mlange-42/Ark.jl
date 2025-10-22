@@ -14,8 +14,9 @@ function setup_world_get_5(n_entities::Int)
     end
 
     sum = 0.0
+    compstypes = Val.((Position, Velocity, CompA, CompB, CompC))
     for e in entities
-        pos, vel, a, b, c = get_components(world, e, Position, Velocity, CompA, CompB, CompC)
+        pos, vel, a, b, c = get_components(world, e, compstypes)
         sum += pos.x + vel.dx + a.x + b.x + c.x
     end
     sum
@@ -26,8 +27,9 @@ end
 function benchmark_world_get_5(n)
     bench = @benchmarkable begin
         sum = 0.0
+        compstypes = Val.((Position, Velocity, CompA, CompB, CompC))
         for e in entities
-            pos, vel, a, b, c = get_components(world, e, Position, Velocity, CompA, CompB, CompC)
+            pos, vel, a, b, c = get_components(world, e, compstypes)
             sum += pos.x + vel.dx + a.x + b.x + c.x
         end
         sum
