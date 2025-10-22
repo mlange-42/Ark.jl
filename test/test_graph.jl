@@ -30,25 +30,15 @@ using Test
     @test node3 !== start
     @test _get_bit(node3.mask, UInt8(5))
 
-    # Now test removing component 5
     node4 = _find_node(graph, node3, (), (UInt8(5),))
     @test node4 === start
 
     # Test error on removing nonexistent component
-    err = try
-        _find_node(graph, start, (), (UInt8(7),))
-        false
-    catch e
-        isa(e, ErrorException)
-    end
-    @test err
+    @test_throws ErrorException _find_node(graph, start, (), (UInt8(7),))
 
     # Test error on adding duplicate component
-    err2 = try
-        _find_node(graph, node3, (UInt8(5),), ())
-        false
-    catch e
-        isa(e, ErrorException)
-    end
-    @test err2
+    @test_throws ErrorException _find_node(graph, node3, (UInt8(5),), ())
+
+    # Test add and remove same
+    @test_throws ErrorException _find_node(graph, node3, (UInt8(1),), (UInt8(1),))
 end
