@@ -146,7 +146,7 @@ end
     @test length(vel_storage.data[arch_index]) == 1
 end
 
-@testset "get_components Tests" begin
+@testset "World get/set components" begin
     world = World(Position, Velocity)
     m = Map(world, (Position, Velocity))
 
@@ -165,6 +165,11 @@ end
 
     t = get_components(world, e1)
     @test t == ()
+
+    set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
+    pos, vel = get_components(world, e1, Position, Velocity)
+    @test pos == Position(5, 6)
+    @test vel == Velocity(7, 8)
 end
 
 @testset "new_entity! Tests" begin

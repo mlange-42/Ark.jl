@@ -398,19 +398,11 @@ end
     return expr
 end
 
+"""
+    get_components(world::World, entity::Entity, comp_types::Type...)
 
-#@generated function get_components(world::World{CS,CT,N}, entity::Entity, ::Type{C})::C where {CS<:Tuple,CT<:Tuple,N,C}
-#    return quote
-#        @inbounds begin
-#            idx = world._entities[entity._id]
-#            stor = _get_storage(world, Val{$(QuoteNode(C))}())
-#            col = stor.data[Int(idx.archetype)]
-#            return col._data[Int(idx.row)]
-#        end
-#    end
-#end
-
-# TODO: experimental for now.
+Get the given components for an entity.
+"""
 function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Type...) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
@@ -446,6 +438,37 @@ end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    set_components(world::World, entity::Entity, values...)
+
+Sets the given component values for an entity. Types are inferred from the values.
+"""
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+    return _set_components!(world, entity, Val{typeof(values)}(), values)
+end
+
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::TV) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple,TV<:Tuple}
+    types = TS.parameters
+    exprs = [:(idx = world._entities[entity._id])]
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_sym = :(values[$i])
+
+        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
+        push!(exprs, :($col_sym._data[idx.row] = $val_sym))
+    end
 
     return quote
         @inbounds begin
