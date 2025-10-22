@@ -25,5 +25,5 @@ function benchmark_new_entity_1(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_new_entity_1 n=$n"] = @benchmarkable setup_new_entity_1($n) benchmark_new_entity_1(_, $n)
+    SUITE["benchmark_new_entity_1 n=$n"] = @benchmarkable setup_map_new_entity_1($n) benchmark_new_entity_1(_, $n)
 end
