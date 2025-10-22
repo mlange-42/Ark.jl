@@ -1,3 +1,7 @@
+using Ark
+using Test
+
+using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Query basic functionality" begin
     world = World(Position, Velocity, Altitude, Health)
@@ -8,7 +12,7 @@
         new_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
-    query = Query(world, Val.((Position, Velocity)))
+    query = @Query(world, (Position, Velocity))
     for i in 1:10
         count = 0
         for _ in query
@@ -37,7 +41,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, Val.((Position, Velocity)); with=Val.((Altitude,)))
+    query = @Query(world, (Position, Velocity), with = (Altitude,))
 
     count = 0
     for a in query

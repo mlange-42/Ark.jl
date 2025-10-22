@@ -62,7 +62,7 @@ for i in 1:1000
 end
 
 # Create a query
-query = Query(world, Val.((Position, Velocity)))
+query = @Query(world, (Position, Velocity))
 
 # Time loop
 for i in 1:10

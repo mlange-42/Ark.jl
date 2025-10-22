@@ -20,6 +20,66 @@ struct Query{W<:World,CS<:Tuple,N}
 end
 
 """
+    @Query(world, comp_types; with=(...), without=(...), optional=(...))
+
+Macro version of `Query(...)` that allows ergonomic construction of queries using simulated keyword arguments.
+
+# Arguments
+- `world`: The `World` instance to query.
+- `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
+- `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
+- `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
+- `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
+
+# Example
+```julia
+@Query(world, (Position, Velocity), with=(Health,), without=(Altitude,))
+```
+"""
+macro Query(args...)
+    if length(args) < 2
+        error("@Query requires at least a world and component tuple")
+    end
+
+    world_expr = args[1]
+    comp_types_expr = args[2]
+
+    # Default values
+    with_expr = :(())
+    without_expr = :(())
+    optional_expr = :(())
+
+    # Parse simulated keyword arguments
+    for arg in args[3:end]
+        if Base.isexpr(arg, :(=), 2)
+            name, value = arg.args
+            if name == :with
+                with_expr = value
+            elseif name == :without
+                without_expr = value
+            elseif name == :optional
+                optional_expr = value
+            else
+                error("Unknown keyword argument: $name")
+            end
+        else
+            error("Unexpected argument format: $arg")
+        end
+    end
+
+    # Build Val{Tuple{...}} expressions with esc inside the macro return
+    quote
+        Query(
+            $(esc(world_expr)),
+            Val.($(esc(comp_types_expr)));
+            with=Val.($(esc(with_expr))),
+            without=Val.($(esc(without_expr))),
+            optional=Val.($(esc(optional_expr)))
+        )
+    end
+end
+
+"""
     Query(
         world::World,
         comp_types::Tuple;

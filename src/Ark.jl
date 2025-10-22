@@ -28,7 +28,7 @@ export Map
 export new_entity!, has_components, add_components!, remove_components!
 export _get_mapped_components
 
-export Query
+export Query, @Query
 export close
 
 export Column, Entities
