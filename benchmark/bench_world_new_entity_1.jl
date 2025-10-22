@@ -19,7 +19,7 @@ end
 function benchmark_world_new_entity_1(args, n::Int)
     world = args
     for _ in 1:n
-        e = new_entity!(world, (Position(0, 0),)))
+        e = new_entity!(world, (Position(0, 0),))
     end
 end
 
