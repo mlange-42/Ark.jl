@@ -75,7 +75,7 @@ end
 
 Set components of an [`Entity`](@ref).
 """
-@inline function Base.setindex!(map::Map{W,CS,N}, value, entity::Entity) where {W<:World,CS<:Tuple,N}
+@inline function Base.setindex!(map::Map{W,CS,N}, value::Tuple, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
