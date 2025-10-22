@@ -451,11 +451,12 @@ end
 
 Sets the given component values for an entity. Types are inferred from the values.
 """
-function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
-    return _set_components!(world, entity, Val{typeof(values)}(), values)
+function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN}
+    types = Tuple{map(typeof, values)...}
+    return _set_components!(world, entity, Val{types}(), values...)
 end
 
-@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::TV) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple,TV<:Tuple}
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Vararg{Any}) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
     types = TS.parameters
     exprs = [:(idx = world._entities[entity._id])]
 
@@ -463,7 +464,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_sym = :(values[$i])
+        val_sym = :(values[$i])  # Type-stable because TS is known
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
