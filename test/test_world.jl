@@ -216,6 +216,7 @@ end
     remove_components!(world, e1, Val.((Position, Velocity)))
     @test has_components(world, e1, Val.((Position, Velocity))) == false
 
+    @test_throws ErrorException set_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4)))
     @test_throws ErrorException add_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4)))
     @test_throws ErrorException remove_components!(world, zero_entity, Val.((Position, Velocity)))
     @test_throws ErrorException has_components(world, zero_entity, Val.((Position, Velocity)))

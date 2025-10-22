@@ -295,7 +295,7 @@ Sets the given component values for an entity. Types are inferred from the value
 """
 function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
     if !is_alive(world, entity)
-        error("can't check components of a dead entity")
+        error("can't set components of a dead entity")
     end
     return _set_components!(world, entity, Val{typeof(values)}(), values)
 end
