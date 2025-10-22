@@ -22,9 +22,9 @@ mutable struct World{CS<:Tuple,CT<:Tuple,N}
 end
 
 """
-    World(types::Type...)
+    World(comp_types::Type...)
 
-Creates a new, empty [`World`](@ref).
+Creates a new, empty [`World`](@ref) for the given component types.
 """
 World(comp_types::Type...) = _World_from_types(Val{Tuple{comp_types...}}())
 
@@ -190,12 +190,6 @@ function is_alive(world::World, entity::Entity)::Bool
     return _is_alive(world._entity_pool, entity)
 end
 
-function _check_locked(world::World)
-    if _is_locked(world._lock)
-        error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
-    end
-end
-
 """
     is_locked(world::World)::Bool
 
@@ -205,10 +199,16 @@ function is_locked(world::World)::Bool
     return _is_locked(world._lock)
 end
 
-"""
-    get_components(world::World, entity::Entity, comp_types::Type...)
+function _check_locked(world::World)
+    if _is_locked(world._lock)
+        error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
+    end
+end
 
-Get the given components for an entity.
+"""
+    get_components(world::World, entity::Entity, comp_types::Tuple)
+
+Get the given components for an [`Entity`](@ref).
 """
 function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
@@ -253,6 +253,11 @@ end
     end
 end
 
+"""
+    has_components(world::World, entity::Entity, comp_types::Tuple)
+
+Returns whether an [`Entity`](@ref) has all given components.
+"""
 @inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't check components of a dead entity")
@@ -289,18 +294,19 @@ end
 end
 
 """
-    set_components(world::World, entity::Entity, values...)
+    set_components!(world::World, entity::Entity, comps::Tuple)
 
-Sets the given component values for an entity. Types are inferred from the values.
+Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
+The entity must already have all these components.
 """
-function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+function set_components!(world::World{CS,CT,WN}, entity::Entity, comps::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
     if !is_alive(world, entity)
         error("can't set components of a dead entity")
     end
-    return _set_components!(world, entity, Val{typeof(values)}(), values)
+    return _set_components!(world, entity, Val{typeof(comps)}(), comps)
 end
 
-@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
     types = TS.parameters
     exprs = [:(idx = world._entities[entity._id])]
 
@@ -308,7 +314,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
+        val_expr = :(comps[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
@@ -337,7 +343,7 @@ end
 """
     new_entity!(world::World, comps::Vararg{Any})::Entity
 
-Creates a new [`Entity`](@ref) with the given components.
+Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
 """
 function new_entity!(world::World{CS,CT,N}, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     return _new_entity!(world, Val{typeof(comps)}(), comps)
@@ -378,6 +384,11 @@ end
     end
 end
 
+"""
+    add_components!(world::World, entity::Entity, comps::Tuple)
+
+Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
+"""
 function add_components!(world::World{CS,CT,N}, entity::Entity, comps::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't add components to a dead entity")
@@ -420,6 +431,11 @@ end
     end
 end
 
+"""
+    remove_components!(world::World, entity::Entity, comp_types::Tuple)
+
+Removes the given components from an [`Entity`](@ref).
+"""
 function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't remove components from a dead entity")

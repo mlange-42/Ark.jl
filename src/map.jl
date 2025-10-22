@@ -55,9 +55,9 @@ function new_entity!(map::Map{W,CS}, comps::Tuple) where {W<:World,CS<:Tuple}
 end
 
 """
-    Base.getindex(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
+    Base.getindex(map::Map, entity::Entity)
 
-Get components of an [`Entity`](@ref).
+Get the Map's components for an [`Entity`](@ref).
 """
 @inline function Base.getindex(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
@@ -71,9 +71,10 @@ Get components of an [`Entity`](@ref).
 end
 
 """
-    Base.setindex!(map::Map{W,CS,N}, value, entity::Entity) where {W<:World,CS<:Tuple,N}
+    Base.setindex!(map::Map, value::Tuple, entity::Entity)
 
-Set components of an [`Entity`](@ref).
+Sets the values of the Map's components for an [`Entity`](@ref).
+The entity must already have all these components.
 """
 @inline function Base.setindex!(map::Map{W,CS,N}, value::Tuple, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
@@ -86,7 +87,7 @@ end
 """
     has_components(map::Map, entity::Entity)
 
-Returns whether an [`Entity`](@ref) has the given components.
+Returns whether an [`Entity`](@ref) has all the Map's components.
 """
 @inline function has_components(map::Map{W,CS,N}, entity::Entity) where {W<:World,CS<:Tuple,N}
     if !is_alive(map._world, entity)
@@ -97,9 +98,9 @@ Returns whether an [`Entity`](@ref) has the given components.
 end
 
 """
-    add_components!(map::Map{CS,1}, entity::Entity, value)::Entity
+    add_components!(map::Map, entity::Entity, value::Tuple)
 
-Adds 1 components to an [`Entity`](@ref).
+Adds the values of the Map's components to an [`Entity`](@ref).
 """
 function add_components!(map::Map{W,CS}, entity::Entity, values::Tuple) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
@@ -111,9 +112,9 @@ function add_components!(map::Map{W,CS}, entity::Entity, values::Tuple) where {W
 end
 
 """
-    remove_components!(map::Map{CS,1}, entity::Entity)
+    remove_components!(map::Map, entity::Entity)
 
-Removes 1 components from an [`Entity`](@ref).
+Removes the Map's components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:Tuple}
     if !is_alive(map._world, entity)
