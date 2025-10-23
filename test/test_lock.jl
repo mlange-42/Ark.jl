@@ -1,5 +1,3 @@
-using Ark
-using Test
 
 @testset "_Lock functionality" begin
     lock = _Lock()

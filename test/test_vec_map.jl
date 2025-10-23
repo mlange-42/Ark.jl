@@ -1,5 +1,3 @@
-using Ark
-using Test
 
 @testset "_VecMap basic functionality" begin
     # Create a new map

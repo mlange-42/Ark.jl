@@ -1,7 +1,3 @@
-using Ark
-using Test
-
-using .TestTypes: Position
 
 @testset "ComponentRegistry Tests" begin
     registry = _ComponentRegistry()

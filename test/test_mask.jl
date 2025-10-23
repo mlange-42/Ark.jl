@@ -1,5 +1,3 @@
-using Ark
-using Test
 
 @testset "_Mask functionality" begin
     # Test constructor and bit setting
