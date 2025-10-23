@@ -1,7 +1,3 @@
-using Ark
-using Test
-
-using .TestTypes: Position, Velocity
 
 @testset "World creation" begin
     world = World()

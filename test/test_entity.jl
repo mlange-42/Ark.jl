@@ -1,5 +1,3 @@
-using Ark
-using Test
 
 @testset "Entity is_zero" begin
     world = World()

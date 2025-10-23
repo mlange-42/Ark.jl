@@ -1,6 +1,3 @@
-module TestTypes
-
-export Position, Velocity, Altitude, Health
 
 struct Position
     x::Float64
@@ -18,6 +15,4 @@ end
 
 struct Health
     health::Float64
-end
-
 end

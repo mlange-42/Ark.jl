@@ -1,5 +1,3 @@
-using Ark
-using Test
 
 @testset "_EntityPool constructor" begin
     initialCap = UInt32(10)

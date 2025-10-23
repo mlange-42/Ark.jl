@@ -1,7 +1,3 @@
-using Ark
-using Test
-
-using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Map new/get/set/has" begin
     world = World(Position, Velocity)

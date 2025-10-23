@@ -1,5 +1,3 @@
-using Ark
-using Test
 
 @testset "_Graph functionality" begin
     # Create a graph

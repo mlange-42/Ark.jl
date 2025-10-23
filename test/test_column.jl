@@ -1,5 +1,3 @@
-using Ark
-using Test
 
 @testset "Column interface tests" begin
     col = _new_column(Int)

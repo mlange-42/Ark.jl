@@ -1,7 +1,3 @@
-using Ark
-using Test
-
-using .TestTypes: Position, Velocity, Altitude, Health
 
 @testset "Query basic functionality" begin
     world = World(Position, Velocity, Altitude, Health)
@@ -12,11 +8,9 @@ using .TestTypes: Position, Velocity, Altitude, Health
         new_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
-    query = @Query(world, (Position, Velocity))
     for i in 1:10
         count = 0
-        for _ in query
-            entities, vec_pos, vec_vel = query[]
+        for (entities, vec_pos, vec_vel) in @Query(world, (Position, Velocity))
             @test length(entities) == length(vec_pos)
             @test length(entities) == length(vec_vel)
             for i in eachindex(vec_pos)
@@ -44,9 +38,7 @@ end
     query = @Query(world, (Position, Velocity), with = (Altitude,))
 
     count = 0
-    for a in query
-        ent, vec_pos, vec_vel = query[]
-        @test a == 1
+    for (ent, vec_pos, vec_vel) in query
         for i in eachindex(ent)
             e = ent[i]
             @test has_components(world, e, Val.((Altitude,))) == true
@@ -67,9 +59,7 @@ end
     query = @Query(world, (Position, Velocity), without = (Altitude,))
 
     count = 0
-    for a in query
-        ent, vec_pos, vec_vel = query[]
-        @test a == 1
+    for (ent, vec_pos, vec_vel) in query
         for i in eachindex(ent)
             e = ent[i]
             @test has_components(world, e, Val.((Altitude,))) == false
@@ -91,21 +81,20 @@ end
 
     count = 0
     indices = Vector{Int}()
-    for a in query
-        ent, vec_pos, vec_vel, vec_alt = query[]
-        if a == 1
+    arch = 1
+    for (ent, vec_pos, vec_vel, vec_alt) in query
+        if arch == 1
             @test vec_alt == nothing
         else
             @test vec_alt != nothing
         end
-        push!(indices, a)
         for i in eachindex(ent)
             e = ent[i]
             count += 1
         end
+        arch += 1
     end
     @test count == 20
-    @test indices == [1, 2]
 end
 
 @testset "Query macro missing argument" begin
