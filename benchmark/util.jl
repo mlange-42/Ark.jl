@@ -84,7 +84,8 @@ function table_to_html(data::Vector{CompareRow})::String
         end
 
         if name != r.name
-            html *= @sprintf("""<tr><th colspan="4" align="center">%s</th></tr>\n""", r.name)
+            name_short = trim_prefix(r.name, "benchmark_")
+            html *= @sprintf("""<tr><th colspan="4" align="center">%s</th></tr>\n""", name_short)
         end
 
         html *= @sprintf("""

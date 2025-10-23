@@ -12,9 +12,7 @@ function process_benches(suite::BenchmarkGroup)::Vector{Row}
         n = parse(Int, parts[end])
         mean_secs = median(map(s -> s.time, bench.samples))
         ns_per_n = 1e9 * mean_secs / n
-
-        name_short = trim_prefix(string(parts[1]), "benchmark_")
-        push!(data, Row(name_short, n, ns_per_n))
+        push!(data, Row(parts[1], n, ns_per_n))
     end
 
     return data
