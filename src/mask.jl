@@ -95,15 +95,22 @@ function _active_bit_indices(mask::_Mask)::Vector{UInt8}
 end
 
 struct _MutableMask
-    bits::MVector{4, UInt64}
+    bits::MVector{4,UInt64}
 end
 
 function _MutableMask()
-    return _MutableMask(MVector{4, UInt64}(0, 0, 0, 0))
+    return _MutableMask(MVector{4,UInt64}(0, 0, 0, 0))
 end
 
 function _MutableMask(mask::_Mask)
-    return _MutableMask(MVector{4, UInt64}(mask.bits))
+    return _MutableMask(MVector{4,UInt64}(mask.bits))
+end
+
+function _set_mask!(mask::_MutableMask, other::_Mask)
+    mask.bits[1] = other.bits[1]
+    mask.bits[2] = other.bits[2]
+    mask.bits[3] = other.bits[3]
+    mask.bits[4] = other.bits[4]
 end
 
 function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
@@ -120,19 +127,19 @@ end
 @inline function _set_bit!(mask::_MutableMask, i::UInt8)
     chunk = (i - UInt8(1)) >>> 6
     offset = (i - UInt8(1)) & 0x3F
-    val = UInt64(1) << (offset%UInt64)
+    val = UInt64(1) << (offset % UInt64)
     mask.bits[chunk+1] |= val
 end
 
 @inline function _clear_bit!(mask::_MutableMask, i::UInt8)
     chunk = (i - UInt8(1)) >>> 6
     offset = (i - UInt8(1)) & 0x3F
-    val = ~(UInt64(1) << (offset%UInt64))
+    val = ~(UInt64(1) << (offset % UInt64))
     mask.bits[chunk+1] &= val
 end
 
 @inline function _get_bit(mask::_MutableMask, i::UInt8)::Bool
     chunk = (i - UInt8(1)) >>> 6
     offset = (i - UInt8(1)) & 0x3F
-    return (mask.bits[chunk+1] >> (offset%UInt64)) & UInt64(1) == 1
+    return (mask.bits[chunk+1] >> (offset % UInt64)) & UInt64(1) == 1
 end

@@ -9,11 +9,12 @@ function _GraphNode(mask::_Mask, archetype::UInt32)
 end
 
 struct _Graph
+    mask::_MutableMask
     nodes::Vector{_GraphNode}
 end
 
 function _Graph()
-    _Graph([_GraphNode(_Mask(), UInt32(1))])
+    _Graph(_MutableMask(), [_GraphNode(_Mask(), UInt32(1))])
 end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)::_GraphNode
@@ -29,35 +30,35 @@ end
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::_GraphNode
     curr::_GraphNode = start
 
-    mask = _MutableMask(start.mask)
+    _set_mask!(g.mask, start.mask)
     for b in remove
-        if !_get_bit(mask, b)
+        if !_get_bit(g.mask, b)
             error("entity does not have component to remove")
         end
-        _clear_bit!(mask, b)
+        _clear_bit!(g.mask, b)
 
         if _get_bit(curr.neighbors.used, b)
             curr = curr.neighbors.data[b]
         else
-            next = _find_or_create(g, mask)
+            next = _find_or_create(g, g.mask)
             _set_map!(next.neighbors, b, curr)
             _set_map!(curr.neighbors, b, next)
             curr = next
         end
     end
     for b in add
-        if _get_bit(mask, b)
+        if _get_bit(g.mask, b)
             error("entity already has component to add, or it was added twice")
         end
         if _get_bit(start.mask, b)
             error("component added and removed in the same exchange operation")
         end
-        _set_bit!(mask, b)
+        _set_bit!(g.mask, b)
 
         if _get_bit(curr.neighbors.used, b)
             curr = curr.neighbors.data[b]
         else
-            next = _find_or_create(g, mask)
+            next = _find_or_create(g, g.mask)
             _set_map!(next.neighbors, b, curr)
             _set_map!(curr.neighbors, b, next)
             curr = next
