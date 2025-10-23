@@ -1,4 +1,3 @@
-using BenchmarkTools
 using Printf
 
 struct Row
@@ -17,22 +16,6 @@ end
 
 function CompareRow()
     CompareRow("", 0, NaN, NaN, NaN)
-end
-
-function process_benches(suite::BenchmarkGroup)::Vector{Row}
-    data = Vector{Row}()
-    sorted_keys = sort(collect(keys(SUITE)))
-
-    for name in sorted_keys
-        bench = SUITE[name]
-        parts = split(name, " n=")
-        n = parse(Int, parts[end])
-        mean_secs = median(map(s -> s.time, bench.samples))
-        ns_per_n = 1e9 * mean_secs / n
-        push!(data, Row(parts[1], n, ns_per_n))
-    end
-
-    return data
 end
 
 function write_bench_table(data::Vector{Row}, file::String)

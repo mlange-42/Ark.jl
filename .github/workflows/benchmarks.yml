@@ -81,10 +81,8 @@ jobs:
       uses: julia-actions/setup-julia@v1
       with:
         version: '1.12.1'
-    - name: Install dependencies
-      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run comparison
-      run: julia --project=benchmark benchmark/compare_benchmarks.jl | tee compare.md
+      run: julia benchmark/compare_benchmarks.jl | tee compare.md
     - name: Archive results CSV
       uses: actions/upload-artifact@v4
       with:
