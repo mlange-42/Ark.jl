@@ -39,6 +39,11 @@ jobs:
               run: |
                 mkdir results
                 benchpkg --add https://github.com/LilithHafner/ChairmarksForAirspeedVelocity.jl ${{ steps.extract-package-name.outputs.package_name }} --rev="${{github.event.pull_request.head.sha}},${{github.event.pull_request.base.sha}}" --url=${{ github.event.repository.clone_url }} --bench-on="${{github.event.pull_request.head.sha}}" --output-dir=results/ --tune
+            - name: Divide by Entities
+              env:
+                RESULTS_DIR: results
+              run: |
+                julia .github/workflows/divide.jl "$RESULTS_DIR"
             - name: Create markdown table from benchmarks
               run: |
                 benchpkgtable ${{ steps.extract-package-name.outputs.package_name }} --rev="${{github.event.pull_request.head.sha}},${{github.event.pull_request.base.sha}}" --input-dir=results/ --ratio > table.md
