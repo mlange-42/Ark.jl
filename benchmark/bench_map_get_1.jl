@@ -30,5 +30,5 @@ function benchmark_map_get_1(args)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_map_get_1 n=$n"] = @benchmarkable setup_map_get_1($n) benchmark_map_get_1(_)
+    SUITE["benchmark_map_get_1 n=$n"] = @be setup_map_get_1($n) benchmark_map_get_1(_)
 end

@@ -642,7 +642,7 @@ end
         stmt = :(
             begin
                 col = ((world._storages).$i).data[Int(slot)]
-                if length(col) < needed
+                if length(col._data) < needed
                     resize!(col._data, needed)
                 end
             end

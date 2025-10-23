@@ -21,5 +21,5 @@ function benchmark_query_posvel(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_query_posvel n=$n"] = @benchmarkable setup_query_posvel($n) benchmark_query_posvel(_, $n)
+    SUITE["benchmark_query_posvel n=$n"] = @be setup_query_posvel($n) benchmark_query_posvel(_, $n)
 end

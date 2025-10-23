@@ -1,7 +1,7 @@
 
 using Ark
-
-using ChairmarksForAirspeedVelocity
+using BenchmarkTools
+using Chairmarks
 
 const SUITE = BenchmarkGroup()
 

@@ -3,6 +3,7 @@
 *.jl.mem
 *.json
 *.json.tmp
+*.mem
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
