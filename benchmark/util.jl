@@ -54,11 +54,11 @@ function write_compare_table(data::Vector{CompareRow}, file::String)
 end
 
 function table_to_markdown(data::Vector{CompareRow})::String
-    header = "| Name                           |       N | Time main | Time curr | Factor |\n" *
-             "|:-------------------------------|--------:|----------:|----------:|-------:|\n"
+    header = "| Name                           |       N | Time main [ns] | Time curr [ns] | Factor |\n" *
+             "|:-------------------------------|--------:|---------------:|---------------:|-------:|\n"
 
     body = join([
-            @sprintf("| %-30s | %7d | %9.2f | %9.2f | %6.2f |",
+            @sprintf("| %-30s | %7d | %14.2f | %14.2f | %6.2f |",
                 r.name, r.n, r.time_ns_a, r.time_ns_b, r.factor)
             for r in data
         ], "\n")
