@@ -5,6 +5,7 @@
 *.json.tmp
 *.mem
 *.csv
+*.html
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/

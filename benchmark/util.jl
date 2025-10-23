@@ -1,4 +1,3 @@
-using BenchmarkTools
 using Printf
 
 struct Row
@@ -19,22 +18,6 @@ function CompareRow()
     CompareRow("", 0, NaN, NaN, NaN)
 end
 
-function process_benches(suite::BenchmarkGroup)::Vector{Row}
-    data = Vector{Row}()
-    sorted_keys = sort(collect(keys(SUITE)))
-
-    for name in sorted_keys
-        bench = SUITE[name]
-        parts = split(name, " n=")
-        n = parse(Int, parts[end])
-        mean_secs = median(map(s -> s.time, bench.samples))
-        ns_per_n = 1e9 * mean_secs / n
-        push!(data, Row(parts[1], n, ns_per_n))
-    end
-
-    return data
-end
-
 function write_bench_table(data::Vector{Row}, file::String)
     open(file, "w") do io
         write(io, "Name,N,Time\n")
@@ -44,13 +27,13 @@ function write_bench_table(data::Vector{Row}, file::String)
     end
 end
 
-function write_compare_table(data::Vector{CompareRow}, file::String)
-    open(file, "w") do io
-        write(io, "Name,N,Time main,Time curr,Factor\n")
-        for row in data
-            write(io, "$(row.name),$(row.n),$(row.time_ns_a),$(row.time_ns_b),$(row.factor)\n")
-        end
-    end
+function table_to_csv(data::Vector{CompareRow})::String
+    header = "Name,N,Time main,Time curr,Factor"
+    body = join([
+            "$(row.name),$(row.n),$(row.time_ns_a),$(row.time_ns_b),$(row.factor)"
+            for row in data
+        ], "\n")
+    return header * body
 end
 
 function table_to_markdown(data::Vector{CompareRow})::String
@@ -64,6 +47,70 @@ function table_to_markdown(data::Vector{CompareRow})::String
         ], "\n")
 
     return header * body
+end
+
+function table_to_html(data::Vector{CompareRow})::String
+    html = """
+    <details>
+    <summary>Click to expand benchmark results</summary>
+    <table>
+      <thead>
+        <tr>
+          <th align="center">N</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Time main&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Time curr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;Factor&nbsp;&nbsp;&nbsp;&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+    """
+
+    improved = false
+    regressed = false
+
+    name = ""
+    for r in data
+        emoji = ""
+        if r.factor <= 0.9
+            improved = true
+            emoji = "🚀"
+        elseif r.factor >= 1.1
+            regressed = true
+            emoji = "⚠️"
+        end
+
+        if name != r.name
+            html *= @sprintf("""<tr><th colspan="4" align="center">%s</th></tr>\n""", r.name)
+        end
+
+        html *= @sprintf("""
+            <tr>
+            <td align="right">%d</td>
+            <td align="right">%.2fns</td>
+            <td align="right">%.2fns</td>
+            <td align="right">%s %.2f</td>
+            </tr>
+            """, r.n, r.time_ns_a, r.time_ns_b, emoji, r.factor)
+
+        name = r.name
+    end
+
+    html *= """
+      </tbody>
+    </table>
+    </details>
+    """
+
+    text = if regressed
+        "<p>⚠️ Benchmark regression detected!</p>"
+    elseif improved
+        "<p>🚀 Benchmark improvement detected!</p>"
+    else
+        "<p>✅ Benchmarks are stable!</p>"
+    end
+    html = text * "\n" * html
+
+    return html
 end
 
 function read_bench_table(file::String)::Vector{Row}
