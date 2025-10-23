@@ -17,7 +17,7 @@ function setup_map_new_entity_5(n::Int)
     return map
 end
 
-function benchmark_new_entity_5(args, n)
+function benchmark_map_new_entity_5(args, n)
     map = args
     for _ in 1:n
         new_entity!(map, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
@@ -25,5 +25,5 @@ function benchmark_new_entity_5(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_new_entity_5 n=$n"] = @be setup_map_new_entity_5($n) benchmark_new_entity_5(_, $n) seconds = SECONDS
+    SUITE["benchmark_map_new_entity_5 n=$n"] = @be setup_map_new_entity_5($n) benchmark_map_new_entity_5(_, $n) seconds = SECONDS
 end
