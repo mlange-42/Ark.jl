@@ -21,6 +21,15 @@ jobs:
       uses: julia-actions/setup-julia@v1
       with:
         version: '1.12.1'
+    - name: Cache Julia packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.julia/artifacts
+          ~/.julia/packages
+        key: ${{ runner.os }}-julia-${{ hashFiles('benchmark/Manifest.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-julia-
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks
@@ -46,6 +55,15 @@ jobs:
       uses: julia-actions/setup-julia@v1
       with:
         version: '1.12.1'
+    - name: Cache Julia packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.julia/artifacts
+          ~/.julia/packages
+        key: ${{ runner.os }}-julia-${{ hashFiles('benchmark/Manifest.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-julia-
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks
@@ -124,6 +142,7 @@ jobs:
       uses: peter-evans/find-comment@v4
       id: find-comment
       with:
+        issue-number: ${{ github.event.pull_request.number }}
         body-includes: '<!-- benchmark-results -->'
     - name: Comment on PR
       uses: peter-evans/create-or-update-comment@v3
