@@ -28,14 +28,13 @@ jobs:
         path: bench.csv
 
   benchmark_main:
-    name: Benchmark current
+    name: Benchmark main branch
     runs-on: ubuntu-latest
     steps:
     - name: Checkout main branch
       uses: actions/checkout@v3
       with:
         ref: main
-        path: main_branch
     - name: Set up Julia
       uses: julia-actions/setup-julia@v1
       with:
