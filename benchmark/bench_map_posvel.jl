@@ -27,5 +27,5 @@ function benchmark_map_posvel(args)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_map_posvel n=$n"] = @benchmarkable setup_map_posvel($n) benchmark_map_posvel(_)
+    SUITE["benchmark_map_posvel n=$n"] = @be setup_map_posvel($n) benchmark_map_posvel(_) seconds = SECONDS
 end

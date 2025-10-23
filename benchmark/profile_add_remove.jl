@@ -29,4 +29,3 @@ end
 Profile.clear()
 profile_add_remove()
 @profilehtml profile_add_remove()
-#ProfileView.view()

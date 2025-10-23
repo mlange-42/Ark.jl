@@ -1,8 +1,9 @@
 
 using Ark
+using BenchmarkTools
+using Chairmarks
 
-using ChairmarksForAirspeedVelocity
-
+const SECONDS = 0.5
 const SUITE = BenchmarkGroup()
 
 include("BenchTypes.jl")

@@ -1,0 +1,93 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  benchmark_current:
+    name: Benchmark current
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '1.12.1'
+    - name: Install dependencies
+      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+    - name: Run benchmarks
+      run: julia --project=benchmark benchmark/run_benchmarks.jl
+    - name: Rename file
+      run: mv bench.csv bench_current.csv
+    - name: Archive results
+      uses: actions/upload-artifact@v4
+      with:
+        name: bench_current
+        path: bench_current.csv
+
+  benchmark_main:
+    name: Benchmark main
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v3
+      with:
+        ref: main
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '1.12.1'
+    - name: Install dependencies
+      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+    - name: Run benchmarks
+      run: julia --project=benchmark benchmark/run_benchmarks.jl
+    - name: Rename file
+      run: mv bench.csv bench_main.csv
+    - name: Archive results
+      uses: actions/upload-artifact@v4
+      with:
+        name: bench_main
+        path: bench_main.csv
+
+  compare:
+    name: Compare benchmarks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs:
+    - benchmark_main
+    - benchmark_current
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download bench_main
+      uses: actions/download-artifact@v4
+      with:
+        name: bench_main
+        path: .
+    - name: Download bench_current
+      uses: actions/download-artifact@v4
+      with:
+        name: bench_current
+        path: .
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '1.12.1'
+    - name: Install dependencies
+      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+    - name: Run comparison
+      run: julia --project=benchmark benchmark/compare_benchmarks.jl | tee compare.md
+    - name: Archive results CSV
+      uses: actions/upload-artifact@v4
+      with:
+        name: compare
+        path: compare.csv
+    - name: Archive results MD
+      uses: actions/upload-artifact@v4
+      with:
+        name: compare_md
+        path: compare.md
