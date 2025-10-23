@@ -56,7 +56,6 @@ function table_to_html(data::Vector{CompareRow})::String
     <table>
       <thead>
         <tr>
-          <th align="center">Name</th>
           <th align="center">N</th>
           <th align="center">Time main [ns]</th>
           <th align="center">Time curr [ns]</th>
@@ -69,25 +68,31 @@ function table_to_html(data::Vector{CompareRow})::String
     improved = false
     regressed = false
 
+    name = ""
     for r in data
         emoji = ""
         if r.factor <= 0.9
             improved = true
-            emoji = "⚠️"
+            emoji = "🚀"
         elseif r.factor >= 1.1
             regressed = true
-            emoji = "🚀"
+            emoji = "⚠️"
+        end
+
+        if name != r.name
+            html *= @sprintf("""<tr><th colspan="4" align="center">%s</th></tr>\n""", r.name)
         end
 
         html *= @sprintf("""
             <tr>
-            <td align="left">%s</td>
             <td align="right">%d</td>
             <td align="right">%.2f</td>
             <td align="right">%.2f</td>
             <td align="right">%s %.2f</td>
             </tr>
-            """, r.name, r.n, r.time_ns_a, r.time_ns_b, emoji, r.factor)
+            """, r.n, r.time_ns_a, r.time_ns_b, emoji, r.factor)
+
+        name = r.name
     end
 
     html *= """
