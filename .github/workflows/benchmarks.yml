@@ -114,7 +114,10 @@ jobs:
       run: |
         echo 'comment<<EOF' >> $GITHUB_OUTPUT
         echo '<!-- benchmark-results -->' >> $GITHUB_OUTPUT
+        echo '<details>' >> $GITHUB_OUTPUT
+        echo '<summary>Click to expand benchmark results</summary>' >> $GITHUB_OUTPUT
         cat compare.md >> $GITHUB_OUTPUT
+        echo '</details>' >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
     - name: Comment on PR
       uses: peter-evans/create-or-update-comment@v3
