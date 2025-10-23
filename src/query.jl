@@ -195,7 +195,7 @@ end
         q._cursor._index += 1
     end
 
-    close(q)
+    close!(q)
     return nothing
 end
 
@@ -205,13 +205,13 @@ end
 end
 
 """
-    close(q::Query)
+    close!(q::Query)
 
 Closes the query and unlocks the world.
 
 Must be called if a query is not fully iterated.
 """
-function close(q::Query{W,CS}) where {W<:World,CS<:Tuple}
+function close!(q::Query{W,CS}) where {W<:World,CS<:Tuple}
     q._cursor._index = 0
     _unlock(q._world._lock, q._cursor._lock)
 end
