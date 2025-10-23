@@ -30,6 +30,7 @@ jobs:
         path: bench_current.csv
 
   benchmark_main:
+    if: github.event_name == 'pull_request'
     name: Benchmark main branch
     runs-on: ubuntu-latest
     steps:
@@ -54,6 +55,7 @@ jobs:
         path: bench_main.csv
 
   compare:
+    if: github.event_name == 'pull_request'
     name: Compare benchmarks
     runs-on: ubuntu-latest
     needs:
