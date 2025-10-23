@@ -64,13 +64,17 @@ function table_to_html(data::Vector{CompareRow})::String
       <tbody>
     """
 
+    improved = false
+    regressed = false
+
     for r in data
-        bg = if r.factor <= 0.9
-            "background-color: rgba(0, 255, 0, 0.1);"
+        bg = ""
+        if r.factor <= 0.9
+            improved = true
+            bg = "background-color: rgba(0, 255, 0, 0.1);"
         elseif r.factor >= 1.1
-            "background-color: rgba(255, 0, 0, 0.1);"
-        else
-            ""
+            regressed = true
+            bg = "background-color: rgba(255, 0, 0, 0.1);"
         end
 
         html *= """
@@ -88,6 +92,15 @@ function table_to_html(data::Vector{CompareRow})::String
       </tbody>
     </table>
     """
+
+    text = if regressed
+        "<p>⚠️ Benchmark regression detected!</p>"
+    elseif improved
+        "<p>🚀 Benchmark improvement detected!</p>"
+    else
+        "<p>✅ Benchmarks stable!</p>"
+    end
+    html = text * "\n" * html
 
     return html
 end
