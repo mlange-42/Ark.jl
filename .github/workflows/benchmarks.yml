@@ -142,7 +142,6 @@ jobs:
         cat compare.html >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
     - name: Find comment
-      continue-on-error: true
       uses: peter-evans/find-comment@v4
       id: find-comment
       with:

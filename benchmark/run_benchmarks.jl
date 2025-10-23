@@ -4,10 +4,10 @@ include("benchmarks.jl")
 
 function process_benches(suite::BenchmarkGroup)::Vector{Row}
     data = Vector{Row}()
-    sorted_keys = sort(collect(keys(SUITE)))
+    sorted_keys = sort(collect(keys(suite)))
 
     for name in sorted_keys
-        bench = SUITE[name]
+        bench = suite[name]
         parts = split(name, " n=")
         n = parse(Int, parts[end])
         mean_secs = median(map(s -> s.time, bench.samples))

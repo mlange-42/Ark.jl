@@ -18,6 +18,10 @@ function CompareRow()
     CompareRow("", 0, NaN, NaN, NaN)
 end
 
+function trim_prefix(s::String, prefix::String)
+    startswith(s, prefix) ? s[length(prefix)+1:end] : s
+end
+
 function write_bench_table(data::Vector{Row}, file::String)
     open(file, "w") do io
         write(io, "Name,N,Time\n")
@@ -80,7 +84,8 @@ function table_to_html(data::Vector{CompareRow})::String
         end
 
         if name != r.name
-            html *= @sprintf("""<tr><th colspan="4" align="center">%s</th></tr>\n""", r.name)
+            name_short = trim_prefix(r.name, "benchmark_")
+            html *= @sprintf("""<tr><th colspan="4" align="center">%s</th></tr>\n""", name_short)
         end
 
         html *= @sprintf("""
