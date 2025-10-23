@@ -121,7 +121,7 @@ jobs:
         echo '<summary>Click to expand benchmark results</summary>' >> $GITHUB_OUTPUT
         cat compare.html >> $GITHUB_OUTPUT
         echo '</details>' >> $GITHUB_OUTPUT
-        echo 'EOF' >> $GITHUB_OUTPUT- name: Find Comment
+        echo 'EOF' >> $GITHUB_OUTPUT
     - name: Find comment
       uses: peter-evans/find-comment@v4
       id: find-comment
