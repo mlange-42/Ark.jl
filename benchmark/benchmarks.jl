@@ -3,6 +3,7 @@ using Ark
 using BenchmarkTools
 using Chairmarks
 
+const SECONDS = 0.5
 const SUITE = BenchmarkGroup()
 
 include("BenchTypes.jl")
