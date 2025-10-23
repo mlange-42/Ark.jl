@@ -8,9 +8,10 @@
         new_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
+    query = @Query(world, (Position, Velocity))
     for i in 1:10
         count = 0
-        for (entities, vec_pos, vec_vel) in @Query(world, (Position, Velocity))
+        for (entities, vec_pos, vec_vel) in query
             @test length(entities) == length(vec_pos)
             @test length(entities) == length(vec_vel)
             for i in eachindex(vec_pos)
@@ -95,6 +96,27 @@ end
         arch += 1
     end
     @test count == 20
+end
+
+@testset "Query empty" begin
+    world = World(Position, Velocity)
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i * 2),))
+    end
+
+    query = @Query(world, (Position, Velocity))
+
+    count = 0
+    arches = 0
+    for (ent, vec_pos) in query
+        for i in eachindex(ent)
+            count += 1
+        end
+        arches += 1
+    end
+    @test count == 0
+    @test arches == 0
 end
 
 @testset "Query macro missing argument" begin
