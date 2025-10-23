@@ -64,10 +64,7 @@ end
 # Time loop
 for i in 1:10
     # Iterate a query (archetypes)
-    query = @Query(world, (Position, Velocity))
-    for _ in query
-        # Get entities and component columns of the current archetype
-        entities, pos_column, vel_column = query[]
+    for (entities, pos_column, vel_column) in @Query(world, (Position, Velocity))
         # Iterate entities in the current archetype
         for i in eachindex(pos_column)
             # Get components of the current entity
@@ -77,7 +74,6 @@ for i in 1:10
             pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
         end
     end
-end
 end
 ```
 

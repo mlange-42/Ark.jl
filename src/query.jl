@@ -179,17 +179,16 @@ Returns entities and component columns of the archetype at the current cursor po
     return _get_query_archetypes(q)
 end
 
-@inline function Base.iterate(q::Query{W,CS}, state::Tuple{Int,Int}) where {W<:World,CS<:Tuple}
-    logical_index, physical_index = state
-    q._cursor._index = physical_index
+@inline function Base.iterate(q::Query{W,CS}, state::Int) where {W<:World,CS<:Tuple}
+    q._cursor._index = state
 
     while q._cursor._index <= length(q._world._archetypes)
         archetype = q._world._archetypes[q._cursor._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = logical_index
-            next_state = (logical_index + 1, q._cursor._index + 1)
+            result = q[]
+            next_state = q._cursor._index + 1
             return result, next_state
         end
         q._cursor._index += 1
@@ -201,7 +200,7 @@ end
 
 @inline function Base.iterate(q::Query{W,CS}) where {W<:World,CS<:Tuple}
     q._cursor._lock = _lock(q._world._lock)
-    return Base.iterate(q, (1, 1))
+    return Base.iterate(q, 1)
 end
 
 """
