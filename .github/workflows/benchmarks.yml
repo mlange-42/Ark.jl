@@ -91,3 +91,16 @@ jobs:
       with:
         name: compare_md
         path: compare.md
+
+  comment:
+    name: Comment on PR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs:
+    - compare
+    steps:
+    - name: Download compare
+      uses: actions/download-artifact@v4
+      with:
+        name: compare_md
+        path: .
