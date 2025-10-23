@@ -113,10 +113,16 @@ jobs:
         echo 'comment<<EOF' >> $GITHUB_OUTPUT
         echo '<!-- benchmark-results -->' >> $GITHUB_OUTPUT
         cat compare.md >> $GITHUB_OUTPUT
-        echo 'EOF' >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT- name: Find Comment
+    - name: Find comment
+      uses: peter-evans/find-comment@v4
+      id: find-comment
+      with:
+        body-includes: <!-- benchmark-results -->
     - name: Comment on PR
       uses: peter-evans/create-or-update-comment@v3
       with:
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
         token: ${{ secrets.GITHUB_TOKEN }}
         issue-number: ${{ github.event.pull_request.number }}
         body: ${{ steps.read_benchmark.outputs.comment }}
