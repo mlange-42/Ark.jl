@@ -57,9 +57,9 @@ function table_to_html(data::Vector{CompareRow})::String
       <thead>
         <tr>
           <th align="center">N</th>
-          <th align="center">Time main</th>
-          <th align="center">Time curr</th>
-          <th align="center">Factor</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Time main&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Time curr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;Factor&nbsp;&nbsp;&nbsp;&nbsp;</th>
         </tr>
       </thead>
       <tbody>
