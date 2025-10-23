@@ -17,12 +17,12 @@ function _new_column(::Type{C}) where {C}
     Column{C}()
 end
 
-function Base.getindex(c::Column, i::Integer)
-    return c._data[i]
+Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
+    return Base.getindex(c._data, i)
 end
 
-function Base.setindex!(c::Column, value, i::Integer)
-    c._data[i] = value
+Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
+    Base.setindex!(c._data, value, i)
 end
 
 function Base.length(c::Column)
@@ -52,8 +52,8 @@ function _new_entities_column()
     Entities()
 end
 
-function Base.getindex(c::Entities, i::Integer)
-    return c._data[i]
+Base.@propagate_inbounds function Base.getindex(c::Entities, i::Integer)
+    getindex(c._data, i)
 end
 
 function Base.length(c::Entities)
