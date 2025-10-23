@@ -79,15 +79,15 @@ function table_to_html(data::Vector{CompareRow})::String
             bg = "background-color: rgba(255, 0, 0, 0.1);"
         end
 
-        html *= """
-        <tr>
-          <td style="text-align: left;">$(r.name)</td>
-          <td style="text-align: right;">$(r.n)</td>
-          <td style="text-align: right;">$(round(r.time_ns_a, digits=2))</td>
-          <td style="text-align: right;">$(round(r.time_ns_b, digits=2))</td>
-          <td style="text-align: right; $bg">$(round(r.factor, digits=2))</td>
-        </tr>
-        """
+        html *= @sprintf("""
+            <tr>
+            <td align="left">%s</td>
+            <td align="right">%d</td>
+            <td align="right">%.2f</td>
+            <td align="right">%.2f</td>
+            <td align="right" style="%s">%.2f</td>
+            </tr>
+            """, r.name, r.n, r.time_ns_a, r.time_ns_b, bg, r.factor)
     end
 
     html *= """
