@@ -28,8 +28,9 @@ jobs:
           ~/.julia/artifacts
           ~/.julia/packages
           ~/.julia/compiled
-        key: ${{ runner.os }}-julia-${{ hashFiles('benchmark/Manifest.toml') }}
+        key: ${{ runner.os }}-julia-current-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
+          ${{ runner.os }}-julia-current-
           ${{ runner.os }}-julia-
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
@@ -63,8 +64,9 @@ jobs:
           ~/.julia/artifacts
           ~/.julia/packages
           ~/.julia/compiled
-        key: ${{ runner.os }}-julia-${{ hashFiles('benchmark/Manifest.toml') }}
+        key: ${{ runner.os }}-julia-main-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
+          ${{ runner.os }}-julia-main-
           ${{ runner.os }}-julia-
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
