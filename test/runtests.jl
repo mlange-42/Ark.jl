@@ -4,6 +4,7 @@ using Revise
 
 include("TestTypes.jl")
 
+include("test_readme.jl")
 include("test_entity.jl")
 include("test_pool.jl")
 include("test_lock.jl")
