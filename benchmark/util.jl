@@ -27,13 +27,13 @@ function write_bench_table(data::Vector{Row}, file::String)
     end
 end
 
-function write_compare_table(data::Vector{CompareRow}, file::String)
-    open(file, "w") do io
-        write(io, "Name,N,Time main,Time curr,Factor\n")
-        for row in data
-            write(io, "$(row.name),$(row.n),$(row.time_ns_a),$(row.time_ns_b),$(row.factor)\n")
-        end
-    end
+function table_to_csv(data::Vector{CompareRow})::String
+    header = "Name,N,Time main,Time curr,Factor"
+    body = join([
+            "$(row.name),$(row.n),$(row.time_ns_a),$(row.time_ns_b),$(row.factor)"
+            for row in data
+        ], "\n")
+    return header * body
 end
 
 function table_to_markdown(data::Vector{CompareRow})::String
@@ -47,6 +47,49 @@ function table_to_markdown(data::Vector{CompareRow})::String
         ], "\n")
 
     return header * body
+end
+
+function table_to_html(data::Vector{CompareRow})::String
+    html = """
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align: left;">Name</th>
+          <th style="text-align: right;">N</th>
+          <th style="text-align: right;">Time main [ns]</th>
+          <th style="text-align: right;">Time curr [ns]</th>
+          <th style="text-align: right;">Factor</th>
+        </tr>
+      </thead>
+      <tbody>
+    """
+
+    for r in data
+        bg = if r.factor <= 0.9
+            "background-color: rgba(0, 255, 0, 0.1);"
+        elseif r.factor >= 1.1
+            "background-color: rgba(255, 0, 0, 0.1);"
+        else
+            ""
+        end
+
+        html *= """
+        <tr>
+          <td style="text-align: left;">$(r.name)</td>
+          <td style="text-align: right;">$(r.n)</td>
+          <td style="text-align: right;">$(round(r.time_ns_a, digits=2))</td>
+          <td style="text-align: right;">$(round(r.time_ns_b, digits=2))</td>
+          <td style="text-align: right; $bg">$(round(r.factor, digits=2))</td>
+        </tr>
+        """
+    end
+
+    html *= """
+      </tbody>
+    </table>
+    """
+
+    return html
 end
 
 function read_bench_table(file::String)::Vector{Row}

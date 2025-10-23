@@ -93,6 +93,11 @@ jobs:
       with:
         name: compare_md
         path: compare.md
+    - name: Archive results HTML
+      uses: actions/upload-artifact@v4
+      with:
+        name: compare_html
+        path: compare.html
 
   comment:
     name: Comment on PR
@@ -102,17 +107,20 @@ jobs:
     - compare
     steps:
     - uses: actions/checkout@v3
-    - name: Download compare
+    - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: compare_md
+        name: compare_html
         path: .
     - name: Read benchmark results
       id: read_benchmark
       run: |
         echo 'comment<<EOF' >> $GITHUB_OUTPUT
         echo '<!-- benchmark-results -->' >> $GITHUB_OUTPUT
-        cat compare.md >> $GITHUB_OUTPUT
+        echo '<details>' >> $GITHUB_OUTPUT
+        echo '<summary>Click to expand benchmark results</summary>' >> $GITHUB_OUTPUT
+        cat compare.html >> $GITHUB_OUTPUT
+        echo '</details>' >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT- name: Find Comment
     - name: Find comment
       uses: peter-evans/find-comment@v4
