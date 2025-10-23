@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   benchmark_current:
     name: Benchmark current
@@ -99,8 +103,23 @@ jobs:
     needs:
     - compare
     steps:
+    - uses: actions/checkout@v3
     - name: Download compare
       uses: actions/download-artifact@v4
       with:
         name: compare_md
         path: .
+    - name: Read benchmark results
+      id: read_benchmark
+      run: |
+        echo 'comment<<EOF' >> $GITHUB_OUTPUT
+        echo '<!-- benchmark-results -->' >> $GITHUB_OUTPUT
+        cat compare.md >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
+    - name: Comment on PR
+      uses: peter-evans/create-or-update-comment@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: ${{ steps.read_benchmark.outputs.comment }}
+        edit-mode: replace
