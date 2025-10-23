@@ -51,6 +51,8 @@ end
 
 function table_to_html(data::Vector{CompareRow})::String
     html = """
+    <details>
+    <summary>Click to expand benchmark results</summary>
     <table>
       <thead>
         <tr>
@@ -91,6 +93,7 @@ function table_to_html(data::Vector{CompareRow})::String
     html *= """
       </tbody>
     </table>
+    </details>
     """
 
     text = if regressed
