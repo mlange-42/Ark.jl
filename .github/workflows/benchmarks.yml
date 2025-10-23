@@ -57,15 +57,15 @@ jobs:
     name: Compare benchmarks
     runs-on: ubuntu-latest
     needs:
-    #  - benchmark_main
+      - benchmark_main
       - benchmark_current
     steps:
       - uses: actions/checkout@v3
-    #  - name: Download bench_main
-    #    uses: actions/download-artifact@v4
-    #    with:
-    #      name: bench_main
-    #      path: .
+      - name: Download bench_main
+        uses: actions/download-artifact@v4
+        with:
+          name: bench_main
+          path: .
       - name: Download bench_current
         uses: actions/download-artifact@v4
         with:
