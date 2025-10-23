@@ -11,8 +11,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  benchmark_current:
-    name: Benchmark current
+  benchmark:
+    name: Benchmarks
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -34,7 +34,7 @@ jobs:
           ${{ runner.os }}-julia-
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
-    - name: Run benchmarks
+    - name: Run benchmarks for current
       run: julia --project=benchmark benchmark/run_benchmarks.jl
     - name: Rename file
       run: mv bench.csv bench_current.csv
@@ -44,20 +44,18 @@ jobs:
         name: bench_current
         path: bench_current.csv
 
-  benchmark_main:
-    name: Benchmark main
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
     - name: Checkout main branch
+      if: github.event_name == 'pull_request'
       uses: actions/checkout@v3
       with:
         ref: main
     - name: Set up Julia
+      if: github.event_name == 'pull_request'
       uses: julia-actions/setup-julia@v1
       with:
         version: '1.12.1'
     - name: Cache Julia packages
+      if: github.event_name == 'pull_request'
       uses: actions/cache@v3
       with:
         path: |
@@ -69,12 +67,16 @@ jobs:
           ${{ runner.os }}-julia-main-
           ${{ runner.os }}-julia-
     - name: Install dependencies
+      if: github.event_name == 'pull_request'
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
-    - name: Run benchmarks
+    - name: Run benchmarks for main
+      if: github.event_name == 'pull_request'
       run: julia --project=benchmark benchmark/run_benchmarks.jl
     - name: Rename file
+      if: github.event_name == 'pull_request'
       run: mv bench.csv bench_main.csv
     - name: Archive results
+      if: github.event_name == 'pull_request'
       uses: actions/upload-artifact@v4
       with:
         name: bench_main
@@ -85,8 +87,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs:
-    - benchmark_main
-    - benchmark_current
+    - benchmark
     steps:
     - uses: actions/checkout@v3
     - name: Download bench_main
