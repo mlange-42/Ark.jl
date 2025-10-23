@@ -170,15 +170,6 @@ end
     end
 end
 
-"""
-    Base.getindex(q::Query)
-
-Returns entities and component columns of the archetype at the current cursor position.
-"""
-@inline function Base.getindex(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
-    return _get_query_archetypes(q)
-end
-
 @inline function Base.iterate(q::Query{W,CS}, state::Int) where {W<:World,CS<:Tuple}
     q._cursor._index = state
 
@@ -187,7 +178,7 @@ end
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = q[]
+            result = _get_columns_at_index(q)
             next_state = q._cursor._index + 1
             return result, next_state
         end
@@ -215,7 +206,7 @@ function close!(q::Query{W,CS}) where {W<:World,CS<:Tuple}
     _unlock(q._world._lock, q._cursor._lock)
 end
 
-@generated function _get_query_archetypes(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
+@generated function _get_columns_at_index(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     push!(exprs, :(entities = q._world._archetypes[q._cursor._index].entities))
     for i in 1:N
