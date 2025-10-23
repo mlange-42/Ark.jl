@@ -61,12 +61,10 @@ for i in 1:1000
     entity = new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
 end
 
-# Create a query
-query = @Query(world, (Position, Velocity))
-
 # Time loop
 for i in 1:10
-    # Iterate the query (archetypes)
+    # Iterate a query (archetypes)
+    query = @Query(world, (Position, Velocity))
     for _ in query
         # Get entities and component columns of the current archetype
         entities, pos_column, vel_column = query[]
@@ -79,6 +77,7 @@ for i in 1:10
             pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
         end
     end
+end
 end
 ```
 
