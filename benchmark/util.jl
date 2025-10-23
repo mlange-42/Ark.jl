@@ -57,8 +57,8 @@ function table_to_html(data::Vector{CompareRow})::String
       <thead>
         <tr>
           <th align="center">N</th>
-          <th align="center">Time main [ns]</th>
-          <th align="center">Time curr [ns]</th>
+          <th align="center">Time main</th>
+          <th align="center">Time curr</th>
           <th align="center">Factor</th>
         </tr>
       </thead>
@@ -86,8 +86,8 @@ function table_to_html(data::Vector{CompareRow})::String
         html *= @sprintf("""
             <tr>
             <td align="right">%d</td>
-            <td align="right">%.2f</td>
-            <td align="right">%.2f</td>
+            <td align="right">%.2fns</td>
+            <td align="right">%.2fns</td>
             <td align="right">%s %.2f</td>
             </tr>
             """, r.n, r.time_ns_a, r.time_ns_b, emoji, r.factor)
