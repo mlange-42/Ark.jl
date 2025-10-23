@@ -1,8 +1,4 @@
 
-println("-----------------------------------------------")
-println("                Map new entity 1")
-println("-----------------------------------------------")
-
 function setup_map_new_entity_1(n::Int)
     world = World(Position, Velocity)
     map = Map(world, Val.((Position,)))
@@ -21,18 +17,13 @@ function setup_map_new_entity_1(n::Int)
     return map
 end
 
-function benchmark_map_new_entity_1(n::Int)
-    bench = @benchmarkable begin
-        for _ in 1:$n
-            new_entity!(map, (Position(0, 0),))
-        end
-    end setup = (map = setup_map_new_entity_1($n))
-
-    tune!(bench)
-    result = run(bench, seconds=seconds)
-    print_result(result, n)
+function benchmark_new_entity_1(args, n)
+    map = args
+    for _ in 1:n
+        new_entity!(map, (Position(0, 0),))
+    end
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_map_new_entity_1(n)
+    SUITE["benchmark_new_entity_1 n=$n"] = @benchmarkable setup_map_new_entity_1($n) benchmark_new_entity_1(_, $n)
 end

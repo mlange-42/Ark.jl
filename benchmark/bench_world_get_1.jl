@@ -1,8 +1,4 @@
 
-println("-----------------------------------------------")
-println("                World get 1")
-println("-----------------------------------------------")
-
 function setup_world_get_1(n_entities::Int)
     world = World(Position, Velocity)
     map = Map(world, Val.((Position,)))
@@ -23,21 +19,15 @@ function setup_world_get_1(n_entities::Int)
     return (entities, world)
 end
 
-function benchmark_world_get_1(n)
-    bench = @benchmarkable begin
-        sum = 0.0
-        for e in entities
-            pos, = get_components(world, e, Val.((Position,)))
-            sum += pos.x
-        end
-        sum
-    end setup = ((entities, world) = setup_world_get_1($n))
-
-    tune!(bench)
-    result = run(bench, seconds=seconds)
-    print_result(result, n)
+function benchmark_world_get_1(args, n)
+    entities, world = args
+    sum = 0.0
+    for e in entities
+        pos, = get_components(world, e, Val.((Position,)))
+        sum += pos.x
+    end
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    benchmark_world_get_1(n)
+    SUITE["benchmark_world_get_1 n=$n"] = @benchmarkable setup_world_get_1($n) benchmark_world_get_1(_, $n)
 end

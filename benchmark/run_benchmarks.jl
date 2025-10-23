@@ -1,36 +1,13 @@
-using BenchmarkTools
-using Ark
-using ArgParse
+using Statistics
 using Printf
 
-s = ArgParseSettings()
-@add_arg_table s begin
-    "--short"
-    help = "Enable short output"
-    action = :store_true
-    "--seconds"
-    help = "Time to run per benchmark"
-    arg_type = Float64
-    default = 1
+include("./benchmark/benchmarks.jl")
+
+for x in sort(filter(x -> x[1] isa String, collect(pairs(SUITE.data))), by=(x->x[1]))
+	x[1] isa Int && continue
+	m = match(r"n=(\d+)", x[1])
+	times = run(x[2]).times
+	n = parse(Int, m.captures[1])
+	times ./= n
+	@printf("%-40s time: %10.2f ns\n", x[1], mean(times))
 end
-
-args = parse_args(ARGS, s)
-
-full_output = !args["short"]
-seconds = args["seconds"]
-
-include("BenchTypes.jl")
-
-include("bench_query_posvel.jl")
-include("bench_world_posvel.jl")
-include("bench_world_get_1.jl")
-include("bench_world_get_5.jl")
-include("bench_world_new_entity_1.jl")
-include("bench_world_new_entity_5.jl")
-include("bench_world_add_remove.jl")
-include("bench_map_posvel.jl")
-include("bench_map_get_1.jl")
-include("bench_map_get_5.jl")
-include("bench_map_new_entity_1.jl")
-include("bench_map_new_entity_5.jl")
-include("bench_map_add_remove.jl")
