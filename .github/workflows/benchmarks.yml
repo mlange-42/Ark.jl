@@ -21,11 +21,13 @@ jobs:
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks
       run: julia --project=benchmark benchmark/run_benchmarks.jl
+    - name: Rename file
+      run: mv bench.csv bench_current.csv
     - name: Archive results
       uses: actions/upload-artifact@v4
       with:
         name: bench_current
-        path: bench.csv
+        path: bench_current.csv
 
   benchmark_main:
     name: Benchmark main branch
@@ -43,11 +45,13 @@ jobs:
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks
       run: julia --project=benchmark benchmark/run_benchmarks.jl
+    - name: Rename file
+      run: mv bench.csv bench_main.csv
     - name: Archive results
       uses: actions/upload-artifact@v4
       with:
         name: bench_main
-        path: bench.csv
+        path: bench_main.csv
 
   compare:
     name: Compare benchmarks
