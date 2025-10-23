@@ -27,6 +27,7 @@ jobs:
         path: |
           ~/.julia/artifacts
           ~/.julia/packages
+          ~/.julia/compiled
         key: ${{ runner.os }}-julia-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
           ${{ runner.os }}-julia-
@@ -61,6 +62,7 @@ jobs:
         path: |
           ~/.julia/artifacts
           ~/.julia/packages
+          ~/.julia/compiled
         key: ${{ runner.os }}-julia-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
           ${{ runner.os }}-julia-

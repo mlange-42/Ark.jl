@@ -56,11 +56,11 @@ function table_to_html(data::Vector{CompareRow})::String
     <table>
       <thead>
         <tr>
-          <th style="text-align: left;">Name</th>
-          <th style="text-align: right;">N</th>
-          <th style="text-align: right;">Time main [ns]</th>
-          <th style="text-align: right;">Time curr [ns]</th>
-          <th style="text-align: right;">Factor</th>
+          <th align="center">Name</th>
+          <th align="center">N</th>
+          <th align="center">Time main [ns]</th>
+          <th align="center">Time curr [ns]</th>
+          <th align="center">Factor</th>
         </tr>
       </thead>
       <tbody>
@@ -73,10 +73,10 @@ function table_to_html(data::Vector{CompareRow})::String
         bg = ""
         if r.factor <= 0.9
             improved = true
-            bg = "background-color: rgba(0, 255, 0, 0.1);"
+            bg = "background-color: rgb(0 255 0 / 25%);"
         elseif r.factor >= 1.1
             regressed = true
-            bg = "background-color: rgba(255, 0, 0, 0.1);"
+            bg = "background-color: rgb(255 0 0 / 25%);"
         end
 
         html *= @sprintf("""
@@ -101,7 +101,7 @@ function table_to_html(data::Vector{CompareRow})::String
     elseif improved
         "<p>🚀 Benchmark improvement detected!</p>"
     else
-        "<p>✅ Benchmarks stable!</p>"
+        "<p>✅ Benchmarks are stable!</p>"
     end
     html = text * "\n" * html
 
