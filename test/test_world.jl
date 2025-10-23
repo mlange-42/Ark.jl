@@ -155,7 +155,8 @@ end
     @test vel == Velocity(3, 4)
 
     # TODO: do we want that, or do we want it to return `nothing`?
-    @test_throws FieldError get_components(world, e2, Val.((Position, Velocity)))
+    err = VERSION < v"1.12.0" ? ErrorException : FieldError
+    @test_throws err get_components(world, e2, Val.((Position, Velocity)))
 
     @test_throws ErrorException get_components(world, zero_entity, Val.((Position, Velocity)))
     @test_throws ErrorException get_components(world, e2, Val.((Altitude,)))
