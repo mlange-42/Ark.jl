@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  benchmark:
+  benchmark_current:
+    name: Benchmark current
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -24,4 +25,27 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: bench_current.csv
+        path: bench.csv
+
+  benchmark_main:
+    name: Benchmark current
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v3
+      with:
+        ref: main
+        path: main_branch
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '1.12.1'
+    - name: Install dependencies
+      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+    - name: Run benchmarks
+      run: julia --project=benchmark benchmark/run_benchmarks.jl
+    - name: Archive results
+      uses: actions/upload-artifact@v4
+      with:
+        name: bench_main.csv
         path: bench.csv
