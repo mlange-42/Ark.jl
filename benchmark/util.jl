@@ -15,8 +15,8 @@ mutable struct CompareRow
     factor::Float64
 end
 
-function CompareRow(name::String)
-    CompareRow(name, 0, NaN, NaN, NaN)
+function CompareRow()
+    CompareRow("", 0, NaN, NaN, NaN)
 end
 
 function process_benches(suite::BenchmarkGroup)::Vector{Row}
@@ -42,6 +42,28 @@ function write_bench_table(data::Vector{Row}, file::String)
             write(io, "$(row.name),$(row.n),$(row.time_ns)\n")
         end
     end
+end
+
+function write_compare_table(data::Vector{CompareRow}, file::String)
+    open(file, "w") do io
+        write(io, "Name,N,Time main,Time curr,Factor\n")
+        for row in data
+            write(io, "$(row.name),$(row.n),$(row.time_ns_a),$(row.time_ns_b),$(row.factor)\n")
+        end
+    end
+end
+
+function table_to_markdown(data::Vector{CompareRow})::String
+    header = "| Name                           |       N | Time main | Time curr | Factor |\n" *
+             "|:-------------------------------|--------:|----------:|----------:|-------:|\n"
+
+    body = join([
+            @sprintf("| %-30s | %7d | %9.2f | %9.2f | %6.2f |",
+                r.name, r.n, r.time_ns_a, r.time_ns_b, r.factor)
+            for r in data
+        ], "\n")
+
+    return header * body
 end
 
 function read_bench_table(file::String)::Vector{Row}
@@ -75,14 +97,16 @@ function compare_tables(a::Vector{Row}, b::Vector{Row})::Vector{CompareRow}
     data = Vector{CompareRow}()
 
     for bench in keys_vec
-        row = CompareRow(bench)
+        row = CompareRow()
         if haskey(dict_a, bench)
             r = dict_a[bench]
+            row.name = r.name
             row.n = r.n
             row.time_ns_a = r.time_ns
         end
         if haskey(dict_b, bench)
             r = dict_b[bench]
+            row.name = r.name
             row.n = r.n
             row.time_ns_b = r.time_ns
         end
