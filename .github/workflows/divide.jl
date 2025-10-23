@@ -1,4 +1,3 @@
-
 using Pkg
 Pkg.add("JSON")
 using JSON
@@ -7,7 +6,7 @@ results_dir = ARGS[1]
 json_files = filter(f -> endswith(f, ".json"), readdir(results_dir))
 
 for file in json_files
-	json_text = read(joinpath(results_dir, file), String) # I need to find branch somehow
+	json_text = read(joinpath(results_dir, file), String)
 	data = JSON.parse(json_text)
 	for x in pairs(data["data"])
 		m = match(r"n=(\d+)", x[1])
