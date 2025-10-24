@@ -22,7 +22,7 @@ Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
 end
 
 Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
-    @inline Base.setindex!(c._data, value, i)
+    return @inline Base.setindex!(c._data, value, i)
 end
 
 function Base.length(c::Column)
@@ -54,7 +54,7 @@ function _new_entities_column()
 end
 
 Base.@propagate_inbounds function Base.getindex(c::Entities, i::Integer)
-    getindex(c._data, i)
+    return @inline getindex(c._data, i)
 end
 
 function Base.length(c::Entities)
