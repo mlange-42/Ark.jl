@@ -1,6 +1,6 @@
 
 @testset "Column interface tests" begin
-    col = _new_column(Int)
+    col = _new_column(Int, UInt32(1024))
     push!(col._data, 10)
     push!(col._data, 20)
     push!(col._data, 30)

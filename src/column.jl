@@ -10,11 +10,11 @@ Used in query iteration.
 struct Column{C} <: AbstractVector{C}
     _data::Vector{C}
 
-    Column{C}() where {C} = new(Vector{C}())
+    Column{C}(capacity::UInt32) where C = new(_vector(C, capacity))
 end
 
-function _new_column(::Type{C}) where {C}
-    Column{C}()
+function _new_column(::Type{C}, capacity::UInt32) where {C}
+    Column{C}(capacity)
 end
 
 Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
@@ -45,11 +45,11 @@ Used in query iteration.
 struct Entities <: AbstractVector{Entity}
     _data::Vector{Entity}
 
-    Entities() = new(Vector{Entity}())
+    Entities(capacity::UInt32) = new(_vector(Entity, capacity))
 end
 
 function _new_entities_column()
-    Entities()
+    Entities(UInt32(1024))
 end
 
 Base.@propagate_inbounds function Base.getindex(c::Entities, i::Integer)

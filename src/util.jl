@@ -8,3 +8,9 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     pop!(v)
     return swapped
 end
+
+function _vector(C::Type, cap::UInt32)
+    v = Vector{C}(undef, cap)
+    resize!(v, 0)
+    return v
+end

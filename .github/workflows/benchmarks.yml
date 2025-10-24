@@ -20,7 +20,7 @@ jobs:
     - name: Set up Julia
       uses: julia-actions/setup-julia@v1
       with:
-        version: '1.12.1'
+        version: '1.10.0'
     - name: Cache Julia packages
       uses: actions/cache@v3
       with:
@@ -28,10 +28,10 @@ jobs:
           ~/.julia/artifacts
           ~/.julia/packages
           ~/.julia/compiled
-        key: ${{ runner.os }}-julia-current-${{ hashFiles('benchmark/Manifest.toml') }}
+        key: ${{ runner.os }}-julia-1.10-current-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
-          ${{ runner.os }}-julia-current-
-          ${{ runner.os }}-julia-
+          ${{ runner.os }}-julia-1.10-current-
+          ${{ runner.os }}-julia-1.10-
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks for current
@@ -53,7 +53,7 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: julia-actions/setup-julia@v1
       with:
-        version: '1.12.1'
+        version: '1.10.0'
     - name: Cache Julia packages
       if: github.event_name == 'pull_request'
       uses: actions/cache@v3
@@ -62,10 +62,10 @@ jobs:
           ~/.julia/artifacts
           ~/.julia/packages
           ~/.julia/compiled
-        key: ${{ runner.os }}-julia-main-${{ hashFiles('benchmark/Manifest.toml') }}
+        key: ${{ runner.os }}-julia-1.10-main-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
-          ${{ runner.os }}-julia-main-
-          ${{ runner.os }}-julia-
+          ${{ runner.os }}-julia-1.10-main-
+          ${{ runner.os }}-julia-1.10-
     - name: Install dependencies
       if: github.event_name == 'pull_request'
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
@@ -103,7 +103,7 @@ jobs:
     - name: Set up Julia
       uses: julia-actions/setup-julia@v1
       with:
-        version: '1.12.1'
+        version: '1.10.0'
     - name: Run comparison
       run: julia benchmark/compare_benchmarks.jl | tee compare.md
     - name: Archive results CSV
