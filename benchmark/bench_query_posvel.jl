@@ -20,6 +20,6 @@ function benchmark_query_posvel(args, n)
     end
 end
 
-for n in (100, 1_000, 10_000, 100_000)
+for n in (100, 1_000, 10_000, 100_000, 1_000_000)
     SUITE["benchmark_query_posvel n=$n"] = @be setup_query_posvel($n) benchmark_query_posvel(_, $n) seconds = SECONDS
 end
