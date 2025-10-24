@@ -33,6 +33,7 @@ Base.eachindex(c::Column) = eachindex(c._data)
 Base.enumerate(c::Column) = enumerate(c._data)
 Base.iterate(c::Column) = iterate(c._data)
 Base.iterate(c::Column, state) = iterate(c._data, state)
+Base.eltype(::Type{Column{C}}) where {C} = C
 
 """
     Entities
