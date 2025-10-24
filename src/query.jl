@@ -218,15 +218,20 @@ end
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
+        vec_sym = Symbol("vec", i)
         push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
         push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
+        # TODO: return nothing if the component is not present.
+        # Required for optional components. Should we remove optional?
+        push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : $col_sym._data))
     end
     result_exprs = [:entities]
     for i in 1:N
-        push!(result_exprs, Symbol("col", i))
+        push!(result_exprs, Symbol("vec", i))
     end
     result_exprs = map(x -> :($x), result_exprs)
     push!(exprs, Expr(:return, Expr(:tuple, result_exprs...)))
+
     return quote
         @inbounds begin
             $(Expr(:block, exprs...))
