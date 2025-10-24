@@ -219,7 +219,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
+        push!(exprs, :($col_sym = $stor_sym.data[q._cursor._index]))
     end
     result_exprs = [:entities]
     for i in 1:N
