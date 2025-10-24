@@ -25,10 +25,7 @@ Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
     Base.setindex!(c._data, value, i)
 end
 
-function Base.length(c::Column)
-    return length(c._data)
-end
-
+Base.length(c::Column) = length(c._data)
 Base.eachindex(c::Column) = eachindex(c._data)
 Base.enumerate(c::Column) = enumerate(c._data)
 Base.iterate(c::Column) = iterate(c._data)
@@ -59,10 +56,7 @@ Base.@propagate_inbounds function Base.getindex(c::Entities, i::Integer)
     getindex(c._data, i)
 end
 
-function Base.length(c::Entities)
-    return length(c._data)
-end
-
+Base.length(c::Entities) = length(c._data)
 Base.eachindex(c::Entities) = eachindex(c._data)
 Base.enumerate(c::Entities) = enumerate(c._data)
 Base.iterate(c::Entities) = iterate(c._data)
