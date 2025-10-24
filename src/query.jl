@@ -10,10 +10,10 @@ end
 
 A query for N components.
 """
-struct Query{W<:World,CS<:Tuple,N}
+struct Query{W<:World,CS<:Tuple,N,NR}
     _world::W
     _cursor::_Cursor
-    _ids::NTuple{N,UInt8} # IDs of non-optional components
+    _ids::NTuple{NR,UInt8} # IDs of non-optional components
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
@@ -156,7 +156,7 @@ end
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
-        Query{$W,$storage_tuple_type,$(length(comp_types))}(
+        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
