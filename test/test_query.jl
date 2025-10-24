@@ -28,6 +28,28 @@
     end
 end
 
+@testset "Query basic unpack" begin
+    world = World(Position, Velocity)
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+    end
+
+    cnt = 0
+    for arch in @Query(world, (Position, Velocity))
+        e, (x, y), (dx, dy) = unpack.(arch)
+        @test isa(e, Entities)
+        @test isa(x, Vector{Float64})
+        @test length(x) == 10
+        for i in eachindex(e)
+            @inbounds x[i] += dx[i]
+            @inbounds y[i] += dy[i]
+            cnt += 1
+        end
+    end
+    @test cnt == 10
+end
+
 @testset "Query with" begin
     world = World(Position, Velocity, Altitude)
 

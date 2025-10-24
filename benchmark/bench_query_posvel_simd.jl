@@ -12,7 +12,7 @@ end
 function benchmark_query_posvel_simd(args, n)
     world = args
     for arch in @Query(world, (Position, Velocity))
-        e, (x, y), (dx, dy) = fields.(arch)
+        e, (x, y), (dx, dy) = unpack.(arch)
         for i in eachindex(e)
             @inbounds x[i] += dx[i]
             @inbounds y[i] += dy[i]

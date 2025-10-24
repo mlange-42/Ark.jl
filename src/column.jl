@@ -35,10 +35,9 @@ Base.enumerate(c::Column) = enumerate(c._data)
 Base.iterate(c::Column) = iterate(c._data)
 Base.iterate(c::Column, state) = iterate(c._data, state)
 
-fields(col::StructArray) = StructArrays.components(col)
-fields(col::NamedTuple) = col
-fields(col::AbstractVector) = (; value=col)
-fields(col::Column) = fields(col._data)
+unpack(col::StructArray) = StructArrays.components(col)
+unpack(col::NamedTuple) = col
+unpack(col::Column) = unpack(col._data)
 
 """
     Entities
@@ -71,4 +70,4 @@ Base.enumerate(c::Entities) = enumerate(c._data)
 Base.iterate(c::Entities) = iterate(c._data)
 Base.iterate(c::Entities, state) = iterate(c._data, state)
 
-fields(col::Entities) = col._data
+unpack(col::Entities) = col

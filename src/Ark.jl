@@ -31,7 +31,7 @@ export Map, @Map
 export _get_mapped_components
 
 export Query, @Query
-export close!, fields
+export close!, unpack
 
 export Column, Entities
 export _new_column, _new_entities_column
