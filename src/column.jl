@@ -35,6 +35,7 @@ Base.iterate(c::Column) = iterate(c._data)
 Base.iterate(c::Column, state) = iterate(c._data, state)
 Base.eltype(::Type{Column{C}}) where {C} = C
 Base.IndexStyle(::Type{<:Column}) = IndexLinear()
+Base.size(c::Column) = (length(c),)
 
 """
     Entities
@@ -68,3 +69,4 @@ Base.iterate(c::Entities) = iterate(c._data)
 Base.iterate(c::Entities, state) = iterate(c._data, state)
 Base.eltype(::Type{Entities}) = Entity
 Base.IndexStyle(::Type{<:Entities}) = IndexLinear()
+Base.size(c::Entities) = (length(c),)
