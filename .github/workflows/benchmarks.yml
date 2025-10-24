@@ -20,7 +20,7 @@ jobs:
     - name: Set up Julia
       uses: julia-actions/setup-julia@v1
       with:
-        version: '1.12.1'
+        version: '1.10.0'
     - name: Cache Julia packages
       uses: actions/cache@v3
       with:
@@ -53,7 +53,7 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: julia-actions/setup-julia@v1
       with:
-        version: '1.12.1'
+        version: '1.10.0'
     - name: Cache Julia packages
       if: github.event_name == 'pull_request'
       uses: actions/cache@v3
@@ -103,7 +103,7 @@ jobs:
     - name: Set up Julia
       uses: julia-actions/setup-julia@v1
       with:
-        version: '1.12.1'
+        version: '1.10.0'
     - name: Run comparison
       run: julia benchmark/compare_benchmarks.jl | tee compare.md
     - name: Archive results CSV
