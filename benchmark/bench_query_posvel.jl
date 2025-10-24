@@ -18,6 +18,7 @@ function benchmark_query_posvel(args, n)
             @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
         end
     end
+    return world
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
