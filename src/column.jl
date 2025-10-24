@@ -29,14 +29,12 @@ function Base.length(c::Column)
     return length(c._data)
 end
 
-Base.Tuple(col::Column{C}) where {C} = StructArrays.components(col._data)
 Base.eachindex(c::Column) = eachindex(c._data)
 Base.enumerate(c::Column) = enumerate(c._data)
 Base.iterate(c::Column) = iterate(c._data)
 Base.iterate(c::Column, state) = iterate(c._data, state)
 
 unpack(col::StructArray) = StructArrays.components(col)
-unpack(col::NamedTuple) = col
 unpack(col::Column) = unpack(col._data)
 
 """
