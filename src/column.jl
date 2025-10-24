@@ -18,11 +18,11 @@ function _new_column(::Type{C}) where {C}
 end
 
 Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
-    return Base.getindex(c._data, i)
+    return @inline Base.getindex(c._data, i)
 end
 
 Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
-    Base.setindex!(c._data, value, i)
+    @inline Base.setindex!(c._data, value, i)
 end
 
 function Base.length(c::Column)
