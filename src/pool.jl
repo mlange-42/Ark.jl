@@ -6,9 +6,8 @@ mutable struct _EntityPool
 end
 
 function _EntityPool(initial_capacity::UInt32)
-    v = [_new_entity(UInt32(0), typemax(UInt32))]
-    sizehint!(v, initial_capacity, shrink=false)
-
+    v = _vector(Entity, initial_capacity)
+    push!(v, _new_entity(UInt32(0), typemax(UInt32)))
     return _EntityPool(v, 0, 0)
 end
 

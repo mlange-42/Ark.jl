@@ -591,8 +591,8 @@ end
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph()
-        entities = [_EntityIndex(typemax(UInt32), 0)]
-        sizehint!(entities, initial_capacity, shrink=false)
+        entities = _vector(_EntityIndex, UInt32(initial_capacity))
+        push!(entities, _EntityIndex(typemax(UInt32), 0))
         World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
             entities,
             $storage_tuple,

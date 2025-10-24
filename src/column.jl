@@ -10,11 +10,7 @@ Used in query iteration.
 struct Column{C} <: AbstractVector{C}
     _data::Vector{C}
 
-    function Column{C}(capacity::UInt32) where {C}
-        vec = Vector{C}()
-        sizehint!(vec, capacity, shrink=false)
-        new(vec)
-    end
+    Column{C}(capacity::UInt32) where C = new(_vector(C, capacity))
 end
 
 function _new_column(::Type{C}, capacity::UInt32) where {C}
@@ -49,11 +45,7 @@ Used in query iteration.
 struct Entities <: AbstractVector{Entity}
     _data::Vector{Entity}
 
-    function Entities(capacity::UInt32)
-        vec = Vector{Entity}()
-        sizehint!(vec, capacity, shrink=false)
-        new(vec)
-    end
+    Entities(capacity::UInt32) = new(_vector(Entity, capacity))
 end
 
 function _new_entities_column()
