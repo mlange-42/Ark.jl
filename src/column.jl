@@ -11,29 +11,6 @@ struct Column{C,S<:StructArray{C}}
     _data::S
 end
 
-@generated function Column{C}() where {C}
-    fnames = fieldnames(C)
-    ftypes = C.types
-
-    # Build Tuple type: Tuple{Vector{T1}, Vector{T2}, ...}
-    tuple_type_expr = Expr(:curly, :Tuple, [:(Vector{$(ftypes[i])}) for i in 1:length(fnames)]...)
-
-    # Build NamedTuple type: NamedTuple{(:x, :y), Tuple{...}}
-    nt_type_expr = Expr(:curly, :NamedTuple,
-        Expr(:tuple, map(QuoteNode, fnames)...),
-        tuple_type_expr
-    )
-
-    # Build value tuple: (Vector{T1}(), Vector{T2}(), ...)
-    value_expr = Expr(:tuple, [:(Vector{$(ftypes[i])}()) for i in 1:length(fnames)]...)
-
-    return quote
-        storage = convert($nt_type_expr, $value_expr)
-        sa = StructArray{C}(storage)
-        Column{C,typeof(sa)}(sa)
-    end
-end
-
 function _new_column(::Type{C}) where {C}
     fnames = fieldnames(C)
     ftypes = C.types
@@ -42,22 +19,22 @@ function _new_column(::Type{C}) where {C}
     Column{C,typeof(sa)}(sa)
 end
 
-Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
-    return Base.getindex(c._data, i)
+Base.@propagate_inbounds function Base.getindex(c::Column{C,S}, i::Integer) where {C,S<:StructArray{C}}
+    return getindex(c._data, i)
 end
 
-Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
-    Base.setindex!(c._data, value, i)
+Base.@propagate_inbounds function Base.setindex!(c::Column{C,S}, v::C, i::Integer) where {C,S<:StructArray{C}}
+    setindex!(c._data, v, i)
 end
 
 function Base.length(c::Column)
     return length(c._data)
 end
 
-Base.eachindex(c::Column) = eachindex(c._data)
-Base.enumerate(c::Column) = enumerate(c._data)
-Base.iterate(c::Column) = iterate(c._data)
-Base.iterate(c::Column, state) = iterate(c._data, state)
+Base.eachindex(c::Column{C,S}) where {C,S<:StructArray{C}} = eachindex(c._data)
+Base.iterate(c::Column{C,S}) where {C,S<:StructArray{C}} = iterate(c._data)
+Base.iterate(c::Column{C,S}, st) where {C,S<:StructArray{C}} = iterate(c._data, st)
+Base.enumerate(c::Column{C,S}) where {C,S<:StructArray{C}} = enumerate(c._data)
 
 unpack(col::StructArray) = StructArrays.components(col)
 unpack(col::Column) = unpack(col._data)
