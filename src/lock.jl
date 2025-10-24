@@ -1,5 +1,5 @@
 mutable struct _Lock
-    pool::_BitPool
+    const pool::_BitPool
     lock_bits::UInt64
 end
 

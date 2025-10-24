@@ -1,5 +1,5 @@
 mutable struct _GraphNode
-    mask::_Mask
+    const mask::_Mask
     neighbors::_VecMap{_GraphNode}
     archetype::UInt32
 end
