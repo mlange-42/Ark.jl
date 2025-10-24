@@ -16,3 +16,7 @@ end
 struct Health
     health::Float64
 end
+
+mutable struct MutableComponent
+    dummy::Int64
+end
