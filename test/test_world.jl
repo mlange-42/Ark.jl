@@ -62,6 +62,9 @@ end
     @test length(world._storages) == 2
 
     @test_throws ErrorException _component_id(world, Velocity)
+
+    @test_throws ErrorException World(Position, MutableComponent)
+    _ = World(Position, MutableComponent; allow_mutable=true)
 end
 
 @testset "_get_storage Tests" begin
