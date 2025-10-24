@@ -119,6 +119,28 @@ end
     @test arches == 0
 end
 
+@testset "Query no comps" begin
+    world = World(Position, Velocity)
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i * 2),))
+        new_entity!(world, (Velocity(i, i * 2),))
+    end
+
+    query = @Query(world, ())
+
+    count = 0
+    arches = 0
+    for (ent,) in query
+        for i in eachindex(ent)
+            count += 1
+        end
+        arches += 1
+    end
+    @test count == 20
+    @test arches == 2
+end
+
 @testset "Query macro missing argument" begin
     ex = Meta.parse("@Query(world)")
     @test_throws LoadError eval(ex)
