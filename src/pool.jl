@@ -1,6 +1,6 @@
 
 mutable struct _EntityPool
-    entities::Vector{Entity}
+    const entities::Vector{Entity}
     next::UInt32
     available::UInt32
 end
@@ -47,7 +47,7 @@ function _is_alive(p::_EntityPool, e::Entity)::Bool
 end
 
 mutable struct _BitPool
-    bits::Vector{UInt8}
+    const bits::Vector{UInt8}
     length::UInt8
     next::UInt8
     available::UInt8

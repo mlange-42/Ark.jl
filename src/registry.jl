@@ -1,8 +1,8 @@
 
 mutable struct _ComponentRegistry
     counter::UInt8
-    components::Dict{DataType,UInt8}
-    types::Vector{DataType}
+    const components::Dict{DataType,UInt8}
+    const types::Vector{DataType}
 end
 
 function _ComponentRegistry()
