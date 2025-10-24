@@ -173,7 +173,7 @@ end
         col = Symbol("col", i)
         push!(exprs, :($stor = map._storage[$i]))
         push!(exprs, :($col = $stor.data[archetype]))
-        push!(exprs, :($col._data[row] = comps[$i]))
+        push!(exprs, :(@inbounds $col._data[row] = comps[$i]))
     end
     return quote
         @inbounds begin

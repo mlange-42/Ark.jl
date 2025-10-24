@@ -119,7 +119,7 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     if entity._id > length(world._entities)
         push!(world._entities, _EntityIndex(archetype_index, index))
     else
-        world._entities[entity._id] = _EntityIndex(archetype_index, index)
+        @inbounds world._entities[entity._id] = _EntityIndex(archetype_index, index)
     end
     return entity, index
 end
@@ -483,7 +483,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
-        push!(exprs, :($col_sym._data[row] = $val_expr))
+        push!(exprs, :(@inbounds $col_sym._data[row] = $val_expr))
     end
 
     push!(exprs, Expr(:return, :nothing))
