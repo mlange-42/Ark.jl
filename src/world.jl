@@ -592,7 +592,7 @@ end
         ids = $id_tuple
         graph = _Graph()
         entities = [_EntityIndex(typemax(UInt32), 0)]
-        sizehint!(entities, initial_capacity)
+        sizehint!(entities, initial_capacity, shrink=false)
         World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
             entities,
             $storage_tuple,

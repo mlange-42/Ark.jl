@@ -7,7 +7,7 @@ end
 
 function _EntityPool(initial_capacity::UInt32)
     v = [_new_entity(UInt32(0), typemax(UInt32))]
-    sizehint!(v, initial_capacity)
+    sizehint!(v, initial_capacity, shrink=false)
 
     return _EntityPool(v, 0, 0)
 end

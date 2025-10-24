@@ -12,7 +12,7 @@ struct Column{C} <: AbstractVector{C}
 
     function Column{C}(capacity::UInt32) where {C}
         vec = Vector{C}()
-        sizehint!(vec, capacity)
+        sizehint!(vec, capacity, shrink=false)
         new(vec)
     end
 end
@@ -51,7 +51,7 @@ struct Entities <: AbstractVector{Entity}
 
     function Entities(capacity::UInt32)
         vec = Vector{Entity}()
-        sizehint!(vec, capacity)
+        sizehint!(vec, capacity, shrink=false)
         new(vec)
     end
 end
