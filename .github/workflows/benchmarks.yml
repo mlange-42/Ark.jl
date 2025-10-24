@@ -28,10 +28,10 @@ jobs:
           ~/.julia/artifacts
           ~/.julia/packages
           ~/.julia/compiled
-        key: ${{ runner.os }}-julia-current-${{ hashFiles('benchmark/Manifest.toml') }}
+        key: ${{ runner.os }}-julia-1.10-current-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
-          ${{ runner.os }}-julia-current-
-          ${{ runner.os }}-julia-
+          ${{ runner.os }}-julia-1.10-current-
+          ${{ runner.os }}-julia-1.10-
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks for current
@@ -62,10 +62,10 @@ jobs:
           ~/.julia/artifacts
           ~/.julia/packages
           ~/.julia/compiled
-        key: ${{ runner.os }}-julia-main-${{ hashFiles('benchmark/Manifest.toml') }}
+        key: ${{ runner.os }}-julia-1.10-main-${{ hashFiles('benchmark/Manifest.toml') }}
         restore-keys: |
-          ${{ runner.os }}-julia-main-
-          ${{ runner.os }}-julia-
+          ${{ runner.os }}-julia-1.10-main-
+          ${{ runner.os }}-julia-1.10-
     - name: Install dependencies
       if: github.event_name == 'pull_request'
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
