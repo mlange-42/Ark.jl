@@ -23,16 +23,15 @@ struct World{CS<:Tuple,CT<:Tuple,N}
 end
 
 """
-    World(comp_types::Type...; initial_capacity::Int=1024, allow_mutable::Bool=false)
+    World(comp_types::Type...; allow_mutable::Bool=false)
 
 Creates a new, empty [`World`](@ref) for the given component types.
 
 # Arguments
 - `comp_types`: The component types used by the world.
-- `initial_capacity`: The initial capacity for entities in archetypes.
 - `allow_mutable`: Allows mutable components. Use with care, as they are heap-allocated.
 """
-World(comp_types::Type...; initial_capacity::Int=1024, allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable), initial_capacity)
+World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
 
 @generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     storage_types = CS.parameters
@@ -560,7 +559,7 @@ end
     end
 end
 
-@generated function _World_from_types(::Val{CS}, ::Val{MUT}, initial_capacity::Int) where {CS<:Tuple,MUT}
+@generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS<:Tuple,MUT}
     types = CS.parameters
 
     allow_mutable = MUT::Bool
