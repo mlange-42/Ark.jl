@@ -13,7 +13,7 @@ A query for N components.
 struct Query{W<:World,CS<:Tuple,N}
     _world::W
     _cursor::_Cursor
-    _ids::NTuple{N,UInt8}
+    _ids::NTuple{N,UInt8} # IDs of non-optional components
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
@@ -133,20 +133,17 @@ end
     without_types = [x.parameters[1] for x in WO.parameters]
     optional_types = [x.parameters[1] for x in OT.parameters]
 
+    required_types = setdiff(comp_types, optional_types)
+
     # Component IDs
-    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in comp_types]
+    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in required_types]
     ids_tuple = Expr(:tuple, id_exprs...)
 
     with_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
     without_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
-    optional_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in optional_types]
 
     # Mask construction
     mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
-    if !isempty(optional_types)
-        clear_expr = :(_clear_bits($mask_expr, _Mask($(optional_ids_exprs...))))
-        mask_expr = clear_expr
-    end
 
     exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
     has_excluded_expr = :($(length(without_types) > 0))
