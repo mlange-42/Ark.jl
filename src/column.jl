@@ -8,9 +8,9 @@ Can be iterated, indexed and updated like a Vector.
 Used in query iteration.
 """
 struct Column{C}
-    _data::Vector{C}
+    _data::StructArray{C}
 
-    Column{C}() where {C} = new(Vector{C}())
+    Column{C}() where {C} = new(StructArray{C}(undef, 0))
 end
 
 function _new_column(::Type{C}) where {C}
@@ -29,10 +29,16 @@ function Base.length(c::Column)
     return length(c._data)
 end
 
+Base.Tuple(col::Column{C}) where {C} = StructArrays.components(col._data)
 Base.eachindex(c::Column) = eachindex(c._data)
 Base.enumerate(c::Column) = enumerate(c._data)
 Base.iterate(c::Column) = iterate(c._data)
 Base.iterate(c::Column, state) = iterate(c._data, state)
+
+fields(col::StructArray) = StructArrays.components(col)
+fields(col::NamedTuple) = col
+fields(col::AbstractVector) = (; value=col)
+fields(col::Column) = fields(col._data)
 
 """
     Entities
@@ -64,3 +70,5 @@ Base.eachindex(c::Entities) = eachindex(c._data)
 Base.enumerate(c::Entities) = enumerate(c._data)
 Base.iterate(c::Entities) = iterate(c._data)
 Base.iterate(c::Entities, state) = iterate(c._data, state)
+
+fields(col::Entities) = col._data
