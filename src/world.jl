@@ -82,11 +82,11 @@ end
 
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
     components = _active_bit_indices(node.mask)
-    arch = _Archetype(node, components...)
+    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
     push!(world._archetypes, arch)
-    node.archetype = length(world._archetypes)
 
     index::UInt32 = length(world._archetypes)
+    node.archetype = index
 
     # type-stable: expand pushes to concrete storage fields
     _push_nothing_to_all!(world)
@@ -94,6 +94,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     # type-stable: assign new column to each component's storage with concrete accesses
     for comp::UInt8 in components
         _assign_new_column_for_comp!(world, comp, index)
+        push!(world._index.components[comp], arch)
     end
 
     return index
@@ -578,7 +579,7 @@ end
         World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
-            [_Archetype(graph.nodes[1])],
+            [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),

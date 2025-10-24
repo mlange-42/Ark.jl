@@ -1,5 +1,6 @@
 
 mutable struct _Cursor
+    _archetypes::Vector{_Archetype}
     _index::Int
     _lock::UInt8
 end
@@ -160,7 +161,7 @@ end
     return quote
         Query{$W,$storage_tuple_type,$(length(comp_types))}(
             world,
-            _Cursor(0, UInt8(0)),
+            _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
             $mask_expr,
             $exclude_mask_expr,
@@ -173,8 +174,8 @@ end
 @inline function Base.iterate(q::Query{W,CS}, state::Int) where {W<:World,CS<:Tuple}
     q._cursor._index = state
 
-    while q._cursor._index <= length(q._world._archetypes)
-        archetype = q._world._archetypes[q._cursor._index]
+    while q._cursor._index <= length(q._cursor._archetypes)
+        archetype = q._cursor._archetypes[q._cursor._index]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
@@ -190,6 +191,13 @@ end
 end
 
 @inline function Base.iterate(q::Query{W,CS}) where {W<:World,CS<:Tuple}
+    if length(q._ids) == 0
+        q._cursor._archetypes = q._world._archetypes
+    else
+        comps = q._world._index.components
+        rare_component = argmin(length(comps[i]) for i in q._ids)
+        q._cursor._archetypes = comps[rare_component]
+    end
     q._cursor._lock = _lock(q._world._lock)
     return Base.iterate(q, 1)
 end
@@ -208,12 +216,13 @@ end
 
 @generated function _get_columns_at_index(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
-    push!(exprs, :(entities = q._world._archetypes[q._cursor._index].entities))
+    push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
+    push!(exprs, :(entities = archetype.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
-        push!(exprs, :($col_sym = $stor_sym.data[q._cursor._index]))
+        push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
     end
     result_exprs = [:entities]
     for i in 1:N
