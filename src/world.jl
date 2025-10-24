@@ -669,7 +669,7 @@ end
     return expr
 end
 
-@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_slot::UInt32, new_slot::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     # TODO: check! but should not be possible
     #if n == 0
@@ -678,14 +678,9 @@ end
 
     expr = nothing
     for i in n:-1:1
-        # build statement using concrete storage field $i
-        # Note: do not interpolate runtime names old_slot/new_slot/row; leave them as runtime vars
         stmt = quote
             begin
-                old_vec = ((world._storages).$i).data[Int(old_slot)]
-                new_vec = ((world._storages).$i).data[Int(new_slot)]
-                push!(new_vec._data, old_vec[row])
-                _swap_remove!(old_vec._data, row)
+                _move_component_data!((world._storages).$i, old_arch, new_arch, row)
             end
         end
         if expr === nothing
@@ -707,7 +702,7 @@ end
     return expr
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, slot::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     # TODO: check! but should not be possible
     #if n == 0
@@ -718,8 +713,7 @@ end
     for i in n:-1:1
         stmt = :(
             begin
-                col = ((world._storages).$i).data[Int(slot)]
-                _swap_remove!(col._data, row)
+                _remove_component_data!((world._storages).$i, arch, row)
             end
         )
         if expr === nothing
