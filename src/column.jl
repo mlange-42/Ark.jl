@@ -7,7 +7,7 @@ Can be iterated, indexed and updated like a Vector.
 
 Used in query iteration.
 """
-struct Column{C}
+struct Column{C} <: AbstractVector{C}
     _data::Vector{C}
 
     Column{C}() where {C} = new(Vector{C}())
@@ -33,6 +33,8 @@ Base.eachindex(c::Column) = eachindex(c._data)
 Base.enumerate(c::Column) = enumerate(c._data)
 Base.iterate(c::Column) = iterate(c._data)
 Base.iterate(c::Column, state) = iterate(c._data, state)
+Base.eltype(::Type{Column{C}}) where {C} = C
+Base.IndexStyle(::Type{<:Column}) = IndexLinear()
 
 """
     Entities
