@@ -15,6 +15,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
+    _index::_ComponentIndex
     _registry::_ComponentRegistry
     _entity_pool::_EntityPool
     _lock::_Lock
@@ -578,6 +579,7 @@ end
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
             [_Archetype(graph.nodes[1])],
+            _ComponentIndex($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),
             _Lock(),
