@@ -64,3 +64,4 @@ Base.eachindex(c::Entities) = eachindex(c._data)
 Base.enumerate(c::Entities) = enumerate(c._data)
 Base.iterate(c::Entities) = iterate(c._data)
 Base.iterate(c::Entities, state) = iterate(c._data, state)
+Base.eltype(::Type{Entities}) = Entity
