@@ -27,6 +27,10 @@
     # Test iteration
     collected = [v for v in col]
     @test collected == [10, 99, 30]
+
+    @test eltype(col) == Int
+    @test size(col) == (length(col),)
+    @test IndexStyle(col) == IndexLinear()
 end
 
 @testset "Entities interface tests" begin
@@ -53,4 +57,8 @@ end
     # Test iteration
     collected = [v for v in col]
     @test collected == [_new_entity(1, 0), _new_entity(2, 0), _new_entity(3, 0)]
+
+    @test eltype(col) == Entity
+    @test size(col) == (length(col),)
+    @test IndexStyle(col) == IndexLinear()
 end
