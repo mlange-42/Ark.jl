@@ -12,7 +12,7 @@ end
 function benchmark_query_posvel(args, n)
     world = args
     for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
-        for i in eachindex(pos_column)
+        for i in 1:length(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
             @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
