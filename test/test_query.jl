@@ -70,7 +70,6 @@ end
     @test count == 10
 end
 
-"""
 @testset "Query optional" begin
     world = World(Position, Velocity, Altitude)
 
@@ -98,7 +97,6 @@ end
     end
     @test count == 20
 end
-"""
 
 @testset "Query empty" begin
     world = World(Position, Velocity)
