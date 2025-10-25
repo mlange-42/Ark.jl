@@ -7,6 +7,7 @@
 *.csv
 *.html
 /Manifest*.toml
+/benchmark/Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
 /statprof/
