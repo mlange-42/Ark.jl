@@ -604,10 +604,6 @@ end
 
 @generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(push!((world._storages).$i.data, nothing)))
@@ -615,135 +611,54 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
-    expr = nothing
-    for i in n:-1:1
-        T = CT.parameters[i]
-        elt = T.parameters[1]
-        assign = :((world._storages).$i.data[index] = _new_column($(QuoteNode(elt))))
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $assign
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $assign
-                else
-                    $expr
-                end
-            )
-        end
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(
+            if comp == $i
+                _assign_column!(world._storages[$i], index)
+            end
+        ))
     end
-    return expr
+    return Expr(:block, exprs...)
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, slot::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
-    expr = nothing
-    for i in n:-1:1
-        stmt = :(
-            begin
-                col = ((world._storages).$i).data[Int(slot)]
-                if length(col._data) < needed
-                    resize!(col._data, needed)
-                end
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(
+            if comp == $i
+                _ensure_column_size!(world._storages[$i], arch, needed)
             end
-        )
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $stmt
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $stmt
-                else
-                    $expr
-                end
-            )
-        end
+        ))
     end
-    return expr
+    return Expr(:block, exprs...)
 end
 
 @generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
-    expr = nothing
-    for i in n:-1:1
-        stmt = quote
-            begin
-                _move_component_data!((world._storages).$i, old_arch, new_arch, row)
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(
+            if comp == $i
+                _move_component_data!(world._storages[$i], old_arch, new_arch, row)
             end
-        end
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $stmt
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $stmt
-                else
-                    $expr
-                end
-            )
-        end
+        ))
     end
-    return expr
+    return Expr(:block, exprs...)
 end
 
 @generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
-    expr = nothing
-    for i in n:-1:1
-        stmt = :(
-            begin
-                _remove_component_data!((world._storages).$i, arch, row)
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(
+            if comp == $i
+                _remove_component_data!(world._storages[$i], arch, row)
             end
-        )
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $stmt
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $stmt
-                else
-                    $expr
-                end
-            )
-        end
+        ))
     end
-    return expr
+    return Expr(:block, exprs...)
 end
