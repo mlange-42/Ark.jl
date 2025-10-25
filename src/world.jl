@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,N}
+struct World{CS<:Tuple,CT<:Tuple,N,MoveFns,RemFns,SizeFns}
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
@@ -20,6 +20,10 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _entity_pool::_EntityPool
     _lock::_Lock
     _graph::_Graph
+
+    move_on_storage_fns::MoveFns
+    remove_on_storage_fns::RemFns
+    ensure_size_fns::SizeFns
 end
 
 """
@@ -112,8 +116,11 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
 
     index = _add_entity!(archetype, entity)
 
-    for comp::UInt8 in archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, index)
+    for comp::Int in archetype.components
+        @inbounds begin
+            s = world._storages[comp]
+            world.ensure_size_fns[comp](s, archetype_index, index)
+        end
     end
 
     if entity._id > length(world._entities)
@@ -139,13 +146,18 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        # comp casting to match generated helper signature
-        _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
+        @inbounds begin
+            s = world._storages[Int(comp)]
+            world.move_on_storage_fns[Int(comp)](s, index.archetype, archetype_index, index.row)
+        end
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
-    for comp::UInt8 in new_archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
+    for comp::Int in new_archetype.components
+        @inbounds begin
+            s = world._storages[comp]
+            world.ensure_size_fns[comp](s, archetype_index, new_row)
+        end
     end
 
     if swapped
@@ -174,9 +186,11 @@ function remove_entity!(world::World, entity::Entity)
     swapped = _swap_remove!(archetype.entities._data, index.row)
 
     # Only operate on storages for components present in this archetype
-    for comp::UInt8 in archetype.components
-        # ensure comp has the integer kind expected by the generated helper
-        _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
+    for comp::Int in archetype.components
+        @inbounds begin
+            s = world._storages[comp]
+            world.remove_on_storage_fns[comp](s, index.archetype, index.row)
+        end
     end
 
     if swapped
@@ -561,6 +575,7 @@ end
 
 @generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS<:Tuple,MUT}
     types = CS.parameters
+    n = length(types)
 
     allow_mutable = MUT::Bool
     if !allow_mutable
@@ -588,16 +603,29 @@ end
     return quote
         registry = _ComponentRegistry()
         ids = $id_tuple
+        storage_tuple = $storage_tuple
         graph = _Graph()
-        World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
+
+        move_fns = _make_move_fns_from_storages(storage_tuple)
+        remove_fns = _make_remove_fns_from_storages(storage_tuple)
+        size_fns = _make_size_fns_from_storages(storage_tuple)
+
+        MoveFns = typeof(move_fns)
+        RemFns = typeof(remove_fns)
+        SizeFns = typeof(size_fns)
+
+        World{$(storage_tuple_type),$(component_tuple_type),$(n),MoveFns,RemFns,SizeFns}(
             [_EntityIndex(typemax(UInt32), 0)],
-            $storage_tuple,
+            storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),
             _Lock(),
             graph,
+            move_fns,
+            remove_fns,
+            size_fns,
         )
     end
 end
@@ -624,41 +652,35 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _ensure_column_size!(world._storages[$i], arch, needed)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+struct _MoveFn{S} end
+struct _RemoveFn{S} end
+struct _SizeFn{S} end
+
+# typed call methods (module-level, specialized on S)
+function (f::_MoveFn{S})(s::S, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {S}
+    _move_component_data!(s, old_arch, new_arch, row)
 end
 
-@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _move_component_data!(world._storages[$i], old_arch, new_arch, row)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+function (f::_RemoveFn{S})(s::S, arch::UInt32, row::UInt32) where {S}
+    _remove_component_data!(s, arch, row)
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _remove_component_data!(world._storages[$i], arch, row)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+function (f::_SizeFn{S})(s::S, arch::UInt32, needed::UInt32) where {S}
+    _ensure_column_size!(s, arch, needed)
+end
+
+# builders that create a concrete NTuple of callables from storage_tuple
+function _make_move_fns_from_storages(storage_tuple)
+    n = length(storage_tuple)
+    ntuple(i -> _MoveFn{typeof(storage_tuple[i])}(), n)
+end
+
+function _make_remove_fns_from_storages(storage_tuple)
+    n = length(storage_tuple)
+    ntuple(i -> _RemoveFn{typeof(storage_tuple[i])}(), n)
+end
+
+function _make_size_fns_from_storages(storage_tuple)
+    n = length(storage_tuple)
+    ntuple(i -> _SizeFn{typeof(storage_tuple[i])}(), n)
 end
