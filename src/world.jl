@@ -597,11 +597,12 @@ end
     return quote
         registry = _ComponentRegistry()
         ids = $id_tuple
+        storage_tuple = $storage_tuple
         graph = _Graph()
 
-        move_fns = _make_move_on_storage_fns($(n))
-        remove_fns = _make_swap_remove_on_storage_fns($(n))
-        size_fns = _make_ensure_size_on_storage_fns($(n))
+        move_fns = _make_move_on_storage_fns(storage_tuple)
+        remove_fns = _make_swap_remove_on_storage_fns(storage_tuple)
+        size_fns = _make_ensure_size_on_storage_fns(storage_tuple)
 
         MoveFns = typeof(move_fns)
         RemFns = typeof(remove_fns)
@@ -609,7 +610,7 @@ end
 
         World{$(storage_tuple_type),$(component_tuple_type),$(n),MoveFns,RemFns,SizeFns}(
             [_EntityIndex(typemax(UInt32), 0)],
-            $storage_tuple,
+            storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex($(length(types))),
             registry,
@@ -645,20 +646,29 @@ end
     return Expr(:block, exprs...)
 end
 
-function _make_ensure_size_on_storage_fns(n::Int)
-    return ntuple(I -> (s, arch::UInt32, needed::UInt32) ->
-            _ensure_column_size!(s, arch, needed),
-        n)
+function _make_ensure_size_on_storage_fns(storage_tuple)
+    n = length(storage_tuple)
+    return ntuple(i -> _make_ensure_size_on_storage_fn(typeof(storage_tuple[i])), n)
 end
 
-function _make_move_on_storage_fns(n::Int)
-    return ntuple(I -> (s, old_arch::UInt32, new_arch::UInt32, row::UInt32) ->
-            _move_component_data!(s, old_arch, new_arch, row),
-        n)
+function _make_ensure_size_on_storage_fn(::Type{S}) where {S}
+    return (s::S, arch::UInt32, needed::UInt32) -> _ensure_column_size!(s, arch, needed)
 end
 
-function _make_swap_remove_on_storage_fns(n::Int)
-    return ntuple(I -> (s, arch::UInt32, row::UInt32) ->
-            _remove_component_data!(s, arch, row),
-        n)
+function _make_move_on_storage_fns(storage_tuple)
+    n = length(storage_tuple)
+    return ntuple(i -> _make_move_on_storage_fn(typeof(storage_tuple[i])), n)
+end
+
+function _make_move_on_storage_fn(::Type{S}) where {S}
+    return (s::S, old_arch::UInt32, new_arch::UInt32, row::UInt32) -> _move_component_data!(s, old_arch, new_arch, row)
+end
+
+function _make_swap_remove_on_storage_fns(storage_tuple)
+    n = length(storage_tuple)
+    return ntuple(i -> _make_swap_remove_on_storage_fn(typeof(storage_tuple[i])), n)
+end
+
+function _make_swap_remove_on_storage_fn(::Type{S}) where {S}
+    return (s::S, arch::UInt32, row::UInt32) -> _remove_component_data!(s, arch, row)
 end
