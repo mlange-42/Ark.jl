@@ -606,9 +606,9 @@ end
         storage_tuple = $storage_tuple
         graph = _Graph()
 
-        move_fns = _make_move_on_storage_fns(storage_tuple)
-        remove_fns = _make_swap_remove_on_storage_fns(storage_tuple)
-        size_fns = _make_ensure_size_on_storage_fns(storage_tuple)
+        move_fns = _make_move_fns_from_storages(storage_tuple)
+        remove_fns = _make_remove_fns_from_storages(storage_tuple)
+        size_fns = _make_size_fns_from_storages(storage_tuple)
 
         MoveFns = typeof(move_fns)
         RemFns = typeof(remove_fns)
@@ -652,29 +652,35 @@ end
     return Expr(:block, exprs...)
 end
 
-function _make_ensure_size_on_storage_fns(storage_tuple)
+struct _MoveFn{S} end
+struct _RemoveFn{S} end
+struct _SizeFn{S} end
+
+# typed call methods (module-level, specialized on S)
+function (f::_MoveFn{S})(s::S, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {S}
+    _move_component_data!(s, old_arch, new_arch, row)
+end
+
+function (f::_RemoveFn{S})(s::S, arch::UInt32, row::UInt32) where {S}
+    _remove_component_data!(s, arch, row)
+end
+
+function (f::_SizeFn{S})(s::S, arch::UInt32, needed::UInt32) where {S}
+    _ensure_column_size!(s, arch, needed)
+end
+
+# builders that create a concrete NTuple of callables from storage_tuple
+function _make_move_fns_from_storages(storage_tuple)
     n = length(storage_tuple)
-    return ntuple(i -> _make_ensure_size_on_storage_fn(typeof(storage_tuple[i])), n)
+    ntuple(i -> _MoveFn{typeof(storage_tuple[i])}(), n)
 end
 
-function _make_ensure_size_on_storage_fn(::Type{S}) where {S}
-    return (s::S, arch::UInt32, needed::UInt32) -> _ensure_column_size!(s, arch, needed)
-end
-
-function _make_move_on_storage_fns(storage_tuple)
+function _make_remove_fns_from_storages(storage_tuple)
     n = length(storage_tuple)
-    return ntuple(i -> _make_move_on_storage_fn(typeof(storage_tuple[i])), n)
+    ntuple(i -> _RemoveFn{typeof(storage_tuple[i])}(), n)
 end
 
-function _make_move_on_storage_fn(::Type{S}) where {S}
-    return (s::S, old_arch::UInt32, new_arch::UInt32, row::UInt32) -> _move_component_data!(s, old_arch, new_arch, row)
-end
-
-function _make_swap_remove_on_storage_fns(storage_tuple)
+function _make_size_fns_from_storages(storage_tuple)
     n = length(storage_tuple)
-    return ntuple(i -> _make_swap_remove_on_storage_fn(typeof(storage_tuple[i])), n)
-end
-
-function _make_swap_remove_on_storage_fn(::Type{S}) where {S}
-    return (s::S, arch::UInt32, row::UInt32) -> _remove_component_data!(s, arch, row)
+    ntuple(i -> _SizeFn{typeof(storage_tuple[i])}(), n)
 end
