@@ -117,8 +117,10 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     index = _add_entity!(archetype, entity)
 
     for comp::Int in archetype.components
-        s = world._storages[comp]
-        world.ensure_size_fns[comp](s, archetype_index, index)
+        @inbounds begin
+            s = world._storages[comp]
+            world.ensure_size_fns[comp](s, archetype_index, index)
+        end
     end
 
     if entity._id > length(world._entities)
@@ -152,8 +154,10 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
     for comp::Int in new_archetype.components
-        s = world._storages[comp]
-        world.ensure_size_fns[comp](s, archetype_index, new_row)
+        @inbounds begin
+            s = world._storages[comp]
+            world.ensure_size_fns[comp](s, archetype_index, new_row)
+        end
     end
 
     if swapped
@@ -183,8 +187,10 @@ function remove_entity!(world::World, entity::Entity)
 
     # Only operate on storages for components present in this archetype
     for comp::Int in archetype.components
-        s = world._storages[comp]
-        world.remove_on_storage_fns[comp](s, index.archetype, index.row)
+        @inbounds begin
+            s = world._storages[comp]
+            world.remove_on_storage_fns[comp](s, index.archetype, index.row)
+        end
     end
 
     if swapped
