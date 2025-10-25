@@ -9,8 +9,7 @@ Used in query iteration.
 """
 struct Column{C} <: AbstractVector{C}
     _data::Vector{C}
-
-    Column{C}() where {C} = new(Vector{C}())
+    Column{C}() where {C} = Column(Vector{C}())
 end
 
 function _new_column(::Type{C}) where {C}
@@ -18,13 +17,11 @@ function _new_column(::Type{C}) where {C}
 end
 
 Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
-    return Base.getindex(c._data, i)
+    Base.getindex(c._data, i)
 end
-
 Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
     Base.setindex!(c._data, value, i)
 end
-
 Base.length(c::Column) = length(c._data)
 Base.eachindex(c::Column) = eachindex(c._data)
 Base.enumerate(c::Column) = enumerate(c._data)
@@ -33,6 +30,8 @@ Base.iterate(c::Column, state) = iterate(c._data, state)
 Base.eltype(::Type{Column{C}}) where {C} = C
 Base.IndexStyle(::Type{<:Column}) = IndexLinear()
 Base.size(c::Column) = (length(c),)
+Base.firstindex(c::Column) = 1
+Base.lastindex(c::Column) = length(c)
 
 """
     Entities
@@ -44,8 +43,7 @@ Used in query iteration.
 """
 struct Entities <: AbstractVector{Entity}
     _data::Vector{Entity}
-
-    Entities() = new(Vector{Entity}())
+    Entities() = Entities(Vector{Entity}())
 end
 
 function _new_entities_column()
@@ -55,12 +53,15 @@ end
 Base.@propagate_inbounds function Base.getindex(c::Entities, i::Integer)
     getindex(c._data, i)
 end
-
 Base.length(c::Entities) = length(c._data)
 Base.eachindex(c::Entities) = eachindex(c._data)
 Base.enumerate(c::Entities) = enumerate(c._data)
 Base.iterate(c::Entities) = iterate(c._data)
 Base.iterate(c::Entities, state) = iterate(c._data, state)
 Base.eltype(::Type{Entities}) = Entity
-Base.IndexStyle(::Type{<:Entities}) = IndexLinear()
+Base.IndexStyle(::Type{Entities}) = IndexLinear()
 Base.size(c::Entities) = (length(c),)
+Base.firstindex(c::Entities) = 1
+Base.lastindex(c::Entities) = length(c)
+
+c._data = getfield(c, :_data)
