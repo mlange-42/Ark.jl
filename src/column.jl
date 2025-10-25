@@ -30,8 +30,8 @@ Base.iterate(c::Column, state) = iterate(c._data, state)
 Base.eltype(::Type{Column{C}}) where {C} = C
 Base.IndexStyle(::Type{<:Column}) = IndexLinear()
 Base.size(c::Column) = (length(c),)
-Base.firstindex(c::Column) = 1
-Base.lastindex(c::Column) = length(c)
+Base.firstindex(c::Column) = firstindex(c._data)
+Base.lastindex(c::Column) = lastindex(c._data)
 
 """
     Entities
@@ -61,5 +61,5 @@ Base.iterate(c::Entities, state) = iterate(c._data, state)
 Base.eltype(::Type{Entities}) = Entity
 Base.IndexStyle(::Type{Entities}) = IndexLinear()
 Base.size(c::Entities) = (length(c),)
-Base.firstindex(c::Entities) = 1
-Base.lastindex(c::Entities) = length(c)
+Base.firstindex(c::Entities) = firstindex(c._data)
+Base.lastindex(c::Entities) = lastindex(c._data)
