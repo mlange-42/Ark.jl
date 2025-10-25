@@ -626,102 +626,39 @@ end
 
 @generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, slot::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
     expr = nothing
-    for i in n:-1:1
-        stmt = :(
-            begin
-                col = ((world._storages).$i).data[Int(slot)]
-                if length(col._data) < needed
-                    resize!(col._data, needed)
-                end
+    for i in 1:n
+        stmt = quote
+            col = (world._storages).$i.data[Int(slot)]
+            if length(col._data) < needed
+                resize!(col._data, needed)
             end
-        )
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $stmt
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $stmt
-                else
-                    $expr
-                end
-            )
         end
+        expr = expr === nothing ? :(comp == $i ? $stmt : nothing) : :(comp == $i ? $stmt : $expr)
     end
     return expr
 end
 
 @generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
     expr = nothing
-    for i in n:-1:1
+    for i in 1:n
         stmt = quote
-            begin
-                _move_component_data!((world._storages).$i, old_arch, new_arch, row)
-            end
+            _move_component_data!((world._storages).$i, old_arch, new_arch, row)
         end
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $stmt
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $stmt
-                else
-                    $expr
-                end
-            )
-        end
+        expr = expr === nothing ? :(comp == $i ? $stmt : nothing) : :(comp == $i ? $stmt : $expr)
     end
     return expr
 end
 
 @generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
     expr = nothing
-    for i in n:-1:1
-        stmt = :(
-            begin
-                _remove_component_data!((world._storages).$i, arch, row)
-            end
-        )
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $stmt
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $stmt
-                else
-                    $expr
-                end
-            )
+    for i in 1:n
+        stmt = quote
+            _remove_component_data!((world._storages).$i, arch, row)
         end
+        expr = expr === nothing ? :(comp == $i ? $stmt : nothing) : :(comp == $i ? $stmt : $expr)
     end
     return expr
 end
