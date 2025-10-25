@@ -684,18 +684,18 @@ function has_resource(world::World, res_type::Type)
 end
 
 """
-    add_resource!(world::World, value::T)
+    add_resource!(world::World, res::T)
 
 Add the given resource to the world.
 """
-function add_resource!(world::World, value::T) where T
+function add_resource!(world::World, res::T) where T
     has_resource(world, T) && error(lazy"World already contains a resource of type $T.")
-    setindex!(world._resources, value, T)
-    return value
+    setindex!(world._resources, res, T)
+    return res
 end
 
 """
-    remove_resource!(world::World, res_type::Type)
+    remove_resource!(world::World, res_type::Type{T})
 
 Remove the resource of type `T` from the world.
 """
