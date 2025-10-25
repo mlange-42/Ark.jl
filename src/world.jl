@@ -665,19 +665,40 @@ end
     return Expr(:block, exprs...)
 end
 
+"""
+    get_resource(world::World, res_type::Type)
+
+Get the given resource from the world.
+"""
 function get_resource(world::World, res_type::Type{T}) where T
     getindex(world._resources, res_type)::T
 end
 
+"""
+    has_resource(world::World, res_type::Type)
+
+Check if the given resource is in the world.
+"""
 function has_resource(world::World, res_type::Type)
     res_type in keys(world._resources)
 end
 
+"""
+    add_resource!(world::World, res_type::Type{T}, value::T)
+
+Add the given resource to the world.
+"""
 function add_resource!(world::World, res_type::Type{T}, value::T) where T
     has_resource(world, res_type) && error("World already contains the resource.")
     setindex!(world._resources, value, res_type)
+    return value
 end
 
+"""
+    remove_resource!(world::World, res_type::Type)
+
+Remove the given resource from the world.
+"""
 function remove_resource!(world::World, res_type::Type)
     delete!(world._resources, res_type)
     return world
