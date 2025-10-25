@@ -615,33 +615,11 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
-
+@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
     expr = nothing
-    for i in n:-1:1
-        T = CT.parameters[i]
-        elt = T.parameters[1]
-        assign = :((world._storages).$i.data[index] = _new_column($(QuoteNode(elt))))
-        if expr === nothing
-            expr = :(
-                if comp == $i
-                    $assign
-                end
-            )
-        else
-            expr = :(
-                if comp == $i
-                    $assign
-                else
-                    $expr
-                end
-            )
-        end
+    for i in 1:length(CS.parameters)
+        assign = :(_assign_column!(world._storages[$i], index))
+        expr = expr === nothing ? :(comp == $i ? $assign : nothing) : :(comp == $i ? $assign : $expr)
     end
     return expr
 end
