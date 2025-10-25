@@ -7,7 +7,7 @@ end
 
 function benchmark_resource(args)
     world = args
-    res = get_resource(world)
+    res = get_resource(world, Tick)
     res.time += 1
     return world
 end
