@@ -9,7 +9,7 @@ Used in query iteration.
 """
 struct Column{C} <: AbstractVector{C}
     _data::Vector{C}
-    Column{C}() where {C} = new(Vector{C}())
+    Column{C}() where {C} = new{C}(Vector{C}())
 end
 
 function _new_column(::Type{C}) where {C}
