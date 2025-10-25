@@ -666,38 +666,38 @@ end
 end
 
 """
-    get_resource(world::World, res_type::Type)
+    get_resource(world::World, res_type::Type{T})
 
-Get the given resource from the world.
+Get the resource of type `T` from the world.
 """
 function get_resource(world::World, res_type::Type{T}) where T
     getindex(world._resources, res_type)::T
 end
 
 """
-    has_resource(world::World, res_type::Type)
+    has_resource(world::World, res_type::Type{T})
 
-Check if the given resource is in the world.
+Check if a resource of type `T` is in the world.
 """
 function has_resource(world::World, res_type::Type)
     res_type in keys(world._resources)
 end
 
 """
-    add_resource!(world::World, res_type::Type{T}, value::T)
+    add_resource!(world::World, value::T)
 
 Add the given resource to the world.
 """
-function add_resource!(world::World, res_type::Type{T}, value::T) where T
-    has_resource(world, res_type) && error("World already contains the resource.")
-    setindex!(world._resources, value, res_type)
+function add_resource!(world::World, value::T) where T
+    has_resource(world, T) && error(lazy"World already contains a resource of type $T.")
+    setindex!(world._resources, value, T)
     return value
 end
 
 """
     remove_resource!(world::World, res_type::Type)
 
-Remove the given resource from the world.
+Remove the resource of type `T` from the world.
 """
 function remove_resource!(world::World, res_type::Type)
     delete!(world._resources, res_type)

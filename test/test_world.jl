@@ -249,11 +249,11 @@ end
 
     @test has_resource(world, Tick) == false
 
-    add_resource!(world, Tick, Tick(0))
+    add_resource!(world, Tick(0))
     @test has_resource(world, Tick) == true
     res = get_resource(world, Tick)
     @test res isa Tick && res.time == 0
-    @test_throws ErrorException add_resource!(world, Tick, Tick(1))
+    @test_throws ErrorException add_resource!(world, Tick(1))
     @inferred Tick get_resource(world, Tick)
 
     remove_resource!(world, Tick)
