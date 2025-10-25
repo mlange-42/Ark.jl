@@ -63,5 +63,3 @@ Base.IndexStyle(::Type{Entities}) = IndexLinear()
 Base.size(c::Entities) = (length(c),)
 Base.firstindex(c::Entities) = 1
 Base.lastindex(c::Entities) = length(c)
-
-c._data = getfield(c, :_data)
