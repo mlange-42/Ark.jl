@@ -20,6 +20,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _entity_pool::_EntityPool
     _lock::_Lock
     _graph::_Graph
+    _resources::IdDict{DataType,Any}
 end
 
 """
@@ -598,6 +599,7 @@ end
             _EntityPool(UInt32(1024)),
             _Lock(),
             graph,
+            IdDict{DataType,Any}()
         )
     end
 end
@@ -661,4 +663,22 @@ end
         ))
     end
     return Expr(:block, exprs...)
+end
+
+function get_resource(world::World, res_type::Type{T}) where T
+    getindex(world._resources, res_type)::T
+end
+
+function has_resource(world::World, res_type::Type)
+    res_type in keys(world._resources)
+end
+
+function add_resource!(world::World, res_type::Type{T}, value::T) where T
+    has_resource(world, res_type) && error("World already contains the resource.")
+    setindex!(world._resources, value, res_type)
+end
+
+function remove_resource!(world::World, res_type::Type)
+    delete!(world._resources, res_type)
+    return world
 end

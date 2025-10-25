@@ -20,3 +20,7 @@ end
 mutable struct MutableComponent
     dummy::Int64
 end
+
+mutable struct Tick
+    time::Int
+end

@@ -22,6 +22,7 @@ export World
 export is_alive, new_entity!, remove_entity!, zero_entity, is_locked
 export get_components, @get_components, set_components!, has_components, @has_components
 export add_components!, remove_components!, @remove_components!
+export get_resource, has_resource, add_resource!, remove_resource!
 export _find_or_create_archetype!, _create_entity!, _move_entity!, _get_storage, _get_storage_by_id, _component_id
 
 export Entity
