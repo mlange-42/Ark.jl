@@ -604,10 +604,6 @@ end
 
 @generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
-    # TODO: check! but should not be possible
-    #if n == 0
-    #    return :(nothing)
-    #end
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(push!((world._storages).$i.data, nothing)))
@@ -624,17 +620,12 @@ end
     return expr
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, slot::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     expr = nothing
     for i in 1:n
-        stmt = quote
-            col = (world._storages).$i.data[Int(slot)]
-            if length(col._data) < needed
-                resize!(col._data, needed)
-            end
-        end
-        expr = expr === nothing ? :(comp == $i ? $stmt : nothing) : :(comp == $i ? $stmt : $expr)
+        ensure = :(_ensure_column_size!(world._storages[$i], arch, needed))
+        expr = expr === nothing ? :(comp == $i ? $ensure : nothing) : :(comp == $i ? $ensure : $expr)
     end
     return expr
 end
