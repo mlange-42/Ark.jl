@@ -628,9 +628,8 @@ end
 end
 
 function _ensure_column_size_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple}
-    T = CS.parameters[Int(comp)]
-    storage::_ComponentStorage = world._storages[Int(comp)]::T
-    _ensure_column_size!(storage, arch, needed)
+    fn = world._size_fns[Int(comp)]
+    fn(world, arch, needed)
 end
 
 function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple}
@@ -639,9 +638,8 @@ function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, 
 end
 
 function _swap_remove_in_column_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple}
-    T = CS.parameters[Int(comp)]
-    storage::_ComponentStorage = world._storages[Int(comp)]::T
-    _remove_component_data!(storage, arch, row)
+    fn = world._remove_fns[Int(comp)]
+    fn(world, arch, row)
 end
 
 struct _SizeFn{C,I}
