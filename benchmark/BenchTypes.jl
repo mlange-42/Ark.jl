@@ -24,6 +24,11 @@ struct CompC
     y::Float64
 end
 
+struct CompN{N}
+    x::Float64
+    y::Float64
+end
+
 mutable struct Tick
     time::Int
 end
