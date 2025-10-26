@@ -222,16 +222,24 @@ end
     exprs = Expr[]
     push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
     push!(exprs, :(entities = archetype.entities))
+
     for i in 1:N
+        S = CS.parameters[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = Base.getfield(q._storage, $i)))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
-        # TODO: return nothing if the component is not present.
-        # Required for optional components. Should we remove optional?
-        push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : $col_sym._data))
+
+        push!(exprs, :(
+            $stor_sym = Base.getfield(q._storage, $i)::$(QuoteNode(S))
+        ))
+        push!(exprs, :(
+            $col_sym = $stor_sym.data[Int(archetype.id)]
+        ))
+        push!(exprs, :(
+            $vec_sym = $col_sym === nothing ? nothing : $col_sym._data
+        ))
     end
+
     result_exprs = [:entities]
     for i in 1:N
         push!(result_exprs, Symbol("vec", i))
