@@ -461,26 +461,38 @@ end
     types = TS.parameters
     exprs = []
 
-    # Generate component IDs as a tuple
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
-    # Find or create new archetype
     push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, ids, ())))
-
-    # Move entity to new archetype
     push!(exprs, :(row = _move_entity!(world, entity, archetype)))
 
-    # Set each new component
     for i in 1:length(types)
         T = types[i]
+        S = nothing
+        for (j, Sj) in enumerate(CS.parameters)
+            if Sj <: _ComponentStorage && Sj.parameters[1] === T
+                S = Sj
+                break
+            end
+        end
+        if S === nothing
+            error("component type $(T) not found in World storage tuple")
+        end
+
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         val_expr = :(values[$i])
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
-        push!(exprs, :(@inbounds $col_sym._data[row] = $val_expr))
+        push!(exprs, :(
+            $stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())::$(QuoteNode(S))
+        ))
+        push!(exprs, :(
+            $col_sym = $stor_sym.data[Int(archetype)]
+        ))
+        push!(exprs, :(
+            @inbounds $col_sym._data[Int(row)] = $val_expr
+        ))
     end
 
     push!(exprs, Expr(:return, :nothing))
