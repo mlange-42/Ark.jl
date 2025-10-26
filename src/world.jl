@@ -562,8 +562,8 @@ end
 
 @generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS<:Tuple,MUT}
     types = CS.parameters
-
     allow_mutable = MUT::Bool
+
     if !allow_mutable
         for T in types
             if ismutabletype(T)
@@ -575,14 +575,18 @@ end
     component_types = map(T -> :(Type{$(QuoteNode(T))}), types)
     component_tuple_type = :(Tuple{$(component_types...)})
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    storage_types = Expr[]
+    storage_exprs = Expr[]
+    for T in types
+        sa_expr = :(_structarray_prototype($(QuoteNode(T))))
+        sa_type_expr = :(StructArray{$(QuoteNode(T))})
+        push!(storage_types, :(_ComponentStorage{$(QuoteNode(T)),$sa_type_expr}))
+        push!(storage_exprs, :(_ComponentStorage{$(QuoteNode(T)),$sa_type_expr}(1, $sa_expr)))
+    end
 
-    # storage tuple value
-    storage_exprs = [:(_ComponentStorage{$(QuoteNode(T))}(1)) for T in types]
+    storage_tuple_type = :(Tuple{$(storage_types...)})
     storage_tuple = Expr(:tuple, storage_exprs...)
 
-    # id registration tuple value
     id_exprs = [:(_register_component!(registry, $(QuoteNode(T)))) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 

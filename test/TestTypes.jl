@@ -21,6 +21,14 @@ mutable struct MutableComponent
     dummy::Int64
 end
 
+struct IntComp
+    v::Int
+end
+
+struct FloatComp
+    v::Float64
+end
+
 mutable struct Tick
     time::Int
 end
