@@ -16,10 +16,9 @@ function benchmark_query_posvel_unpack(args, n)
         py = pos_column.y
         vx = vel_column.dx
         vy = vel_column.dy
-        #ent, (px, py), (vx, vy) = unpack.(entry)
         for i in eachindex(ent)
-            px[i] += vx[i]
-            py[i] += vy[i]
+            @inbounds px[i] += vx[i]
+            @inbounds py[i] += vy[i]
         end
     end
     return world
