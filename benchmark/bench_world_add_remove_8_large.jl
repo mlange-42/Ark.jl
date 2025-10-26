@@ -1,6 +1,6 @@
 
-function setup_world_add_remove_large_world(n_entities::Int)
-    world = World(
+function setup_world_add_remove_8_large(n_entities::Int)
+    world = World(Position,
         CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
         CompN{6}, CompN{7}, CompN{8}, CompN{9}, CompN{10},
         CompN{11}, CompN{12}, CompN{13}, CompN{14}, CompN{15},
@@ -13,8 +13,7 @@ function setup_world_add_remove_large_world(n_entities::Int)
         CompN{46}, CompN{47}, CompN{48}, CompN{49}, CompN{50},
         CompN{51}, CompN{52}, CompN{53}, CompN{54}, CompN{55},
         CompN{56}, CompN{57}, CompN{58}, CompN{59}, CompN{60},
-        CompN{61}, CompN{62},
-        Position, Velocity,
+        CompN{61}, CompN{62}, CompN{63},
     )
 
     entities = Vector{Entity}()
@@ -24,21 +23,28 @@ function setup_world_add_remove_large_world(n_entities::Int)
     end
 
     for e in entities
-        add_components!(world, e, (Velocity(0, 0),))
-        remove_components!(world, e, Val.((Velocity,)))
+        add_components!(world, e, (CompN{1}(0, 0), CompN{2}(0, 0), CompN{3}(0, 0), CompN{4}(0, 0),
+            CompN{5}(0, 0), CompN{6}(0, 0), CompN{7}(0, 0), CompN{8}(0, 0),))
+        remove_components!(world, e, Val.((CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
+            CompN{6}, CompN{7}, CompN{8})))
     end
 
     return (entities, world)
 end
 
-function benchmark_world_add_remove_large_world(args, n)
+function benchmark_world_add_remove_8_large(args, n)
     entities, world = args
     for e in entities
-        add_components!(world, e, (Velocity(0, 0),))
-        remove_components!(world, e, Val.((Velocity,)))
+        for e in entities
+            add_components!(world, e, (CompN{1}(0, 0), CompN{2}(0, 0), CompN{3}(0, 0), CompN{4}(0, 0),
+                CompN{5}(0, 0), CompN{6}(0, 0), CompN{7}(0, 0), CompN{8}(0, 0),))
+            remove_components!(world, e, Val.((CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
+                CompN{6}, CompN{7}, CompN{8})))
+        end
+
     end
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_add_remove_large n=$n"] = @be setup_world_add_remove_large_world($n) benchmark_world_add_remove_large_world(_, $n) seconds = SECONDS
+    SUITE["benchmark_world_add_remove_8_large n=$n"] = @be setup_world_add_remove_8_large($n) benchmark_world_add_remove_8_large(_, $n) seconds = SECONDS
 end
