@@ -87,19 +87,18 @@ end
 
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
     components = _active_bit_indices(node.mask)
-    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
+    types = [world._registry.types[c] for c in components]
+    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components, types)
     push!(world._archetypes, arch)
 
     index::UInt32 = length(world._archetypes)
     node.archetype = index
 
-    # type-stable: expand pushes to concrete storage fields
     _push_nothing_to_all!(world)
 
-    # type-stable: assign new column to each component's storage with concrete accesses
-    for comp::UInt8 in components
-        _assign_new_column_for_comp!(world, comp, index)
-        push!(world._index.components[comp], arch)
+    for i in eachindex(components)
+        _assign_new_column_for_comp!(world, types[i], index)
+        push!(world._index.components[Int(components[i])], arch)
     end
 
     return index
@@ -113,8 +112,8 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
 
     index = _add_entity!(archetype, entity)
 
-    for comp::UInt8 in archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, index)
+    for type in archetype.types
+        _ensure_column_size_for_comp!(world, type, archetype_index, index)
     end
 
     if entity._id > length(world._entities)
@@ -136,17 +135,17 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
     swapped = _swap_remove!(old_archetype.entities._data, index.row)
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
-    for comp::UInt8 in old_archetype.components
+    for i in eachindex(old_archetype.components)
+        comp = old_archetype.components[i]
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        # comp casting to match generated helper signature
-        _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
+        _move_component_data!(world, old_archetype.types[i], index.archetype, archetype_index, index.row)
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
-    for comp::UInt8 in new_archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
+    for type in new_archetype.types
+        _ensure_column_size_for_comp!(world, type, archetype_index, new_row)
     end
 
     if swapped
@@ -175,9 +174,8 @@ function remove_entity!(world::World, entity::Entity)
     swapped = _swap_remove!(archetype.entities._data, index.row)
 
     # Only operate on storages for components present in this archetype
-    for comp::UInt8 in archetype.components
-        # ensure comp has the integer kind expected by the generated helper
-        _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
+    for type in archetype.types
+        _swap_remove_in_column_for_comp!(world, type, index.archetype, index.row)
     end
 
     if swapped
@@ -613,56 +611,52 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _assign_column!(world._storages[$i], index)
+@generated function _assign_new_column_for_comp!(world::World{CS}, ::Type{C}, index::UInt32) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return quote
+                s = world._storages[$(i)]::$(QuoteNode(S))
+                _assign_column!(s, index)
             end
-        ))
+        end
     end
-    return Expr(:block, exprs...)
+    return :(error("Component type $(C) not found in World"))
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _ensure_column_size!(world._storages[$i], arch, needed)
+@generated function _ensure_column_size_for_comp!(world::World{CS}, ::Type{C}, arch::UInt32, needed::UInt32) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return quote
+                s = world._storages[$(i)]::$(QuoteNode(S))
+                _ensure_column_size!(s, arch, needed)
             end
-        ))
+        end
     end
-    return Expr(:block, exprs...)
+    return :(error("Component type $(C) not found in World"))
 end
 
-@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _move_component_data!(world._storages[$i], old_arch, new_arch, row)
+@generated function _move_component_data!(world::World{CS}, ::Type{C}, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return quote
+                s = world._storages[$(i)]::$(QuoteNode(S))
+                _move_component_data!(s, old_arch, new_arch, row)
             end
-        ))
+        end
     end
-    return Expr(:block, exprs...)
+    return :(error("Component type $(C) not found in World"))
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _remove_component_data!(world._storages[$i], arch, row)
+@generated function _swap_remove_in_column_for_comp!(world::World{CS}, ::Type{C}, arch::UInt32, row::UInt32) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return quote
+                s = world._storages[$(i)]::$(QuoteNode(S))
+                _remove_component_data!(s, arch, row)
             end
-        ))
+        end
     end
-    return Expr(:block, exprs...)
+    return :(error("Component type $(C) not found in World"))
 end
 
 """
