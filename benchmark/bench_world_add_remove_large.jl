@@ -1,6 +1,6 @@
 
 function setup_world_add_remove_large_world(n_entities::Int)
-    world = World(Position, Velocity,
+    world = World(
         CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
         CompN{6}, CompN{7}, CompN{8}, CompN{9}, CompN{10},
         CompN{11}, CompN{12}, CompN{13}, CompN{14}, CompN{15},
@@ -14,6 +14,7 @@ function setup_world_add_remove_large_world(n_entities::Int)
         CompN{51}, CompN{52}, CompN{53}, CompN{54}, CompN{55},
         CompN{56}, CompN{57}, CompN{58}, CompN{59}, CompN{60},
         CompN{61}, CompN{62},
+        Position, Velocity,
     )
 
     entities = Vector{Entity}()
