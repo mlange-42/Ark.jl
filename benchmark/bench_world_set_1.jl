@@ -9,6 +9,10 @@ function setup_world_set_1(n_entities::Int)
         push!(entities, e)
     end
 
+    for e in entities
+        set_components!(world, e, (Position(1, 2),))
+    end
+
     return (entities, world)
 end
 
