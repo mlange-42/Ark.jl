@@ -606,21 +606,27 @@ end
 end
 
 @generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(push!((world._storages).$i.data, nothing)))
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
+        push!(exprs, :(
+            begin
+                s = world._storages[$i]::$(QuoteNode(S))
+                push!(s.data, nothing)
+            end
+        ))
     end
     return Expr(:block, exprs...)
 end
 
 @generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _assign_column!(world._storages[$i], index)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _assign_column!(s, index)
             end
         ))
     end
@@ -628,12 +634,13 @@ end
 end
 
 @generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _ensure_column_size!(world._storages[$i], arch, needed)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _ensure_column_size!(s, arch, needed)
             end
         ))
     end
@@ -641,10 +648,8 @@ end
 end
 
 @generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-
-    for i in 1:n
+    for i in 1:length(CS.parameters)
         S = CS.parameters[i]
         push!(exprs, :(
             if comp == $(UInt8(i))
@@ -653,18 +658,17 @@ end
             end
         ))
     end
-
-    push!(exprs, :(error("component id out of range: ", comp)))
     return Expr(:block, exprs...)
 end
 
 @generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _remove_component_data!(world._storages[$i], arch, row)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _remove_component_data!(s, arch, row)
             end
         ))
     end
