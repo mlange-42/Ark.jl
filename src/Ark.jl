@@ -1,6 +1,7 @@
 module Ark
 
 using StaticArrays
+using StructArrays
 
 include("util.jl")
 include("entity.jl")
