@@ -445,16 +445,30 @@ end
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
 
-    # Set each component
+    # Set each component with concrete storage and typed value
     for i in 1:length(types)
         T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
-        push!(exprs, :($col_sym._data[index] = $val_expr))
+        # find concrete storage type S = _ComponentStorage{C,A} for component T
+        S = nothing
+        for Sj in CS.parameters
+            if Sj <: _ComponentStorage && Sj.parameters[1] === T
+                S = Sj
+                break
+            end
+        end
+        if S === nothing
+            error("component type $(T) not found in World storage tuple")
+        end
+        C = S.parameters[1]
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        val = Symbol("val", i)
+
+        push!(exprs, :($stor = _get_storage(world, Val{$(QuoteNode(T))}())::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(archetype)]))
+        push!(exprs, :($val = (values[$i])::$(QuoteNode(C))))
+        push!(exprs, :(@inbounds $col._data[Int(index)] = $val))
     end
 
     push!(exprs, Expr(:return, :entity))
