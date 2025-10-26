@@ -80,6 +80,7 @@ end
     @test storage1 === storage2
 
     @test_throws ErrorException _get_storage(world, Float64)
+    @test_throws ErrorException _get_storage(world, Val(Float64))
 end
 
 @testset "_find_or_create_archetype! Tests" begin
