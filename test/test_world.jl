@@ -19,6 +19,19 @@ end
     @test isa(_get_storage_by_id(world, Val(1)), _ComponentStorage{Position})
 end
 
+@testset "World creation large" begin
+    world = World(Position, Velocity,
+        CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
+        CompN{6}, CompN{7}, CompN{8}, CompN{9}, CompN{10},
+        CompN{11}, CompN{12}, CompN{13}, CompN{14}, CompN{15},
+        CompN{16}, CompN{17}, CompN{18}, CompN{19}, CompN{20},
+        CompN{21}, CompN{22}, CompN{23}, CompN{24}, CompN{25},
+        CompN{26}, CompN{27}, CompN{28}, CompN{29}, CompN{30},
+    )
+
+    @test length(world._storages) == 32
+end
+
 @testset "World create archetype" begin
     world = World(Position, Velocity)
 

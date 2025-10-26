@@ -7,6 +7,13 @@ function setup_world_add_remove_large_world(n_entities::Int)
         CompN{16}, CompN{17}, CompN{18}, CompN{19}, CompN{20},
         CompN{21}, CompN{22}, CompN{23}, CompN{24}, CompN{25},
         CompN{26}, CompN{27}, CompN{28}, CompN{29}, CompN{30},
+        CompN{31}, CompN{32}, CompN{33}, CompN{34}, CompN{35},
+        CompN{36}, CompN{37}, CompN{38}, CompN{39}, CompN{30},
+        CompN{41}, CompN{42}, CompN{43}, CompN{44}, CompN{45},
+        CompN{46}, CompN{47}, CompN{48}, CompN{49}, CompN{50},
+        CompN{51}, CompN{52}, CompN{53}, CompN{54}, CompN{55},
+        CompN{56}, CompN{57}, CompN{58}, CompN{59}, CompN{60},
+        CompN{61}, CompN{62},
     )
 
     entities = Vector{Entity}()
