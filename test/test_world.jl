@@ -243,3 +243,20 @@ end
 
     @test_throws ErrorException remove_entity!(world, zero_entity)
 end
+
+@testset "World add/remove resources Tests" begin
+    world = World(Position, Velocity)
+
+    @test has_resource(world, Tick) == false
+
+    add_resource!(world, Tick(0))
+    @test has_resource(world, Tick) == true
+    res = get_resource(world, Tick)
+    @test res isa Tick && res.time == 0
+    @test_throws ErrorException add_resource!(world, Tick(1))
+    @inferred Tick get_resource(world, Tick)
+
+    remove_resource!(world, Tick)
+    @test has_resource(world, Tick) == false
+    @test_throws KeyError get_resource(world, Tick)
+end

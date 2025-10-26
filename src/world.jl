@@ -20,6 +20,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _entity_pool::_EntityPool
     _lock::_Lock
     _graph::_Graph
+    _resources::IdDict{DataType,Any}
 end
 
 """
@@ -598,6 +599,7 @@ end
             _EntityPool(UInt32(1024)),
             _Lock(),
             graph,
+            IdDict{DataType,Any}()
         )
     end
 end
@@ -661,4 +663,43 @@ end
         ))
     end
     return Expr(:block, exprs...)
+end
+
+"""
+    get_resource(world::World, res_type::Type{T})
+
+Get the resource of type `T` from the world.
+"""
+function get_resource(world::World, res_type::Type{T}) where T
+    getindex(world._resources, res_type)::T
+end
+
+"""
+    has_resource(world::World, res_type::Type{T})
+
+Check if a resource of type `T` is in the world.
+"""
+function has_resource(world::World, res_type::Type)
+    res_type in keys(world._resources)
+end
+
+"""
+    add_resource!(world::World, res::T)
+
+Add the given resource to the world.
+"""
+function add_resource!(world::World, res::T) where T
+    has_resource(world, T) && error(lazy"World already contains a resource of type $T.")
+    setindex!(world._resources, res, T)
+    return res
+end
+
+"""
+    remove_resource!(world::World, res_type::Type{T})
+
+Remove the resource of type `T` from the world.
+"""
+function remove_resource!(world::World, res_type::Type)
+    delete!(world._resources, res_type)
+    return world
 end

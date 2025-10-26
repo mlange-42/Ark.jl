@@ -23,3 +23,7 @@ struct CompC
     x::Float64
     y::Float64
 end
+
+mutable struct Tick
+    time::Int
+end
