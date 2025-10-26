@@ -269,9 +269,9 @@ end
                 break
             end
         end
-        if S === nothing
-            error("component type $(T) not found in World storage tuple")
-        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
         C = S.parameters[1]   # component type (== T)
 
         stor = Symbol("stor", i)
@@ -388,9 +388,9 @@ end
                 break
             end
         end
-        if S === nothing
-            error("component type $(T) not found in World storage tuple")
-        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
         C = S.parameters[1]
 
         stor = Symbol("stor", i)
@@ -457,9 +457,9 @@ end
                 break
             end
         end
-        if S === nothing
-            error("component type $(T) not found in World storage tuple")
-        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
         C = S.parameters[1]
         stor = Symbol("stor", i)
         col = Symbol("col", i)
@@ -511,9 +511,9 @@ end
                 break
             end
         end
-        if S === nothing
-            error("component type $(T) not found in World storage tuple")
-        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
 
         C = S.parameters[1]
         stor = Symbol("stor", i)
