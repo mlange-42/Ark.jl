@@ -61,13 +61,25 @@ end
     end
 end
 
-function _structarray_prototype_type(::Type{C}) where {C}
+@generated function _structarray_prototype_type(::Type{C}) where {C}
     fnames = fieldnames(C)
-    ftypes = C.types
+    ftypes = fieldtypes(C)
     n = length(fnames)
 
-    values = (; (fnames[i] => Vector{ftypes[i]}() for i in 1:n)...)
+    # build value tuple expr: (Vector{T1}(), Vector{T2}(), ...)
+    value_exprs = [:(Vector{$(QuoteNode(ftypes[i]))}()) for i in 1:n]
+    value_tuple_expr = Expr(:tuple, value_exprs...)
 
-    sa = StructArray{C}(values)
-    return typeof(sa)
+    # build names tuple expr: (:f1, :f2, ...)
+    names_tuple_expr = Expr(:tuple, map(QuoteNode, fnames)...)
+
+    # build NamedTuple constructor expression: NamedTuple{(:f1,:f2,...)}((v1,v2,...))
+    nt_type_ctor_expr = Expr(:curly, :NamedTuple, names_tuple_expr)
+    nt_construct_expr = Expr(:call, nt_type_ctor_expr, value_tuple_expr)
+
+    return quote
+        storage = $(nt_construct_expr)   # concrete NamedTuple of Vector{Ti}
+        sa = StructArray{C}(storage)
+        return typeof(sa)
+    end
 end
