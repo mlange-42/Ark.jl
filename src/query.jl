@@ -152,7 +152,7 @@ end
     for T in comp_types
         for (i, S) in enumerate(CS.parameters)
             if S <: _ComponentStorage && S.parameters[1] === T
-                push!(storage_exprs, :(world._storages[$i]))
+                push!(storage_exprs, :(world._storages[$i]::$(QuoteNode(S))))
                 push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(S.parameters[2])))
                 break
             end

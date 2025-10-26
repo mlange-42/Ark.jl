@@ -58,8 +58,9 @@ Map(world::W, comp_types::Tuple) where {W<:World} = _Map_from_types(world, comp_
     for T in types
         for (i, S) in enumerate(CS.parameters)
             if S <: _ComponentStorage && S.parameters[1] === T
+                A = S.parameters[2]
                 push!(storage_exprs, :(world._storages[$i]::$(QuoteNode(S))))
-                push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(S.parameters[2])))
+                push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(A)))
                 break
             end
         end
