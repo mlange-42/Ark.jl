@@ -4,7 +4,7 @@ struct _ComponentStorage{C,S<:StructArray{C}}
     data::Vector{Union{Nothing,Column{C,S}}}
 end
 
-function _ComponentStorage{C,S}(archetypes::Int, prototype::S) where {C,S<:StructArray{C}}
+function _make_component_storage(::Type{C}, archetypes::Int, prototype::S) where {C,S}
     data = Vector{Union{Nothing,Column{C,S}}}(nothing, archetypes)
     _ComponentStorage{C,S}(prototype, data)
 end
@@ -41,20 +41,26 @@ end
     fnames = fieldnames(C)
     ftypes = C.types
 
-    # Tuple{Vector{T1}, Vector{T2}, ...}
     tuple_type_expr = Expr(:curly, :Tuple, [:(Vector{$(ftypes[i])}) for i in 1:length(fnames)]...)
-
-    # NamedTuple{(:x, :y), Tuple{...}}
     nt_type_expr = Expr(:curly, :NamedTuple,
         Expr(:tuple, map(QuoteNode, fnames)...),
         tuple_type_expr
     )
-
-    # (Vector{T1}(), Vector{T2}(), ...)
     value_expr = Expr(:tuple, [:(Vector{$(ftypes[i])}()) for i in 1:length(fnames)]...)
 
     return quote
         storage = convert($nt_type_expr, $value_expr)
         StructArray{C}(storage)
     end
+end
+
+function _structarray_prototype_type(::Type{C}) where {C}
+    fnames = fieldnames(C)
+    ftypes = C.types
+    n = length(fnames)
+
+    values = (; (fnames[i] => Vector{ftypes[i]}() for i in 1:n)...)
+
+    sa = StructArray{C}(values)
+    return typeof(sa)
 end

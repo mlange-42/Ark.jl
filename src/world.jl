@@ -574,11 +574,12 @@ end
 
     storage_types = Expr[]
     storage_exprs = Expr[]
+
     for T in types
-        sa_expr = :(_structarray_prototype($(QuoteNode(T))))
-        sa_type_expr = :(StructArray{$(QuoteNode(T))})
-        push!(storage_types, :(_ComponentStorage{$(QuoteNode(T)),$sa_type_expr}))
-        push!(storage_exprs, :(_ComponentStorage{$(QuoteNode(T)),$sa_type_expr}(1, $sa_expr)))
+        sa_type = _structarray_prototype_type(T)           # returns a Type object
+        sa_expr = :(_structarray_prototype($(QuoteNode(T)))) # runtime value expression
+        push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(sa_type)))
+        push!(storage_exprs, :(_make_component_storage($(QuoteNode(T)), 1, $sa_expr)))
     end
 
     storage_tuple_type = :(Tuple{$(storage_types...)})

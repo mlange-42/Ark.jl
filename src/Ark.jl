@@ -59,7 +59,7 @@ export _get_bit
 export _Lock
 export _lock, _unlock, _is_locked
 
-export _ComponentStorage
+export _ComponentStorage, _make_component_storage
 
 export _VecMap
 export _get_map, _set_map!

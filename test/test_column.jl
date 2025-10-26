@@ -1,7 +1,7 @@
 
 @testset "Column interface tests" begin
     arr = StructArray{IntComp}(NamedTuple{(:v,)}((Int[],)))
-    storage = _ComponentStorage{IntComp,typeof(arr)}(0, arr)
+    storage = _make_component_storage(IntComp, 0, arr)
     col = _new_column(storage)
     push!(col._data, IntComp(10))
     push!(col._data, IntComp(20))
