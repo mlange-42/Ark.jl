@@ -137,7 +137,6 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        # comp casting to match generated helper signature
         _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
     end
 
@@ -644,13 +643,18 @@ end
 @generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     exprs = Expr[]
+
     for i in 1:n
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _move_component_data!(world._storages[$i], old_arch, new_arch, row)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _move_component_data!(s, old_arch, new_arch, row)
             end
         ))
     end
+
+    push!(exprs, :(error("component id out of range: ", comp)))
     return Expr(:block, exprs...)
 end
 
