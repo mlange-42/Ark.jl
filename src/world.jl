@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,N}
+struct World{CS<:Tuple,CT<:Tuple,N,SizeFns,MoveFns,RemoveFns}
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
@@ -21,6 +21,10 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _lock::_Lock
     _graph::_Graph
     _resources::Dict{DataType,Any}
+
+    _size_fns::SizeFns
+    _move_fns::MoveFns
+    _remove_fns::RemoveFns
 end
 
 """
@@ -576,11 +580,15 @@ end
     id_exprs = [:(_register_component!(registry, $(QuoteNode(T)))) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
+    size_fns = make_size_callers(CS)
+    move_fns = make_move_callers(CS)
+    remove_fns = make_remove_callers(CS)
+
     return quote
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph()
-        World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
+        World{$(storage_tuple_type),$(component_tuple_type),$(length(types)),$(QuoteNode(typeof(size_fns))),$(QuoteNode(typeof(move_fns))),$(QuoteNode(typeof(remove_fns)))}(
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
@@ -589,7 +597,10 @@ end
             _EntityPool(UInt32(1024)),
             _Lock(),
             graph,
-            Dict{DataType,Any}()
+            Dict{DataType,Any}(),
+            $size_fns,
+            $move_fns,
+            $remove_fns,
         )
     end
 end
@@ -616,19 +627,63 @@ end
     return Expr(:block, exprs...)
 end
 
-function _ensure_column_size_for_comp!(world::World, comp::UInt8, arch::UInt32, needed::UInt32)
-    storage::_ComponentStorage = world._storages[Int(comp)]
+function _ensure_column_size_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple}
+    T = CS.parameters[Int(comp)]
+    storage::_ComponentStorage = world._storages[Int(comp)]::T
     _ensure_column_size!(storage, arch, needed)
 end
 
-function _move_component_data!(world::World, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32)
-    storage::_ComponentStorage = world._storages[Int(comp)]
-    _move_component_data!(storage, old_arch, new_arch, row)
+function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple}
+    fn = world._move_fns[Int(comp)]
+    fn(world, old_arch, new_arch, row)
 end
 
-function _swap_remove_in_column_for_comp!(world::World, comp::UInt8, arch::UInt32, row::UInt32)
-    storage::_ComponentStorage = world._storages[Int(comp)]
+function _swap_remove_in_column_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple}
+    T = CS.parameters[Int(comp)]
+    storage::_ComponentStorage = world._storages[Int(comp)]::T
     _remove_component_data!(storage, arch, row)
+end
+
+struct _SizeFn{C,I}
+end
+
+function (m::_SizeFn{C,I})(world::World, arch::UInt32, needed::UInt32) where {C,I}
+    _ensure_column_size!(world._storages[I], arch, needed)
+end
+
+@generated function make_size_callers(::Type{CS}) where {CS<:Tuple}
+    types = CS.parameters
+    n = length(types)
+    callers = Expr(:tuple, [:(_SizeFn{$(QuoteNode(types[i])),$(i)}()) for i in 1:n]...)
+    return callers
+end
+
+struct _MoveFn{C,I}
+end
+
+function (m::_MoveFn{C,I})(world::World, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {C,I}
+    _move_component_data!(world._storages[I], old_arch, new_arch, row)
+end
+
+@generated function make_move_callers(::Type{CS}) where {CS<:Tuple}
+    types = CS.parameters
+    n = length(types)
+    callers = Expr(:tuple, [:(_MoveFn{$(QuoteNode(types[i])),$(i)}()) for i in 1:n]...)
+    return callers
+end
+
+struct _RemoveFn{C,I}
+end
+
+function (m::_RemoveFn{C,I})(world::World, arch::UInt32, index::UInt32) where {C,I}
+    _remove_component_data!(world._storages[I], arch, index)
+end
+
+@generated function make_remove_callers(::Type{CS}) where {CS<:Tuple}
+    types = CS.parameters
+    n = length(types)
+    callers = Expr(:tuple, [:(_RemoveFn{$(QuoteNode(types[i])),$(i)}()) for i in 1:n]...)
+    return callers
 end
 
 """
