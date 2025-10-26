@@ -1,17 +1,19 @@
 
 @testset "Column interface tests" begin
-    col = _new_column(Int)
-    push!(col._data, 10)
-    push!(col._data, 20)
-    push!(col._data, 30)
+    arr = StructArray{IntComp}(NamedTuple{(:v,)}((Int[],)))
+    storage = _make_component_storage(IntComp, 0, arr)
+    col = _new_column(storage)
+    push!(col._data, IntComp(10))
+    push!(col._data, IntComp(20))
+    push!(col._data, IntComp(30))
 
     # Test getindex
-    @test col[1] == 10
-    @test col[3] == 30
+    @test col[1].v == 10
+    @test col[3].v == 30
 
     # Test setindex!
-    col[2] = 99
-    @test col[2] == 99
+    col[2] = IntComp(99)
+    @test col[2].v == 99
 
     # Test length
     @test length(col) == 3
@@ -22,15 +24,15 @@
 
     # Test enumerate
     values = [(i, v) for (i, v) in enumerate(col)]
-    @test values == [(1, 10), (2, 99), (3, 30)]
+    @test values == [(1, IntComp(10)), (2, IntComp(99)), (3, IntComp(30))]
 
     # Test iteration
     collected = [v for v in col]
-    @test collected == [10, 99, 30]
+    @test collected == [IntComp(10), IntComp(99), IntComp(30)]
 
     @test firstindex(col) == 1
     @test lastindex(col) == 3
-    @test eltype(col) == Int
+    @test eltype(col) == IntComp
     @test size(col) == (length(col),)
     @test IndexStyle(col) == IndexLinear()
 end

@@ -44,21 +44,19 @@ World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tu
     return :(error("Component type $(string(C)) not found in the World"))
 end
 
-@generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
+@generated function _get_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._storages[$i])
+            return :(world._storages[$i]::$S)
         end
     end
     return :(error("Component type $(string(C)) not found in the World"))
 end
 
-@generated function _get_storage(world::World{CS}, ::Val{C})::_ComponentStorage{C} where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
+@generated function _get_storage(world::World{CS}, ::Val{C}) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._storages[$i])
+            return :(world._storages[$i]::$S)
         end
     end
     return :(error("Component type $(string(C)) not found in the World"))
@@ -66,8 +64,7 @@ end
 
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
     S = CS.parameters[id]
-    T = S.parameters[1]
-    return :(world._storages[$id]::_ComponentStorage{$(QuoteNode(T))})
+    return :(world._storages[$id]::$S)
 end
 
 function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
@@ -140,7 +137,6 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        # comp casting to match generated helper signature
         _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
     end
 
@@ -264,19 +260,27 @@ end
 
     for i in 1:length(types)
         T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_sym = Symbol("v", i)
 
-        push!(exprs, :(
-            $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
-        ))
-        push!(exprs, :(
-            $(col_sym) = $(stor_sym).data[idx.archetype]
-        ))
-        push!(exprs, :(
-            $(val_sym) = $(col_sym)._data[idx.row]
-        ))
+        # find concrete storage type S = _ComponentStorage{C,A} for component T
+        S = nothing
+        for Sj in CS.parameters
+            if Sj <: _ComponentStorage && Sj.parameters[1] === T
+                S = Sj
+                break
+            end
+        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
+        C = S.parameters[1]   # component type (== T)
+
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        val = Symbol("v", i)
+
+        push!(exprs, :($stor = _get_storage(world, Val{$(QuoteNode(T))}())::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(idx.archetype)]))
+        push!(exprs, :($val = ($col._data[Int(idx.row)])::$(QuoteNode(C))))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -377,13 +381,26 @@ end
 
     for i in 1:length(types)
         T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
+        S = nothing
+        for Sj in CS.parameters
+            if Sj <: _ComponentStorage && Sj.parameters[1] === T
+                S = Sj
+                break
+            end
+        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
+        C = S.parameters[1]
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
-        push!(exprs, :($col_sym._data[idx.row] = $val_expr))
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        val = Symbol("val", i)
+
+        push!(exprs, :($stor = _get_storage(world, Val{$(QuoteNode(T))}())::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(idx.archetype)]))
+        push!(exprs, :($val = (values[$i])::$(QuoteNode(C))))
+        push!(exprs, :(@inbounds $col._data[Int(idx.row)] = $val))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -428,16 +445,30 @@ end
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
 
-    # Set each component
+    # Set each component with concrete storage and typed value
     for i in 1:length(types)
         T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
-        push!(exprs, :($col_sym._data[index] = $val_expr))
+        # find concrete storage type S = _ComponentStorage{C,A} for component T
+        S = nothing
+        for Sj in CS.parameters
+            if Sj <: _ComponentStorage && Sj.parameters[1] === T
+                S = Sj
+                break
+            end
+        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
+        C = S.parameters[1]
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        val = Symbol("val", i)
+
+        push!(exprs, :($stor = _get_storage(world, Val{$(QuoteNode(T))}())::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(archetype)]))
+        push!(exprs, :($val = (values[$i])::$(QuoteNode(C))))
+        push!(exprs, :(@inbounds $col._data[Int(index)] = $val))
     end
 
     push!(exprs, Expr(:return, :entity))
@@ -465,26 +496,34 @@ end
     types = TS.parameters
     exprs = []
 
-    # Generate component IDs as a tuple
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
-    # Find or create new archetype
     push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, ids, ())))
-
-    # Move entity to new archetype
     push!(exprs, :(row = _move_entity!(world, entity, archetype)))
 
-    # Set each new component
     for i in 1:length(types)
         T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
+        S = nothing
+        for Sj in CS.parameters
+            if Sj <: _ComponentStorage && Sj.parameters[1] === T
+                S = Sj
+                break
+            end
+        end
+        #if S === nothing
+        #    error("component type $(T) not found in World storage tuple")
+        #end
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype]))
-        push!(exprs, :(@inbounds $col_sym._data[row] = $val_expr))
+        C = S.parameters[1]
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        val = Symbol("val", i)
+
+        push!(exprs, :($stor = _get_storage(world, Val{$(QuoteNode(T))}())::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(archetype)]))
+        push!(exprs, :($val = (values[$i])::$(QuoteNode(C))))
+        push!(exprs, :(@inbounds $col._data[Int(row)] = $val))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -562,8 +601,8 @@ end
 
 @generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS<:Tuple,MUT}
     types = CS.parameters
-
     allow_mutable = MUT::Bool
+
     if !allow_mutable
         for T in types
             if ismutabletype(T)
@@ -575,14 +614,19 @@ end
     component_types = map(T -> :(Type{$(QuoteNode(T))}), types)
     component_tuple_type = :(Tuple{$(component_types...)})
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    storage_types = Expr[]
+    storage_exprs = Expr[]
 
-    # storage tuple value
-    storage_exprs = [:(_ComponentStorage{$(QuoteNode(T))}(1)) for T in types]
+    for T in types
+        sa_type = _structarray_prototype_type(T)           # returns a Type object
+        sa_expr = :(_structarray_prototype($(QuoteNode(T)))) # runtime value expression
+        push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(sa_type)))
+        push!(storage_exprs, :(_make_component_storage($(QuoteNode(T)), 1, $sa_expr)))
+    end
+
+    storage_tuple_type = :(Tuple{$(storage_types...)})
     storage_tuple = Expr(:tuple, storage_exprs...)
 
-    # id registration tuple value
     id_exprs = [:(_register_component!(registry, $(QuoteNode(T)))) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
@@ -605,21 +649,27 @@ end
 end
 
 @generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(push!((world._storages).$i.data, nothing)))
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
+        push!(exprs, :(
+            begin
+                s = world._storages[$i]::$(QuoteNode(S))
+                push!(s.data, nothing)
+            end
+        ))
     end
     return Expr(:block, exprs...)
 end
 
 @generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _assign_column!(world._storages[$i], index)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _assign_column!(s, index)
             end
         ))
     end
@@ -627,12 +677,13 @@ end
 end
 
 @generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _ensure_column_size!(world._storages[$i], arch, needed)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _ensure_column_size!(s, arch, needed)
             end
         ))
     end
@@ -640,12 +691,13 @@ end
 end
 
 @generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _move_component_data!(world._storages[$i], old_arch, new_arch, row)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _move_component_data!(s, old_arch, new_arch, row)
             end
         ))
     end
@@ -653,12 +705,13 @@ end
 end
 
 @generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
-    n = length(CS.parameters)
     exprs = Expr[]
-    for i in 1:n
+    for i in 1:length(CS.parameters)
+        S = CS.parameters[i]
         push!(exprs, :(
-            if comp == $i
-                _remove_component_data!(world._storages[$i], arch, row)
+            if comp == $(UInt8(i))
+                s = world._storages[$i]::$(QuoteNode(S))
+                return _remove_component_data!(s, arch, row)
             end
         ))
     end
