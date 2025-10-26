@@ -20,7 +20,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _entity_pool::_EntityPool
     _lock::_Lock
     _graph::_Graph
-    _resources::IdDict{DataType,Any}
+    _resources::Dict{DataType,Any}
 end
 
 """
@@ -599,7 +599,7 @@ end
             _EntityPool(UInt32(1024)),
             _Lock(),
             graph,
-            IdDict{DataType,Any}()
+            Dict{DataType,Any}()
         )
     end
 end
