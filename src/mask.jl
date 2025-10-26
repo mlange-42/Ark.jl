@@ -33,12 +33,6 @@ function _Mask(bits::Integer...)
     return _Mask(chunks)
 end
 
-function _get_bit(mask::_Mask, i::UInt8)::Bool
-    chunk = (i - 1) >>> 6        # which UInt64 (0-based)
-    offset = (i - 1) & 0x3F       # which bit within that UInt64
-    return (mask.bits[chunk+1] >> offset) & 0x1 == 1
-end
-
 function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
     return (mask1.bits[1] & mask2.bits[1]) == mask2.bits[1] &&
            (mask1.bits[2] & mask2.bits[2]) == mask2.bits[2] &&
@@ -138,8 +132,8 @@ end
     mask.bits[chunk+1] &= val
 end
 
-@inline function _get_bit(mask::_MutableMask, i::UInt8)::Bool
-    chunk = (i - UInt8(1)) >>> 6
-    offset = (i - UInt8(1)) & 0x3F
+@inline function _get_bit(mask::Union{_Mask, _MutableMask}, i::UInt8)::Bool
+    chunk = (i - UInt8(1)) >>> 6 # which UInt64 (0-based)
+    offset = (i - UInt8(1)) & 0x3F # which bit within that UInt64
     return (mask.bits[chunk+1] >> (offset % UInt64)) & UInt64(1) == 1
 end
