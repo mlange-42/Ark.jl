@@ -39,17 +39,19 @@ end
 
 @generated function _structarray_prototype(::Type{C}) where {C}
     fnames = fieldnames(C)
-    ftypes = C.types
+    ftypes = fieldtypes(C)
 
-    tuple_type_expr = Expr(:curly, :Tuple, [:(Vector{$(ftypes[i])}) for i in 1:length(fnames)]...)
-    nt_type_expr = Expr(:curly, :NamedTuple,
-        Expr(:tuple, map(QuoteNode, fnames)...),
-        tuple_type_expr
-    )
-    value_expr = Expr(:tuple, [:(Vector{$(ftypes[i])}()) for i in 1:length(fnames)]...)
+    vec_type_exprs = [Expr(:curly, :Vector, QuoteNode(ftypes[i])) for i in 1:length(ftypes)]
+    tuple_type_expr = Expr(:curly, :Tuple, vec_type_exprs...)
+
+    names_tuple = Expr(:tuple, map(QuoteNode, fnames)...)
+    nt_type_expr = Expr(:curly, :NamedTuple, names_tuple, tuple_type_expr)
+
+    value_exprs = [:(Vector{$(QuoteNode(ftypes[i]))}()) for i in 1:length(ftypes)]
+    value_tuple_expr = Expr(:tuple, value_exprs...)
 
     return quote
-        storage = convert($nt_type_expr, $value_expr)
+        storage = convert($(nt_type_expr), $(value_tuple_expr))
         StructArray{C}(storage)
     end
 end
