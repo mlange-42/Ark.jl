@@ -11,8 +11,12 @@ end
 
 function benchmark_query_posvel_unpack(args, n)
     world = args
-    for entry in @Query(world, (Position, Velocity))
-        ent, (px, py), (vx, vy) = unpack.(entry)
+    for (ent, pos_column, vel_column) in @Query(world, (Position, Velocity))
+        px = pos_column.x
+        py = pos_column.y
+        vx = vel_column.dx
+        vy = vel_column.dy
+        #ent, (px, py), (vx, vy) = unpack.(entry)
         for i in eachindex(ent)
             px[i] += vx[i]
             py[i] += vy[i]
