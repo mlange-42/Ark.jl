@@ -54,16 +54,6 @@ end
     return :(error("Component type $(string(C)) not found in the World"))
 end
 
-@generated function _get_storage(world::World{CS}, ::Val{C})::_ComponentStorage{C} where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
-        if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._storages[$i])
-        end
-    end
-    return :(error("Component type $(string(C)) not found in the World"))
-end
-
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
     S = CS.parameters[id]
     T = S.parameters[1]
@@ -269,7 +259,7 @@ end
         val_sym = Symbol("v", i)
 
         push!(exprs, :(
-            $(stor_sym) = _get_storage(world, Val{$(QuoteNode(T))}())
+            $(stor_sym) = _get_storage(world, $(QuoteNode(T)))
         ))
         push!(exprs, :(
             $(col_sym) = $(stor_sym).data[idx.archetype]
@@ -340,7 +330,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
         push!(exprs, :(
             if $col_sym === nothing
@@ -381,7 +371,7 @@ end
         col_sym = Symbol("col", i)
         val_expr = :(values[$i])
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
         push!(exprs, :($col_sym._data[idx.row] = $val_expr))
     end
@@ -435,7 +425,7 @@ end
         col_sym = Symbol("col", i)
         val_expr = :(values[$i])
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
         push!(exprs, :($col_sym._data[index] = $val_expr))
     end
@@ -482,7 +472,7 @@ end
         col_sym = Symbol("col", i)
         val_expr = :(values[$i])
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
+        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
         push!(exprs, :(@inbounds $col_sym._data[row] = $val_expr))
     end
