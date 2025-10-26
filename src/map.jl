@@ -58,7 +58,7 @@ Map(world::W, comp_types::Tuple) where {W<:World} = _Map_from_types(world, comp_
     for T in types
         for (i, S) in enumerate(CS.parameters)
             if S <: _ComponentStorage && S.parameters[1] === T
-                push!(storage_exprs, :(world._storages[$i]))
+                push!(storage_exprs, :(world._storages[$i]::$(QuoteNode(S))))
                 push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(S.parameters[2])))
                 break
             end
@@ -159,11 +159,12 @@ end
 @generated function _get_mapped_components(map::Map{W,CS,N}, index::_EntityIndex) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
+        S = CS.parameters[i]
         stor = Symbol("stor", i)
         col = Symbol("col", i)
         val = Symbol("v", i)
-        push!(exprs, :($stor = map._storage[$i]))
-        push!(exprs, :($col = $stor.data[index.archetype]))
+        push!(exprs, :($stor = map._storage[$i]::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(index.archetype)]))
         push!(exprs, :($val = $col._data[index.row]))
     end
     vals = [Symbol("v", i) for i in 1:N]
@@ -178,11 +179,12 @@ end
 @generated function _set_entity_values!(map::Map{W,CS,N}, archetype::UInt32, row::UInt32, comps::Tuple) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
+        S = CS.parameters[i]
         stor = Symbol("stor", i)
         col = Symbol("col", i)
-        push!(exprs, :($stor = map._storage[$i]))
-        push!(exprs, :($col = $stor.data[archetype]))
-        push!(exprs, :(@inbounds $col._data[row] = comps[$i]))
+        push!(exprs, :($stor = map._storage[$i]::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(archetype)]))
+        push!(exprs, :(@inbounds $col._data[Int(row)] = comps[$i]))
     end
     return quote
         @inbounds begin
@@ -194,10 +196,11 @@ end
 @generated function _has_entity_components(map::Map{W,CS,N}, index::_EntityIndex) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
+        S = CS.parameters[i]
         stor = Symbol("stor", i)
         col = Symbol("col", i)
-        push!(exprs, :($stor = map._storage[$i]))
-        push!(exprs, :($col = $stor.data[index.archetype]))
+        push!(exprs, :($stor = map._storage[$i]::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(index.archetype)]))
         push!(exprs, :(
             if $col === nothing
                 return false
@@ -211,4 +214,3 @@ end
         end
     end
 end
-
