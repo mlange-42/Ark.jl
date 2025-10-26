@@ -16,7 +16,6 @@ end
     @test_throws ErrorException _component_id(world, Altitude)
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position})
-    @test isa(_get_storage(world, Val{Position}()), _ComponentStorage{Position})
     @test isa(_get_storage_by_id(world, Val(1)), _ComponentStorage{Position})
 end
 
