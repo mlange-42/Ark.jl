@@ -24,6 +24,6 @@ function benchmark_map_set_5(args)
 
 end
 
-for n in (100, 1_000, 10_000, 100_000)
+for n in (100, 10_000)
     SUITE["benchmark_map_set_5 n=$n"] = @be setup_map_set_5($n) benchmark_map_set_5(_) seconds = SECONDS
 end
