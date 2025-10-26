@@ -373,13 +373,26 @@ end
 
     for i in 1:length(types)
         T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
+        S = nothing
+        for Sj in CS.parameters
+            if Sj <: _ComponentStorage && Sj.parameters[1] === T
+                S = Sj
+                break
+            end
+        end
+        if S === nothing
+            error("component type $(T) not found in World storage tuple")
+        end
+        C = S.parameters[1]
 
-        push!(exprs, :($stor_sym = _get_storage(world, Val{$(QuoteNode(T))}())))
-        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
-        push!(exprs, :($col_sym._data[idx.row] = $val_expr))
+        stor = Symbol("stor", i)
+        col = Symbol("col", i)
+        val = Symbol("val", i)
+
+        push!(exprs, :($stor = _get_storage(world, Val{$(QuoteNode(T))}())::$(QuoteNode(S))))
+        push!(exprs, :($col = $stor.data[Int(idx.archetype)]))
+        push!(exprs, :($val = (values[$i])::$(QuoteNode(C))))
+        push!(exprs, :(@inbounds $col._data[Int(idx.row)] = $val))
     end
 
     push!(exprs, Expr(:return, :nothing))

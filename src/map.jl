@@ -181,11 +181,15 @@ end
     exprs = Expr[]
     for i in 1:N
         S = CS.parameters[i]
+        C = S.parameters[1]
         stor = Symbol("stor", i)
         col = Symbol("col", i)
+        val = Symbol("val", i)
+
         push!(exprs, :($stor = map._storage[$i]::$(QuoteNode(S))))
         push!(exprs, :($col = $stor.data[Int(archetype)]))
-        push!(exprs, :(@inbounds $col._data[Int(row)] = comps[$i]))
+        push!(exprs, :($val = (comps[$i])::$(QuoteNode(C))))
+        push!(exprs, :(@inbounds $col._data[Int(row)] = $val))
     end
     return quote
         @inbounds begin
