@@ -604,55 +604,58 @@ end
 end
 
 @generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
+    leaf_builder = i -> :(_assign_column!(world._storages[$i], index))
+
     n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _assign_column!(world._storages[$i], index)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    comp_sym = :comp
+    body = _build_binary_tree_expr(1, n, comp_sym, leaf_builder)
+    return body
 end
 
 @generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    leaf_builder = i -> :(_ensure_column_size!(world._storages[$i], arch, needed))
+
     n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _ensure_column_size!(world._storages[$i], arch, needed)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    comp_sym = :comp
+    body = _build_binary_tree_expr(1, n, comp_sym, leaf_builder)
+    return body
 end
 
 @generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    leaf_builder = i -> :(_move_component_data!(world._storages[$i], old_arch, new_arch, row))
+
     n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _move_component_data!(world._storages[$i], old_arch, new_arch, row)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    comp_sym = :comp
+    body = _build_binary_tree_expr(1, n, comp_sym, leaf_builder)
+    return body
 end
 
 @generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+    leaf_builder = i -> :(_remove_component_data!(world._storages[$i], arch, row))
+
     n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _remove_component_data!(world._storages[$i], arch, row)
+    comp_sym = :comp
+    body = _build_binary_tree_expr(1, n, comp_sym, leaf_builder)
+    return body
+end
+
+function _build_binary_tree_expr(l::Int, r::Int, comp_sym::Symbol, leaf_builder::Function)
+    if l > r
+        return :(nothing)
+    elseif l == r
+        return leaf_builder(l)
+    else
+        mid = fld(l + r, 2)
+        left = _build_binary_tree_expr(l, mid, comp_sym, leaf_builder)
+        right = _build_binary_tree_expr(mid + 1, r, comp_sym, leaf_builder)
+        return :(
+            if $(comp_sym) <= $(UInt8(mid))
+                $(left)
+            else
+                $(right)
             end
-        ))
+        )
     end
-    return Expr(:block, exprs...)
 end
 
 """
