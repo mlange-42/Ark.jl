@@ -12,4 +12,4 @@ function benchmark_resource(args)
     return world
 end
 
-SUITE["benchmark_resource n=1"] = @be setup_resource() benchmark_resource(_) seconds = SECONDS
+SUITE["benchmark_world_resource n=1"] = @be setup_resource() benchmark_resource(_) seconds = SECONDS
