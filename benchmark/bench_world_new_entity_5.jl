@@ -23,6 +23,6 @@ function benchmark_world_new_entity_5(args, n::Int)
     end
 end
 
-for n in (100, 1_000, 10_000, 100_000)
+for n in (100, 10_000)
     SUITE["benchmark_world_new_entity_5 n=$n"] = @be setup_world_new_entity_5($n) benchmark_world_new_entity_5(_, $n) seconds = SECONDS
 end

@@ -1,5 +1,5 @@
 
-function setup_map_get_1(n_entities::Int)
+function setup_map_set_1(n_entities::Int)
     world = World(Position, Velocity)
     map = @Map(world, (Position,))
 
@@ -9,26 +9,20 @@ function setup_map_get_1(n_entities::Int)
         push!(entities, e)
     end
 
-    sum = 0.0
     for e in entities
-        pos, = map[e]
-        sum += pos.x
+        map[e] = (Position(1, 2),)
     end
-    sum
 
     return (entities, map)
 end
 
-function benchmark_map_get_1(args)
+function benchmark_map_set_1(args)
     entities, map = args
-    sum = 0.0
     for e in entities
-        pos, = map[e]
-        sum += pos.x
+        map[e] = (Position(1, 2),)
     end
-    return sum
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_map_get_1 n=$n"] = @be setup_map_get_1($n) benchmark_map_get_1(_) seconds = SECONDS
+    SUITE["benchmark_map_set_1 n=$n"] = @be setup_map_set_1($n) benchmark_map_set_1(_) seconds = SECONDS
 end
