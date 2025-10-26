@@ -10,7 +10,7 @@ function setup_map_set_5(n_entities::Int)
     end
 
     for e in entities
-        map[e] = (Position(i, i * 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0))
+        map[e] = (Position(1, 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0))
     end
 
     return (entities, map)
@@ -19,7 +19,7 @@ end
 function benchmark_map_set_5(args)
     entities, map = args
     for e in entities
-        map[e] = (Position(i, i * 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0))
+        map[e] = (Position(1, 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0))
     end
 
 end
