@@ -616,17 +616,17 @@ end
     return Expr(:block, exprs...)
 end
 
-function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+function _ensure_column_size_for_comp!(world::World, comp::UInt8, arch::UInt32, needed::UInt32)
     storage = world._storages[Int(comp)]
     _ensure_column_size!(storage, arch, needed)
 end
 
-function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+function _move_component_data!(world::World, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32)
     storage = world._storages[Int(comp)]
     _move_component_data!(storage, old_arch, new_arch, row)
 end
 
-function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+function _swap_remove_in_column_for_comp!(world::World, comp::UInt8, arch::UInt32, row::UInt32)
     storage = world._storages[Int(comp)]
     _remove_component_data!(storage, arch, row)
 end
