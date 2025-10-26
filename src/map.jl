@@ -47,17 +47,26 @@ Map(world, Val.((Position, Velocity)))
 """
 Map(world::W, comp_types::Tuple) where {W<:World} = _Map_from_types(world, comp_types)
 
-@generated function _Map_from_types(world::W, ::CT) where {W<:World,CT<:Tuple}
+@generated function _Map_from_types(world::W, ::CT) where {W<:World{CS},CT<:Tuple} where {CS<:Tuple}
     types = [x.parameters[1] for x in CT.parameters]
 
-    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     ids_tuple = Expr(:tuple, id_exprs...)
 
-    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in types]
-    storages_tuple = Expr(:tuple, storage_exprs...)
+    storage_exprs = Expr[]
+    storage_types = Expr[]
+    for T in types
+        for (i, S) in enumerate(CS.parameters)
+            if S <: _ComponentStorage && S.parameters[1] === T
+                push!(storage_exprs, :(world._storages[$i]))
+                push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(S.parameters[2])))
+                break
+            end
+        end
+    end
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    storages_tuple = Expr(:tuple, storage_exprs...)
+    storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
 
     return quote
         Map{$W,$storage_tuple_type,$(length(types))}(world, $ids_tuple, $storages_tuple)

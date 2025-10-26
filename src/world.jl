@@ -44,21 +44,19 @@ World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tu
     return :(error("Component type $(string(C)) not found in the World"))
 end
 
-@generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
+@generated function _get_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._storages[$i])
+            return :(world._storages[$i]::$S)
         end
     end
     return :(error("Component type $(string(C)) not found in the World"))
 end
 
-@generated function _get_storage(world::World{CS}, ::Val{C})::_ComponentStorage{C} where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
+@generated function _get_storage(world::World{CS}, ::Val{C}) where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._storages[$i])
+            return :(world._storages[$i]::$S)
         end
     end
     return :(error("Component type $(string(C)) not found in the World"))
@@ -66,8 +64,7 @@ end
 
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
     S = CS.parameters[id]
-    T = S.parameters[1]
-    return :(world._storages[$id]::_ComponentStorage{$(QuoteNode(T))})
+    return :(world._storages[$id]::$S)
 end
 
 function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
