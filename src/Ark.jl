@@ -36,7 +36,7 @@ export Query, @Query
 export close!
 
 export Column, Entities
-export _new_column, _new_entities_column
+export _new_column, _new_entities_column, unpack
 
 export _Archetype
 export _add_entity!
