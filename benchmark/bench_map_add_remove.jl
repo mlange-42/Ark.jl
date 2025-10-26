@@ -27,5 +27,5 @@ function benchmark_add_remove(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_add_remove n=$n"] = @be setup_map_add_remove($n) benchmark_add_remove(_, $n) seconds = SECONDS
+    SUITE["benchmark_map_add_remove n=$n"] = @be setup_map_add_remove($n) benchmark_add_remove(_, $n) seconds = SECONDS
 end
