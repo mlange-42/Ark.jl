@@ -89,7 +89,7 @@ Get the Map's components for an [`Entity`](@ref).
     # TODO: currently raises MethodError of components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
-    index = @inbounds map._world._entities[Int(entity._id)]
+    index = @inbounds map._world._entities[_convert(Int, entity._id)]
     return @inline _get_mapped_components(map, index)
 end
 
@@ -103,7 +103,7 @@ The entity must already have all these components.
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
-    index = @inbounds map._world._entities[Int(entity._id)]
+    index = @inbounds map._world._entities[_convert(Int, entity._id)]
     @inline _set_entity_values!(map, index.archetype, index.row, values)
 end
 
@@ -116,7 +116,7 @@ Returns whether an [`Entity`](@ref) has all the Map's components.
     if !is_alive(map._world, entity)
         error("can't check components of a dead entity")
     end
-    index = map._world._entities[Int(entity._id)]
+    index = map._world._entities[_convert(Int, entity._id)]
     return @inline _has_entity_components(map, index)
 end
 
@@ -154,8 +154,8 @@ end
         col = Symbol("col", i)
         val = Symbol("v", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[Int(index.archetype)]))
-        push!(exprs, :(@inbounds $val = $col._data[Int(index.row)]))
+        push!(exprs, :(@inbounds $col = $stor.data[_convert(Int, index.archetype)]))
+        push!(exprs, :(@inbounds $val = $col._data[_convert(Int, index.row)]))
     end
     vals = [Symbol("v", i) for i in 1:N]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
@@ -172,8 +172,8 @@ end
         stor = Symbol("stor", i)
         col = Symbol("col", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[Int(archetype)]))
-        push!(exprs, :(@inbounds $col._data[Int(row)] = comps.$i))
+        push!(exprs, :(@inbounds $col = $stor.data[_convert(Int, archetype)]))
+        push!(exprs, :(@inbounds $col._data[_convert(Int, row)] = comps.$i))
     end
     return quote
         @inbounds begin
@@ -188,7 +188,7 @@ end
         stor = Symbol("stor", i)
         col = Symbol("col", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[Int(index.archetype)]))
+        push!(exprs, :(@inbounds $col = $stor.data[_convert(Int, index.archetype)]))
         push!(exprs, :(
             if $col === nothing
                 return false
