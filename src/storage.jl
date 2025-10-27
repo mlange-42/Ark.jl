@@ -8,11 +8,11 @@ function _ComponentStorage{C}(archetypes::Int) where C
 end
 
 function _assign_column!(storage::_ComponentStorage{C}, index::UInt32) where {C}
-    storage.data[index] = _new_column(C)
+    storage.data[Int(index)] = _new_column(C)
 end
 
 function _ensure_column_size!(storage::_ComponentStorage{C}, arch::UInt32, needed::UInt32) where {C}
-    col = storage.data[arch]
+    col = storage.data[Int(arch)]
     if length(col._data) < needed
         resize!(col._data, needed)
     end
@@ -21,7 +21,7 @@ end
 function _move_component_data!(s::_ComponentStorage{C}, old_arch::UInt32, new_arch::UInt32, row::UInt32) where C
     old_vec = s.data[Int(old_arch)]
     new_vec = s.data[Int(new_arch)]
-    push!(new_vec._data, old_vec[row])
+    push!(new_vec._data, old_vec[Int(row)])
     _swap_remove!(old_vec._data, row)
 end
 
