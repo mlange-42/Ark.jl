@@ -134,7 +134,7 @@ function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::UI
     end
 
     for comp::UInt8 in archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, new_length)
+        _ensure_column_size_for_comp!(world, comp, archetype_index, UInt32(new_length))
     end
 
     return old_length + 1
@@ -458,20 +458,30 @@ end
     end
 end
 
+function new_entities!(world::World{CS,CT,N}, n::Int, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entities!(world, UInt32(n), comp_types)
+end
 
-@generated function _new_entities!(world::World{CS,CT,N}, ::Val{TS}, n::UInt32) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
+@generated function _new_entities!(world::World{CS,CT,N}, n::UInt32, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [x.parameters[1] for x in TS.parameters]
     exprs = []
 
-    # Generate component IDs as a tuple
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))  # Tuple, not Vector
+    push!(exprs, :(ids = ($(id_exprs...),)))
 
-    # Create archetype and entity
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
-    push!(exprs, :(start_index = _create_entities!(world, archetype, n)))
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(start_index = _create_entities!(world, archetype_idx, n)))
+    push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
-    # TODO
+    types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
+    # TODO: do we really need this?
+    ts_val_expr = Expr(:call, Expr(:curly, :Val, types_tuple_type_expr))
+    push!(exprs, :(batch =
+        _Batch_from_types(
+            world,
+            [_BatchArchetype(archetype, start_index, length(archetype.entities))],
+            $ts_val_expr))
+    )
 
     push!(exprs, Expr(:return, :batch))
 

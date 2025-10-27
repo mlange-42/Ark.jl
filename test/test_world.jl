@@ -202,6 +202,12 @@ end
     @test vel == Velocity(3, 4)
 end
 
+@testset "new_entities! Tests" begin
+    world = World(Position, Velocity)
+
+    batch = new_entities!(world, 100, Val.((Position, Velocity)))
+end
+
 @testset "World add/remove components" begin
     world = World(Position, Velocity, Altitude, Health)
 

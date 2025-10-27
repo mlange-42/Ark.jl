@@ -15,9 +15,9 @@ end
 @generated function _Batch_from_types(
     world::W,
     archetypes::Vector{_BatchArchetype},
-    ::CT,
+    ::Val{CT},
 ) where {W<:World,CT<:Tuple}
-    comp_types = [x.parameters[1] for x in CT.parameters]
+    comp_types = CT.parameters
 
     storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)

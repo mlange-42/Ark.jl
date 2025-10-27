@@ -20,7 +20,7 @@ include("query.jl")
 include("batch.jl")
 
 export World
-export is_alive, new_entity!, remove_entity!, zero_entity, is_locked
+export is_alive, new_entity!, new_entities!, remove_entity!, zero_entity, is_locked
 export get_components, @get_components, set_components!, has_components, @has_components
 export add_components!, remove_components!, @remove_components!
 export exchange_components!, @exchange_components!
