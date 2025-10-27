@@ -1,6 +1,6 @@
+
 using Ark
 using Test
-using Revise
 
 include("TestTypes.jl")
 
@@ -16,3 +16,4 @@ include("test_column.jl")
 include("test_vec_map.jl")
 include("test_graph.jl")
 include("test_world.jl")
+include("test_quality.jl")
