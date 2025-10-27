@@ -520,7 +520,7 @@ end
 end
 
 """
-    @new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+    @new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
 
 Creates the given number of [`Entity`](@ref).
 
@@ -532,7 +532,7 @@ Macro version of [`new_entities!`](@ref) for ergonomic construction of component
 # Arguments
 - `world::World`: The `World` instance to use.
 - `n::Int`: The number of entities to create.
-- `comp_types::Tuple`: Component types for the new entities, like `Val.(Position, Velocity)`.
+- `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
 """
 macro new_entities!(world_expr, n_expr, comp_types_expr)
     quote
@@ -545,7 +545,7 @@ macro new_entities!(world_expr, n_expr, comp_types_expr)
 end
 
 """
-    new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+    new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
 
 Creates the given number of [`Entity`](@ref).
 
@@ -557,7 +557,7 @@ For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provid
 # Arguments
 - `world::World`: The `World` instance to use.
 - `n::Int`: The number of entities to create.
-- `comp_types::Tuple`: Component types for the new entities, like `Val.(Position, Velocity)`.
+- `comp_types::Tuple`: Component types for the new entities, like `Val.((Position, Velocity))`.
 """
 function new_entities!(world::World{CS,CT,N},
     n::Int,
