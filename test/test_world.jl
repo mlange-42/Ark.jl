@@ -164,7 +164,7 @@ end
     world = World(Position, Velocity)
 
     e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
-    e2 = new_entity!(world)
+    e2 = new_entity!(world, ())
 
     pos, vel = @get_components(world, e1, (Position, Velocity))
     @test pos == Position(1, 2)
@@ -189,7 +189,7 @@ end
 @testset "new_entity! Tests" begin
     world = World(Position, Velocity)
 
-    entity = new_entity!(world)
+    entity = new_entity!(world, ())
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
 
@@ -237,7 +237,7 @@ end
 @testset "World add/remove components" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    e1 = new_entity!(world)
+    e1 = new_entity!(world, ())
     add_components!(world, e1, (Position(1, 2), Velocity(3, 4)))
 
     e2 = new_entity!(world, (Position(5, 6), Velocity(7, 8)))

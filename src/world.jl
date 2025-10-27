@@ -405,16 +405,6 @@ end
 end
 
 """
-    new_entity!(world::World, comps::Vararg{Any})::Entity
-
-Creates a new [`Entity`](@ref) without any components.
-"""
-function new_entity!(world::World)::Entity
-    entity, _ = _create_entity!(world, UInt32(1))
-    return entity
-end
-
-"""
     new_entity!(world::World, values::Tuple)::Entity
 
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
