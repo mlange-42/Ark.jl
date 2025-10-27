@@ -1,6 +1,6 @@
 
 @testset "Batch iterator test" begin
-    world = World(Position, Velocity)
+    world = World(Position, Velocity, Altitude)
     new_entity!(world, (Position(1, 2),))
     new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 

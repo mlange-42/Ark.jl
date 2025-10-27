@@ -45,14 +45,10 @@ end
 @inline function Base.iterate(b::Batch{W,CS}, state::Int) where {W<:World,CS<:Tuple}
     b._index = state
 
-    while b._index <= length(b._archetypes)
-        arch = b._archetypes[b._index]
-        if length(arch.archetype.entities) > 0
-            result = _get_columns_at_index(b)
-            next_state = b._index + 1
-            return result, next_state
-        end
-        b._index += 1
+    if b._index <= length(b._archetypes)
+        result = _get_columns_at_index(b)
+        next_state = b._index + 1
+        return result, next_state
     end
 
     close!(b)
