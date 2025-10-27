@@ -455,17 +455,11 @@ end
     types = TS.parameters
     exprs = []
 
-    # Generate component IDs as a tuple
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
-
-    # Find or create new archetype
     push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, ids, ())))
-
-    # Move entity to new archetype
     push!(exprs, :(row = _move_entity!(world, entity, archetype)))
 
-    # Set each new component
     for i in 1:length(types)
         T = types[i]
         stor_sym = Symbol("stor", i)
@@ -531,16 +525,10 @@ end
     types = [x.parameters[1] for x in TS.parameters]
     exprs = []
 
-    # Generate component IDs to remove
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(remove_ids = ($(id_exprs...),)))
-
-    # Find or create new archetype without those components
     push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, (), remove_ids)))
-
-    # Move entity to new archetype
     push!(exprs, :(_move_entity!(world, entity, archetype)))
-
     push!(exprs, Expr(:return, :nothing))
 
     return quote
