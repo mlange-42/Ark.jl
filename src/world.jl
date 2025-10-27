@@ -207,7 +207,7 @@ end
 
 Get the given components for an [`Entity`](@ref).
 
-Macro version of [`get_components`](@ref) for ergonomic construction of component mappers.
+Macro version of [`get_components`](@ref) for more ergonomic component type tuples.
 
 # Example
 ```julia
@@ -284,7 +284,7 @@ end
 
 Returns whether an [`Entity`](@ref) has all given components.
 
-Macro version of [`has_components`](@ref) for ergonomic construction of component mappers.
+Macro version of [`has_components`](@ref) for more ergonomic component type tuples.
 
 # Example
 ```julia
@@ -543,11 +543,14 @@ end
 
 Removes the given components from an [`Entity`](@ref).
 
-Macro version of [`exchange_components!`](@ref) for ergonomic construction of component mappers.
+Macro version of [`exchange_components!`](@ref) for more ergonomic component type tuples.
 
 # Example
 ```julia
-@exchange_components!(world, entity, add=(Health(100),), remove=Val.((Position, Velocity)))
+@exchange_components!(world, entity,
+    add=(Health(100),),
+    remove=Val.((Position, Velocity)),
+)
 ```
 """
 macro exchange_components!(args...)
@@ -595,7 +598,10 @@ For a more convenient tuple syntax, the macro [`@exchange_components!`](@ref) is
 
 # Example
 ```julia
-exchange_components!(world, entity; add=(Health(100),), remove=Val.((Position, Velocity)))
+exchange_components!(world, entity;
+    add=(Health(100),),
+    remove=Val.((Position, Velocity)),
+)
 ```
 """
 function exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple=(), remove::Tuple=()) where {CS<:Tuple,CT<:Tuple,N}
