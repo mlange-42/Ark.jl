@@ -17,10 +17,21 @@ struct Health
     health::Float64
 end
 
-struct CompN{N} end
+struct CompN{N}
+    dx::Float64
+    dy::Float64
+end
 
 mutable struct MutableComponent
     dummy::Int64
+end
+
+struct IntComp
+    v::Int
+end
+
+struct FloatComp
+    v::Float64
 end
 
 mutable struct Tick

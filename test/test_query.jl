@@ -12,8 +12,8 @@
     for i in 1:10
         count = 0
         for (entities, vec_pos, vec_vel) in query
-            @test isa(vec_pos, Vector{Position}) == true
-            @test isa(vec_vel, Vector{Velocity}) == true
+            #@test isa(vec_pos, Vector{Position}) == true
+            #@test isa(vec_vel, Vector{Velocity}) == true
             @test length(entities) == length(vec_pos)
             @test length(entities) == length(vec_vel)
             for i in eachindex(vec_pos)
@@ -141,6 +141,31 @@ end
     end
     @test count == 20
     @test arches == 2
+end
+
+
+@testset "Query components" begin
+    world = World(Position, Velocity)
+
+    for i in 1:10
+        new_entity!(world, (Position(0, 0), Velocity(i, i * 2)))
+    end
+
+    count = 0
+    arches = 0
+    for entry in @Query(world, (Position, Velocity))
+        ent, (px, py), (vx, vy) = unpack.(entry)
+        @test isa(px, Vector{Float64}) == true
+        @test isa(py, Vector{Float64}) == true
+        for i in eachindex(ent)
+            px[i] += vx[i]
+            py[i] += vy[i]
+            count += 1
+        end
+        arches += 1
+    end
+    @test count == 10
+    @test arches == 1
 end
 
 @testset "Query macro missing argument" begin

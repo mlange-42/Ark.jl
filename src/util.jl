@@ -1,5 +1,5 @@
 
-function _swap_remove!(v::Vector, i::UInt32)::Bool
+function _swap_remove!(v::AbstractVector{T}, i::UInt32)::Bool where T
     last_index = length(v)
     swapped = i != last_index
     if swapped
