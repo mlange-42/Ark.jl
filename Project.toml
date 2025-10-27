@@ -1,21 +1,20 @@
 name = "Ark"
 uuid = "56664e29-41e4-4ea5-ab0e-825499acc647"
 version = "0.1.0-dev"
-authors = [
-    "Martin Lange <martin_lange_@gmx.net>",
-    "Adriano Meligrana <adriano.meligrana@centai.eu>"
-]
+authors = ["Martin Lange <martin_lange_@gmx.net>", "Adriano Meligrana <adriano.meligrana@centai.eu>"]
 
 [deps]
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
 StaticArrays = "1"
+StructArrays = "0.7.2"
 julia = "1.12"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test", "Revise"]

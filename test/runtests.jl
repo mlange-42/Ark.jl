@@ -1,6 +1,7 @@
 using Ark
 using Test
 using Revise
+using StructArrays
 
 include("TestTypes.jl")
 

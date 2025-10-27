@@ -1,37 +1,37 @@
 
 """
-    Column{C}
+    Column{C,S<:StructArray{C}}
 
 Archetype column storing one type of components.
 Can be iterated, indexed and updated like a Vector.
 
 Used in query iteration.
 """
-struct Column{C} <: AbstractVector{C}
-    _data::Vector{C}
-    Column{C}() where {C} = new{C}(Vector{C}())
+struct Column{C,S<:StructArray{C}} <: AbstractVector{C}
+    _data::S
 end
 
-function _new_column(::Type{C}) where {C}
-    Column{C}()
+Base.@propagate_inbounds function Base.getindex(c::Column{C,S}, i::Integer) where {C,S<:StructArray{C}}
+    return getindex(c._data, i)
 end
 
-Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
-    Base.getindex(c._data, i)
+Base.@propagate_inbounds function Base.setindex!(c::Column{C,S}, v::C, i::Integer) where {C,S<:StructArray{C}}
+    setindex!(c._data, v, i)
 end
-Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
-    Base.setindex!(c._data, value, i)
-end
-Base.length(c::Column) = length(c._data)
-Base.eachindex(c::Column) = eachindex(c._data)
-Base.enumerate(c::Column) = enumerate(c._data)
-Base.iterate(c::Column) = iterate(c._data)
-Base.iterate(c::Column, state) = iterate(c._data, state)
-Base.eltype(::Type{Column{C}}) where {C} = C
+
+Base.length(c::Column{C,S}) where {C,S<:StructArray{C}} = length(c._data)
+Base.eachindex(c::Column{C,S}) where {C,S<:StructArray{C}} = eachindex(c._data)
+Base.enumerate(c::Column{C,S}) where {C,S<:StructArray{C}} = enumerate(c._data)
+Base.iterate(c::Column{C,S}) where {C,S<:StructArray{C}} = iterate(c._data)
+Base.iterate(c::Column{C,S}, state) where {C,S<:StructArray{C}} = iterate(c._data, state)
+Base.eltype(::Type{Column{C,S}}) where {C,S} = C
 Base.IndexStyle(::Type{<:Column}) = IndexLinear()
-Base.size(c::Column) = (length(c),)
-Base.firstindex(c::Column) = firstindex(c._data)
-Base.lastindex(c::Column) = lastindex(c._data)
+Base.size(c::Column{C,S}) where {C,S<:StructArray{C}} = (length(c),)
+Base.firstindex(c::Column{C,S}) where {C,S<:StructArray{C}} = firstindex(c._data)
+Base.lastindex(c::Column{C,S}) where {C,S<:StructArray{C}} = lastindex(c._data)
+
+# TODO: This is terribly inefficient. Make a type stable version.
+unpack(col::StructArray) = StructArrays.components(col)
 
 """
     Entities
@@ -63,3 +63,6 @@ Base.IndexStyle(::Type{Entities}) = IndexLinear()
 Base.size(c::Entities) = (length(c),)
 Base.firstindex(c::Entities) = firstindex(c._data)
 Base.lastindex(c::Entities) = lastindex(c._data)
+
+# TODO: Re-enable this.
+unpack(col::Entities) = col

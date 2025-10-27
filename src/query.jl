@@ -126,7 +126,7 @@ end
     ::WT,
     ::WO,
     ::OT
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple}
+) where {W<:World{CS},CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple} where {CS<:Tuple}
     # Extract actual types from each tuple
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]
@@ -136,24 +136,31 @@ end
     required_types = setdiff(comp_types, optional_types)
 
     # Component IDs
-    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in required_types]
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in required_types]
     ids_tuple = Expr(:tuple, id_exprs...)
 
-    with_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
-    without_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
+    with_ids_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
+    without_ids_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
 
-    # Mask construction
     mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
-
     exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
     has_excluded_expr = :($(length(without_types) > 0))
 
-    # Storage construction
-    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
-    storages_tuple = Expr(:tuple, storage_exprs...)
+    # Storage expressions and types
+    storage_exprs = Expr[]
+    storage_types = Expr[]
+    for T in comp_types
+        for (i, S) in enumerate(CS.parameters)
+            if S <: _ComponentStorage && S.parameters[1] === T
+                push!(storage_exprs, :(world._storages[$i]::$(QuoteNode(S))))
+                push!(storage_types, Expr(:curly, :_ComponentStorage, QuoteNode(T), QuoteNode(S.parameters[2])))
+                break
+            end
+        end
+    end
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in comp_types]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    storages_tuple = Expr(:tuple, storage_exprs...)
+    storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
 
     return quote
         Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
@@ -215,16 +222,18 @@ end
     exprs = Expr[]
     push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
     push!(exprs, :(entities = archetype.entities))
+
     for i in 1:N
+        S = CS.parameters[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = q._storage.$i))
+
+        push!(exprs, :($stor_sym = q._storage.$i::$(QuoteNode(S))))
         push!(exprs, :($col_sym = $stor_sym.data[Int(archetype.id)]))
-        # TODO: return nothing if the component is not present.
-        # Required for optional components. Should we remove optional?
         push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : $col_sym._data))
     end
+
     result_exprs = [:entities]
     for i in 1:N
         push!(result_exprs, Symbol("vec", i))

@@ -51,14 +51,14 @@ end
 end
 
 @testset "World Component Registration" begin
-    world = World(Int, Position)
+    world = World(IntComp, Position)
 
-    # Register Int component
-    id_int = _component_id(world, Int)
+    # Register IntComp component
+    id_int = _component_id(world, IntComp)
     @test isa(id_int, UInt8)
-    @test world._registry.types[id_int] == Int
+    @test world._registry.types[id_int] == IntComp
     @test length(world._storages) == 2
-    @test world._storages[id_int] isa _ComponentStorage{Int}
+    @test world._storages[id_int] isa _ComponentStorage{IntComp}
     @test length(world._storages[id_int].data) == 1
 
     # Register Position component
@@ -69,8 +69,8 @@ end
     @test world._storages[id_pos] isa _ComponentStorage{Position}
     @test length(world._storages[id_pos].data) == 1
 
-    # Re-register Int component (should not add new storage)
-    id_int2 = _component_id(world, Int)
+    # Re-register IntComp component (should not add new storage)
+    id_int2 = _component_id(world, IntComp)
     @test id_int2 == id_int
     @test length(world._storages) == 2
 
@@ -81,14 +81,14 @@ end
 end
 
 @testset "_get_storage Tests" begin
-    world = World(Int)
+    world = World(IntComp)
 
-    storage1 = _get_storage(world, Int)
-    @test storage1 isa _ComponentStorage{Int}
+    storage1 = _get_storage(world, IntComp)
+    @test storage1 isa _ComponentStorage{IntComp}
 
-    id = _component_id(world, Int)
-    storage2 = _get_storage(world, Int)
-    @test storage2 isa _ComponentStorage{Int}
+    id = _component_id(world, IntComp)
+    storage2 = _get_storage(world, IntComp)
+    @test storage2 isa _ComponentStorage{IntComp}
 
     @test storage1 === storage2
 
