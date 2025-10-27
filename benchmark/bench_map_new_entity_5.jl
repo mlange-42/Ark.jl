@@ -25,5 +25,5 @@ function benchmark_map_new_entity_5(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_map_new_entity_5 n=$n"] = @be setup_map_new_entity_5($n) benchmark_map_new_entity_5(_, $n) seconds = SECONDS
+    SUITE["benchmark_map_new_entity_5 n=$n"] = @be setup_map_new_entity_5($n) benchmark_map_new_entity_5(_, $n) evals=1 seconds = SECONDS
 end

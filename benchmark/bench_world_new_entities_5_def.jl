@@ -28,5 +28,5 @@ function benchmark_world_new_entities_5_def(args, n::Int)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_new_entities_5_def n=$n"] = @be setup_world_new_entities_5_def($n) benchmark_world_new_entities_5_def(_, $n) seconds = SECONDS
+    SUITE["benchmark_world_new_entities_5_def n=$n"] = @be setup_world_new_entities_5_def($n) benchmark_world_new_entities_5_def(_, $n) evals=1 seconds = SECONDS
 end
