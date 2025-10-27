@@ -9,4 +9,4 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     return swapped
 end
 
-_convert(T::Integer, x::Integer) = x%T
+_convert(T::Type{<:Integer}, x::Integer) = x%T
