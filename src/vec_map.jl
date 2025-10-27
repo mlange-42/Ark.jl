@@ -14,7 +14,7 @@ function _get_map(m::_VecMap{T}, index::UInt8)::Union{Nothing,T} where T
     if !_get_bit(m.used, index)
         return nothing
     end
-    return m.data[index]
+    @inbounds return m.data[Int(index)]
 end
 
 function _set_map!(m::_VecMap{T}, index::UInt8, value::T) where T
@@ -23,5 +23,5 @@ function _set_map!(m::_VecMap{T}, index::UInt8, value::T) where T
         resize!(m.data, size)
     end
     _set_bit!(m.used, index)
-    m.data[index] = value
+    @inbounds m.data[Int(index)] = value
 end
