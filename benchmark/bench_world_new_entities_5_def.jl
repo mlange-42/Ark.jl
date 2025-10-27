@@ -14,6 +14,10 @@ function setup_world_new_entities_5_def(n::Int)
         end
     end
 
+    for e in entities
+        remove_entity!(world, e)
+    end
+
     return world
 end
 
