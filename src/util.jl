@@ -8,3 +8,5 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     pop!(v)
     return swapped
 end
+
+_convert(T::Integer, x::Integer) = x%T
