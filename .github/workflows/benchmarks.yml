@@ -91,12 +91,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Download bench_main
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: bench_main
         path: .
     - name: Download bench_current
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: bench_current
         path: .
@@ -131,7 +131,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Download artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: compare_html
         path: .
