@@ -236,6 +236,26 @@ end
     @test_throws ErrorException has_components(world, zero_entity, Val.((Position, Velocity)))
 end
 
+@testset "World exchange components" begin
+    world = World(Position, Velocity, Altitude, Health)
+
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+
+    @exchange_components!(world, e1, add = (Altitude(1),), remove = (Position,))
+    alt, = @get_components(world, e1, (Altitude,))
+    @test alt == Altitude(1)
+    @test @has_components(world, e1, (Position,)) == false
+
+    @exchange_components!(world, e1, add = (Health(5),))
+    h, = @get_components(world, e1, (Health,))
+    @test h == Health(5)
+
+    @exchange_components!(world, e1, remove = (Velocity,))
+    @test @has_components(world, e1, (Velocity,)) == false
+
+    @test_throws ErrorException @exchange_components!(world, zero_entity, add = (Altitude(1),), remove = (Position,))
+end
+
 @testset "remove_entity! Tests" begin
     world = World(Position, Velocity)
 
