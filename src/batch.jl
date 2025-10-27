@@ -70,8 +70,8 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = q._storage.$i))
-        push!(exprs, :($col_sym = $stor_sym.data[Int(archetype.id)]))
+        push!(exprs, :($stor_sym = b._storages.$i))
+        push!(exprs, :($col_sym = $stor_sym.data[Int(arch.archetype.id)]))
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
         push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : view($col_sym._data, arch.start_idx:arch.end_idx)))

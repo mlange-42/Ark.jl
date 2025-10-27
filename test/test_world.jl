@@ -205,7 +205,31 @@ end
 @testset "new_entities! Tests" begin
     world = World(Position, Velocity)
 
-    batch = new_entities!(world, 100, Val.((Position, Velocity)))
+    new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+
+    count = 0
+    for (ent, pos_col, vel_col) in new_entities!(world, 100, Val.((Position, Velocity)))
+        @test length(ent) == 100
+        @test length(pos_col) == 100
+        @test length(vel_col) == 100
+        for i in eachindex(ent)
+            pos_col[i] = Position(i + 1, i + 1)
+            vel_col[i] = Velocity(i + 1, i + 1)
+            count += 1
+        end
+        @test is_locked(world) == true
+    end
+    @test count == 100
+    @test is_locked(world) == false
+
+    count = 0
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
+        for i in eachindex(ent)
+            @test pos_col[i] == Position(i, i)
+            count += 1
+        end
+    end
+    @test count == 101
 end
 
 @testset "World add/remove components" begin
