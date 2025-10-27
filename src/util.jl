@@ -8,3 +8,10 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     pop!(v)
     return swapped
 end
+
+function fill_range!(v::Vector, range::UnitRange{Int}, value)
+    @inbounds @simd for i in range
+        v[i] = value
+    end
+    return v
+end
