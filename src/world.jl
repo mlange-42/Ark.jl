@@ -48,7 +48,7 @@ end
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
         if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._storages[$i])
+            return :(world._storages.$i)
         end
     end
     return :(error("Component type $(string(C)) not found in the World"))
@@ -57,7 +57,7 @@ end
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
     S = CS.parameters[id]
     T = S.parameters[1]
-    return :(world._storages[$id]::_ComponentStorage{$(QuoteNode(T))})
+    return :(world._storages.$id::_ComponentStorage{$(QuoteNode(T))})
 end
 
 function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
@@ -236,11 +236,11 @@ For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provi
 pos, vel = get_components(world, entity, Val.((Position, Velocity)))
 ```
 """
-function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+@inline function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
-    return _get_components(world, entity, comp_types)
+    return @inline _get_components(world, entity, comp_types)
 end
 
 @generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
@@ -250,7 +250,7 @@ end
     end
 
     exprs = Expr[]
-    push!(exprs, :(idx = world._entities[entity._id]))
+    push!(exprs, :(@inbounds idx = world._entities[entity._id]))
 
     for i in 1:length(types)
         T = types[i]
@@ -262,10 +262,10 @@ end
             $(stor_sym) = _get_storage(world, $(QuoteNode(T)))
         ))
         push!(exprs, :(
-            $(col_sym) = $(stor_sym).data[idx.archetype]
+            $(col_sym) = @inbounds $(stor_sym).data[idx.archetype]
         ))
         push!(exprs, :(
-            $(val_sym) = $(col_sym)._data[idx.row]
+            $(val_sym) = @inbounds $(col_sym)._data[idx.row]
         ))
     end
 
@@ -318,7 +318,7 @@ has = has_components(world, entity, Val.((Position, Velocity)))
         error("can't check components of a dead entity")
     end
     index = world._entities[entity._id]
-    return _has_components(world, index, comp_types)
+    return @inline _has_components(world, index, comp_types)
 end
 
 @generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
@@ -354,26 +354,26 @@ end
 Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
 The entity must already have all these components.
 """
-function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+@inline function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
     if !is_alive(world, entity)
         error("can't set components of a dead entity")
     end
-    return _set_components!(world, entity, Val{typeof(values)}(), values)
+    return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
 end
 
 @generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
     types = TS.parameters
-    exprs = [:(idx = world._entities[entity._id])]
+    exprs = [:(@inbounds idx = world._entities[entity._id])]
 
     for i in 1:length(types)
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
+        val_expr = :(@inbounds values[$i])
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :($col_sym = $stor_sym.data[idx.archetype]))
-        push!(exprs, :($col_sym._data[idx.row] = $val_expr))
+        push!(exprs, :($col_sym = @inbounds $stor_sym.data[idx.archetype]))
+        push!(exprs, :(@inbounds $col_sym._data[idx.row] = $val_expr))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -423,7 +423,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
+        val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
@@ -470,7 +470,7 @@ end
         T = types[i]
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
-        val_expr = :(values[$i])
+        val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($col_sym = $stor_sym.data[archetype]))
@@ -609,7 +609,7 @@ end
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _assign_column!(world._storages[$i], index)
+                _assign_column!(world._storages.$i, index)
             end
         ))
     end
@@ -622,7 +622,7 @@ end
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _ensure_column_size!(world._storages[$i], arch, needed)
+                _ensure_column_size!(world._storages.$i, arch, needed)
             end
         ))
     end
@@ -635,7 +635,7 @@ end
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _move_component_data!(world._storages[$i], old_arch, new_arch, row)
+                _move_component_data!(world._storages.$i, old_arch, new_arch, row)
             end
         ))
     end
@@ -648,7 +648,7 @@ end
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _remove_component_data!(world._storages[$i], arch, row)
+                _remove_component_data!(world._storages.$i, arch, row)
             end
         ))
     end

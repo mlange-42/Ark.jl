@@ -43,7 +43,7 @@ function _recycle(p::_EntityPool, e::Entity)
 end
 
 function _is_alive(p::_EntityPool, e::Entity)::Bool
-    return e._gen == p.entities[e._id]._gen
+    @inbounds return e._gen == p.entities[e._id]._gen
 end
 
 mutable struct _BitPool

@@ -89,7 +89,7 @@ Get the Map's components for an [`Entity`](@ref).
     # TODO: currently raises MethodError of components are missing.
     # Should we pay the cost for a more informative error,
     # or for returning nothing?
-    index = map._world._entities[entity._id]
+    index = @inbounds map._world._entities[entity._id]
     return @inline _get_mapped_components(map, index)
 end
 
@@ -103,7 +103,7 @@ The entity must already have all these components.
     if !is_alive(map._world, entity)
         error("can't set components of a dead entity")
     end
-    index = map._world._entities[entity._id]
+    index = @inbounds map._world._entities[entity._id]
     @inline _set_entity_values!(map, index.archetype, index.row, values)
 end
 
@@ -153,9 +153,9 @@ end
         stor = Symbol("stor", i)
         col = Symbol("col", i)
         val = Symbol("v", i)
-        push!(exprs, :($stor = map._storage[$i]))
-        push!(exprs, :($col = $stor.data[index.archetype]))
-        push!(exprs, :($val = $col._data[index.row]))
+        push!(exprs, :($stor = map._storage.$i))
+        push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
+        push!(exprs, :(@inbounds $val = $col._data[index.row]))
     end
     vals = [Symbol("v", i) for i in 1:N]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
@@ -171,9 +171,9 @@ end
     for i in 1:N
         stor = Symbol("stor", i)
         col = Symbol("col", i)
-        push!(exprs, :($stor = map._storage[$i]))
-        push!(exprs, :($col = $stor.data[archetype]))
-        push!(exprs, :(@inbounds $col._data[row] = comps[$i]))
+        push!(exprs, :($stor = map._storage.$i))
+        push!(exprs, :(@inbounds $col = $stor.data[archetype]))
+        push!(exprs, :(@inbounds $col._data[row] = comps.$i))
     end
     return quote
         @inbounds begin
@@ -187,8 +187,8 @@ end
     for i in 1:N
         stor = Symbol("stor", i)
         col = Symbol("col", i)
-        push!(exprs, :($stor = map._storage[$i]))
-        push!(exprs, :($col = $stor.data[index.archetype]))
+        push!(exprs, :($stor = map._storage.$i))
+        push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
         push!(exprs, :(
             if $col === nothing
                 return false
