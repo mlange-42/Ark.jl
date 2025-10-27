@@ -17,13 +17,13 @@ function _get_entity(p::_EntityPool)::Entity
         return _get_new_entity(p)
     end
     curr = p.next
-    p.next = p.entities[Int(p.next)]._id
+    p.next = p.entities[p.next]._id
 
-    temp = p.entities[Int(curr)]
-    p.entities[Int(curr)] = Entity(curr, temp._gen)
+    temp = p.entities[curr]
+    p.entities[curr] = Entity(curr, temp._gen)
 
     p.available -= 1
-    return p.entities[Int(curr)]
+    return p.entities[curr]
 end
 
 function _get_new_entity(p::_EntityPool)::Entity

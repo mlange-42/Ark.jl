@@ -192,8 +192,8 @@ end
         q._cursor._archetypes = q._world._archetypes
     else
         comps = q._world._index.components
-        rare_component = argmin(length(comps[Int(i)]) for i in q._ids)
-        q._cursor._archetypes = comps[Int(rare_component)]
+        rare_component = argmin(length(comps[i]) for i in q._ids)
+        q._cursor._archetypes = comps[rare_component]
     end
     q._cursor._lock = _lock(q._world._lock)
     return Base.iterate(q, 1)
@@ -220,7 +220,7 @@ end
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
         push!(exprs, :($stor_sym = q._storage.$i))
-        push!(exprs, :($col_sym = $stor_sym.data[Int(archetype.id)]))
+        push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
         push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : $col_sym._data))
