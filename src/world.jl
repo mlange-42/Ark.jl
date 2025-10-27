@@ -442,36 +442,7 @@ function add_components!(world::World{CS,CT,N}, entity::Entity, values::Tuple) w
     if !is_alive(world, entity)
         error("can't add components to a dead entity")
     end
-    return _add_components!(world, entity, Val{typeof(values)}(), values)
-end
-
-@generated function _add_components!(world::World{CS,CT,N}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = TS.parameters
-    exprs = []
-
-    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, ids, ())))
-    push!(exprs, :(row = _move_entity!(world, entity, archetype)))
-
-    for i in 1:length(types)
-        T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_expr = :(values.$i)
-
-        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(archetype)]))
-        push!(exprs, :(@inbounds $col_sym._data[Int(row)] = $val_expr))
-    end
-
-    push!(exprs, Expr(:return, :nothing))
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
+    return _exchange_components!(world, entity, Val{typeof(values)}(), values, ())
 end
 
 """
@@ -512,24 +483,7 @@ function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::T
     if !is_alive(world, entity)
         error("can't remove components from a dead entity")
     end
-    return _remove_components!(world, entity, comp_types)
-end
-
-@generated function _remove_components!(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = [x.parameters[1] for x in TS.parameters]
-    exprs = []
-
-    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
-    push!(exprs, :(remove_ids = ($(id_exprs...),)))
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, (), remove_ids)))
-    push!(exprs, :(_move_entity!(world, entity, archetype)))
-    push!(exprs, Expr(:return, :nothing))
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
+    return _exchange_components!(world, entity, Val{Tuple{}}(), (), comp_types)
 end
 
 """
