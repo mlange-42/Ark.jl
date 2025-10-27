@@ -172,7 +172,7 @@ function remove_entity!(world::World, entity::Entity)
 
     if swapped
         swap_entity = archetype.entities[_convert(Int, index.row)]
-        world._entities[Int(swap_entity._id)] = index
+        world._entities[_convert(Int, swap_entity._id)] = index
     end
 
     _recycle(world._entity_pool, entity)

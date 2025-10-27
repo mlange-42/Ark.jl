@@ -192,7 +192,7 @@ end
         q._cursor._archetypes = q._world._archetypes
     else
         comps = q._world._index.components
-        rare_component = argmin(length(comps[Int(i)]) for i in q._ids)
+        rare_component = argmin(length(comps[_convert(Int, i)]) for i in q._ids)
         q._cursor._archetypes = comps[Int(rare_component)]
     end
     q._cursor._lock = _lock(q._world._lock)
