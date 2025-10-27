@@ -115,7 +115,7 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     return entity, index
 end
 
-function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::UInt32
+function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32}
     _check_locked(world)
 
     archetype = world._archetypes[Int(archetype_index)]
@@ -139,7 +139,7 @@ function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::UI
         _ensure_column_size_for_comp!(world, comp, archetype_index, UInt32(new_length))
     end
 
-    return old_length + 1
+    return old_length + 1, new_length
 end
 
 function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
@@ -419,11 +419,9 @@ end
     types = TS.parameters
     exprs = []
 
-    # Generate component IDs as a tuple
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))  # Tuple, not Vector
+    push!(exprs, :(ids = ($(id_exprs...),)))
 
-    # Create archetype and entity
     push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
@@ -450,51 +448,38 @@ end
     end
 end
 
-
 """
-    @new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+    new_entities!(world::World, n::Int, defaults::Tuple)::Batch
 
-Creates the given number of [`Entity`](@ref).
+Creates the given number of [`Entity`](@ref), initialized with default values.
 
-Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator.
-
-Macro version of [`new_entities!`](@ref) for ergonomic construction of component mappers.
+Returns a [`Batch`](@ref) iterator over the newly created entities that can be used to initialize components.
 """
-macro new_entities!(world_expr, n_expr, comp_types_expr)
-    quote
-        new_entities!(
-            $(esc(world_expr)),
-            $(esc(n_expr)),
-            Val.($(esc(comp_types_expr)))
-        )
-    end
+function new_entities!(world::World{CS,CT,N}, n::Int, defaults::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entities!(world, UInt32(n), Val{typeof(defaults)}(), defaults)
 end
 
-"""
-    new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
-
-Creates the given number of [`Entity`](@ref).
-
-Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator.
-
-For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provided.
-"""
-function new_entities!(world::World{CS,CT,N}, n::Int, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
-    return _new_entities!(world, UInt32(n), comp_types)
-end
-
-@generated function _new_entities!(world::World{CS,CT,N}, n::UInt32, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = [x.parameters[1] for x in TS.parameters]
+@generated function _new_entities!(world::World{CS,CT,N}, n::UInt32, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
     exprs = []
 
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
     push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
-    push!(exprs, :(start_index = _create_entities!(world, archetype_idx, n)))
+    push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(values.$i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype_idx]))
+        push!(exprs, :(fill!(view($col_sym, indices[1]:indices[2]), $val_expr)))
+    end
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
     # TODO: do we really need this?
@@ -502,7 +487,7 @@ end
     push!(exprs, :(batch =
         _Batch_from_types(
             world,
-            [_BatchArchetype(archetype, start_index, length(archetype.entities))],
+            [_BatchArchetype(archetype, indices...)],
             $ts_val_expr))
     )
 

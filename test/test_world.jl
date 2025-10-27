@@ -202,7 +202,7 @@ end
     @test vel == Velocity(3, 4)
 end
 
-@testset "new_entities! Tests" begin
+@testset "World new_entities!" begin
     world = World(Position, Velocity, Altitude)
 
     new_entity!(world, (Position(1, 1), Velocity(3, 4)))
@@ -210,7 +210,7 @@ end
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in @new_entities!(world, 100, (Position, Velocity))
+    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(0, 0), Velocity(0, 0)))
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
