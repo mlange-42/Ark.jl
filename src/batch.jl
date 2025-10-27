@@ -1,7 +1,7 @@
 struct _BatchArchetype
     archetype::_Archetype
-    start_idx::Int
-    end_idx::Int
+    start_idx::UInt32
+    end_idx::UInt32
 end
 
 """

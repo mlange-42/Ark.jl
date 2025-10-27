@@ -115,7 +115,7 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     return entity, index
 end
 
-function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::UInt32
+function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32}
     _check_locked(world)
 
     archetype = world._archetypes[Int(archetype_index)]
@@ -139,7 +139,7 @@ function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::UI
         _ensure_column_size_for_comp!(world, comp, archetype_index, UInt32(new_length))
     end
 
-    return old_length + 1
+    return old_length + 1, new_length
 end
 
 function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
@@ -419,11 +419,9 @@ end
     types = TS.parameters
     exprs = []
 
-    # Generate component IDs as a tuple
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))  # Tuple, not Vector
+    push!(exprs, :(ids = ($(id_exprs...),)))
 
-    # Create archetype and entity
     push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
@@ -450,9 +448,79 @@ end
     end
 end
 
+"""
+    new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Union{Batch,Nothing}
+
+Creates the given number of [`Entity`](@ref), initialized with default values.
+Component types are inferred from the provided default values.
+
+If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
+that can be used for initialization.
+
+# Arguments
+- `world::World`: The `World` instance to use.
+- `n::Int`: The number of entities to create.
+- `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
+- `iterate::Bool`: Whether to return a batch for individual entity initialization.
+"""
+function new_entities!(world::World{CS,CT,N}, n::Int, defaults::Tuple; iterate::Bool=false) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
+end
+
+@generated function _new_entities_from_defaults!(world::World{CS,CT,N}, n::UInt32, ::Val{TS}, values::Tuple, iterate::Bool) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(ids = ($(id_exprs...),)))
+
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
+    push!(exprs, :(archetype = world._archetypes[archetype_idx]))
+
+    if length(types) > 0
+        body_exprs = Expr(:block)
+        for i in 1:length(types)
+            T = types[i]
+            stor_sym = Symbol("stor", i)
+            col_sym = Symbol("col", i)
+            val_expr = :(values.$i)
+
+            push!(body_exprs.args, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+            push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[archetype_idx]))
+            push!(body_exprs.args, :(fill!(view($col_sym, indices[1]:indices[2]), $val_expr)))
+        end
+        push!(exprs, :(
+            if !isempty(values)
+                $(body_exprs)
+            end
+        ))
+    end
+
+    types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
+    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
+    push!(exprs, :(
+        if iterate
+            batch = _Batch_from_types(
+                world,
+                [_BatchArchetype(archetype, indices...)],
+                $ts_val_expr
+            )
+            return batch
+        else
+            return nothing
+        end
+    ))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
 
 """
-    @new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+    @new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
 
 Creates the given number of [`Entity`](@ref).
 
@@ -460,6 +528,11 @@ Returns a [`Batch`](@ref) iterator over the newly created entities that should b
 Note that components are not initialized/undef unless set in the iterator.
 
 Macro version of [`new_entities!`](@ref) for ergonomic construction of component mappers.
+
+# Arguments
+- `world::World`: The `World` instance to use.
+- `n::Int`: The number of entities to create.
+- `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
 """
 macro new_entities!(world_expr, n_expr, comp_types_expr)
     quote
@@ -472,28 +545,35 @@ macro new_entities!(world_expr, n_expr, comp_types_expr)
 end
 
 """
-    new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+    new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
 
 Creates the given number of [`Entity`](@ref).
 
 Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator.
+Note that components are not initialized/undef unless set in the iterator!
 
 For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provided.
+
+# Arguments
+- `world::World`: The `World` instance to use.
+- `n::Int`: The number of entities to create.
+- `comp_types::Tuple`: Component types for the new entities, like `Val.((Position, Velocity))`.
 """
-function new_entities!(world::World{CS,CT,N}, n::Int, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
-    return _new_entities!(world, UInt32(n), comp_types)
+function new_entities!(world::World{CS,CT,N},
+    n::Int,
+    comp_types::Tuple{Vararg{Val}}) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entities_from_types!(world, UInt32(n), comp_types)
 end
 
-@generated function _new_entities!(world::World{CS,CT,N}, n::UInt32, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = [x.parameters[1] for x in TS.parameters]
+@generated function _new_entities_from_types!(world::World{CS,CT,N}, n::UInt32, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = [t.parameters[1] for t in TS.parameters]
     exprs = []
 
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
     push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
-    push!(exprs, :(start_index = _create_entities!(world, archetype_idx, n)))
+    push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
@@ -502,7 +582,7 @@ end
     push!(exprs, :(batch =
         _Batch_from_types(
             world,
-            [_BatchArchetype(archetype, start_index, length(archetype.entities))],
+            [_BatchArchetype(archetype, indices[1], indices[2])],
             $ts_val_expr))
     )
 

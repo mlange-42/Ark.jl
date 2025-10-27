@@ -202,7 +202,8 @@ end
     @test vel == Velocity(3, 4)
 end
 
-@testset "new_entities! Tests" begin
+
+@testset "World new_entities! with types" begin
     world = World(Position, Velocity, Altitude)
 
     new_entity!(world, (Position(1, 1), Velocity(3, 4)))
@@ -235,6 +236,64 @@ end
         end
     end
     @test count == 101
+end
+
+@testset "World new_entities! with values" begin
+    world = World(Position, Velocity, Altitude)
+
+    new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    remove_entity!(world, e)
+
+    count = 0
+    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate=true)
+        @test length(ent) == 100
+        @test length(pos_col) == 100
+        @test length(vel_col) == 100
+        for i in eachindex(ent)
+            @test pos_col[i] == Position(99, 99)
+            @test vel_col[i] == Velocity(99, 99)
+            pos_col[i] = Position(i + 1, i + 1)
+            vel_col[i] = Velocity(i + 1, i + 1)
+            count += 1
+        end
+        @test is_locked(world) == true
+    end
+    @test count == 100
+    @test is_locked(world) == false
+    @test length(world._archetypes[2].entities) == 101
+    @test length(world._storages[1].data[2]) == 101
+    @test length(world._storages[2].data[2]) == 101
+
+    count = 0
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
+        for i in eachindex(ent)
+            @test pos_col[i] == Position(i, i)
+            count += 1
+        end
+    end
+    @test count == 101
+
+    batch = new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
+    @test batch === nothing
+    @test is_locked(world) == false
+
+    count = 0
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
+        for i in eachindex(ent)
+            if i <= 101
+                @test pos_col[i] == Position(i, i)
+            else
+                @test pos_col[i] == Position(13, 13)
+            end
+            count += 1
+        end
+    end
+    @test count == 201
+
+    for (ent,) in new_entities!(world, 100, (); iterate=true)
+        @test length(ent) == 100
+    end
 end
 
 @testset "World add/remove components" begin
