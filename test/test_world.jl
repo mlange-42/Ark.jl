@@ -206,9 +206,11 @@ end
     world = World(Position, Velocity)
 
     new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in new_entities!(world, 100, Val.((Position, Velocity)))
+    for (ent, pos_col, vel_col) in @new_entities!(world, 100, (Position, Velocity))
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100

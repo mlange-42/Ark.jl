@@ -458,6 +458,37 @@ end
     end
 end
 
+
+"""
+    @new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+
+Creates the given number of [`Entity`](@ref).
+
+Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
+Note that components are not initialized/undef unless set in the iterator.
+
+Macro version of [`new_entities!`](@ref) for ergonomic construction of component mappers.
+"""
+macro new_entities!(world_expr, n_expr, comp_types_expr)
+    quote
+        new_entities!(
+            $(esc(world_expr)),
+            $(esc(n_expr)),
+            Val.($(esc(comp_types_expr)))
+        )
+    end
+end
+
+"""
+    new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+
+Creates the given number of [`Entity`](@ref).
+
+Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
+Note that components are not initialized/undef unless set in the iterator.
+
+For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provided.
+"""
 function new_entities!(world::World{CS,CT,N}, n::Int, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     return _new_entities!(world, UInt32(n), comp_types)
 end
