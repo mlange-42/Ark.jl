@@ -17,4 +17,11 @@
         arches += 1
     end
     @test arches == 2
+
+    # test closed batch
+    @test_throws ErrorException begin
+        for x in batch
+            nothing
+        end
+    end
 end
