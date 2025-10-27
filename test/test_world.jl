@@ -202,7 +202,43 @@ end
     @test vel == Velocity(3, 4)
 end
 
-@testset "World new_entities!" begin
+
+@testset "World new_entities! with types" begin
+    world = World(Position, Velocity, Altitude)
+
+    new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    remove_entity!(world, e)
+
+    count = 0
+    for (ent, pos_col, vel_col) in @new_entities!(world, 100, (Position, Velocity))
+        @test length(ent) == 100
+        @test length(pos_col) == 100
+        @test length(vel_col) == 100
+        for i in eachindex(ent)
+            pos_col[i] = Position(i + 1, i + 1)
+            vel_col[i] = Velocity(i + 1, i + 1)
+            count += 1
+        end
+        @test is_locked(world) == true
+    end
+    @test count == 100
+    @test is_locked(world) == false
+    @test length(world._archetypes[2].entities) == 101
+    @test length(world._storages[1].data[2]) == 101
+    @test length(world._storages[2].data[2]) == 101
+
+    count = 0
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
+        for i in eachindex(ent)
+            @test pos_col[i] == Position(i, i)
+            count += 1
+        end
+    end
+    @test count == 101
+end
+
+@testset "World new_entities! with values" begin
     world = World(Position, Velocity, Altitude)
 
     new_entity!(world, (Position(1, 1), Velocity(3, 4)))
