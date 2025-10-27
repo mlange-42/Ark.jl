@@ -3,7 +3,7 @@ function setup_world_new_entities_5(n::Int)
     world = World(Position, Velocity, CompA, CompB, CompC)
 
     # Run once to allocate memory
-    for (e, pos_col, vel_col, a_col, b_col, c_col) in @new_entities!(world, n, (Position, Velocity, CompA, CompB, CompC))
+    for (e, pos_col, vel_col, a_col, b_col, c_col) in new_entities!(world, n, (Position, Velocity, CompA, CompB, CompC); iterate=true)
         @inbounds for i in eachindex(e)
             pos_col[i] = Position(0, 0)
             vel_col[i] = Velocity(0, 0)
@@ -18,7 +18,7 @@ end
 
 function benchmark_world_new_entities_5(args, n::Int)
     world = args
-    for (e, pos_col, vel_col, a_col, b_col, c_col) in @new_entities!(world, n, (Position, Velocity, CompA, CompB, CompC))
+    for (e, pos_col, vel_col, a_col, b_col, c_col) in new_entities!(world, n, (Position, Velocity, CompA, CompB, CompC); iterate=true)
         @inbounds for i in eachindex(e)
             pos_col[i] = Position(0, 0)
             vel_col[i] = Velocity(0, 0)
