@@ -256,6 +256,21 @@ end
     @test_throws ErrorException @exchange_components!(world, zero_entity, add = (Altitude(1),), remove = (Position,))
 end
 
+@testset "World exchange macro missing argument" begin
+    ex = Meta.parse("@exchange_components!(world)")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "World exchange macro unknown argument" begin
+    ex = Meta.parse("@exchange_components!(world, e, abc = 2)")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "World exchange macro invalid syntax" begin
+    ex = Meta.parse("@exchange_components!(world, e, xyz)")
+    @test_throws LoadError eval(ex)
+end
+
 @testset "remove_entity! Tests" begin
     world = World(Position, Velocity)
 
