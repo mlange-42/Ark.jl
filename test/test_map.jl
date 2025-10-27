@@ -17,7 +17,7 @@
     @test pos == Position(5, 6)
     @test vel == Velocity(7, 8)
 
-    empty_entity = new_entity!(world)
+    empty_entity = new_entity!(world, ())
     # TODO: do we want that, or do we want it to return `nothing`?
     err = VERSION < v"1.12.0" ? ErrorException : FieldError
     @test_throws err m[empty_entity]
@@ -38,7 +38,7 @@ end
     m1 = Map(world, Val.((Position, Velocity)))
     m2 = Map(world, Val.((Altitude, Health)))
 
-    e1 = new_entity!(world)
+    e1 = new_entity!(world, ())
     add_components!(m1, e1, (Position(1, 2), Velocity(3, 4)))
 
     @test has_components(m1, e1) == true

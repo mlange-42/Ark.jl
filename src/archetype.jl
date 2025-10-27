@@ -19,3 +19,5 @@ function _add_entity!(arch::_Archetype, entity::Entity)::UInt32
     push!(arch.entities._data, entity)
     return length(arch.entities)
 end
+
+Base.resize!(arch::_Archetype, length::Int) = Base.resize!(arch.entities._data, length)

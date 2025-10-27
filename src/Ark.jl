@@ -17,9 +17,10 @@ include("lock.jl")
 include("world.jl")
 include("map.jl")
 include("query.jl")
+include("batch.jl")
 
 export World
-export is_alive, new_entity!, remove_entity!, zero_entity, is_locked
+export is_alive, new_entity!, new_entities!, @new_entities!, remove_entity!, zero_entity, is_locked
 export get_components, @get_components, set_components!, has_components, @has_components
 export add_components!, remove_components!, @remove_components!
 export exchange_components!, @exchange_components!
@@ -30,7 +31,7 @@ export is_zero
 
 export Map, @Map
 
-export Query, @Query
+export Query, @Query, Batch, _BatchArchetype
 export close!
 
 export Column, Entities
