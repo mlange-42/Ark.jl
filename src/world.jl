@@ -569,19 +569,21 @@ For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provid
 - `n::Int`: The number of entities to create.
 - `comp_types::Tuple`: Component types for the new entities, like `Val.(Position, Velocity)`.
 """
-function new_entities!(world::World{CS,CT,N}, n::Int, comp_types::Val{TS}) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    return _new_entities_from_types!(world, UInt32(n), TS)
+function new_entities!(world::World{CS,CT,N},
+    n::Int,
+    comp_types::Tuple{Vararg{Val}}) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entities_from_types!(world, UInt32(n), comp_types)
 end
 
 @generated function _new_entities_from_types!(world::World{CS,CT,N}, n::UInt32, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
-    types = [x.parameters[1] for x in TS.parameters]
+    types = [t.parameters[1] for t in TS.parameters]
     exprs = []
 
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
     push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
-    push!(exprs, :(start_index = _create_entities!(world, archetype_idx, n)))
+    push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
@@ -590,7 +592,7 @@ end
     push!(exprs, :(batch =
         _Batch_from_types(
             world,
-            [_BatchArchetype(archetype, start_index, length(archetype.entities))],
+            [_BatchArchetype(archetype, indices[1], indices[2])],
             $ts_val_expr))
     )
 
