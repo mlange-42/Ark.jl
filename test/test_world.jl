@@ -147,7 +147,7 @@ end
     entity, index = _create_entity!(world, arch_index)
     @test entity == _new_entity(2, 0)
     @test index == 1
-    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(arch_index, UInt32(1))]
+    @test world._entities == [_EntityIndex(typemax(Int), 0), _EntityIndex(arch_index, 1)]
 
     remove_entity!(world, entity)
     entity, index = _create_entity!(world, arch_index)

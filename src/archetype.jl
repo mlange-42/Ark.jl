@@ -15,7 +15,7 @@ function _Archetype(id::UInt32, node::_GraphNode, components::UInt8...)
     _Archetype(Entities(), collect(components), node.mask, node, id)
 end
 
-function _add_entity!(arch::_Archetype, entity::Entity)::UInt32
+function _add_entity!(arch::_Archetype, entity::Entity)::Int
     push!(arch.entities._data, entity)
     return length(arch.entities)
 end

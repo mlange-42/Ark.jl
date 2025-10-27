@@ -154,8 +154,8 @@ end
         col = Symbol("col", i)
         val = Symbol("v", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[Int(index.archetype)]))
-        push!(exprs, :(@inbounds $val = $col._data[Int(index.row)]))
+        push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
+        push!(exprs, :(@inbounds $val = $col._data[index.row]))
     end
     vals = [Symbol("v", i) for i in 1:N]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
@@ -166,14 +166,14 @@ end
     end
 end
 
-@generated function _set_entity_values!(map::Map{W,CS,N}, archetype::UInt32, row::UInt32, comps::Tuple) where {W<:World,CS<:Tuple,N}
+@generated function _set_entity_values!(map::Map{W,CS,N}, archetype::Int, row::Int, comps::Tuple) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
         stor = Symbol("stor", i)
         col = Symbol("col", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[Int(archetype)]))
-        push!(exprs, :(@inbounds $col._data[Int(row)] = comps.$i))
+        push!(exprs, :(@inbounds $col = $stor.data[archetype]))
+        push!(exprs, :(@inbounds $col._data[row] = comps.$i))
     end
     return quote
         @inbounds begin
@@ -188,7 +188,7 @@ end
         stor = Symbol("stor", i)
         col = Symbol("col", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[Int(index.archetype)]))
+        push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
         push!(exprs, :(
             if $col === nothing
                 return false

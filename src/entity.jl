@@ -28,6 +28,6 @@ function _new_entity(id::Int, gen::Int)
 end
 
 struct _EntityIndex
-    archetype::UInt32
-    row::UInt32
+    archetype::Int
+    row::Int
 end

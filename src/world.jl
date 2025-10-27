@@ -60,12 +60,12 @@ end
     return :(world._storages.$id::_ComponentStorage{$(QuoteNode(T))})
 end
 
-function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::Int
     index = world._entities[Int(entity._id)]
-    return _find_or_create_archetype!(world, world._archetypes[Int(index.archetype)].node, add, remove)
+    return _find_or_create_archetype!(world, world._archetypes[index.archetype].node, add, remove)
 end
 
-function _find_or_create_archetype!(world::World, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+function _find_or_create_archetype!(world::World, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::Int
     node = _find_node(world._graph, start, add, remove)
 
     archetype = (node.archetype == typemax(UInt32)) ?
@@ -75,13 +75,13 @@ function _find_or_create_archetype!(world::World, start::_GraphNode, add::Tuple{
     return archetype
 end
 
-function _create_archetype!(world::World, node::_GraphNode)::UInt32
+function _create_archetype!(world::World, node::_GraphNode)::Int
     components = _active_bit_indices(node.mask)
     arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
     push!(world._archetypes, arch)
 
-    index::UInt32 = length(world._archetypes)
-    node.archetype = index
+    index = length(world._archetypes)
+    node.archetype = UInt32(index)
 
     # type-stable: expand pushes to concrete storage fields
     _push_nothing_to_all!(world)
@@ -95,11 +95,11 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return index
 end
 
-function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
+function _create_entity!(world::World, archetype_index::Int)::Tuple{Entity,Int}
     _check_locked(world)
 
     entity = _get_entity(world._entity_pool)
-    archetype = world._archetypes[Int(archetype_index)]
+    archetype = world._archetypes[archetype_index]
 
     index = _add_entity!(archetype, entity)
 
@@ -115,12 +115,12 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     return entity, index
 end
 
-function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
+function _move_entity!(world::World, entity::Entity, archetype_index::Int)::Int
     _check_locked(world)
 
     index = world._entities[Int(entity._id)]
-    old_archetype = world._archetypes[Int(index.archetype)]
-    new_archetype = world._archetypes[Int(archetype_index)]
+    old_archetype = world._archetypes[index.archetype]
+    new_archetype = world._archetypes[archetype_index]
 
     new_row = _add_entity!(new_archetype, entity)
     swapped = _swap_remove!(old_archetype.entities._data, index.row)
@@ -140,7 +140,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
     end
 
     if swapped
-        swap_entity = old_archetype.entities[Int(index.row)]
+        swap_entity = old_archetype.entities[index.row]
         world._entities[Int(swap_entity._id)] = index
     end
 
@@ -160,7 +160,7 @@ function remove_entity!(world::World, entity::Entity)
     _check_locked(world)
 
     index = world._entities[Int(entity._id)]
-    archetype = world._archetypes[Int(index.archetype)]
+    archetype = world._archetypes[index.archetype]
 
     swapped = _swap_remove!(archetype.entities._data, index.row)
 
@@ -171,9 +171,10 @@ function remove_entity!(world::World, entity::Entity)
     end
 
     if swapped
-        swap_entity = archetype.entities[Int(index.row)]
+        swap_entity = archetype.entities[index.row]
         world._entities[Int(swap_entity._id)] = index
     end
+    world._entities[Int(entity._id)] = _EntityIndex(typemax(Int), 0)
 
     _recycle(world._entity_pool, entity)
 end
@@ -259,8 +260,8 @@ end
         val_sym = Symbol("v", i)
 
         push!(exprs, :($(stor_sym) = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :($(col_sym) = @inbounds $(stor_sym).data[Int(idx.archetype)]))
-        push!(exprs, :($(val_sym) = @inbounds $(col_sym)._data[Int(idx.row)]))
+        push!(exprs, :($(col_sym) = @inbounds $(stor_sym).data[idx.archetype]))
+        push!(exprs, :($(val_sym) = @inbounds $(col_sym)._data[idx.row]))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -325,7 +326,7 @@ end
         col_sym = Symbol("col", i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :($col_sym = $stor_sym.data[Int(index.archetype)]))
+        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
         push!(exprs, :(
             if $col_sym === nothing
                 return false
@@ -366,8 +367,8 @@ end
         val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :(@inbounds $col_sym = @inbounds $stor_sym.data[Int(idx.archetype)]))
-        push!(exprs, :(@inbounds $col_sym._data[Int(idx.row)] = $val_expr))
+        push!(exprs, :(@inbounds $col_sym = @inbounds $stor_sym.data[idx.archetype]))
+        push!(exprs, :(@inbounds $col_sym._data[idx.row] = $val_expr))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -385,7 +386,7 @@ end
 Creates a new [`Entity`](@ref) without any components.
 """
 function new_entity!(world::World)::Entity
-    entity, _ = _create_entity!(world, UInt32(1))
+    entity, _ = _create_entity!(world, 1)
     return entity
 end
 
@@ -420,8 +421,8 @@ end
         val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(archetype)]))
-        push!(exprs, :(@inbounds $col_sym._data[Int(index)] = $val_expr))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :(@inbounds $col_sym._data[index] = $val_expr))
     end
 
     push!(exprs, Expr(:return, :entity))
@@ -461,8 +462,8 @@ end
         val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(archetype)]))
-        push!(exprs, :(@inbounds $col_sym._data[Int(row)] = $val_expr))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :(@inbounds $col_sym._data[row] = $val_expr))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -624,8 +625,8 @@ end
         val_expr = :(add.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(archetype)]))
-        push!(exprs, :(@inbounds $col_sym._data[Int(row)] = $val_expr))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :(@inbounds $col_sym._data[row] = $val_expr))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -668,7 +669,7 @@ end
         ids = $id_tuple
         graph = _Graph()
         World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
-            [_EntityIndex(typemax(UInt32), 0)],
+            [_EntityIndex(typemax(Int), 0)],
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex($(length(types))),
@@ -690,7 +691,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
+@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::Int) where {CS,CT,N}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -703,7 +704,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::Int, needed::Int) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -716,7 +717,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::Int, new_arch::Int, row::Int) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -729,7 +730,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::Int, row::Int) where {CS<:Tuple,CT<:Tuple,N}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
