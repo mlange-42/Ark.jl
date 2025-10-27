@@ -19,7 +19,7 @@ end
 
 function benchmark_world_new_entities_5_def(args, n::Int)
     world = args
-    new_entities!(world, n, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
+    new_entities!(world, n, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)); iterate=false)
 end
 
 for n in (100, 10_000)
