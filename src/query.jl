@@ -29,7 +29,11 @@ end
         optional::Tuple=()
     )
 
+Creates a query.
+
 Macro version of [`Query`](@ref) that allows ergonomic construction of queries using simulated keyword arguments.
+
+Queries can be stored and re-used. However, query creation is fast (<20ns), so this is mandatory.
 
 # Arguments
 - `world`: The `World` instance to query.
@@ -95,6 +99,8 @@ end
     )
 
 Creates a query.
+
+Queries can be stored and re-used. However, query creation is fast (<20ns), so this is mandatory.
 
 For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 

@@ -56,6 +56,9 @@ end
 end
 
 @inline function Base.iterate(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
+    if b._lock == 0
+        error("batch closed, batches can't be used multiple times")
+    end
     return Base.iterate(b, 1)
 end
 
@@ -67,8 +70,9 @@ Closes the batch iterator and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
-    b._index = 0
     _unlock(b._world._lock, b._lock)
+    b._index = 0
+    b._lock = 0
 end
 
 @generated function _get_columns_at_index(b::Batch{W,CS,N}) where {W<:World,CS<:Tuple,N}
