@@ -497,30 +497,20 @@ end
         ))
     end
 
-    if length(types) == 0
-        push!(exprs, :(
-            if iterate
-                return _Batch_from_types(world, [_BatchArchetype(archetype, indices...)], Val{Tuple{}}())
-            else
-                return nothing
-            end
-        ))
-    else
-        types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
-        ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-        push!(exprs, :(
-            if iterate
-                batch = _Batch_from_types(
-                    world,
-                    [_BatchArchetype(archetype, indices...)],
-                    $ts_val_expr
-                )
-                return batch
-            else
-                return nothing
-            end
-        ))
-    end
+    types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
+    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
+    push!(exprs, :(
+        if iterate
+            batch = _Batch_from_types(
+                world,
+                [_BatchArchetype(archetype, indices...)],
+                $ts_val_expr
+            )
+            return batch
+        else
+            return nothing
+        end
+    ))
 
     return quote
         @inbounds begin

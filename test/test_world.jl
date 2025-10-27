@@ -290,6 +290,10 @@ end
         end
     end
     @test count == 201
+
+    for (ent,) in new_entities!(world, 100, (); iterate=true)
+        @test length(ent) == 100
+    end
 end
 
 @testset "World add/remove components" begin
