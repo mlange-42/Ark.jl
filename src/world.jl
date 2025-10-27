@@ -115,6 +115,31 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     return entity, index
 end
 
+function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::UInt32
+    _check_locked(world)
+
+    archetype = world._archetypes[Int(archetype_index)]
+    old_length = length(archetype.entities)
+    new_length = old_length + n
+
+    for _ in 1:n
+        entity = _get_entity(world._entity_pool)
+        index = _add_entity!(archetype, entity)
+
+        if entity._id > length(world._entities)
+            push!(world._entities, _EntityIndex(archetype_index, index))
+        else
+            @inbounds world._entities[Int(entity._id)] = _EntityIndex(archetype_index, index)
+        end
+    end
+
+    for comp::UInt8 in archetype.components
+        _ensure_column_size_for_comp!(world, comp, archetype_index, new_length)
+    end
+
+    return old_length + 1
+end
+
 function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
     _check_locked(world)
 
@@ -425,6 +450,30 @@ end
     end
 
     push!(exprs, Expr(:return, :entity))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+
+@generated function _new_entities!(world::World{CS,CT,N}, ::Val{TS}, n::UInt32) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+    types = TS.parameters
+    exprs = []
+
+    # Generate component IDs as a tuple
+    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    push!(exprs, :(ids = ($(id_exprs...),)))  # Tuple, not Vector
+
+    # Create archetype and entity
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(start_index = _create_entities!(world, archetype, n)))
+
+    # TODO
+
+    push!(exprs, Expr(:return, :batch))
 
     return quote
         @inbounds begin
