@@ -1,6 +1,6 @@
 
 # These tests are too slow
-if "CI" in keys(ENV)
+if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     using Aqua
     @testset "Aqua tests" begin
         Aqua.test_all(Ark, deps_compat=false)
