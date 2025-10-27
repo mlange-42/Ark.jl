@@ -9,7 +9,7 @@ if "CI" in keys(ENV) && VERSION >= v"1.12.0"
 
     using JET
     @testset "JET tests" begin
-        rep = JET.report_package(Ark, target_defined_modules = true)
+        rep = JET.report_package(Ark, target_modules = [Ark,])
         @test length(JET.get_reports(rep)) == 0
     end
 end
