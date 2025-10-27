@@ -13,7 +13,7 @@ A query for N components.
 struct Query{W<:World,CS<:Tuple,N,NR}
     _world::W
     _cursor::_Cursor
-    _ids::NTuple{NR,UInt8} # IDs of non-optional components
+    _ids::NTuple{NR,UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
