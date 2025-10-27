@@ -236,11 +236,11 @@ For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provi
 pos, vel = get_components(world, entity, Val.((Position, Velocity)))
 ```
 """
-function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+@inline function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
-    return _get_components(world, entity, comp_types)
+    return @inline _get_components(world, entity, comp_types)
 end
 
 @generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
@@ -318,7 +318,7 @@ has = has_components(world, entity, Val.((Position, Velocity)))
         error("can't check components of a dead entity")
     end
     index = world._entities[entity._id]
-    return _has_components(world, index, comp_types)
+    return @inline _has_components(world, index, comp_types)
 end
 
 @generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
@@ -354,11 +354,11 @@ end
 Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
 The entity must already have all these components.
 """
-function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+@inline function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
     if !is_alive(world, entity)
         error("can't set components of a dead entity")
     end
-    return _set_components!(world, entity, Val{typeof(values)}(), values)
+    return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
 end
 
 @generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
