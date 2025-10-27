@@ -122,11 +122,11 @@ function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::UI
     old_length = length(archetype.entities)
     new_length = old_length + n
 
-    resize!(archetype.entities, new_length)
+    resize!(archetype, new_length)
     for i in 1:n
         entity = _get_entity(world._entity_pool)
         index = old_length + i
-        archetype.entities[i] = entity
+        @inbounds archetype.entities._data[i] = entity
 
         if entity._id > length(world._entities)
             push!(world._entities, _EntityIndex(archetype_index, index))
