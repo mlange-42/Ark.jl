@@ -452,9 +452,16 @@ end
     new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Batch
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
+Component types are inferred from the provided default values.
 
 If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
 that can be used for initialization.
+    
+# Arguments
+- `world::World`: The `World` instance to use.
+- `n::Int`: The number of entities to create.
+- `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
+- `iterate::Bool`: Whether to return a batch for individual entity initialization.
 """
 function new_entities!(world::World{CS,CT,N}, n::Int, defaults::Tuple; iterate::Bool=false) where {CS<:Tuple,CT<:Tuple,N}
     return _new_entities!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)

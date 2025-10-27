@@ -237,6 +237,23 @@ end
         end
     end
     @test count == 101
+
+    batch = new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
+    @test batch === nothing
+    @test is_locked(world) == false
+
+    count = 0
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
+        for i in eachindex(ent)
+            if i <= 101
+                @test pos_col[i] == Position(i, i)
+            else
+                @test pos_col[i] == Position(13, 13)
+            end
+            count += 1
+        end
+    end
+    @test count == 201
 end
 
 @testset "World add/remove components" begin
