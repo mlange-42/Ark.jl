@@ -207,7 +207,7 @@ end
 
 Get the given components for an [`Entity`](@ref).
 
-Macro version of [`get_components`](@ref) for ergonomic construction of component mappers.
+Macro version of [`get_components`](@ref) for more ergonomic component type tuples.
 
 # Example
 ```julia
@@ -258,15 +258,9 @@ end
         col_sym = Symbol("col", i)
         val_sym = Symbol("v", i)
 
-        push!(exprs, :(
-            $(stor_sym) = _get_storage(world, $(QuoteNode(T)))
-        ))
-        push!(exprs, :(
-            $(col_sym) = @inbounds $(stor_sym).data[Int(idx.archetype)]
-        ))
-        push!(exprs, :(
-            $(val_sym) = @inbounds $(col_sym)._data[Int(idx.row)]
-        ))
+        push!(exprs, :($(stor_sym) = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :($(col_sym) = @inbounds $(stor_sym).data[Int(idx.archetype)]))
+        push!(exprs, :($(val_sym) = @inbounds $(col_sym)._data[Int(idx.row)]))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -284,7 +278,7 @@ end
 
 Returns whether an [`Entity`](@ref) has all given components.
 
-Macro version of [`has_components`](@ref) for ergonomic construction of component mappers.
+Macro version of [`has_components`](@ref) for more ergonomic component type tuples.
 
 # Example
 ```julia
@@ -455,17 +449,11 @@ end
     types = TS.parameters
     exprs = []
 
-    # Generate component IDs as a tuple
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
-
-    # Find or create new archetype
     push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, ids, ())))
-
-    # Move entity to new archetype
     push!(exprs, :(row = _move_entity!(world, entity, archetype)))
 
-    # Set each new component
     for i in 1:length(types)
         T = types[i]
         stor_sym = Symbol("stor", i)
@@ -531,15 +519,114 @@ end
     types = [x.parameters[1] for x in TS.parameters]
     exprs = []
 
-    # Generate component IDs to remove
     id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
     push!(exprs, :(remove_ids = ($(id_exprs...),)))
-
-    # Find or create new archetype without those components
     push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, (), remove_ids)))
-
-    # Move entity to new archetype
     push!(exprs, :(_move_entity!(world, entity, archetype)))
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    @exchange_components!(world::World, entity::Entity, add::Tuple, remove::Tuple)
+
+Removes the given components from an [`Entity`](@ref).
+
+Macro version of [`exchange_components!`](@ref) for more ergonomic component type tuples.
+
+# Example
+```julia
+@exchange_components!(world, entity,
+    add=(Health(100),),
+    remove=Val.((Position, Velocity)),
+)
+```
+"""
+macro exchange_components!(args...)
+    if length(args) < 2
+        error("@exchange requires at least a world and an entity")
+    end
+
+    world_expr = args[1]
+    entity_expr = args[2]
+
+    add_expr = :(())
+    remove_expr = :(())
+
+    for arg in args[3:end]
+        if Base.isexpr(arg, :(=), 2)
+            name, value = arg.args
+            if name == :add
+                add_expr = value
+            elseif name == :remove
+                remove_expr = value
+            else
+                error("Unknown keyword argument: $name")
+            end
+        else
+            error("Unexpected argument format: $arg")
+        end
+    end
+
+    quote
+        exchange_components!(
+            $(esc(world_expr)),
+            $(esc(entity_expr));
+            add=$(esc(add_expr)),
+            remove=Val.($(esc(remove_expr)))
+        )
+    end
+end
+
+"""
+    exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple, remove::Tuple)
+
+Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
+
+For a more convenient tuple syntax, the macro [`@exchange_components!`](@ref) is provided.
+
+# Example
+```julia
+exchange_components!(world, entity;
+    add=(Health(100),),
+    remove=Val.((Position, Velocity)),
+)
+```
+"""
+function exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple=(), remove::Tuple=()) where {CS<:Tuple,CT<:Tuple,N}
+    if !is_alive(world, entity)
+        error("can't exchange components on a dead entity")
+    end
+    return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
+end
+
+@generated function _exchange_components!(world::World{CS,CT,N}, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {CS<:Tuple,CT<:Tuple,N,ATS<:Tuple,RTS<:Tuple}
+    add_types = ATS.parameters
+    rem_types = [x.parameters[1] for x in RTS.parameters]
+    exprs = []
+
+    add_id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in add_types]
+    push!(exprs, :(add_ids = ($(add_id_exprs...),)))
+    rem_id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in rem_types]
+    push!(exprs, :(rem_ids = ($(rem_id_exprs...),)))
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, add_ids, rem_ids)))
+    push!(exprs, :(row = _move_entity!(world, entity, archetype)))
+
+    for i in 1:length(add_types)
+        T = add_types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(add.$i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(archetype)]))
+        push!(exprs, :(@inbounds $col_sym._data[Int(row)] = $val_expr))
+    end
 
     push!(exprs, Expr(:return, :nothing))
 
