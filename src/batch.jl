@@ -4,6 +4,12 @@ struct _BatchArchetype
     end_idx::Int
 end
 
+"""
+    Batch
+
+A batch iterator.
+This is returned from batch operations and serves for initializing newly added components.
+"""
 mutable struct Batch{W<:World,CS<:Tuple,N}
     _world::W
     _archetypes::Vector{_BatchArchetype}
@@ -30,7 +36,8 @@ end
             world,
             archetypes,
             $storages_tuple,
-            0, UInt8(0)
+            0,
+            _lock(world._lock),
         )
     end
 end
@@ -53,10 +60,16 @@ end
 end
 
 @inline function Base.iterate(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
-    b._lock = _lock(b._world._lock)
     return Base.iterate(b, 1)
 end
 
+"""
+    close!(b::Batch)
+
+Closes the batch iterator and unlocks the world.
+
+Must be called if a query is not fully iterated.
+"""
 function close!(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
     b._index = 0
     _unlock(b._world._lock, b._lock)

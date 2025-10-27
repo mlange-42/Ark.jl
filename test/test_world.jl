@@ -203,7 +203,7 @@ end
 end
 
 @testset "new_entities! Tests" begin
-    world = World(Position, Velocity)
+    world = World(Position, Velocity, Altitude)
 
     new_entity!(world, (Position(1, 1), Velocity(3, 4)))
     e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))

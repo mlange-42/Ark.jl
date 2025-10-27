@@ -6,9 +6,9 @@ mutable struct _Cursor
 end
 
 """
-    Query{W,CS,N}
+    Query
 
-A query for N components.
+A query for components.
 """
 struct Query{W<:World,CS<:Tuple,N,NR}
     _world::W

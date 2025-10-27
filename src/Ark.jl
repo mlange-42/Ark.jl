@@ -31,7 +31,7 @@ export is_zero
 
 export Map, @Map
 
-export Query, @Query, Batch
+export Query, @Query, Batch, _BatchArchetype
 export close!
 
 export Column, Entities
