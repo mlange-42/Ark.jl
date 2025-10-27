@@ -210,11 +210,13 @@ end
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(0, 0), Velocity(0, 0)))
+    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate=true)
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
         for i in eachindex(ent)
+            @test pos_col[i] == Position(99, 99)
+            @test vel_col[i] == Velocity(99, 99)
             pos_col[i] = Position(i + 1, i + 1)
             vel_col[i] = Velocity(i + 1, i + 1)
             count += 1

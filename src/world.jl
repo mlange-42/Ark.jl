@@ -449,17 +449,18 @@ end
 end
 
 """
-    new_entities!(world::World, n::Int, defaults::Tuple)::Batch
+    new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Batch
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 
-Returns a [`Batch`](@ref) iterator over the newly created entities that can be used to initialize components.
+If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
+that can be used for initialization.
 """
-function new_entities!(world::World{CS,CT,N}, n::Int, defaults::Tuple) where {CS<:Tuple,CT<:Tuple,N}
-    return _new_entities!(world, UInt32(n), Val{typeof(defaults)}(), defaults)
+function new_entities!(world::World{CS,CT,N}, n::Int, defaults::Tuple; iterate::Bool=false) where {CS<:Tuple,CT<:Tuple,N}
+    return _new_entities!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
-@generated function _new_entities!(world::World{CS,CT,N}, n::UInt32, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _new_entities!(world::World{CS,CT,N}, n::UInt32, ::Val{TS}, values::Tuple, iterate::Bool) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -481,17 +482,30 @@ end
         push!(exprs, :(fill!(view($col_sym, indices[1]:indices[2]), $val_expr)))
     end
 
-    types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
-    # TODO: do we really need this?
-    ts_val_expr = Expr(:call, Expr(:curly, :Val, types_tuple_type_expr))
-    push!(exprs, :(batch =
-        _Batch_from_types(
-            world,
-            [_BatchArchetype(archetype, indices...)],
-            $ts_val_expr))
-    )
-
-    push!(exprs, Expr(:return, :batch))
+    if length(types) == 0
+        push!(exprs, :(
+            if iterate
+                return _Batch_from_types(world, [_BatchArchetype(archetype, indices...)], Val{Tuple{}}())
+            else
+                return nothing
+            end
+        ))
+    else
+        types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
+        ts_val_expr = :(Val{$(types_tuple_type_expr)}())
+        push!(exprs, :(
+            if iterate
+                batch = _Batch_from_types(
+                    world,
+                    [_BatchArchetype(archetype, indices...)],
+                    $ts_val_expr
+                )
+                return batch
+            else
+                return nothing
+            end
+        ))
+    end
 
     return quote
         @inbounds begin
