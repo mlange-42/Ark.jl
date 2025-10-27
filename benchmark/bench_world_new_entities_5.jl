@@ -3,7 +3,9 @@ function setup_world_new_entities_5(n::Int)
     world = World(Position, Velocity, CompA, CompB, CompC)
 
     # Run once to allocate memory
+    entities = Vector{Entity}()
     for (e, pos_col, vel_col, a_col, b_col, c_col) in @new_entities!(
+        append!(entities, e)
         world, n, (Position, Velocity, CompA, CompB, CompC))
 
         @inbounds for i in eachindex(e)
@@ -13,6 +15,10 @@ function setup_world_new_entities_5(n::Int)
             b_col[i] = CompB(0, 0)
             c_col[i] = CompC(0, 0)
         end
+    end
+
+    for e in entities
+        remove_entity!(world, e)
     end
 
     return world
