@@ -5,9 +5,8 @@ function setup_world_new_entities_5(n::Int)
     # Run once to allocate memory
     entities = Vector{Entity}()
     for (e, pos_col, vel_col, a_col, b_col, c_col) in @new_entities!(
-        append!(entities, e)
         world, n, (Position, Velocity, CompA, CompB, CompC))
-
+        append!(entities, e)
         @inbounds for i in eachindex(e)
             pos_col[i] = Position(0, 0)
             vel_col[i] = Velocity(0, 0)
