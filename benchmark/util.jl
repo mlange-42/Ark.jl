@@ -137,7 +137,7 @@ function compare_multi_tables(a::Vector{Vector{Row}}, b::Vector{Vector{Row}})::V
     compare_multi = [compare_tables(a, b) for (a, b) in zip(a, b)]
 
     count = length(compare_multi)
-    data = Vector{CompareRow}
+    data = Vector{CompareRow}()
     for r in eachindex(compare_multi[1])
         out::CompareRow = CompareRow()
         for t in compare_multi
