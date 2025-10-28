@@ -1,37 +1,37 @@
 
 """
-    Column{C}
+    _Column{C}
 
 Archetype column storing one type of components.
 Can be iterated, indexed and updated like a Vector.
 
 Used in query iteration.
 """
-struct Column{C} <: AbstractVector{C}
+struct _Column{C} <: AbstractVector{C}
     _data::Vector{C}
-    Column{C}() where {C} = new{C}(Vector{C}())
+    _Column{C}() where {C} = new{C}(Vector{C}())
 end
 
 function _new_column(::Type{C}) where {C}
-    Column{C}()
+    _Column{C}()
 end
 
-Base.@propagate_inbounds function Base.getindex(c::Column, i::Integer)
+Base.@propagate_inbounds function Base.getindex(c::_Column, i::Integer)
     Base.getindex(c._data, i)
 end
-Base.@propagate_inbounds function Base.setindex!(c::Column, value, i::Integer)
+Base.@propagate_inbounds function Base.setindex!(c::_Column, value, i::Integer)
     Base.setindex!(c._data, value, i)
 end
-Base.length(c::Column) = length(c._data)
-Base.eachindex(c::Column) = eachindex(c._data)
-Base.enumerate(c::Column) = enumerate(c._data)
-Base.iterate(c::Column) = iterate(c._data)
-Base.iterate(c::Column, state) = iterate(c._data, state)
-Base.eltype(::Type{Column{C}}) where {C} = C
-Base.IndexStyle(::Type{<:Column}) = IndexLinear()
-Base.size(c::Column) = (length(c),)
-Base.firstindex(c::Column) = firstindex(c._data)
-Base.lastindex(c::Column) = lastindex(c._data)
+Base.length(c::_Column) = length(c._data)
+Base.eachindex(c::_Column) = eachindex(c._data)
+Base.enumerate(c::_Column) = enumerate(c._data)
+Base.iterate(c::_Column) = iterate(c._data)
+Base.iterate(c::_Column, state) = iterate(c._data, state)
+Base.eltype(::Type{_Column{C}}) where {C} = C
+Base.IndexStyle(::Type{<:_Column}) = IndexLinear()
+Base.size(c::_Column) = (length(c),)
+Base.firstindex(c::_Column) = firstindex(c._data)
+Base.lastindex(c::_Column) = lastindex(c._data)
 
 """
     Entities

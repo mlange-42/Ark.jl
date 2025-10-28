@@ -67,7 +67,7 @@ end
 
 Closes the batch iterator and unlocks the world.
 
-Must be called if a query is not fully iterated.
+Must be called if a batch is not fully iterated.
 """
 function close!(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
     _unlock(b._world._lock, b._lock)

@@ -1,10 +1,10 @@
 
 struct _ComponentStorage{C}
-    data::Vector{Union{Nothing,Column{C}}}  # Outer Vec: one per archetype
+    data::Vector{Union{Nothing,_Column{C}}}  # Outer Vec: one per archetype
 end
 
 function _ComponentStorage{C}(archetypes::Int) where C
-    _ComponentStorage{C}(Vector{Union{Nothing,Column{C}}}(nothing, archetypes))
+    _ComponentStorage{C}(Vector{Union{Nothing,_Column{C}}}(nothing, archetypes))
 end
 
 function _assign_column!(storage::_ComponentStorage{C}, index::UInt32) where {C}
