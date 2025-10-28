@@ -1,7 +1,7 @@
 
 include("util/process.jl")
 include("util/compare.jl")
-include("benches/benchmarks.jl")
+include("internal/benchmarks.jl")
 
 result = process_benches(SUITE)
 write_bench_table(result, "bench.csv")
