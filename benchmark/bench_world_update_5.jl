@@ -11,7 +11,7 @@ function setup_world_update_5(n_entities::Int)
 
     for e in entities
         pos, vel, a, b, c = get_components(world, e, Val.((Position, Velocity, CompA, CompB, CompC)))
-        set_components!(world, e, (pos, vel, a, b, c))
+        set_components!(world, e, (Position(pos.x + 1, 0), Velocity(vel.x + 1, 0), CompA(a.x + 1, 0), CompB(b.x + 1, 0), CompC(c.x + 1, 0)))
     end
 
     return (entities, world)
@@ -22,7 +22,7 @@ function benchmark_world_update_5(args, n)
     sum = 0.0
     for e in entities
         pos, vel, a, b, c = get_components(world, e, Val.((Position, Velocity, CompA, CompB, CompC)))
-        set_components!(world, e, (pos, vel, a, b, c))
+        set_components!(world, e, (Position(pos.x + 1, 0), Velocity(vel.x + 1, 0), CompA(a.x + 1, 0), CompB(b.x + 1, 0), CompC(c.x + 1, 0)))
     end
 end
 
