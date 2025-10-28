@@ -133,6 +133,30 @@ function read_bench_table(file::String)::Vector{Row}
     return data
 end
 
+function compare_multi_tables(a::Vector{Vector{Row}}, b::Vector{Vector{Row}})::Vector{CompareRow}
+    compare_multi = [compare_tables(a, b) for (a, b) in zip(a, b)]
+
+    count = length(compare_multi)
+    data = Vector{CompareRow}
+    for r in eachindex(compare_multi[1])
+        out::CompareRow = CompareRow()
+        for t in compare_multi
+            row = t[r]
+            out.name = row.name
+            out.n = row.n
+            out.time_ns_a += row.time_ns_a
+            out.time_ns_b += row.time_ns_b
+            out.factor += row.factor
+        end
+        out.time_ns_a /= count
+        out.time_ns_b /= count
+        out.factor /= count
+        push!(data, out)
+    end
+
+    return data
+end
+
 function compare_tables(a::Vector{Row}, b::Vector{Row})::Vector{CompareRow}
     dict_a = Dict(@sprintf("%s %07d", x.name, x.n) => x for x in a)
     dict_b = Dict(@sprintf("%s %07d", x.name, x.n) => x for x in b)
