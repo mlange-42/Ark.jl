@@ -12,8 +12,8 @@
     for i in 1:10
         count = 0
         for (entities, vec_pos, vec_vel) in query
-            @test isa(vec_pos, Vector{Position}) == true
-            @test isa(vec_vel, Vector{Velocity}) == true
+            @test isa(vec_pos, SubArray{Position}) == true
+            @test isa(vec_vel, SubArray{Velocity}) == true
             @test length(entities) == length(vec_pos)
             @test length(entities) == length(vec_vel)
             for i in eachindex(vec_pos)

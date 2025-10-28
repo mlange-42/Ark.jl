@@ -11,8 +11,6 @@
 Ark.jl is an archetype-based [Entity Component System](https://en.wikipedia.org/wiki/Entity_component_system) (ECS) for [Julia](https://julialang.org/).
 It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
-⚠️ Ark.jl is still early work in progress! ⚠️
-
 &mdash;&mdash;
 
 [Features](#features) &nbsp; &bull; &nbsp; [Installation](#installation) &nbsp; &bull; &nbsp; [Usage](#usage)
