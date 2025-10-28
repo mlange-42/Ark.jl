@@ -14,7 +14,7 @@ using Ark: _Lock, _lock, _unlock, _is_locked
 using Ark: _ComponentStorage
 using Ark: _VecMap, _get_map, _set_map!
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create
-using Ark: _BatchArchetype
+using Ark: _BatchArchetype, _Column
 
 using Test
 

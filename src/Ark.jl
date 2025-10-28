@@ -39,6 +39,6 @@ export Map, @Map
 export Query, @Query, Batch
 export close!
 
-export Column, Entities
+export Entities
 
 end
