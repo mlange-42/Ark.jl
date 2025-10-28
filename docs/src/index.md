@@ -1,14 +1,7 @@
-```@meta
-CurrentModule = Ark
-```
+# WeightVectors
 
-# Ark.jl
+Documentation for [Ark](https://github.com/mlange-42/Ark.jl).
 
-Documentation for [Ark.jl](https://github.com/mlange-42/Ark.jl).
-
-```@index
-```
-
-```@autodocs
-Modules = [Ark]
+```@docs
+Ark
 ```
