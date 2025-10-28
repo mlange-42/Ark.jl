@@ -1,5 +1,5 @@
 
-include("util.jl")
+include("util/compare.jl")
 
 data_current = [read_bench_table("bench_current_$(i).csv") for i in 1:3]
 data_main = [read_bench_table("bench_main_$(i).csv") for i in 1:3]
