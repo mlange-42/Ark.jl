@@ -1,58 +1,36 @@
-
 struct _Mask
-    bits::NTuple{4,UInt64}
+    bits::NTuple{2,UInt128}
 end
 
 function _Mask()
-    return _Mask(ntuple(_ -> UInt64(0), 4))
-end
-
-function _Mask(bits::UInt8...)
-    chunks = ntuple(_ -> UInt64(0), 4)
-
-    for b in bits
-        @assert b > 0 "Bit index must be between 1 and 256"
-        chunk = (b - 1) >>> 6
-        offset = (b - 1) & 0x3F
-        chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
-    end
-
-    return _Mask(chunks)
+    return _Mask((0, 0))
 end
 
 function _Mask(bits::Integer...)
-    chunks = ntuple(_ -> UInt64(0), 4)
-
+    chunks = (UInt128(0), UInt128(0))
     for b in bits
         @assert 1 ≤ b ≤ 256 "Bit index must be between 1 and 256"
-        chunk = (b - 1) >>> 6
-        offset = (b - 1) & 0x3F
-        chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
+        chunk = (b - 1) >>> 7  # 128 bits per chunk
+        offset = (b - 1) & 0x7F
+        chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt128(1) << offset), chunk + 1)
     end
-
     return _Mask(chunks)
 end
 
-function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
-    return (mask1.bits[1] & mask2.bits[1]) == mask2.bits[1] &&
-           (mask1.bits[2] & mask2.bits[2]) == mask2.bits[2] &&
-           (mask1.bits[3] & mask2.bits[3]) == mask2.bits[3] &&
-           (mask1.bits[4] & mask2.bits[4]) == mask2.bits[4]
+function _contains_all(a::_Mask, b::_Mask)::Bool
+    return (a.bits[1] & b.bits[1]) == b.bits[1] &&
+           (a.bits[2] & b.bits[2]) == b.bits[2]
 end
 
-function _contains_any(mask1::_Mask, mask2::_Mask)::Bool
-    return (mask1.bits[1] & mask2.bits[1]) != 0 ||
-           (mask1.bits[2] & mask2.bits[2]) != 0 ||
-           (mask1.bits[3] & mask2.bits[3]) != 0 ||
-           (mask1.bits[4] & mask2.bits[4]) != 0
+function _contains_any(a::_Mask, b::_Mask)::Bool
+    return (a.bits[1] & b.bits[1]) != 0 ||
+           (a.bits[2] & b.bits[2]) != 0
 end
 
 function _and(a::_Mask, b::_Mask)::_Mask
     return _Mask((
         a.bits[1] & b.bits[1],
         a.bits[2] & b.bits[2],
-        a.bits[3] & b.bits[3],
-        a.bits[4] & b.bits[4],
     ))
 end
 
@@ -60,29 +38,25 @@ function _or(a::_Mask, b::_Mask)::_Mask
     return _Mask((
         a.bits[1] | b.bits[1],
         a.bits[2] | b.bits[2],
-        a.bits[3] | b.bits[3],
-        a.bits[4] | b.bits[4],
     ))
 end
 
-@inline function _clear_bits(a::_Mask, b::_Mask)::_Mask
+function _clear_bits(a::_Mask, b::_Mask)::_Mask
     return _Mask((
         a.bits[1] & ~b.bits[1],
         a.bits[2] & ~b.bits[2],
-        a.bits[3] & ~b.bits[3],
-        a.bits[4] & ~b.bits[4],
     ))
 end
 
 function _active_bit_indices(mask::_Mask)::Vector{UInt8}
     indices = UInt8[]
-    for chunk_index in 1:4
-        chunk = mask.bits[chunk_index]
-        base = UInt8((chunk_index - 1) * 64)
+    for i in 1:2
+        chunk = mask.bits[i]
+        base = UInt8((i - 1) * 128)
         while chunk != 0
             tz = trailing_zeros(chunk)
             push!(indices, base + UInt8(tz + 1))
-            chunk &= chunk - 1  # clear lowest set bit
+            chunk &= chunk - 1
         end
     end
     return indices
@@ -132,7 +106,7 @@ end
     mask.bits[chunk+1] &= val
 end
 
-@inline function _get_bit(mask::Union{_Mask, _MutableMask}, i::UInt8)::Bool
+@inline function _get_bit(mask::Union{_Mask,_MutableMask}, i::UInt8)::Bool
     chunk = (i - UInt8(1)) >>> 6 # which UInt64 (0-based)
     offset = (i - UInt8(1)) & 0x3F # which bit within that UInt64
     return (mask.bits[chunk+1] >> (offset % UInt64)) & UInt64(1) == 1
