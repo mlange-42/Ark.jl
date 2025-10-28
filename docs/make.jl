@@ -10,10 +10,11 @@ makedocs(;
     format=Documenter.HTML(;
         canonical="https://mlange-42.github.io/Ark.jl",
         edit_link="main",
+        prettyurls=false,
     ),
     pages=[
-        "Home" => "index.md",
-        "API" => "api.md"
+        "Home" => "./index.md",
+        "API" => "./api.md"
     ],
     warnonly=[:missing_docs],
 )
