@@ -22,6 +22,8 @@ include("map.jl")
 include("query.jl")
 include("batch.jl")
 
+include("docs.jl") # doctest setup
+
 export World
 export is_alive, new_entity!, new_entities!, @new_entities!, remove_entity!, zero_entity, is_locked
 export get_components, @get_components, set_components!, has_components, @has_components
@@ -34,7 +36,7 @@ export is_zero
 
 export Map, @Map
 
-export Query, @Query, Batch, _BatchArchetype
+export Query, @Query, Batch
 export close!
 
 export Column, Entities

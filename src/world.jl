@@ -31,6 +31,17 @@ Creates a new, empty [`World`](@ref) for the given component types.
 # Arguments
 - `comp_types`: The component types used by the world.
 - `allow_mutable`: Allows mutable components. Use with care, as they are heap-allocated.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+world = World(Position, Velocity)
+is_alive(world, entity)
+
+# output
+
+true
+```
 """
 World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
 

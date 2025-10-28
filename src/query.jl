@@ -43,8 +43,17 @@ Queries can be stored and re-used. However, query creation is fast (<20ns), so t
 - `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
 
 # Example
-```julia
-@Query(world, (Position, Velocity), with=(Health,), without=(Altitude,))
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for (entities, pos_column, vel_column) in @Query(world, (Position, Velocity))
+    for i in eachindex(entities)
+        pos = pos_column[i]
+        vel = vel_column[i]
+        pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+    end
+end
+
+# output
 ```
 """
 macro Query(args...)
@@ -112,8 +121,19 @@ For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 - `optional::Tuple`: Makes components of the parameters optional.
 
 # Example
-```julia
-Query(world, Val.((Position, Velocity)), with=Val.((Health,)), without=Val.((Altitude,)))
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for (entities, pos_column, vel_column) in Query(world, Val.((Position, Velocity)))
+    for i in eachindex(entities)
+        pos = pos_column[i]
+        vel = vel_column[i]
+        pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+    end
+end
+
+# output
 ```
 """
 function Query(

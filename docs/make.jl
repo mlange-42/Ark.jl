@@ -3,6 +3,8 @@ using Documenter
 
 DocMeta.setdocmeta!(Ark, :DocTestSetup, :(using Ark); recursive=true)
 
+doctest(Ark)
+
 makedocs(;
     modules=[Ark],
     sitename="Ark.jl",
