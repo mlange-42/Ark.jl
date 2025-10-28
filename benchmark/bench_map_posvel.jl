@@ -10,7 +10,7 @@ function setup_map_posvel(n_entities::Int)
         push!(entities, e)
     end
 
-    for e in entities
+    @inbounds for e in entities
         pos, vel = map2[e]
         p = pos[]
         v = vel[]
@@ -22,7 +22,7 @@ end
 
 function benchmark_map_posvel(args)
     entities, map1, map2 = args
-    for e in entities
+    @inbounds for e in entities
         pos, vel = map2[e]
         p = pos[]
         v = vel[]
