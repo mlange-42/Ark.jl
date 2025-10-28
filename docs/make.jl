@@ -18,9 +18,3 @@ makedocs(;
     ],
     warnonly=[:missing_docs],
 )
-
-deploydocs(;
-    repo="github.com/mlange-42/Ark.jl",
-    devbranch="main",
-    push_preview=true,
-)
