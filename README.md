@@ -3,6 +3,7 @@
 [![Ark.jl (logo)](https://github.com/user-attachments/assets/efd131c8-cadf-434e-9994-c02f5914f2fa)](https://github.com/mlange-42/ark.jl)
 [![Build Status](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/mlange-42/Ark.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/mlange-42/Ark.jl)
+[![Documentation](https://img.shields.io/badge/docs-dev-blue?logo=julia)](https://mlange-42.github.io/Ark.jl/)
 [![GitHub](https://img.shields.io/badge/github-repo-blue?logo=github)](https://github.com/mlange-42/ark)
 [![MIT license](https://img.shields.io/badge/MIT-brightgreen?label=license)](https://github.com/mlange-42/ark/blob/main/LICENSE-MIT)
 [![Apache 2.0 license](https://img.shields.io/badge/Apache%202.0-brightgreen?label=license)](https://github.com/mlange-42/ark/blob/main/LICENSE-APACHE)
@@ -18,7 +19,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 ## Features
 
-- [x] Designed for performance ~~and highly optimized~~ (ongoing).
+- [x] Designed for performance and highly optimized.
 - [x] Well-documented, type-safe API.
 - [ ] [Entity relationships](https://mlange-42.github.io/ark/relations/) as a first-class feature.
 - [ ] Extensible [event system](https://mlange-42.github.io/ark/events/) with filtering and custom event types.

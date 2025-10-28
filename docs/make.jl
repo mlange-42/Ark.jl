@@ -24,3 +24,11 @@ makedocs(;
     ],
     warnonly=[:missing_docs],
 )
+
+deploydocs(;
+    repo="github.com/mlange-42/Ark.jl.git",
+    versions=[
+        "stable" => "v^",
+        "dev" => "main",
+    ]
+)
