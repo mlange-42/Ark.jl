@@ -11,7 +11,8 @@ function setup_world_update_1(n_entities::Int)
 
     for e in entities
         pos, = get_components(world, e, Val.((Position,)))
-        set_components!(world, e, (Position(pos.x + 1, pos.y),))
+        p = pos[]
+        pos[] = Position(p.x + 1, p.y)
     end
 
     return (entities, world)
@@ -21,7 +22,8 @@ function benchmark_world_update_1(args, n)
     entities, world = args
     for e in entities
         pos, = get_components(world, e, Val.((Position,)))
-        set_components!(world, e, (Position(pos.x + 1, pos.y),))
+        p = pos[]
+        pos[] = Position(p.x + 1, p.y)
     end
 end
 
