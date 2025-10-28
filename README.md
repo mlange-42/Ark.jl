@@ -18,7 +18,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 ## Features
 
-- [x] Designed for performance ~~and highly optimized~~ (ongoing).
+- [x] Designed for performance and highly optimized.
 - [x] Well-documented, type-safe API.
 - [ ] [Entity relationships](https://mlange-42.github.io/ark/relations/) as a first-class feature.
 - [ ] Extensible [event system](https://mlange-42.github.io/ark/events/) with filtering and custom event types.
