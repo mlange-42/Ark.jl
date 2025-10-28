@@ -488,7 +488,7 @@ end
 
             push!(body_exprs.args, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
             push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[archetype_idx]))
-            push!(body_exprs.args, :(fill!(view($col_sym._data, Int(indices[1]):Int(indices[2])), $val_expr)))
+            push!(body_exprs.args, :(fill_range!($col_sym._data, Int(indices[1]):Int(indices[2]), $val_expr)))
         end
         push!(exprs, :(
             if !isempty(values)
