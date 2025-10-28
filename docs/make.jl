@@ -26,7 +26,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/mlange-42/Ark.jl.git",
+    repo="git@github.com/mlange-42/Ark.jl.git",
     versions=[
         "stable" => "v^",
         "dev" => "main",
