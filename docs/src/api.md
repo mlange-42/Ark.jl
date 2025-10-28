@@ -1,5 +1,7 @@
 # API
 
+Ark's public API.
+
 ```@contents
 Pages = ["api.md"]
 Depth = 2:2
@@ -7,7 +9,8 @@ Depth = 2:2
 
 ## World
 
-The World is...
+The World is the central data storage for [Entities](@ref Entities), [Components](@ref Components)
+and [Resources](@ref Resources).
 
 ```@docs
 World
@@ -16,6 +19,9 @@ is_locked
 
 ## Map
 
+Maps allow access and manipulation capabilities for entities.
+Note that the same capabilities are also accessible through the [World](@ref World),
+but the maps API may be more ergonomic in some cases.
 See also the [Components](@ref Components)-related API.
 
 ```@docs
@@ -26,6 +32,10 @@ setindex!(::Map, ::Tuple, ::Entity)
 ```
 
 ## Entities
+
+Entities are the "game objects" or "model entities".
+An entity if just an ID with a generation, but [Components](@ref Components)
+can be attached to an entity.
 
 ```@docs
 Entity
@@ -39,6 +49,8 @@ is_zero
 ```
 
 ## Components
+
+Components contain the data associated with [Entities](@ref Entities)
 
 ```@docs
 get_components
@@ -55,6 +67,9 @@ exchange_components!
 
 ## Queries
 
+Queries are used to filter and process [Entities](@ref Entities) with a
+certain set of [Components](@ref Components).
+
 ```@docs
 Query
 @Query
@@ -63,6 +78,9 @@ Entities
 ```
 
 ## Resources
+
+Resources are singleton-like data structures that appear only once in a [World](@ref World)
+and are not associated to an [Entities](@ref Entity).
 
 ```@docs
 get_resource

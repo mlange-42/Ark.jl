@@ -20,7 +20,7 @@ makedocs(;
         "Manual" => [
             "TODO..." => "./manual/index.md",
         ],
-        "API" => "./api.md"
+        "Public API" => "./api.md"
     ],
     warnonly=[:missing_docs],
 )
