@@ -12,7 +12,9 @@ function setup_map_posvel(n_entities::Int)
 
     for e in entities
         pos, vel = map2[e]
-        map1[e] = (Position(pos.x + vel.dx, pos.y + vel.dy),)
+        p = pos[]
+        v = vel[]
+        pos[] = Position(p.x + v.dx, p.y + v.dy)
     end
 
     return (entities, map1, map2)
@@ -22,7 +24,9 @@ function benchmark_map_posvel(args)
     entities, map1, map2 = args
     for e in entities
         pos, vel = map2[e]
-        map1[e] = (Position(pos.x + vel.dx, pos.y + vel.dy),)
+        p = pos[]
+        v = vel[]
+        pos[] = Position(p.x + v.dx, p.y + v.dy)
     end
 end
 
