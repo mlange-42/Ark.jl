@@ -54,6 +54,7 @@ for (entities, pos_column, vel_column) in @Query(world, (Position, Velocity))
 end
 
 # output
+
 ```
 """
 macro Query(args...)
@@ -134,6 +135,7 @@ for (entities, pos_column, vel_column) in Query(world, Val.((Position, Velocity)
 end
 
 # output
+
 ```
 """
 function Query(

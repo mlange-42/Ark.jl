@@ -36,11 +36,12 @@ Creates a new, empty [`World`](@ref) for the given component types.
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 world = World(Position, Velocity)
-is_alive(world, entity)
+
+entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
 
 # output
 
-true
+Entity(0x00000002, 0x00000000)
 ```
 """
 World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
