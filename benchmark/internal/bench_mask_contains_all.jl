@@ -27,6 +27,7 @@ function setup_mask_contains_all_small(n::Int)
     mask_a = _Mask(1)
     masks = [
         _Mask(1),
+        _Mask(2),
         _Mask(1),
         _Mask(2),
     ]

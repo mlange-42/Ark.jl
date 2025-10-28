@@ -29,6 +29,7 @@ function setup_mask_contains_any_small(n::Int)
         _Mask(2),
         _Mask(1),
         _Mask(2),
+        _Mask(1),
     ]
 
     return mask_a, masks
