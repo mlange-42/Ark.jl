@@ -5,13 +5,16 @@ DocMeta.setdocmeta!(Ark, :DocTestSetup, :(using Ark); recursive=true)
 
 makedocs(;
     modules=[Ark],
-    authors="Martin Lange <martin_lange_@gmx.net>",
     sitename="Ark.jl",
+    authors="Martin Lange <martin_lange_@gmx.net>, Adriano Meligrana <adriano.meligrana@centai.eu>",
     format=Documenter.HTML(;
+        canonical="https://mlange-42.github.io/Ark.jl",
         edit_link="main",
-        assets=String[],
+        prettyurls=false,
     ),
     pages=[
-        "Home" => "index.md",
+        "Home" => "./index.md",
+        "API" => "./api.md"
     ],
+    warnonly=[:missing_docs],
 )
