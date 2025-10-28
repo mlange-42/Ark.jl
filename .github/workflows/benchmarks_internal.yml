@@ -1,0 +1,134 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  benchmark:
+    name: Benchmarks (internal)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repetition: [1, 2, 3]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v2
+      with:
+        version: '1.12.1'
+    - name: Cache Julia packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.julia/artifacts
+          ~/.julia/packages
+          ~/.julia/compiled
+        key: ${{ runner.os }}-julia-current-${{ hashFiles('benchmark/Manifest.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-julia-current-
+          ${{ runner.os }}-julia-
+    - name: Install dependencies
+      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+    - name: Run benchmarks for current
+      run: julia --project=benchmark benchmark/run_internal.jl
+    - name: Rename file
+      run: mv bench.csv bench_current_${{ matrix.repetition }}.csv
+    - name: Archive results
+      uses: actions/upload-artifact@v5
+      with:
+        name: bench_current_${{ matrix.repetition }}
+        path: bench_current_${{ matrix.repetition }}.csv
+
+    - name: Checkout main branch
+      if: github.event_name == 'pull_request'
+      uses: actions/checkout@v3
+      with:
+        ref: main
+    - name: Set up Julia
+      if: github.event_name == 'pull_request'
+      uses: julia-actions/setup-julia@v2
+      with:
+        version: '1.12.1'
+    - name: Cache Julia packages
+      if: github.event_name == 'pull_request'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.julia/artifacts
+          ~/.julia/packages
+          ~/.julia/compiled
+        key: ${{ runner.os }}-julia-main-${{ hashFiles('benchmark/Manifest.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-julia-main-
+          ${{ runner.os }}-julia-
+    - name: Install dependencies
+      if: github.event_name == 'pull_request'
+      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+    - name: Run benchmarks for main
+      if: github.event_name == 'pull_request'
+      run: julia --project=benchmark benchmark/run_internal.jl
+    - name: Rename file
+      if: github.event_name == 'pull_request'
+      run: mv bench.csv bench_main_${{ matrix.repetition }}.csv
+    - name: Archive results
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v5
+      with:
+        name: bench_main_${{ matrix.repetition }}
+        path: bench_main_${{ matrix.repetition }}.csv
+
+  compare:
+    name: Compare benchmarks (internal)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs:
+    - benchmark
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v6
+      with:
+        name: bench_main_1
+    - uses: actions/download-artifact@v6
+      with:
+        name: bench_main_2
+    - uses: actions/download-artifact@v6
+      with:
+        name: bench_main_3
+    - uses: actions/download-artifact@v6
+      with:
+        name: bench_current_1
+    - uses: actions/download-artifact@v6
+      with:
+        name: bench_current_2
+    - uses: actions/download-artifact@v6
+      with:
+        name: bench_current_3
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v2
+      with:
+        version: '1.12.1'
+    - name: Run comparison
+      run: julia benchmark/compare_benchmarks.jl | tee compare.md
+    - name: Archive results CSV
+      uses: actions/upload-artifact@v5
+      with:
+        name: compare
+        path: compare.csv
+    - name: Archive results MD
+      uses: actions/upload-artifact@v5
+      with:
+        name: compare_md
+        path: compare.md
+    - name: Archive results HTML
+      uses: actions/upload-artifact@v5
+      with:
+        name: compare_html
+        path: compare.html
