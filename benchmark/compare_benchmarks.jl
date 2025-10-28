@@ -1,10 +1,10 @@
 
 include("util.jl")
 
-data_current = read_bench_table("bench_current.csv")
-data_main = read_bench_table("bench_main.csv")
+data_current = [read_bench_table("bench_current_$(i).csv") for i in 1:3]
+data_main = [read_bench_table("bench_main_$(i).csv") for i in 1:3]
 
-result = compare_tables(data_main, data_current)
+result = compare_multi_tables(data_main, data_current)
 
 csv = table_to_csv(result,)
 write("compare.csv", csv)
