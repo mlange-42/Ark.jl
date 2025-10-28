@@ -80,4 +80,4 @@ end
 
 ## License
 
-Ark.jl and all its sources and documentation are distributed under the [MIT license](./LICENSE-MIT) and the [Apache 2.0 license](./LICENSE-APACHE), as your options.
+Ark.jl and all its sources and documentation are distributed under the [MIT license](https://github.com/mlange-42/Ark.jl/blob/main/LICENSE-MIT) and the [Apache 2.0 license](https://github.com/mlange-42/Ark.jl/blob/main/LICENSE-APACHE), as your options.
