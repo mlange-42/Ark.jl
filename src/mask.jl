@@ -41,10 +41,10 @@ function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
 end
 
 function _contains_any(mask1::_Mask, mask2::_Mask)::Bool
-    return (mask1.bits[1] & mask2.bits[1]) != 0 ||
-           (mask1.bits[2] & mask2.bits[2]) != 0 ||
-           (mask1.bits[3] & mask2.bits[3]) != 0 ||
-           (mask1.bits[4] & mask2.bits[4]) != 0
+    return !(((mask1.bits[1] & mask2.bits[1]) == 0) *
+             ((mask1.bits[2] & mask2.bits[2]) == 0) *
+             ((mask1.bits[3] & mask2.bits[3]) == 0) *
+             ((mask1.bits[4] & mask2.bits[4]) == 0))
 end
 
 function _and(a::_Mask, b::_Mask)::_Mask
