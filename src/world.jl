@@ -286,8 +286,8 @@ end
         val_sym = Symbol("v", i)
 
         push!(exprs, :($(stor_sym) = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :($(col_sym) = @inbounds $(stor_sym).data[idx.archetype]))
-        push!(exprs, :($(val_sym) = @inbounds $(col_sym)._data[idx.row]))
+        push!(exprs, :(@inbounds $(col_sym) = $(stor_sym).data[idx.archetype]))
+        push!(exprs, :(@inbounds $(val_sym) = view($(col_sym)._data, idx.row:idx.row)))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]

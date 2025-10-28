@@ -9,13 +9,13 @@
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
     pos, vel = m[entity]
-    @test pos == Position(1, 2)
-    @test vel == Velocity(3, 4)
+    @test pos[] == Position(1, 2)
+    @test vel[] == Velocity(3, 4)
 
     m[entity] = (Position(5, 6), Velocity(7, 8))
     pos, vel = m[entity]
-    @test pos == Position(5, 6)
-    @test vel == Velocity(7, 8)
+    @test pos[] == Position(5, 6)
+    @test vel[] == Velocity(7, 8)
 
     empty_entity = new_entity!(world, ())
     # TODO: do we want that, or do we want it to return `nothing`?
@@ -59,10 +59,10 @@ end
     @test has_components(m2, e1) == true
 
     a, h = m2[e1]
-    @test a == Altitude(1)
-    @test h == Health(2)
+    @test a[] == Altitude(1)
+    @test h[] == Health(2)
 
     a, h = m2[e2]
-    @test a == Altitude(3)
-    @test h == Health(4)
+    @test a[] == Altitude(3)
+    @test h[] == Health(4)
 end

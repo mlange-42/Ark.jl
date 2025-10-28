@@ -167,8 +167,8 @@ end
     e2 = new_entity!(world, ())
 
     pos, vel = @get_components(world, e1, (Position, Velocity))
-    @test pos == Position(1, 2)
-    @test vel == Velocity(3, 4)
+    @test pos[] == Position(1, 2)
+    @test vel[] == Velocity(3, 4)
 
     # TODO: do we want that, or do we want it to return `nothing`?
     err = VERSION < v"1.12.0" ? ErrorException : FieldError
@@ -182,8 +182,8 @@ end
 
     set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
     pos, vel = get_components(world, e1, Val.((Position, Velocity)))
-    @test pos == Position(5, 6)
-    @test vel == Velocity(7, 8)
+    @test pos[] == Position(5, 6)
+    @test vel[] == Velocity(7, 8)
 end
 
 @testset "new_entity! Tests" begin
@@ -198,8 +198,8 @@ end
     @test is_alive(world, entity) == true
 
     pos, vel = get_components(world, entity, Val.((Position, Velocity)))
-    @test pos == Position(1, 2)
-    @test vel == Velocity(3, 4)
+    @test pos[] == Position(1, 2)
+    @test vel[] == Velocity(3, 4)
 end
 
 
@@ -308,18 +308,18 @@ end
     add_components!(world, e2, (Altitude(3), Health(4)))
 
     pos, vel, a, h = get_components(world, e1, Val.((Position, Velocity, Altitude, Health)))
-    @test pos == Position(1, 2)
-    @test vel == Velocity(3, 4)
-    @test a == Altitude(1)
-    @test h == Health(2)
+    @test pos[] == Position(1, 2)
+    @test vel[] == Velocity(3, 4)
+    @test a[] == Altitude(1)
+    @test h[] == Health(2)
 
     @test @has_components(world, e1, (Position, Velocity)) == true
 
     pos, vel, a, h = get_components(world, e2, Val.((Position, Velocity, Altitude, Health)))
-    @test pos == Position(5, 6)
-    @test vel == Velocity(7, 8)
-    @test a == Altitude(3)
-    @test h == Health(4)
+    @test pos[] == Position(5, 6)
+    @test vel[] == Velocity(7, 8)
+    @test a[] == Altitude(3)
+    @test h[] == Health(4)
 
     @remove_components!(world, e1, (Position, Velocity))
     @test has_components(world, e1, Val.((Position, Velocity))) == false
@@ -337,12 +337,12 @@ end
 
     @exchange_components!(world, e1, add = (Altitude(1),), remove = (Position,))
     alt, = @get_components(world, e1, (Altitude,))
-    @test alt == Altitude(1)
+    @test alt[] == Altitude(1)
     @test @has_components(world, e1, (Position,)) == false
 
     @exchange_components!(world, e1, add = (Health(5),))
     h, = @get_components(world, e1, (Health,))
-    @test h == Health(5)
+    @test h[] == Health(5)
 
     @exchange_components!(world, e1, remove = (Velocity,))
     @test @has_components(world, e1, (Velocity,)) == false
@@ -378,10 +378,10 @@ end
     @test is_alive(world, e1) == true
 
     pos, = get_components(world, e1, Val.((Position,)))
-    @test pos == Position(1, 1)
+    @test pos[] == Position(1, 1)
 
     pos, = get_components(world, e3, Val.((Position,)))
-    @test pos == Position(3, 3)
+    @test pos[] == Position(3, 3)
 
     @test_throws ErrorException remove_entity!(world, zero_entity)
 end
