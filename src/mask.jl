@@ -34,9 +34,9 @@ function _Mask(bits::Integer...)
 end
 
 function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
-    return (mask1.bits[1] & mask2.bits[1]) == mask2.bits[1] &&
-           (mask1.bits[2] & mask2.bits[2]) == mask2.bits[2] &&
-           (mask1.bits[3] & mask2.bits[3]) == mask2.bits[3] &&
+    return (mask1.bits[1] & mask2.bits[1]) == mask2.bits[1] *
+           (mask1.bits[2] & mask2.bits[2]) == mask2.bits[2] *
+           (mask1.bits[3] & mask2.bits[3]) == mask2.bits[3] *
            (mask1.bits[4] & mask2.bits[4]) == mask2.bits[4]
 end
 
@@ -108,9 +108,9 @@ function _set_mask!(mask::_MutableMask, other::_Mask)
 end
 
 function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
-    return mask1.bits[1] == mask2.bits[1] &&
-           mask1.bits[2] == mask2.bits[2] &&
-           mask1.bits[3] == mask2.bits[3] &&
+    return mask1.bits[1] == mask2.bits[1] *
+           mask1.bits[2] == mask2.bits[2] *
+           mask1.bits[3] == mask2.bits[3] *
            mask1.bits[4] == mask2.bits[4]
 end
 
