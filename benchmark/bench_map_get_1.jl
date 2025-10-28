@@ -12,7 +12,7 @@ function setup_map_get_1(n_entities::Int)
     sum = 0.0
     for e in entities
         pos, = map[e]
-        sum += pos.x
+        sum += pos[].x
     end
     sum
 
@@ -24,7 +24,7 @@ function benchmark_map_get_1(args)
     sum = 0.0
     for e in entities
         pos, = map[e]
-        sum += pos.x
+        sum += pos[].x
     end
     return sum
 end

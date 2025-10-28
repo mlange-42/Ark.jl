@@ -12,7 +12,7 @@ function setup_map_get_5(n_entities::Int)
     sum = 0.0
     for e in entities
         pos, vel, a, b, c = map[e]
-        sum += pos.x + vel.dx + a.x + b.x + c.x
+        sum += pos[].x + vel[].dx + a[].x + b[].x + c[].x
     end
     sum
 
@@ -24,7 +24,7 @@ function benchmark_map_get_5(args)
     sum = 0.0
     for e in entities
         pos, vel, a, b, c = map[e]
-        sum += pos.x + vel.dx + a.x + b.x + c.x
+        sum += pos[].x + vel[].dx + a[].x + b[].x + c[].x
     end
     return sum
 end
