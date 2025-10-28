@@ -157,7 +157,7 @@ end
         push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
         push!(exprs, :(@inbounds $val = $col._data[index.row]))
     end
-    vals = [Symbol("v", i) for i in 1:N]
+    vals = [:($(Symbol("v", i))) for i in 1:N]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
     return quote
         @inbounds begin
