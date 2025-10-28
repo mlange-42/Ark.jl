@@ -18,8 +18,7 @@ makedocs(;
     pages=[
         "Home" => "./index.md",
         "Manual" => [
-            "Overview" => "./manual/index.md",
-            "Queries" => "./manual/queries.md",
+            "TODO..." => "./manual/index.md",
         ],
         "API" => "./api.md"
     ],

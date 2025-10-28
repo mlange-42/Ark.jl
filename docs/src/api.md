@@ -5,13 +5,9 @@ Pages = ["api.md"]
 Depth = 2:2
 ```
 
-**Index**
-
-```@index
-Pages = ["api.md"]
-```
-
 ## World
+
+The World is...
 
 ```@docs
 World
@@ -20,9 +16,13 @@ is_locked
 
 ## Map
 
+See also the [Components](@ref Components)-related API.
+
 ```@docs
 Map
 @Map
+getindex(::Map, ::Entity)
+setindex!(::Map, ::Tuple, ::Entity)
 ```
 
 ## Entities
@@ -49,6 +49,8 @@ set_components!
 add_components!
 remove_components!
 @remove_components!
+exchange_components!
+@exchange_components!
 ```
 
 ## Queries
@@ -56,13 +58,28 @@ remove_components!
 ```@docs
 Query
 @Query
-close!
+close!(q::Query{W,CS}) where {W<:World,CS<:Tuple}
+Entities
 ```
 
 ## Resources
+
+```@docs
+get_resource
+has_resource
+add_resource!
+remove_resource!
+```
 
 ## Batch
 
 ```@docs
 Batch
+close!(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
+```
+
+## Index
+
+```@index
+Pages = ["api.md"]
 ```

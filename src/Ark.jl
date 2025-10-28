@@ -1,8 +1,5 @@
 module Ark
 
-# Useful to retrieve the README for the Ark docs
-@doc read(joinpath(dirname(@__DIR__), "README.md"), String) Ark
-
 using StaticArrays
 
 include("util.jl")
