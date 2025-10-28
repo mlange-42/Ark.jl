@@ -14,6 +14,9 @@ jobs:
   benchmark:
     name: Benchmarks
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repetition: [1, 2, 3]
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -37,12 +40,12 @@ jobs:
     - name: Run benchmarks for current
       run: julia --project=benchmark benchmark/run_benchmarks.jl
     - name: Rename file
-      run: mv bench.csv bench_current.csv
+      run: mv bench.csv bench_current_${{ matrix.repetition }}.csv
     - name: Archive results
       uses: actions/upload-artifact@v5
       with:
-        name: bench_current
-        path: bench_current.csv
+        name: bench_current_${{ matrix.repetition }}
+        path: bench_current_${{ matrix.repetition }}.csv
 
     - name: Checkout main branch
       if: github.event_name == 'pull_request'
@@ -74,13 +77,13 @@ jobs:
       run: julia --project=benchmark benchmark/run_benchmarks.jl
     - name: Rename file
       if: github.event_name == 'pull_request'
-      run: mv bench.csv bench_main.csv
+      run: mv bench.csv bench_main_${{ matrix.repetition }}.csv
     - name: Archive results
       if: github.event_name == 'pull_request'
       uses: actions/upload-artifact@v5
       with:
-        name: bench_main
-        path: bench_main.csv
+        name: bench_main_${{ matrix.repetition }}
+        path: bench_main_${{ matrix.repetition }}.csv
 
   compare:
     name: Compare benchmarks
