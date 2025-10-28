@@ -13,9 +13,14 @@ makedocs(;
         canonical="https://mlange-42.github.io/Ark.jl",
         edit_link="main",
         prettyurls=false,
+        sidebar_sitename=false,
     ),
     pages=[
         "Home" => "./index.md",
+        "Manual" => [
+            "Overview" => "./manual/index.md",
+            "Queries" => "./manual/queries.md",
+        ],
         "API" => "./api.md"
     ],
     warnonly=[:missing_docs],

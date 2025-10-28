@@ -1,43 +1,68 @@
 # API
 
-## Types
+```@contents
+Pages = ["api.md"]
+Depth = 2:2
+```
+
+**Index**
+
+```@index
+Pages = ["api.md"]
+```
+
+## World
 
 ```@docs
 World
-Query
-@Query
-Map
-@Map
-Entities
-Entity
-Column
-Batch
+is_locked
 ```
 
-## Methods
+## Map
 
 ```@docs
-get_components
-@get_components
-set_components!
-has_components
-@has_components
-add_components!
-remove_components!
-@remove_components!
-exchange_components!
-@exchange_components!
+Map
+@Map
+```
+
+## Entities
+
+```@docs
+Entity
+zero_entity
 new_entity!
 new_entities!
 @new_entities!
 remove_entity!
-zero_entity
-get_resource
-has_resource
-add_resource!
-remove_resource!
 is_alive
-is_locked
 is_zero
+```
+
+## Components
+
+```@docs
+get_components
+@get_components
+has_components
+@has_components
+set_components!
+add_components!
+remove_components!
+@remove_components!
+```
+
+## Queries
+
+```@docs
+Query
+@Query
 close!
+```
+
+## Resources
+
+## Batch
+
+```@docs
+Batch
 ```
