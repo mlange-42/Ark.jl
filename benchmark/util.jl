@@ -41,11 +41,11 @@ function table_to_csv(data::Vector{CompareRow})::String
 end
 
 function table_to_markdown(data::Vector{CompareRow})::String
-    header = "| Name                           |       N | Time main [ns] | Time curr [ns] | Factor |\n" *
-             "|:-------------------------------|--------:|---------------:|---------------:|-------:|\n"
+    header = "| Name                                |       N | Time main [ns] | Time curr [ns] | Factor |\n" *
+             "|:------------------------------------|--------:|---------------:|---------------:|-------:|\n"
 
     body = join([
-            @sprintf("| %-30s | %7d | %14.2f | %14.2f | %6.2f |",
+            @sprintf("| %-35s | %7d | %14.2f | %14.2f | %6.2f |",
                 r.name, r.n, r.time_ns_a, r.time_ns_b, r.factor)
             for r in data
         ], "\n")
@@ -139,7 +139,7 @@ function compare_multi_tables(a::Vector{Vector{Row}}, b::Vector{Vector{Row}})::V
     count = length(compare_multi)
     data = Vector{CompareRow}()
     for r in eachindex(compare_multi[1])
-        out::CompareRow = CompareRow()
+        out::CompareRow = CompareRow("", 0, 0, 0, 0)
         for t in compare_multi
             row = t[r]
             out.name = row.name
