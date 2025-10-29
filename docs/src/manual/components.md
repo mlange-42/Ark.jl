@@ -29,12 +29,10 @@ DocTestSetup = quote
         x::Float64
         y::Float64
     end
-
     struct Velocity
         dx::Float64
         dy::Float64
     end
-
     struct Health
         value::Float64
     end
