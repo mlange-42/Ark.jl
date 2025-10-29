@@ -24,7 +24,7 @@ struct Velocity
 end
 
 world = World(Position, Velocity)
-; # Suppress output
+; # Suppress print output
 
 # output
 

@@ -213,6 +213,7 @@ function remove_entity!(world::World, entity::Entity)
     end
 
     _recycle(world._entity_pool, entity)
+    return nothing
 end
 
 """
