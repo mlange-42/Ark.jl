@@ -4,9 +4,9 @@
 
 A component mapper for N components.
 """
-struct Map{W<:World}
+struct Map{W<:World,CT<:Tuple}
     _world::W
-    _types::Tuple
+    _types::CT
     _dummy::Bool # TODO: Get rid of this without method overwriting error!
 end
 
@@ -56,7 +56,7 @@ Map(world::W, comp_types::Tuple) where {W<:World} = _Map_from_types(world, comp_
 
     return quote
         $ids_tuple
-        Map{$W}(world, comp_types, false)
+        Map{$W,$CT}(world, comp_types, false)
     end
 end
 
@@ -65,7 +65,7 @@ end
 
 Get the Map's components for an [`Entity`](@ref).
 """
-@inline function Base.getindex(map::Map{W}, entity::Entity) where {W<:World}
+@inline function Base.getindex(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
     return @inline get_components(map._world, entity, map._types)
 end
 
@@ -75,7 +75,7 @@ end
 Sets the values of the Map's components for an [`Entity`](@ref).
 The entity must already have all these components.
 """
-@inline function Base.setindex!(map::Map{W}, values::Tuple, entity::Entity) where {W<:World}
+@inline function Base.setindex!(map::Map{W,CT}, values::Tuple, entity::Entity) where {W<:World,CT<:Tuple}
     @inline set_components!(map._world, entity, values)
 end
 
@@ -84,7 +84,7 @@ end
 
 Returns whether an [`Entity`](@ref) has all the Map's components.
 """
-@inline function has_components(map::Map{W}, entity::Entity) where {W<:World}
+@inline function has_components(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
     return @inline has_components(map._world, entity, map._types)
 end
 
@@ -93,7 +93,7 @@ end
 
 Adds the values of the Map's components to an [`Entity`](@ref).
 """
-function add_components!(map::Map{W}, entity::Entity, values::Tuple) where {W<:World}
+function add_components!(map::Map{W,CT}, entity::Entity, values::Tuple) where {W<:World,CT<:Tuple}
     @inline add_components!(map._world, entity, values)
 end
 
@@ -102,7 +102,7 @@ end
 
 Removes the Map's components from an [`Entity`](@ref).
 """
-function remove_components!(map::Map{W}, entity::Entity) where {W<:World}
+function remove_components!(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
     @inline remove_components!(map._world, entity, map._types)
 end
 
@@ -111,6 +111,6 @@ end
 
 Creates a new [`Entity`](@ref) with `length(comps)` components.
 """
-function new_entity!(map::Map{W}, comps::Tuple) where {W<:World}
+function new_entity!(map::Map{W,CT}, comps::Tuple) where {W<:World,CT<:Tuple}
     return new_entity!(map._world, comps)
 end
