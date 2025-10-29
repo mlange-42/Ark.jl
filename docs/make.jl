@@ -19,6 +19,11 @@ makedocs(;
         "Home" => "index.md",
         "Manual" => [
             "manual/quickstart.md",
+            "manual/world.md",
+            "manual/entities.md",
+            "manual/components.md",
+            "manual/queries.md",
+            "manual/resources.md",
         ],
         "Public API" => "api.md"
     ],
