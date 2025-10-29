@@ -1,12 +1,10 @@
 
 function setup_world_posvel(n_entities::Int)
     world = World(Position, Velocity)
-    map1 = Map(world, Val.((Position,)))
-    map2 = Map(world, Val.((Position, Velocity)))
 
     entities = Vector{Entity}()
     for i in 1:n_entities
-        e = new_entity!(map2, (Position(i, i * 2), Velocity(1, 1)))
+        e = new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
         push!(entities, e)
     end
 

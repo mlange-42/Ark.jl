@@ -17,20 +17,6 @@ World
 is_locked
 ```
 
-## Map
-
-Maps allow access and manipulation capabilities for entities.
-Note that the same capabilities are also accessible through the [World](@ref World),
-but the maps API may be more ergonomic in some cases.
-See also the [Components](@ref Components)-related API.
-
-```@docs
-Map
-@Map
-getindex(::Map, ::Entity)
-setindex!(::Map, ::Tuple, ::Entity)
-```
-
 ## Entities
 
 Entities are the "game objects" or "model entities".
