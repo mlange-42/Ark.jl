@@ -65,7 +65,7 @@ end
 
 Get the Map's components for an [`Entity`](@ref).
 """
-@inline function Base.getindex(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
+@inline function Base.getindex(map::Map{<:World}, entity::Entity)
     world = map._world
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
