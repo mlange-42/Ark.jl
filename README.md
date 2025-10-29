@@ -42,6 +42,8 @@ Pkg.add(url="https://github.com/mlange-42/ark.jl")
 Here is the classical Position/Velocity example that every ECS shows in the docs.
 
 ```julia
+using Ark
+
 """Position component"""
 struct Position
     x::Float64

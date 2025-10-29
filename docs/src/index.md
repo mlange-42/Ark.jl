@@ -30,6 +30,27 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 - ☑ No systems. Just queries. Use your own structure.
 - ☑ Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
 
+## Manual Outline
+
+```@contents
+Pages = [
+    "manual/quickstart.md",
+]
+```
+
+## Public API Outline
+
+```@contents
+Pages = ["api.md"]
+Depth = 2
+```
+
+## Index
+
+```@index
+Pages = ["api.md"]
+```
+
 ## License
 
 Ark.jl and all its sources and documentation are distributed under the [MIT license](https://github.com/mlange-42/Ark.jl/blob/main/LICENSE-MIT) and the [Apache 2.0 license](https://github.com/mlange-42/Ark.jl/blob/main/LICENSE-APACHE), as your options.
