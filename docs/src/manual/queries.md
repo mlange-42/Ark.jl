@@ -65,8 +65,112 @@ and makes the iteration faster as it allows the compiler to skip bounds checks.
 
 ### `with`
 
+Queries provide an optional `with` argument that filters for additional components
+that entities must have, but that are not used by the query.
+
+```jldoctest; output = false
+for (entities, positions, velocities) in @Query(world,
+            (Position, Velocity),
+            with=(Health,)
+        )
+    @inbounds for i in eachindex(entities)
+        # ...
+    end
+end
+
+# output
+
+```
+
 ### `without`
+
+The optional `without` argument allows to exclude entities that have certain components:
+
+```jldoctest; output = false
+for (entities, positions, velocities) in @Query(world,
+            (Position, Velocity),
+            without=(Health,)
+        )
+    @inbounds for i in eachindex(entities)
+        # ...
+    end
+end
+
+# output
+
+```
 
 ### `optional`
 
+The optional `optional` argument makes components optional. 😉
+
+Entities are included irrespective of presence of these components on them.
+Note that, in contrast to the other arguments, this one is not related to additional components,
+but makes components from the query's components set optional.
+
+Optional components are still included in the iterator's columns tuple,
+but they are `nothing` if the current [archetype](@ref Architecture) does not have them.
+
+```jldoctest; output = false
+for (entities, positions, velocities) in @Query(world,
+            (Position, Velocity),
+            without=(Velocity,)
+        )
+    has_velocity = velocities !== nothing
+    @inbounds for i in eachindex(entities)
+        # ...
+    end
+end
+
+# output
+
+```
+
+Note that it is possible to branch already outside of the inner loop,
+as all entities in an archetype either have a component or don't.
+
 ## World lock
+
+During query iteration, the World is locked for modifications like
+entity creation and removal and component addition and removal.
+This is necessary to prevent changes to the inner storage structure of the World
+that would result in undefined behavior of the query.
+
+If the necessity for these forbidden iteration arises,
+the respective entities must be collected into a `Vector` to apply the
+operations after query iteration has finished.
+
+```jldoctest; output = false
+# vector for entities to be removed from te world
+to_remove = Entity[]
+
+for (entities, positions) in @Query(world, (Position,))
+    @inbounds for i in eachindex(entities)
+        pos = positions[i]
+
+        # collect entities for removal
+        if pos.y < 0
+            push!(to_remove, entities[i])
+        end
+    end
+end
+
+# actual removal
+for entity in to_remove
+    remove_entity!(world, entity)
+end
+
+# clear the vector for re-use
+resize!(to_remove, 0)
+
+# output
+
+Entity[]
+```
+
+For the best performance, such a Vector should be stored persistently and re-used
+to avoid repeated memory allocations.
+
+The world is automatically unlocked when query iteration finishes.
+When breaking out of a query loop, however, it must be unlocked by calling
+[close!](@ref close!(::Query)) on the query.
