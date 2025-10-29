@@ -38,7 +38,7 @@ jobs:
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks for current
-      run: julia --project=benchmark benchmark/run_benchmarks.jl
+      run: julia -O3 --project=benchmark benchmark/run_benchmarks.jl
     - name: Rename file
       run: mv bench.csv bench_current_${{ matrix.repetition }}.csv
     - name: Archive results
