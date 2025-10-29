@@ -728,7 +728,7 @@ function exchange_components!(world::World, entity::Entity; add::Tuple=(), remov
     return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
 end
 
-@generated function _exchange_components!(world::World{CS,CT,N}, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {CS<:Tuple,CT<:Tuple,N,ATS<:Tuple,RTS<:Tuple}
+@generated function _exchange_components!(world::World, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
     rem_types = [x.parameters[1] for x in RTS.parameters]
     exprs = []
@@ -804,7 +804,7 @@ end
     end
 end
 
-@generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _push_nothing_to_all!(world::World{CS}) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -813,7 +813,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
+@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::UInt32) where {CS}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -826,7 +826,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _ensure_column_size_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -839,7 +839,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -852,7 +852,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _swap_remove_in_column_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n

@@ -139,12 +139,12 @@ end
 ```
 """
 function Query(
-    world::W,
+    world::World,
     comp_types::Tuple;
     with::Tuple=(),
     without::Tuple=(),
     optional::Tuple=()
-) where {W<:World}
+)
     return _Query_from_types(world, comp_types, with, without, optional)
 end
 
@@ -196,7 +196,7 @@ end
     end
 end
 
-@inline function Base.iterate(q::Query{W,CS}, state::Int) where {W<:World,CS<:Tuple}
+@inline function Base.iterate(q::Query, state::Int)
     q._cursor._index = state
 
     while q._cursor._index <= length(q._cursor._archetypes)
@@ -215,7 +215,7 @@ end
     return nothing
 end
 
-@inline function Base.iterate(q::Query{W,CS}) where {W<:World,CS<:Tuple}
+@inline function Base.iterate(q::Query)
     if length(q._ids) == 0
         q._cursor._archetypes = q._world._archetypes
     else
@@ -234,7 +234,7 @@ Closes the query and unlocks the world.
 
 Must be called if a query is not fully iterated.
 """
-function close!(q::Query{W,CS}) where {W<:World,CS<:Tuple}
+function close!(q::Query)
     q._cursor._index = 0
     _unlock(q._world._lock, q._cursor._lock)
 end
