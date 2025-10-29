@@ -66,13 +66,17 @@ end
 Get the Map's components for an [`Entity`](@ref).
 """
 @inline function Base.getindex(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
-    return @inline get_components(map._world, entity, map._types)
+    if !is_alive(map._world, entity)
+        error("can't get components of a dead entity")
+    end
+    return @inline _get_components(map._world, entity, map._types)
 end
 
 """
     Base.setindex!(map::Map, values::Tuple, entity::Entity)
 
-Sets the values of the Map's components for an [`Entity`](@ref).
+Sets the given components values for an [`Entity`](@ref).
+Types are inferred from the values and don't need to match the map's component types.
 The entity must already have all these components.
 """
 @inline function Base.setindex!(map::Map{W,CT}, values::Tuple, entity::Entity) where {W<:World,CT<:Tuple}
@@ -85,13 +89,18 @@ end
 Returns whether an [`Entity`](@ref) has all the Map's components.
 """
 @inline function has_components(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
-    return @inline has_components(map._world, entity, map._types)
+    if !is_alive(map._world, entity)
+        error("can't check components of a dead entity")
+    end
+    index = map._world._entities[entity._id]
+    return @inline _has_components(map._world, index, map._types)
 end
 
 """
     add_components!(map::Map, entity::Entity, value::Tuple)
 
-Adds the values of the Map's components to an [`Entity`](@ref).
+Adds the given components values to an [`Entity`](@ref).
+Types are inferred from the values and don't need to match the map's component types.
 """
 function add_components!(map::Map{W,CT}, entity::Entity, values::Tuple) where {W<:World,CT<:Tuple}
     @inline add_components!(map._world, entity, values)
@@ -103,14 +112,18 @@ end
 Removes the Map's components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
-    @inline remove_components!(map._world, entity, map._types)
+    if !is_alive(map._world, entity)
+        error("can't remove components from a dead entity")
+    end
+    return _exchange_components!(map._world, entity, Val{Tuple{}}(), (), map._types)
 end
 
 """
-    new_entity!(map::Map, comps::Tuple)::Entity
+    new_entity!(map::Map, values::Tuple)::Entity
 
-Creates a new [`Entity`](@ref) with `length(comps)` components.
+Creates a new [`Entity`](@ref) with the given components.
+Types are inferred from the values and don't need to match the map's component types.
 """
-function new_entity!(map::Map{W,CT}, comps::Tuple) where {W<:World,CT<:Tuple}
-    return new_entity!(map._world, comps)
+function new_entity!(map::Map{W,CT}, values::Tuple) where {W<:World,CT<:Tuple}
+    return new_entity!(map._world, values)
 end
