@@ -20,7 +20,7 @@
     empty_entity = new_entity!(world, ())
     # TODO: do we want that, or do we want it to return `nothing`?
     @test_throws MethodError m[empty_entity]
-    @test_throws MethodError m[empty_entity] = (Position(5, 6), Velocity(7, 8))
+    @test_throws ErrorException m[empty_entity] = (Position(5, 6), Velocity(7, 8))
 
     @test_throws ErrorException m[zero_entity]
     @test_throws ErrorException m[zero_entity] = (Position(5, 6), Velocity(7, 8))

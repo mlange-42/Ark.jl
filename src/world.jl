@@ -300,13 +300,6 @@ end
         push!(exprs, :($(stor_sym) = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($(col_sym) = @inbounds $(stor_sym).data[idx.archetype]))
         push!(exprs, :($(val_sym) = @inbounds $(col_sym)[idx.row]))
-        push!(exprs, :(
-            if $(col_sym) !== nothing
-                $(val_sym) = @inbounds ($(col_sym)::Vector{$(QuoteNode(T))})[idx.row]
-            else
-                error("entity has no $(string(C)) component")
-            end
-        ))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -820,7 +813,8 @@ end
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
-        push!(exprs, :(push!((world._storages).$i.data, nothing)))
+        T = CS.parameters[i].parameters[1]
+        push!(exprs, :(push!((world._storages).$i.data, _Missing{$(QuoteNode(T))}())))
     end
     return Expr(:block, exprs...)
 end
@@ -830,9 +824,7 @@ end
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(
-            if comp == $i
-                _assign_column!(world._storages.$i, index)
-            end
+            _assign_column!(world._storages.$i, index)
         ))
     end
     return Expr(:block, exprs...)
