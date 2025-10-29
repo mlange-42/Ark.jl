@@ -299,7 +299,7 @@ end
 
         push!(exprs, :($(stor_sym) = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($(col_sym) = @inbounds $(stor_sym).data[idx.archetype]))
-        push!(exprs, :($(val_sym) = @inbounds $(col_sym)[idx.row]))
+        push!(exprs, :($(val_sym) = _get_component($(col_sym), Int(idx.row))))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -406,7 +406,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :(@inbounds $col_sym = @inbounds $stor_sym.data[idx.archetype]))
-        push!(exprs, :(@inbounds $col_sym[idx.row] = $val_expr))
+        push!(exprs, :(_set_component!($col_sym, $val_expr, Int(idx.row))))
     end
 
     push!(exprs, Expr(:return, :nothing))

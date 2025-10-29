@@ -1,4 +1,33 @@
 
+abstract type StorageTrait end
+struct HasComponent <: StorageTrait end
+struct MissingComponent <: StorageTrait end
+
+storage_trait(::Vector{C}) where C = HasComponent()
+storage_trait(::_Missing{C}) where C = MissingComponent()
+
+_get_component(storage::Union{_Missing{C},Vector{C}}, i::Int) where C =
+    _get_component(storage, i, storage_trait(storage))
+
+function _get_component(storage::Vector{C}, i::Int, ::HasComponent) where C
+    @inbounds return storage[i]
+end
+
+function _get_component(storage::_Missing{C}, i::Int, ::MissingComponent) where C
+    error("entity has no $(string(C)) component")
+end
+
+_set_component!(storage::Union{_Missing{C},Vector{C}}, val, i::Int) where C =
+    _set_component!(storage, val, i, storage_trait(storage))
+
+function _set_component!(storage::Vector{C}, val, i::Int, ::HasComponent) where C
+    @inbounds storage[i] = val
+end
+
+function _set_component!(storage::_Missing{C}, val, i::Int, ::MissingComponent) where C
+    error("cannot set component $(string(C)) — it is missing")
+end
+
 struct _ComponentStorage{C}
     data::Vector{Union{_Missing{C},Vector{C}}}
 end
