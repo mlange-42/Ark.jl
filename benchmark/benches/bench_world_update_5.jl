@@ -1,11 +1,10 @@
 
 function setup_world_update_5(n_entities::Int)
     world = World(Position, Velocity, CompA, CompB, CompC)
-    map = Map(world, Val.((Position, Velocity, CompA, CompB, CompC)))
 
     entities = Vector{Entity}()
     for i in 1:n_entities
-        e = new_entity!(map, (Position(i, i * 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
+        e = new_entity!(world, (Position(i, i * 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
         push!(entities, e)
     end
 

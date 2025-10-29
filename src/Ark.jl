@@ -14,7 +14,6 @@ include("registry.jl")
 include("pool.jl")
 include("lock.jl")
 include("world.jl")
-include("map.jl")
 include("query.jl")
 include("batch.jl")
 
@@ -29,8 +28,6 @@ export get_resource, has_resource, add_resource!, remove_resource!
 
 export Entity
 export is_zero
-
-export Map, @Map
 
 export Query, @Query, Batch
 export close!
