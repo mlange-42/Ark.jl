@@ -14,6 +14,7 @@ and [Resources](@ref resources-api).
 
 ```@docs
 World
+World(::Type...; ::Bool)
 is_locked
 ```
 

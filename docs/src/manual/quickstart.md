@@ -17,7 +17,7 @@ Pkg.add(url="https://github.com/mlange-42/ark.jl")
 
 Here is the classical Position/Velocity example that every ECS shows in the docs.
 
-```jldoctest
+```jldoctest; output = false
 using Ark
 
 """Position component"""
