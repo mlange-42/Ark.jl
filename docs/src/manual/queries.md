@@ -49,6 +49,18 @@ end
 
 ```
 
+Note the nested loop!
+In the outer loop, the query iterates the [archetypes](@ref Architecture),
+and for each one returns a vector of entities and the columns for the queried components.
+In the inner loop, we iterate over the entities within the archetype and perform the actual logic.
+
+Also not the last line in the inner loop. Here, we assign a new `Position` value to the current entity.
+This is necessary as `Position` is immutable, which is the default and highly recommended.
+See section [Component types](@ref) for details.
+
+The `@inbounds` macro in front of the inner loop is optional, but it is safe to use here
+and makes the iteration faster as it allows the compiler to skip bounds checks.
+
 ## Advanced queries
 
 ### `with`

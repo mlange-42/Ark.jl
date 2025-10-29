@@ -24,6 +24,7 @@ makedocs(;
             "manual/components.md",
             "manual/queries.md",
             "manual/resources.md",
+            "manual/architecture.md",
         ],
         "Public API" => "api.md"
     ],
