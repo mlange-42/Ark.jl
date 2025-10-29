@@ -448,7 +448,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
-        push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
+        push!(exprs, :(_set_component!($col_sym, $val_expr, index)))
     end
 
     push!(exprs, Expr(:return, :entity))
