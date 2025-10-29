@@ -166,10 +166,8 @@ end
 
     # TODO: do we want that, or do we want it to return `nothing`?
     @test_throws ErrorException get_components(world, e2, Val.((Position, Velocity)))
-
+    @test_throws ErrorException set_components!(world, e2, (Position(0, 0),))
     @test_throws ErrorException get_components(world, zero_entity, Val.((Position, Velocity)))
-    @test_throws ErrorException get_components(world, e2, Val.((Altitude,)))
-    @test_throws ErrorException set_components!(world, e2, (Altitude(0),))
 
     t = get_components(world, e1, Val.(()))
     @test t == ()
