@@ -32,17 +32,13 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 ## Manual Outline
 
-```@contents
-Pages = [
-    "manual/quickstart.md",
-]
-```
+- [Quickstart](@ref)
 
-## Public API Outline
+## API Outline
 
 ```@contents
 Pages = ["api.md"]
-Depth = 2
+Depth = 2:2
 ```
 
 ## Index
