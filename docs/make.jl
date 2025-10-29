@@ -23,6 +23,7 @@ makedocs(;
             "manual/entities.md",
             "manual/components.md",
             "manual/queries.md",
+            "manual/systems.md",
             "manual/resources.md",
             "manual/architecture.md",
         ],

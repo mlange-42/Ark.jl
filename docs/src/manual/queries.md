@@ -3,8 +3,8 @@
 Queries allow to select [Entities](@ref) that have a certain set of [Components](@ref) and to manipulate them.
 
 Queries are the heart of every ECS and the main reason for its flexibility and performance.
-In Ark, queries are blazing fast and should be used to write game or model logic where possible.
-For cases where components of a articular entity are required, see section [Accessing components](@ref).
+In Ark, queries are blazing fast and should be used to write the game or model logic where possible.
+For cases where components of a particular entity are required, see section [Accessing components](@ref).
 
 ## Basic queries
 
