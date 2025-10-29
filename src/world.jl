@@ -242,9 +242,10 @@ end
 """
     @get_components(world::World, entity::Entity, comp_types::Tuple)
 
-Get the given components for an [`Entity`](@ref get_components(World, ::Entity, ::Tuple)).
+Get the given components for an [`Entity`](@ref).
+Components are returned in a tuple.
 
-Macro version of [`get_components`](@ref ) for more ergonomic component type tuples.
+Macro version of [`get_components`](@ref) for more ergonomic component type tuples.
 
 # Example
 ```julia
@@ -265,6 +266,7 @@ end
     get_components(world::World, entity::Entity, comp_types::Tuple)
 
 Get the given components for an [`Entity`](@ref).
+Components are returned in a tuple.
 
 For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provided.
 
@@ -309,7 +311,7 @@ end
 end
 
 """
-    @has_components(world::World, entity::Entity, comp_types::Tuple)
+    @has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
 
 Returns whether an [`Entity`](@ref) has all given components.
 
@@ -332,7 +334,7 @@ macro has_components(world_expr, entity_expr, comp_types_expr)
 end
 
 """
-    has_components(world::World, entity::Entity, comp_types::Tuple)
+    has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
 
 Returns whether an [`Entity`](@ref) has all given components.
 
