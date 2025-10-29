@@ -32,15 +32,16 @@ DocTestSetup = quote
     end
 
     world = World(Position, Velocity, Health)
+    new_entities!(world, 100, (Position(0,0), Velocity(0,0), Health(0)))
 end
 ```
 
 ```jldoctest; output = false
-for (entities, pos_column, vel_column) in @Query(world, (Position, Velocity))
-    for i in eachindex(entities)
-        pos = pos_column[i]
-        vel = vel_column[i]
-        pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+for (entities, positions, velocities) in @Query(world, (Position, Velocity))
+    @inbounds for i in eachindex(entities)
+        pos = positions[i]
+        vel = velocities[i]
+        positions[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
     end
 end
 
