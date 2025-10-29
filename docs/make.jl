@@ -16,11 +16,16 @@ makedocs(;
         sidebar_sitename=false,
     ),
     pages=[
-        "Home" => "./index.md",
+        "Home" => "index.md",
         "Manual" => [
-            "TODO..." => "./manual/index.md",
+            "manual/quickstart.md",
+            "manual/world.md",
+            "manual/entities.md",
+            "manual/components.md",
+            "manual/queries.md",
+            "manual/resources.md",
         ],
-        "Public API" => "./api.md"
+        "Public API" => "api.md"
     ],
     warnonly=[:missing_docs],
 )
