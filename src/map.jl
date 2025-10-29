@@ -147,15 +147,13 @@ function remove_components!(map::Map{W,CS}, entity::Entity) where {W<:World,CS<:
     _move_entity!(map._world, entity, archetype)
 end
 
-@generated function _get_mapped_components(map::Map{W,CS,N}, index::_EntityIndex) where {W<:World,CS<:Tuple,N}
+@generated function _get_mapped_components(map::Map{W,CS,N}, idx::_EntityIndex) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     for i in 1:N
         stor = Symbol("stor", i)
-        col = Symbol("col", i)
         val = Symbol("v", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
-        push!(exprs, :(@inbounds $val = $col[index.row]))
+        push!(exprs, :($val = _get_component($stor, idx.archetype, idx.row)))
     end
     vals = [Symbol("v", i) for i in 1:N]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
@@ -170,10 +168,8 @@ end
     exprs = Expr[]
     for i in 1:N
         stor = Symbol("stor", i)
-        col = Symbol("col", i)
         push!(exprs, :($stor = map._storage.$i))
-        push!(exprs, :(@inbounds $col = $stor.data[archetype]))
-        push!(exprs, :(@inbounds $col[row] = comps.$i))
+        push!(exprs, :(_set_component!($stor, archetype, row, comps.$i)))
     end
     return quote
         @inbounds begin
@@ -190,7 +186,7 @@ end
         push!(exprs, :($stor = map._storage.$i))
         push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
         push!(exprs, :(
-            if $col === nothing
+            if length($col) == 0
                 return false
             end
         ))

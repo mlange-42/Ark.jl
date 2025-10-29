@@ -294,12 +294,10 @@ end
     for i in 1:length(types)
         T = types[i]
         stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
         val_sym = Symbol("v", i)
 
         push!(exprs, :($(stor_sym) = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :($(col_sym) = @inbounds $(stor_sym).data[idx.archetype]))
-        push!(exprs, :($(val_sym) = @inbounds $(col_sym)[idx.row]))
+        push!(exprs, :($(val_sym) = _get_component($(stor_sym), idx.archetype, idx.row)))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -366,7 +364,7 @@ end
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
         push!(exprs, :(
-            if $col_sym === nothing
+            if length($col_sym) == 0
                 return false
             end
         ))
@@ -401,12 +399,10 @@ end
     for i in 1:length(types)
         T = types[i]
         stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
         val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
-        push!(exprs, :(@inbounds $col_sym = @inbounds $stor_sym.data[idx.archetype]))
-        push!(exprs, :(@inbounds $col_sym[idx.row] = $val_expr))
+        push!(exprs, :(_set_component!($stor_sym, idx.archetype, idx.row, $val_expr)))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -813,7 +809,7 @@ end
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
-        push!(exprs, :(push!((world._storages).$i.data, nothing)))
+        push!(exprs, :(_add_column!(world._storages.$i)))
     end
     return Expr(:block, exprs...)
 end

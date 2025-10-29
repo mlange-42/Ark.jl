@@ -1,10 +1,30 @@
 
 struct _ComponentStorage{C}
-    data::Vector{Union{Nothing,Vector{C}}}  # Outer Vec: one per archetype
+    data::Vector{Vector{C}}
 end
 
 function _ComponentStorage{C}(archetypes::Int) where C
-    _ComponentStorage{C}(Vector{Union{Nothing,Vector{C}}}(nothing, archetypes))
+    _ComponentStorage{C}(fill(Vector{C}(), archetypes))
+end
+
+function _get_component(s::_ComponentStorage{C}, arch::UInt32, row::UInt32) where C
+    @inbounds col = s.data[arch]
+    if length(col) == 0
+        error("entity has no $(string(C)) component")
+    end
+    return @inbounds col[row]
+end
+
+function _set_component!(s::_ComponentStorage{C}, arch::UInt32, row::UInt32, value::C) where C
+    @inbounds col = s.data[arch]
+    if length(col) == 0
+        error("entity has no $(string(C)) component")
+    end
+    return @inbounds col[row] = value
+end
+
+function _add_column!(storage::_ComponentStorage{C}) where {C}
+    push!(storage.data, Vector{C}())
 end
 
 function _assign_column!(storage::_ComponentStorage{C}, index::UInt32) where {C}
