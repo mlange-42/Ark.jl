@@ -66,10 +66,11 @@ end
 Get the Map's components for an [`Entity`](@ref).
 """
 @inline function Base.getindex(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
-    if !is_alive(map._world, entity)
+    world = map._world
+    if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
-    return @inline _get_components(map._world, entity, map._types)
+    return @inline _get_components(world, entity, map._types)
 end
 
 """
@@ -89,11 +90,12 @@ end
 Returns whether an [`Entity`](@ref) has all the Map's components.
 """
 @inline function has_components(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
-    if !is_alive(map._world, entity)
+    world = map._world
+    if !is_alive(world, entity)
         error("can't check components of a dead entity")
     end
-    index = map._world._entities[entity._id]
-    return @inline _has_components(map._world, index, map._types)
+    index = world._entities[entity._id]
+    return @inline _has_components(world, index, map._types)
 end
 
 """
@@ -112,10 +114,11 @@ end
 Removes the Map's components from an [`Entity`](@ref).
 """
 function remove_components!(map::Map{W,CT}, entity::Entity) where {W<:World,CT<:Tuple}
-    if !is_alive(map._world, entity)
+    world = map._world
+    if !is_alive(world, entity)
         error("can't remove components from a dead entity")
     end
-    return _exchange_components!(map._world, entity, Val{Tuple{}}(), (), map._types)
+    return _exchange_components!(world, entity, Val{Tuple{}}(), (), map._types)
 end
 
 """
