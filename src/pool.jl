@@ -40,6 +40,7 @@ function _recycle(p::_EntityPool, e::Entity)
     p.next = e._id
     p.entities[e._id] = _new_entity(temp, e._gen + UInt32(1))
     p.available += 1
+    return nothing
 end
 
 function _is_alive(p::_EntityPool, e::Entity)::Bool
@@ -86,4 +87,5 @@ function _recycle(p::_BitPool, b::UInt8)
     p.next = b
     p.bits[b] = temp
     p.available += 1
+    return nothing
 end
