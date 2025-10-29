@@ -42,7 +42,7 @@ end
     end
 end
 
-@inline function Base.iterate(b::Batch{W,CS}, state::Int) where {W<:World,CS<:Tuple}
+@inline function Base.iterate(b::Batch, state::Int)
     b._index = state
 
     if b._index <= length(b._archetypes)
@@ -55,7 +55,7 @@ end
     return nothing
 end
 
-@inline function Base.iterate(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
+@inline function Base.iterate(b::Batch)
     if b._lock == 0
         error("batch closed, batches can't be used multiple times")
     end
@@ -69,7 +69,7 @@ Closes the batch iterator and unlocks the world.
 
 Must be called if a batch is not fully iterated.
 """
-function close!(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
+function close!(b::Batch)
     _unlock(b._world._lock, b._lock)
     b._index = 0
     b._lock = 0

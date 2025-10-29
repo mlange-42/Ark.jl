@@ -273,14 +273,14 @@ For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provi
 pos, vel = get_components(world, entity, Val.((Position, Velocity)))
 ```
 """
-@inline function get_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+@inline function get_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         error("can't get components of a dead entity")
     end
     return @inline _get_components(world, entity, comp_types)
 end
 
-@generated function _get_components(world::World{CS,CT,N}, entity::Entity, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
     types = [x.parameters[1] for x in TS.parameters]
     if length(types) == 0
         return :(())
@@ -343,7 +343,7 @@ For a more convenient tuple syntax, the macro [`@has_components`](@ref) is provi
 has = has_components(world, entity, Val.((Position, Velocity)))
 ```
 """
-@inline function has_components(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+@inline function has_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         error("can't check components of a dead entity")
     end
@@ -351,7 +351,7 @@ has = has_components(world, entity, Val.((Position, Velocity)))
     return @inline _has_components(world, index, comp_types)
 end
 
-@generated function _has_components(world::World{CS,CT,N}, index::_EntityIndex, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS<:Tuple}
     types = [x.parameters[1] for x in TS.parameters]
     exprs = []
 
@@ -384,14 +384,14 @@ end
 Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
 The entity must already have all these components.
 """
-@inline function set_components!(world::World{CS,CT,WN}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN}
+@inline function set_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
         error("can't set components of a dead entity")
     end
     return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
 end
 
-@generated function _set_components!(world::World{CS,CT,WN}, entity::Entity, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,WN,TS<:Tuple}
+@generated function _set_components!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS<:Tuple}
     types = TS.parameters
     exprs = [:(@inbounds idx = world._entities[entity._id])]
 
@@ -418,11 +418,11 @@ end
 
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
 """
-function new_entity!(world::World{CS,CT,N}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+function new_entity!(world::World, values::Tuple)
     return _new_entity!(world, Val{typeof(values)}(), values)
 end
 
-@generated function _new_entity!(world::World{CS,CT,N}, ::Val{TS}, values::Tuple) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _new_entity!(world::World, ::Val{TS}, values::Tuple) where {TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -470,11 +470,11 @@ that can be used for initialization.
 - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
 - `iterate::Bool`: Whether to return a batch for individual entity initialization.
 """
-function new_entities!(world::World{CS,CT,N}, n::Int, defaults::Tuple; iterate::Bool=false) where {CS<:Tuple,CT<:Tuple,N}
+function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
-@generated function _new_entities_from_defaults!(world::World{CS,CT,N}, n::UInt32, ::Val{TS}, values::Tuple, iterate::Bool) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _new_entities_from_defaults!(world::World, n::UInt32, ::Val{TS}, values::Tuple, iterate::Bool) where {TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -567,13 +567,11 @@ For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provid
 - `n::Int`: The number of entities to create.
 - `comp_types::Tuple`: Component types for the new entities, like `Val.((Position, Velocity))`.
 """
-function new_entities!(world::World{CS,CT,N},
-    n::Int,
-    comp_types::Tuple{Vararg{Val}}) where {CS<:Tuple,CT<:Tuple,N}
+function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
     return _new_entities_from_types!(world, UInt32(n), comp_types)
 end
 
-@generated function _new_entities_from_types!(world::World{CS,CT,N}, n::UInt32, ::TS) where {CS<:Tuple,CT<:Tuple,N,TS<:Tuple}
+@generated function _new_entities_from_types!(world::World, n::UInt32, ::TS) where {TS<:Tuple}
     types = [t.parameters[1] for t in TS.parameters]
     exprs = []
 
@@ -608,7 +606,7 @@ end
 
 Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
 """
-function add_components!(world::World{CS,CT,N}, entity::Entity, values::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+function add_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
         error("can't add components to a dead entity")
     end
@@ -650,7 +648,7 @@ For a more convenient tuple syntax, the macro [`@remove_components!`](@ref) is p
 remove_components!(world, entity, Val.((Position, Velocity)))
 ```
 """
-function remove_components!(world::World{CS,CT,N}, entity::Entity, comp_types::Tuple) where {CS<:Tuple,CT<:Tuple,N}
+function remove_components!(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         error("can't remove components from a dead entity")
     end
@@ -723,14 +721,14 @@ exchange_components!(world, entity;
 )
 ```
 """
-function exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple=(), remove::Tuple=()) where {CS<:Tuple,CT<:Tuple,N}
+function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
         error("can't exchange components on a dead entity")
     end
     return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
 end
 
-@generated function _exchange_components!(world::World{CS,CT,N}, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {CS<:Tuple,CT<:Tuple,N,ATS<:Tuple,RTS<:Tuple}
+@generated function _exchange_components!(world::World, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
     rem_types = [x.parameters[1] for x in RTS.parameters]
     exprs = []
@@ -806,7 +804,7 @@ end
     end
 end
 
-@generated function _push_nothing_to_all!(world::World{CS,CT,N}) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _push_nothing_to_all!(world::World{CS}) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -815,7 +813,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, index::UInt32) where {CS,CT,N}
+@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::UInt32) where {CS}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -828,7 +826,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _ensure_column_size_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -841,7 +839,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _move_component_data!(world::World{CS,CT,N}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -854,7 +852,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS,CT,N}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple,CT<:Tuple,N}
+@generated function _swap_remove_in_column_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
