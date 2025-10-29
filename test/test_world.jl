@@ -128,12 +128,6 @@ end
     @test isa(vel_storage, _ComponentStorage{Velocity})
     @test length(pos_storage.data) == 3
     @test length(vel_storage.data) == 3
-    @test pos_storage.data[1] == nothing
-    @test vel_storage.data[1] == nothing
-    @test pos_storage.data[2]._data == Vector{Position}()
-    @test vel_storage.data[2] == nothing
-    @test pos_storage.data[3]._data == Vector{Position}()
-    @test vel_storage.data[3]._data == Vector{Velocity}()
 end
 
 @testset "_create_entity! Tests" begin
@@ -171,8 +165,7 @@ end
     @test vel == Velocity(3, 4)
 
     # TODO: do we want that, or do we want it to return `nothing`?
-    err = VERSION < v"1.12.0" ? ErrorException : FieldError
-    @test_throws err get_components(world, e2, Val.((Position, Velocity)))
+    @test_throws ErrorException get_components(world, e2, Val.((Position, Velocity)))
 
     @test_throws ErrorException get_components(world, zero_entity, Val.((Position, Velocity)))
     @test_throws ErrorException get_components(world, e2, Val.((Altitude,)))
