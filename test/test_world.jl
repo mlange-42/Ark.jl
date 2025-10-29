@@ -1,10 +1,11 @@
 
 @testset "World creation" begin
-    world = World()
+    world = World(; initial_capacity=512)
     @test isa(world, World)
     @test isa(world._registry, _ComponentRegistry)
     @test world._storages == ()
     @test length(world._archetypes) == 1
+    @test world._initial_capacity == 512
 end
 
 @testset "World creation 2" begin

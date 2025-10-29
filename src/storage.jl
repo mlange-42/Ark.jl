@@ -27,8 +27,10 @@ function _add_column!(storage::_ComponentStorage{C}) where {C}
     push!(storage.data, Vector{C}())
 end
 
-function _assign_column!(storage::_ComponentStorage{C}, index::UInt32) where {C}
-    storage.data[index] = Vector{C}()
+function _assign_column!(storage::_ComponentStorage{C}, index::UInt32, capacity::UInt32) where {C}
+    vec = Vector{C}()
+    sizehint!(vec, capacity)
+    storage.data[index] = vec
 end
 
 function _ensure_column_size!(storage::_ComponentStorage{C}, arch::UInt32, needed::UInt32) where {C}
