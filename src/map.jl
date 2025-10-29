@@ -155,7 +155,7 @@ end
         val = Symbol("v", i)
         push!(exprs, :($stor = map._storage.$i))
         push!(exprs, :(@inbounds $col = $stor.data[index.archetype]))
-        push!(exprs, :(@inbounds $val = $col._data[index.row]))
+        push!(exprs, :(@inbounds $val = $col[index.row]))
     end
     vals = [Symbol("v", i) for i in 1:N]
     push!(exprs, Expr(:return, Expr(:tuple, vals...)))
@@ -173,7 +173,7 @@ end
         col = Symbol("col", i)
         push!(exprs, :($stor = map._storage.$i))
         push!(exprs, :(@inbounds $col = $stor.data[archetype]))
-        push!(exprs, :(@inbounds $col._data[row] = comps.$i))
+        push!(exprs, :(@inbounds $col[row] = comps.$i))
     end
     return quote
         @inbounds begin
