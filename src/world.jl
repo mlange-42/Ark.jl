@@ -21,15 +21,17 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _lock::_Lock
     _graph::_Graph
     _resources::Dict{DataType,Any}
+    _initial_capacity::UInt32
 end
 
 """
-    World(comp_types::Type...; allow_mutable::Bool=false)
+    World(comp_types::Type...; initial_capacity::Int=1024, allow_mutable::Bool=false)
 
 Creates a new, empty [`World`](@ref) for the given component types.
 
 # Arguments
 - `comp_types`: The component types used by the world.
+- `initial_capacity`: The initial capacity for entities in archetypes.
 - `allow_mutable`: Allows mutable components. Use with care, as they are heap-allocated.
 
 # Example
@@ -44,7 +46,7 @@ entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
 Entity(0x00000002, 0x00000000)
 ```
 """
-World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
+World(comp_types::Type...; initial_capacity::Int=1024, allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable), initial_capacity)
 
 @generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     storage_types = CS.parameters
@@ -89,7 +91,7 @@ end
 
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
     components = _active_bit_indices(node.mask)
-    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
+    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, world._initial_capacity, components...)
     push!(world._archetypes, arch)
 
     index::UInt32 = length(world._archetypes)
@@ -761,7 +763,7 @@ end
     end
 end
 
-@generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS<:Tuple,MUT}
+@generated function _World_from_types(::Val{CS}, ::Val{MUT}, initial_capacity::Int) where {CS<:Tuple,MUT}
     types = CS.parameters
 
     allow_mutable = MUT::Bool
@@ -791,16 +793,20 @@ end
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph()
+        entities = Vector{_EntityIndex}()
+        sizehint!(entities, initial_capacity)
+        push!(entities, _EntityIndex(typemax(UInt32), 0))
         World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
-            [_EntityIndex(typemax(UInt32), 0)],
+            entities,
             $storage_tuple,
-            [_Archetype(UInt32(1), graph.nodes[1])],
+            [_Archetype(UInt32(1), graph.nodes[1], UInt32(initial_capacity))],
             _ComponentIndex($(length(types))),
             registry,
-            _EntityPool(UInt32(1024)),
+            _EntityPool(UInt32(initial_capacity)),
             _Lock(),
             graph,
-            Dict{DataType,Any}()
+            Dict{DataType,Any}(),
+            UInt32(initial_capacity),
         )
     end
 end
@@ -820,7 +826,7 @@ end
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _assign_column!(world._storages.$i, index)
+                _assign_column!(world._storages.$i, index, world._initial_capacity)
             end
         ))
     end

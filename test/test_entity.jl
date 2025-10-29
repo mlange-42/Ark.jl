@@ -10,7 +10,7 @@
 end
 
 @testset "Entities interface tests" begin
-    col = _new_entities_column()
+    col = _new_entities_column(UInt32(32))
     push!(col._data, _new_entity(1, 0))
     push!(col._data, _new_entity(2, 0))
     push!(col._data, _new_entity(3, 0))
