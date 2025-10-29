@@ -437,7 +437,7 @@ end
     push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
-    push!(exprs, :(index = tmp[2]))
+    push!(exprs, :(index = Int(tmp[2])))
 
     # Set each component
     for i in 1:length(types)
@@ -753,7 +753,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
-        push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
+        push!(exprs, :(_set_component!($col_sym, $val_expr, Int(row))))
     end
 
     push!(exprs, Expr(:return, :nothing))
