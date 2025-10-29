@@ -244,9 +244,9 @@ end
 """
     @get_components(world::World, entity::Entity, comp_types::Tuple)
 
-Get the given components for an [`Entity`](@ref).
+Get the given components for an [`Entity`](@ref get_components(World, ::Entity, ::Tuple)).
 
-Macro version of [`get_components`](@ref) for more ergonomic component type tuples.
+Macro version of [`get_components`](@ref ) for more ergonomic component type tuples.
 
 # Example
 ```julia
@@ -315,7 +315,8 @@ end
 
 Returns whether an [`Entity`](@ref) has all given components.
 
-Macro version of [`has_components`](@ref) for more ergonomic component type tuples.
+Macro version of [`has_components`](@ref has_components(::World, ::Entity, ::Tuple))
+for more ergonomic component type tuples.
 
 # Example
 ```julia
@@ -535,7 +536,8 @@ Creates the given number of [`Entity`](@ref).
 Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
 Note that components are not initialized/undef unless set in the iterator.
 
-Macro version of [`new_entities!`](@ref) for ergonomic construction of component mappers.
+Macro version of [`new_entities!`](@ref new_entities!(::World, n:Int, ::Tuple{Vararg{Val}}))
+for ergonomic construction of component mappers.
 
 # Arguments
 - `world::World`: The `World` instance to use.
@@ -620,7 +622,8 @@ end
 
 Removes the given components from an [`Entity`](@ref).
 
-Macro version of [`remove_components!`](@ref) for ergonomic construction of component mappers.
+Macro version of [`remove_components!`](@ref remove_components!(::World, ::Entity, ::Tuple))
+for ergonomic construction of component mappers.
 
 # Example
 ```julia
