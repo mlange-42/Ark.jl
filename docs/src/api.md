@@ -60,7 +60,7 @@ certain set of [Components](@ref components-api).
 ```@docs
 Query
 @Query
-close!(q::Query{W,CS}) where {W<:World,CS<:Tuple}
+close!(q::Query)
 Entities
 ```
 
@@ -83,7 +83,7 @@ Behaves like a [Query](@ref) and can be used for component initialization.
 
 ```@docs
 Batch
-close!(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
+close!(b::Batch)
 ```
 
 ## Index
