@@ -77,6 +77,9 @@ remove_resource!
 
 ## Batch
 
+An iterator over entities that were created or modified using batch operations.
+Behaves like a [Query](@ref) and can be used for component initialization.
+
 ```@docs
 Batch
 close!(b::Batch{W,CS}) where {W<:World,CS<:Tuple}
