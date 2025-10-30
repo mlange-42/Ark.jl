@@ -900,7 +900,7 @@ end
 """
     set_resource!(world::World, res::T)
 
-Overwrites an existing a resource in the world.
+Overwrites an existing resource in the world.
 """
 function set_resource!(world::World, res::T) where T
     !has_resource(world, T) && error(lazy"World does not contain a resource of type $T.")
