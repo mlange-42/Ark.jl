@@ -106,7 +106,7 @@ The optional `optional` argument makes components optional. 😉
 
 Entities are included irrespective of presence of these components on them.
 Note that, in contrast to the other arguments, this one is not related to additional components,
-but makes components from the query's components set optional.
+but refers to components of the query's "normal" components set.
 
 Optional components are still included in the iterator's columns tuple,
 but they are `nothing` if the current [archetype](@ref Architecture) does not have them.
@@ -114,7 +114,7 @@ but they are `nothing` if the current [archetype](@ref Architecture) does not ha
 ```jldoctest; output = false
 for (entities, positions, velocities) in @Query(world,
             (Position, Velocity),
-            without=(Velocity,)
+            optional=(Velocity,)
         )
     has_velocity = velocities !== nothing
     @inbounds for i in eachindex(entities)

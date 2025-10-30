@@ -12,6 +12,8 @@ Below, we provide an example for how to implement systems and a scheduler.
 
 ## Systems example
 
+### [Components](@id sys-components)
+
 We start by defining our component types:
 
 ```jldoctest systems; output = false
@@ -30,6 +32,8 @@ end
 
 ```
 
+### Abstract system type
+
 We write and abstract system type.
 This is optional, but useful for clarity and to avoid boilerplate.
 
@@ -44,6 +48,8 @@ function finalize!(::System, ::World) end
 
 finalize! (generic function with 1 method)
 ```
+
+### Scheduler
 
 Next, we build a (type-stable) scheduler:
 
@@ -78,6 +84,8 @@ end
 run! (generic function with 1 method)
 ```
 
+### Initializer system
+
 Now we can write some systems. First one that creates some entities.
 
 ```jldoctest systems; output = false
@@ -101,6 +109,8 @@ initialize! (generic function with 2 methods)
 
 As we have the abstract type, we only need to implement the functions that are required for the system.
 
+### Movement system
+
 And here the classical movement system:
 
 ```jldoctest systems; output = false
@@ -121,6 +131,8 @@ end
 
 update! (generic function with 2 methods)
 ```
+
+### Putting it together
 
 Finally, we can plug everything together:
 
