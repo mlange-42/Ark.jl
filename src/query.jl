@@ -100,7 +100,7 @@ macro Query(args...)
             with=Val.($(esc(with_expr))),
             without=Val.($(esc(without_expr))),
             optional=Val.($(esc(optional_expr))),
-            exclusive=$(esc(exclusive_expr)),
+            exclusive=Val($(esc(exclusive_expr))),
         )
     end
 end
@@ -127,7 +127,7 @@ For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 - `with::Tuple`: Additional components the entities must have.
 - `without::Tuple`: Components the entities must not have.
 - `optional::Tuple`: Makes components of the parameters optional.
-- `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+- `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -150,12 +150,9 @@ function Query(
     with::Tuple=(),
     without::Tuple=(),
     optional::Tuple=(),
-    exclusive::Bool=false
+    exclusive::Val=Val(false)
 )
-    if exclusive && !isempty(without)
-        error("cannot use 'exclusive' with 'without'")
-    end
-    return _Query_from_types(world, comp_types, with, without, optional, Val(exclusive))
+    return _Query_from_types(world, comp_types, with, without, optional, exclusive)
 end
 
 @generated function _Query_from_types(
@@ -173,6 +170,10 @@ end
 
     required_types = setdiff(comp_types, optional_types)
     non_exclude_types = union(comp_types, with_types)
+
+    if EX === Val{true} && !isempty(without_types)
+        error("cannot use 'exclusive' with 'without'")
+    end
 
     # Component IDs
     id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in required_types]
