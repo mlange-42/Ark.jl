@@ -35,7 +35,7 @@ end
 
 function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
     lb1, lb2, lb3, lb4 = mask1.bits
-    rb1, rb2, rb3, rb4 = mask1.bits
+    rb1, rb2, rb3, rb4 = mask2.bits
     return ((lb1 & rb1) == rb1) *
            ((lb2 & rb2) == rb2) *
            ((lb3 & rb3) == rb3) *
@@ -44,7 +44,7 @@ end
 
 function _contains_any(mask1::_Mask, mask2::_Mask)::Bool
     lb1, lb2, lb3, lb4 = mask1.bits
-    rb1, rb2, rb3, rb4 = mask1.bits
+    rb1, rb2, rb3, rb4 = mask2.bits
     return !(((lb1 & rb1) == 0) *
              ((lb2 & rb2) == 0) *
              ((lb3 & rb3) == 0) *
