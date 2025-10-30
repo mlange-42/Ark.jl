@@ -9,6 +9,11 @@ struct Velocity
     dy::Float64
 end
 
+struct Comp{N}
+    x::Float64
+    y::Float64
+end
+
 struct Payload
     x::Float64
     y::Float64
