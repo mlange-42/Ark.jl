@@ -16,7 +16,6 @@ DocTestSetup = quote
         x::Float64
         y::Float64
     end
-
     struct Velocity
         dx::Float64
         dy::Float64
@@ -124,3 +123,13 @@ end
 
 There is a reserved [zero_entity](@ref) that can be used as a placeholder for "no entity".
 The zero entity is never alive.
+the function [is_zero](@ref) can be used to determine whether an entity is the zero entity:
+
+```jldoctest entities; output = false
+if is_zero(entity)
+    # ...
+end
+
+# output
+
+```
