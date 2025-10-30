@@ -19,6 +19,10 @@ end
     @test isa(_get_storage_by_id(world, Val(1)), _ComponentStorage{Position})
 end
 
+@testset "World creation error" begin
+    @test_throws ErrorException World(Position, Velocity, Velocity)
+end
+
 @testset "World creation large" begin
     world = World(
         CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},

@@ -17,6 +17,9 @@ end
 end
 
 function _register_component!(registry::_ComponentRegistry, ::Type{C})::UInt8 where C
+    if haskey(registry.components, C)
+        error(lazy"duplicate component type $C during world creation")
+    end
     id = registry.counter
     registry.components[C] = id
     push!(registry.types, C)
