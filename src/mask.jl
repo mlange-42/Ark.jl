@@ -101,11 +101,7 @@ function _MutableMask(mask::_Mask)
 end
 
 function _set_mask!(mask::_MutableMask, other::_Mask)
-    b = mask.bits
-    GC.@preserve b begin
-        dst = Base.unsafe_convert(Ptr{MVector{4, UInt64}}, b)
-        unsafe_store!(dst, other.bits)
-    end
+    mask.bits.data = other.bits
     return mask
 end
 
