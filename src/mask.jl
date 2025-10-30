@@ -101,10 +101,10 @@ function _MutableMask(mask::_Mask)
 end
 
 function _set_mask!(mask::_MutableMask, other::_Mask)
-    mask.bits[1] = other.bits[1]
-    mask.bits[2] = other.bits[2]
-    mask.bits[3] = other.bits[3]
-    mask.bits[4] = other.bits[4]
+    v = Vec{4,UInt64}(other.bits)
+    dst = Base.unsafe_convert(Ptr{Vec{4,UInt64}}, mask.bits)
+    unsafe_store!(dst, v)
+    return mask
 end
 
 function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
