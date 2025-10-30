@@ -51,7 +51,7 @@ World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tu
             return :(UInt8($i))
         end
     end
-    return :(error("Component type $(string(C)) not found in the World"))
+    return :(error(lazy"Component type $(string(C)) not found in the World"))
 end
 
 @generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
@@ -61,7 +61,7 @@ end
             return :(world._storages.$i)
         end
     end
-    return :(error("Component type $(string(C)) not found in the World"))
+    return :(error(lazy"Component type $(string(C)) not found in the World"))
 end
 
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
@@ -692,10 +692,10 @@ macro exchange_components!(args...)
             elseif name == :remove
                 remove_expr = value
             else
-                error("Unknown keyword argument: $name")
+                error(lazy"Unknown keyword argument: $name")
             end
         else
-            error("Unexpected argument format: $arg")
+            error(lazy"Unexpected argument format: $arg")
         end
     end
 
@@ -770,7 +770,7 @@ end
     if !allow_mutable
         for T in types
             if ismutabletype(T)
-                error("Component type $T must be immutable.")
+                error(lazy"Component type $T must be immutable.")
             end
         end
     end
