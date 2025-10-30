@@ -869,40 +869,42 @@ end
 end
 
 """
-    get_resource(world::World, res_type::Type{T})
+    get_resource(world::World, res_type::Type{T})::T
 
 Get the resource of type `T` from the world.
 """
-function get_resource(world::World, res_type::Type{T}) where T
+function get_resource(world::World, res_type::Type{T})::T where T
     getindex(world._resources, res_type)::T
 end
 
 """
-    has_resource(world::World, res_type::Type{T})
+    has_resource(world::World, res_type::Type{T})::Bool
 
 Check if a resource of type `T` is in the world.
 """
-function has_resource(world::World, res_type::Type)
+function has_resource(world::World, res_type::Type)::Bool
     res_type in keys(world._resources)
 end
 
 """
-    add_resource!(world::World, res::T)
+    add_resource!(world::World, res::T)::T
 
 Add the given resource to the world.
+Returns the newly added resource.
 """
-function add_resource!(world::World, res::T) where T
+function add_resource!(world::World, res::T)::T where T
     has_resource(world, T) && error(lazy"World already contains a resource of type $T.")
     setindex!(world._resources, res, T)
     return res
 end
 
 """
-    set_resource!(world::World, res::T)
+    set_resource!(world::World, res::T)::T
 
 Overwrites an existing resource in the world.
+Returns the newly overwritten resource.
 """
-function set_resource!(world::World, res::T) where T
+function set_resource!(world::World, res::T)::T where T
     !has_resource(world, T) && error(lazy"World does not contain a resource of type $T.")
     setindex!(world._resources, res, T)
     return res
@@ -915,5 +917,5 @@ Remove the resource of type `T` from the world.
 """
 function remove_resource!(world::World, res_type::Type)
     delete!(world._resources, res_type)
-    return world
+    return nothing
 end
