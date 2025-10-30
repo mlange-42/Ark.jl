@@ -1,5 +1,6 @@
 module Ark
 
+using SIMD
 using StaticArrays
 
 include("util.jl")
