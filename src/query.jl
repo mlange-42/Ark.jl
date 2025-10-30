@@ -155,7 +155,7 @@ function Query(
     if exclusive && !isempty(without)
         error("cannot use 'exclusive' with 'without'")
     end
-    return _Query_from_types(world, comp_types, with, without, optional, exclusive)
+    return _Query_from_types(world, comp_types, with, without, optional, Val(exclusive))
 end
 
 @generated function _Query_from_types(
@@ -164,8 +164,8 @@ end
     ::WT,
     ::WO,
     ::OT,
-    exclusive::Bool
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple}
+    ::EX
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]
     without_types = [x.parameters[1] for x in WO.parameters]
@@ -184,8 +184,15 @@ end
 
     # Mask construction
     mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
-    exclude_mask_expr = :(exclusive ? _MaskNot($(non_exclude_ids_exprs...)) : _Mask($(without_ids_exprs...)))
-    has_excluded_expr = :($(length(without_types) > 0))
+
+    if EX === Val{true}
+        exclude_mask_expr = :(_MaskNot($(non_exclude_ids_exprs...)))
+    else
+        exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
+    end
+
+    has_excluded = (length(without_types) > 0) || (EX === Val{true})
+    has_excluded_expr = has_excluded ? :(true) : :(false)
 
     # Storage construction
     storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
@@ -201,7 +208,7 @@ end
             $ids_tuple,
             $mask_expr,
             $exclude_mask_expr,
-            $has_excluded_expr || exclusive,
+            $has_excluded_expr,
             $storages_tuple,
         )
     end
