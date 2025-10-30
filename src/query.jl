@@ -185,7 +185,7 @@ end
     # Mask construction
     mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
     exclude_mask_expr = :(exclusive ? _MaskNot($(non_exclude_ids_exprs...)) : _Mask($(without_ids_exprs...)))
-    has_excluded_expr = :(exclusive || $(length(without_types) > 0 ? :(true) : :(false)))
+    has_excluded_expr = :($(length(without_types) > 0))
 
     # Storage construction
     storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
@@ -201,7 +201,7 @@ end
             $ids_tuple,
             $mask_expr,
             $exclude_mask_expr,
-            $has_excluded_expr,
+            $has_excluded_expr || exclusive,
             $storages_tuple,
         )
     end
