@@ -29,7 +29,7 @@ makedocs(;
         ],
         "Public API" => "api.md"
     ],
-    warnonly=[:missing_docs],
+    warnonly=false,
 )
 
 deploydocs(;

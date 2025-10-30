@@ -73,6 +73,7 @@ and are not associated to an [Entity](@ref entities-api).
 get_resource
 has_resource
 add_resource!
+set_resource!
 remove_resource!
 ```
 
