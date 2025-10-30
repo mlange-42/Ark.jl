@@ -1,13 +1,13 @@
 
-function setup_outer_2(n_entities::Int)
-    vec = Vector{AosOuter2}()
+function setup_outer_32B(n_entities::Int)
+    vec = Vector{AosOuter_32B}()
     for _ in 1:n_entities
-        push!(vec, AosOuter2())
+        push!(vec, AosOuter_32B())
     end
     return vec
 end
 
-function benchmark_outer_2(args, n)
+function benchmark_outer_32B(args, n)
     vec = args
     @inbounds for entity in vec
         pos = entity.pos
@@ -18,18 +18,18 @@ function benchmark_outer_2(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_outer_2 n=$n"] = @be setup_outer_2($n) benchmark_outer_2(_, $n) seconds = SECONDS
+    SUITE["benchmark_outer bytes=032 n=$n"] = @be setup_outer_32B($n) benchmark_outer_32B(_, $n) seconds = SECONDS
 end
 
-function setup_outer_4(n_entities::Int)
-    vec = Vector{AosOuter4}()
+function setup_outer_64B(n_entities::Int)
+    vec = Vector{AosOuter_64B}()
     for _ in 1:n_entities
-        push!(vec, AosOuter4())
+        push!(vec, AosOuter_64B())
     end
     return vec
 end
 
-function benchmark_outer_4(args, n)
+function benchmark_outer_64B(args, n)
     vec = args
     @inbounds for entity in vec
         pos = entity.pos
@@ -40,18 +40,18 @@ function benchmark_outer_4(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_outer_4 n=$n"] = @be setup_outer_4($n) benchmark_outer_4(_, $n) seconds = SECONDS
+    SUITE["benchmark_outer bytes=064 n=$n"] = @be setup_outer_64B($n) benchmark_outer_64B(_, $n) seconds = SECONDS
 end
 
-function setup_outer_8(n_entities::Int)
-    vec = Vector{AosOuter8}()
+function setup_outer_128B(n_entities::Int)
+    vec = Vector{AosOuter_128B}()
     for _ in 1:n_entities
-        push!(vec, AosOuter8())
+        push!(vec, AosOuter_128B())
     end
     return vec
 end
 
-function benchmark_outer_8(args, n)
+function benchmark_outer_128B(args, n)
     vec = args
     @inbounds for entity in vec
         pos = entity.pos
@@ -62,5 +62,5 @@ function benchmark_outer_8(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_outer_8 n=$n"] = @be setup_outer_8($n) benchmark_outer_8(_, $n) seconds = SECONDS
+    SUITE["benchmark_outer bytes=128 n=$n"] = @be setup_outer_128B($n) benchmark_outer_128B(_, $n) seconds = SECONDS
 end

@@ -14,50 +14,30 @@ struct Payload
     y::Float64
 end
 
-mutable struct AosOuter2
+mutable struct AosOuter_32B
     pos::Position
     vel::Velocity
 end
 
-function AosOuter2()
-    AosOuter2(Position(0, 0), Velocity(1, 1))
+function AosOuter_32B()
+    AosOuter_32B(Position(0, 0), Velocity(1, 1))
 end
 
-mutable struct AosOuter4
+mutable struct AosOuter_64B
     pos::Position
     vel::Velocity
     p1::Payload
     p2::Payload
 end
 
-function AosOuter4()
-    AosOuter4(
+function AosOuter_64B()
+    AosOuter_64B(
         Position(0, 0), Velocity(1, 1),
         Payload(0, 0), Payload(0, 0),
     )
 end
 
-mutable struct AosOuter8
-    pos::Position
-    vel::Velocity
-    p1::Payload
-    p2::Payload
-    p3::Payload
-    p4::Payload
-    p5::Payload
-    p6::Payload
-end
-
-function AosOuter8()
-    AosOuter8(
-        Position(0, 0), Velocity(1, 1),
-        Payload(0, 0), Payload(0, 0),
-        Payload(0, 0), Payload(0, 0),
-        Payload(0, 0), Payload(0, 0),
-    )
-end
-
-mutable struct AosOuter16
+mutable struct AosOuter_128B
     pos::Position
     vel::Velocity
     p1::Payload
@@ -66,41 +46,29 @@ mutable struct AosOuter16
     p4::Payload
     p5::Payload
     p6::Payload
-    p7::Payload
-    p8::Payload
-    p9::Payload
-    p10::Payload
-    p11::Payload
-    p12::Payload
-    p13::Payload
-    p14::Payload
 end
 
-function AosOuter16()
-    AosOuter16(
+function AosOuter_128B()
+    AosOuter_128B(
         Position(0, 0), Velocity(1, 1),
-        Payload(0, 0), Payload(0, 0),
-        Payload(0, 0), Payload(0, 0),
-        Payload(0, 0), Payload(0, 0),
-        Payload(0, 0), Payload(0, 0),
         Payload(0, 0), Payload(0, 0),
         Payload(0, 0), Payload(0, 0),
         Payload(0, 0), Payload(0, 0),
     )
 end
 
-mutable struct AosFlat2
+mutable struct AosFlat_32B
     x::Float64
     y::Float64
     dx::Float64
     dy::Float64
 end
 
-function AosFlat2()
-    AosFlat2(0, 0, 1, 1)
+function AosFlat_32B()
+    AosFlat_32B(0, 0, 1, 1)
 end
 
-mutable struct AosFlat4
+mutable struct AosFlat_64B
     x::Float64
     y::Float64
     dx::Float64
@@ -111,11 +79,11 @@ mutable struct AosFlat4
     p4::Float64
 end
 
-function AosFlat4()
-    AosFlat4(0, 0, 1, 1, 0, 0, 0, 0)
+function AosFlat_64B()
+    AosFlat_64B(0, 0, 1, 1, 0, 0, 0, 0)
 end
 
-mutable struct AosFlat8
+mutable struct AosFlat_128B
     x::Float64
     y::Float64
     dx::Float64
@@ -134,6 +102,6 @@ mutable struct AosFlat8
     p12::Float64
 end
 
-function AosFlat8()
-    AosFlat8(0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+function AosFlat_128B()
+    AosFlat_128B(0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 end
