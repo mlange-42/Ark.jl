@@ -114,10 +114,8 @@ function _MutableMask(mask::_Mask)
 end
 
 function _set_mask!(mask::_MutableMask, other::_Mask)
-    mask.bits[1] = other.bits[1]
-    mask.bits[2] = other.bits[2]
-    mask.bits[3] = other.bits[3]
-    mask.bits[4] = other.bits[4]
+    mask.bits.data = other.bits
+    return mask
 end
 
 function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
