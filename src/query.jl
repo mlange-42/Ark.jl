@@ -45,11 +45,11 @@ Queries can be stored and re-used. However, query creation is fast (<20ns), so t
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, pos_column, vel_column) in @Query(world, (Position, Velocity))
+for (entities, positions, velocities) in @Query(world, (Position, Velocity))
     for i in eachindex(entities)
-        pos = pos_column[i]
-        vel = vel_column[i]
-        pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        pos = positions[i]
+        vel = velocities[i]
+        positions[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
     end
 end
 
@@ -126,11 +126,11 @@ For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, pos_column, vel_column) in Query(world, Val.((Position, Velocity)))
+for (entities, positions, velocities) in Query(world, Val.((Position, Velocity)))
     for i in eachindex(entities)
-        pos = pos_column[i]
-        vel = vel_column[i]
-        pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        pos = positions[i]
+        vel = velocities[i]
+        positions[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
     end
 end
 
