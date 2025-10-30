@@ -34,17 +34,21 @@ function _Mask(bits::Integer...)
 end
 
 function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
-    return ((mask1.bits[1] & mask2.bits[1]) == mask2.bits[1]) *
-           ((mask1.bits[2] & mask2.bits[2]) == mask2.bits[2]) *
-           ((mask1.bits[3] & mask2.bits[3]) == mask2.bits[3]) *
-           ((mask1.bits[4] & mask2.bits[4]) == mask2.bits[4])
+    lb1, lb2, lb3, lb4 = mask1.bits
+    rb1, rb2, rb3, rb4 = mask1.bits
+    return ((lb1 & rb1) == rb1) *
+           ((lb2 & rb2) == rb2) *
+           ((lb3 & rb3) == rb3) *
+           ((lb4 & rb4) == rb4)
 end
 
 function _contains_any(mask1::_Mask, mask2::_Mask)::Bool
-    return !(((mask1.bits[1] & mask2.bits[1]) == 0) *
-             ((mask1.bits[2] & mask2.bits[2]) == 0) *
-             ((mask1.bits[3] & mask2.bits[3]) == 0) *
-             ((mask1.bits[4] & mask2.bits[4]) == 0))
+    lb1, lb2, lb3, lb4 = mask1.bits
+    rb1, rb2, rb3, rb4 = mask1.bits
+    return !(((lb1 & rb1) == 0) *
+             ((lb2 & rb2) == 0) *
+             ((lb3 & rb3) == 0) *
+             ((lb4 & rb4) == 0))
 end
 
 function _and(a::_Mask, b::_Mask)::_Mask
