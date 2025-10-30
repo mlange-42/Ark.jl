@@ -7,11 +7,9 @@ authors = [
 ]
 
 [deps]
-SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-SIMD = "3"
 StaticArrays = "1"
 julia = "1.12"
 
