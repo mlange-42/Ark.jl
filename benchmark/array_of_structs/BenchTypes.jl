@@ -88,3 +88,52 @@ function AosOuter16()
         Payload(0, 0), Payload(0, 0),
     )
 end
+
+mutable struct AosFlat2
+    x::Float64
+    y::Float64
+    dx::Float64
+    dy::Float64
+end
+
+function AosFlat2()
+    AosFlat2(0, 0, 1, 1)
+end
+
+mutable struct AosFlat4
+    x::Float64
+    y::Float64
+    dx::Float64
+    dy::Float64
+    p1::Float64
+    p2::Float64
+    p3::Float64
+    p4::Float64
+end
+
+function AosFlat4()
+    AosFlat4(0, 0, 1, 1, 0, 0, 0, 0)
+end
+
+mutable struct AosFlat8
+    x::Float64
+    y::Float64
+    dx::Float64
+    dy::Float64
+    p1::Float64
+    p2::Float64
+    p3::Float64
+    p4::Float64
+    p5::Float64
+    p6::Float64
+    p7::Float64
+    p8::Float64
+    p9::Float64
+    p10::Float64
+    p11::Float64
+    p12::Float64
+end
+
+function AosFlat8()
+    AosFlat8(0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+end
