@@ -166,7 +166,6 @@ end
     ::OT,
     exclusive::Bool
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple}
-    # Extract actual types from each tuple
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]
     without_types = [x.parameters[1] for x in WO.parameters]
@@ -185,12 +184,8 @@ end
 
     # Mask construction
     mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
-
-    exclude_mask_expr = exclusive <: Val{true} ?
-                        :(_MaskNot($(non_exclude_ids_exprs...))) :
-                        :(_Mask($(without_ids_exprs...)))
-    has_excluded = length(without_types) > 0 || exclusive <: Val{true}
-    has_excluded_expr = has_excluded ? :(true) : :(false)
+    exclude_mask_expr = :(exclusive ? _MaskNot($(non_exclude_ids_exprs...)) : _Mask($(without_ids_exprs...)))
+    has_excluded_expr = :(exclusive || $(length(without_types) > 0 ? :(true) : :(false)))
 
     # Storage construction
     storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]

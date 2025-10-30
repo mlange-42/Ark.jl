@@ -100,6 +100,32 @@ end
     @test count == 20
 end
 
+@testset "Query exclusive" begin
+    world = World(Position, Velocity, Altitude, Health)
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5), Health(6)))
+    end
+
+    @test_throws ErrorException @Query(world, (Position, Velocity), without = (Altitude,), exclusive = true)
+
+    query = @Query(world, (Position, Velocity), with = (Altitude,), exclusive = true)
+    @test query._has_excluded == true
+
+    count = 0
+    for (ent, vec_pos, vec_vel) in query
+        for i in eachindex(ent)
+            e = ent[i]
+            @test has_components(world, e, Val.((Health,))) == false
+            @test has_components(world, e, Val.((Altitude,))) == true
+            count += 1
+        end
+    end
+    @test count == 10
+end
+
 @testset "Query empty" begin
     world = World(Position, Velocity)
 
