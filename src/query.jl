@@ -26,7 +26,8 @@ end
         comp_types::Tuple,
         with::Tuple=(),
         without::Tuple=(),
-        optional::Tuple=()
+        optional::Tuple=(),
+        exclusive::Bool=false
     )
 
 Creates a query.
@@ -41,6 +42,7 @@ Queries can be stored and re-used. However, query creation is fast (<20ns), so t
 - `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
 - `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
 - `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
+- `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -69,6 +71,7 @@ macro Query(args...)
     with_expr = :(())
     without_expr = :(())
     optional_expr = :(())
+    exclusive_expr = :false
 
     # Parse simulated keyword arguments
     for arg in args[3:end]
@@ -80,6 +83,8 @@ macro Query(args...)
                 without_expr = value
             elseif name == :optional
                 optional_expr = value
+            elseif name == :exclusive
+                exclusive_expr = value
             else
                 error(lazy"Unknown keyword argument: $name")
             end
@@ -94,7 +99,8 @@ macro Query(args...)
             Val.($(esc(comp_types_expr)));
             with=Val.($(esc(with_expr))),
             without=Val.($(esc(without_expr))),
-            optional=Val.($(esc(optional_expr)))
+            optional=Val.($(esc(optional_expr))),
+            exclusive=Val($(esc(exclusive_expr))),
         )
     end
 end
@@ -105,7 +111,8 @@ end
         comp_types::Tuple;
         with::Tuple=(),
         without::Tuple=(),
-        optional::Tuple=()
+        optional::Tuple=(),
+        exclusive::Val=Val(false)
     )
 
 Creates a query.
@@ -120,8 +127,7 @@ For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 - `with::Tuple`: Additional components the entities must have.
 - `without::Tuple`: Components the entities must not have.
 - `optional::Tuple`: Makes components of the parameters optional.
-
-# Example
+- `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -143,9 +149,10 @@ function Query(
     comp_types::Tuple;
     with::Tuple=(),
     without::Tuple=(),
-    optional::Tuple=()
+    optional::Tuple=(),
+    exclusive::Val=Val(false)
 )
-    return _Query_from_types(world, comp_types, with, without, optional)
+    return _Query_from_types(world, comp_types, with, without, optional, exclusive)
 end
 
 @generated function _Query_from_types(
@@ -153,15 +160,20 @@ end
     ::CT,
     ::WT,
     ::WO,
-    ::OT
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple}
-    # Extract actual types from each tuple
+    ::OT,
+    ::EX
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]
     without_types = [x.parameters[1] for x in WO.parameters]
     optional_types = [x.parameters[1] for x in OT.parameters]
 
     required_types = setdiff(comp_types, optional_types)
+    non_exclude_types = union(comp_types, with_types)
+
+    if EX === Val{true} && !isempty(without_types)
+        error("cannot use 'exclusive' with 'without'")
+    end
 
     # Component IDs
     id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in required_types]
@@ -169,12 +181,19 @@ end
 
     with_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
     without_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
+    non_exclude_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in non_exclude_types]
 
     # Mask construction
     mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
 
-    exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
-    has_excluded_expr = :($(length(without_types) > 0))
+    if EX === Val{true}
+        exclude_mask_expr = :(_MaskNot($(non_exclude_ids_exprs...)))
+    else
+        exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
+    end
+
+    has_excluded = (length(without_types) > 0) || (EX === Val{true})
+    has_excluded_expr = has_excluded ? :(true) : :(false)
 
     # Storage construction
     storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]

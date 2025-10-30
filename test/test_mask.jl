@@ -26,6 +26,11 @@
     @test _contains_any(m1, m2) == true
     @test _contains_any(m1, m3) == false
     @test _contains_any(m2, m3) == false
+
+    m4 = _MaskNot(UInt8(1), UInt8(5))
+    @test _get_bit(m4, UInt8(1)) == false
+    @test _get_bit(m4, UInt8(2)) == true
+    @test _get_bit(m4, UInt8(5)) == false
 end
 
 @testset "_Mask clear_bits" begin
