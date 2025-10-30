@@ -38,5 +38,4 @@ deploydocs(;
         "stable" => "v^",
         "dev" => "main",
     ],
-    push_preview=true
 )
