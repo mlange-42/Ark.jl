@@ -100,6 +100,25 @@ end
 
 ```
 
+### `exclusive`
+
+The optional `exclusive` argument excludes entities that have any other then the query's components
+and those specified by `with`. So it acts like an exhaustive `without`:
+
+```jldoctest; output = false
+for (entities, positions, velocities) in @Query(world,
+            (Position, Velocity),
+            exclusive=true
+        )
+    @inbounds for i in eachindex(entities)
+        # ...
+    end
+end
+
+# output
+
+```
+
 ### `optional`
 
 The optional `optional` argument makes components optional. 😉

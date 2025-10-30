@@ -112,7 +112,7 @@ end
         with::Tuple=(),
         without::Tuple=(),
         optional::Tuple=(),
-        exclusive::Bool=false
+        exclusive::Val=Val(false)
     )
 
 Creates a query.
