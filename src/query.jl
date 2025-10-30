@@ -81,10 +81,10 @@ macro Query(args...)
             elseif name == :optional
                 optional_expr = value
             else
-                error("Unknown keyword argument: $name")
+                error(lazy"Unknown keyword argument: $name")
             end
         else
-            error("Unexpected argument format: $arg")
+            error(lazy"Unexpected argument format: $arg")
         end
     end
 
