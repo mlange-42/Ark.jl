@@ -390,7 +390,13 @@ end
     @test_throws ErrorException add_resource!(world, Tick(1))
     @inferred Tick get_resource(world, Tick)
 
+    set_resource!(world, Tick(2))
+    res = get_resource(world, Tick)
+    @test res isa Tick && res.time == 2
+
     remove_resource!(world, Tick)
     @test has_resource(world, Tick) == false
     @test_throws KeyError get_resource(world, Tick)
+
+    @test_throws ErrorException set_resource!(world, Tick(2))
 end
