@@ -81,7 +81,7 @@ end
     @test_throws ErrorException _component_id(world, Velocity)
 
     @test_throws ErrorException World(Position, MutableComponent)
-    _ = World(Position, MutableComponent; allow_mutable=true)
+    _ = World(Position, MutableComponent; allow_mutable = true)
 end
 
 @testset "_get_storage Tests" begin
@@ -242,7 +242,7 @@ end
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate=true)
+    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate = true)
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
@@ -287,7 +287,7 @@ end
     end
     @test count == 201
 
-    for (ent,) in new_entities!(world, 100, (); iterate=true)
+    for (ent,) in new_entities!(world, 100, (); iterate = true)
         @test length(ent) == 100
     end
 end

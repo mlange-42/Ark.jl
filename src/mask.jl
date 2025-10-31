@@ -1,6 +1,6 @@
 
 struct _Mask
-    bits::NTuple{4,UInt64}
+    bits::NTuple{4, UInt64}
 end
 
 function _Mask()
@@ -102,15 +102,15 @@ function _active_bit_indices(mask::_Mask)::Vector{UInt8}
 end
 
 struct _MutableMask
-    bits::MVector{4,UInt64}
+    bits::MVector{4, UInt64}
 end
 
 function _MutableMask()
-    return _MutableMask(MVector{4,UInt64}(0, 0, 0, 0))
+    return _MutableMask(MVector{4, UInt64}(0, 0, 0, 0))
 end
 
 function _MutableMask(mask::_Mask)
-    return _MutableMask(MVector{4,UInt64}(mask.bits))
+    return _MutableMask(MVector{4, UInt64}(mask.bits))
 end
 
 function _set_mask!(mask::_MutableMask, other::_Mask)
@@ -143,7 +143,7 @@ end
     mask.bits[chunk+1] &= val
 end
 
-@inline function _get_bit(mask::Union{_Mask,_MutableMask}, i::UInt8)::Bool
+@inline function _get_bit(mask::Union{_Mask, _MutableMask}, i::UInt8)::Bool
     chunk = (i - UInt8(1)) >>> 6 # which UInt64 (0-based)
     offset = (i - UInt8(1)) & 0x3F # which bit within that UInt64
     return (mask.bits[chunk+1] >> (offset % UInt64)) & UInt64(1) == 1

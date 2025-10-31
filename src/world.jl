@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,N}
+struct World{CS <: Tuple, CT <: Tuple, N}
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
@@ -20,7 +20,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _entity_pool::_EntityPool
     _lock::_Lock
     _graph::_Graph
-    _resources::Dict{DataType,Any}
+    _resources::Dict{DataType, Any}
 end
 
 """
@@ -42,9 +42,9 @@ world = World(Position, Velocity)
 
 ```
 """
-World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
+World(comp_types::Type...; allow_mutable::Bool = false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
 
-@generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
+@generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS <: Tuple, C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
         if S <: _ComponentStorage && S.parameters[1] === C
@@ -54,7 +54,7 @@ World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tu
     return :(error(lazy"Component type $(string(C)) not found in the World"))
 end
 
-@generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
+@generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS <: Tuple, C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
         if S <: _ComponentStorage && S.parameters[1] === C
@@ -64,7 +64,7 @@ end
     return :(error(lazy"Component type $(string(C)) not found in the World"))
 end
 
-@generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
+@generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS <: Tuple, id}
     S = CS.parameters[id]
     T = S.parameters[1]
     return :(world._storages.$id::_ComponentStorage{$(QuoteNode(T))})
@@ -105,7 +105,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return index
 end
 
-function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
+function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity, UInt32}
     _check_locked(world)
 
     entity = _get_entity(world._entity_pool)
@@ -125,7 +125,7 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
     return entity, index
 end
 
-function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32}
+function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tuple{UInt32, UInt32}
     _check_locked(world)
 
     archetype = world._archetypes[Int(archetype_index)]
@@ -258,7 +258,7 @@ macro get_components(world_expr, entity_expr, comp_types_expr)
         get_components(
             $(esc(world_expr)),
             $(esc(entity_expr)),
-            Val.($(esc(comp_types_expr)))
+            Val.($(esc(comp_types_expr))),
         )
     end
 end
@@ -283,7 +283,7 @@ pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     return @inline _get_components(world, entity, comp_types)
 end
 
-@generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
+@generated function _get_components(world::World, entity::Entity, ::TS) where {TS <: Tuple}
     types = [x.parameters[1] for x in TS.parameters]
     if length(types) == 0
         return :(())
@@ -329,7 +329,7 @@ macro has_components(world_expr, entity_expr, comp_types_expr)
         has_components(
             $(esc(world_expr)),
             $(esc(entity_expr)),
-            Val.($(esc(comp_types_expr)))
+            Val.($(esc(comp_types_expr))),
         )
     end
 end
@@ -354,7 +354,7 @@ has = has_components(world, entity, Val.((Position, Velocity)))
     return @inline _has_components(world, index, comp_types)
 end
 
-@generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS<:Tuple}
+@generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS <: Tuple}
     types = [x.parameters[1] for x in TS.parameters]
     exprs = []
 
@@ -394,7 +394,7 @@ The entity must already have all these components.
     return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
 end
 
-@generated function _set_components!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS<:Tuple}
+@generated function _set_components!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS <: Tuple}
     types = TS.parameters
     exprs = [:(@inbounds idx = world._entities[entity._id])]
 
@@ -425,7 +425,7 @@ function new_entity!(world::World, values::Tuple)
     return _new_entity!(world, Val{typeof(values)}(), values)
 end
 
-@generated function _new_entity!(world::World, ::Val{TS}, values::Tuple) where {TS<:Tuple}
+@generated function _new_entity!(world::World, ::Val{TS}, values::Tuple) where {TS <: Tuple}
     types = TS.parameters
     exprs = []
 
@@ -473,11 +473,11 @@ that can be used for initialization.
 - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
 - `iterate::Bool`: Whether to return a batch for individual entity initialization.
 """
-function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
+function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool = false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
-@generated function _new_entities_from_defaults!(world::World, n::UInt32, ::Val{TS}, values::Tuple, iterate::Bool) where {TS<:Tuple}
+@generated function _new_entities_from_defaults!(world::World, n::UInt32, ::Val{TS}, values::Tuple, iterate::Bool) where {TS <: Tuple}
     types = TS.parameters
     exprs = []
 
@@ -514,7 +514,7 @@ end
             batch = _Batch_from_types(
                 world,
                 [_BatchArchetype(archetype, indices...)],
-                $ts_val_expr
+                $ts_val_expr,
             )
             return batch
         else
@@ -550,7 +550,7 @@ macro new_entities!(world_expr, n_expr, comp_types_expr)
         new_entities!(
             $(esc(world_expr)),
             $(esc(n_expr)),
-            Val.($(esc(comp_types_expr)))
+            Val.($(esc(comp_types_expr))),
         )
     end
 end
@@ -574,7 +574,7 @@ function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
     return _new_entities_from_types!(world, UInt32(n), comp_types)
 end
 
-@generated function _new_entities_from_types!(world::World, n::UInt32, ::TS) where {TS<:Tuple}
+@generated function _new_entities_from_types!(world::World, n::UInt32, ::TS) where {TS <: Tuple}
     types = [t.parameters[1] for t in TS.parameters]
     exprs = []
 
@@ -634,7 +634,7 @@ macro remove_components!(world_expr, entity_expr, comp_types_expr)
         remove_components!(
             $(esc(world_expr)),
             $(esc(entity_expr)),
-            Val.($(esc(comp_types_expr)))
+            Val.($(esc(comp_types_expr))),
         )
     end
 end
@@ -703,8 +703,8 @@ macro exchange_components!(args...)
         exchange_components!(
             $(esc(world_expr)),
             $(esc(entity_expr));
-            add=$(esc(add_expr)),
-            remove=Val.($(esc(remove_expr)))
+            add = $(esc(add_expr)),
+            remove = Val.($(esc(remove_expr))),
         )
     end
 end
@@ -724,14 +724,14 @@ exchange_components!(world, entity;
 )
 ```
 """
-function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
+function exchange_components!(world::World, entity::Entity; add::Tuple = (), remove::Tuple = ())
     if !is_alive(world, entity)
         error("can't exchange components on a dead entity")
     end
     return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
 end
 
-@generated function _exchange_components!(world::World, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {ATS<:Tuple,RTS<:Tuple}
+@generated function _exchange_components!(world::World, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {ATS <: Tuple, RTS <: Tuple}
     add_types = ATS.parameters
     rem_types = [x.parameters[1] for x in RTS.parameters]
     exprs = []
@@ -763,7 +763,7 @@ end
     end
 end
 
-@generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS<:Tuple,MUT}
+@generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS <: Tuple, MUT}
     types = CS.parameters
 
     allow_mutable = MUT::Bool
@@ -793,7 +793,7 @@ end
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph()
-        World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
+        World{$(storage_tuple_type), $(component_tuple_type), $(length(types))}(
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
@@ -802,12 +802,12 @@ end
             _EntityPool(UInt32(1024)),
             _Lock(),
             graph,
-            Dict{DataType,Any}()
+            Dict{DataType, Any}(),
         )
     end
 end
 
-@generated function _push_nothing_to_all!(world::World{CS}) where {CS<:Tuple}
+@generated function _push_nothing_to_all!(world::World{CS}) where {CS <: Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -829,7 +829,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple}
+@generated function _ensure_column_size_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS <: Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -842,7 +842,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple}
+@generated function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS <: Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -855,7 +855,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple}
+@generated function _swap_remove_in_column_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, row::UInt32) where {CS <: Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n

@@ -10,10 +10,10 @@ end
 
 A query for components.
 """
-struct Query{W<:World,CS<:Tuple,N,NR}
+struct Query{W <: World, CS <: Tuple, N, NR}
     _world::W
     _cursor::_Cursor
-    _ids::NTuple{NR,UInt8}
+    _ids::NTuple{NR, UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
@@ -97,10 +97,10 @@ macro Query(args...)
         Query(
             $(esc(world_expr)),
             Val.($(esc(comp_types_expr)));
-            with=Val.($(esc(with_expr))),
-            without=Val.($(esc(without_expr))),
-            optional=Val.($(esc(optional_expr))),
-            exclusive=Val($(esc(exclusive_expr))),
+            with = Val.($(esc(with_expr))),
+            without = Val.($(esc(without_expr))),
+            optional = Val.($(esc(optional_expr))),
+            exclusive = Val($(esc(exclusive_expr))),
         )
     end
 end
@@ -147,10 +147,10 @@ end
 function Query(
     world::World,
     comp_types::Tuple;
-    with::Tuple=(),
-    without::Tuple=(),
-    optional::Tuple=(),
-    exclusive::Val=Val(false)
+    with::Tuple = (),
+    without::Tuple = (),
+    optional::Tuple = (),
+    exclusive::Val = Val(false),
 )
     return _Query_from_types(world, comp_types, with, without, optional, exclusive)
 end
@@ -161,8 +161,8 @@ end
     ::WT,
     ::WO,
     ::OT,
-    ::EX
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
+    ::EX,
+) where {W <: World, CT <: Tuple, WT <: Tuple, WO <: Tuple, OT <: Tuple, EX <: Val}
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]
     without_types = [x.parameters[1] for x in WO.parameters]
@@ -203,7 +203,7 @@ end
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
-        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
+        Query{$W, $storage_tuple_type, $(length(comp_types)), $(length(required_types))}(
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
@@ -258,7 +258,7 @@ function close!(q::Query)
     _unlock(q._world._lock, q._cursor._lock)
 end
 
-@generated function _get_columns_at_index(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
+@generated function _get_columns_at_index(q::Query{W, CS, N}) where {W <: World, CS <: Tuple, N}
     exprs = Expr[]
     push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
     push!(exprs, :(entities = archetype.entities))

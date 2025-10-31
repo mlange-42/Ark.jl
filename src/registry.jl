@@ -1,12 +1,12 @@
 
 mutable struct _ComponentRegistry
     counter::UInt8
-    const components::Dict{DataType,UInt8}
+    const components::Dict{DataType, UInt8}
     const types::Vector{DataType}
 end
 
 function _ComponentRegistry()
-    _ComponentRegistry(0x01, Dict{DataType,UInt8}(), Vector{DataType}())
+    _ComponentRegistry(0x01, Dict{DataType, UInt8}(), Vector{DataType}())
 end
 
 @inline function _get_id!(registry::_ComponentRegistry, ::Type{C})::UInt8 where C
