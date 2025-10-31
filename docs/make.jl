@@ -15,7 +15,7 @@ makedocs(;
         edit_link="main",
         prettyurls=false,
         sidebar_sitename=false,
-        assets=["assets/custom.css"],
+        assets=["assets/favicon.ico", "assets/custom.css"],
     ),
     pages=[
         "Home" => "index.md",
