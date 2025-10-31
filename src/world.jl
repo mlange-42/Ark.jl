@@ -911,11 +911,12 @@ function set_resource!(world::World, res::T)::T where T
 end
 
 """
-    remove_resource!(world::World, res_type::Type{T})
+    remove_resource!(world::World, res_type::Type{T})::T
 
 Remove the resource of type `T` from the world.
+Returns the removed resource.
 """
-function remove_resource!(world::World, res_type::Type)
-    delete!(world._resources, res_type)
-    return nothing
+function remove_resource!(world::World, res_type::Type{T}) where T
+    res = pop!(world._resources, res_type)
+    return res::T
 end
