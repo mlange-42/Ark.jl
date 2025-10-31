@@ -11,6 +11,15 @@ jobs:
     name: Linters
     runs-on: ubuntu-latest
     steps:
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '1.12'
+    - name: Install ReLint.jl
+      run: julia -e 'using Pkg; Pkg.add(url="https://github.com/RelationalAI-oss/ReLint.jl")'
+    - name: Run ReLint
+      run: julia -e 'using ReLint; ReLint.lint(".")'
+
     - uses: actions/checkout@v5
     - uses: julia-actions/julia-format@v4
       with:
