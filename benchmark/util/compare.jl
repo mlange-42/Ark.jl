@@ -6,6 +6,14 @@ struct Row
     time_ns::Float64
 end
 
+struct RowAoS
+    name::String
+    n::Int
+    bytes::Int
+    vars::Int
+    time_ns::Float64
+end
+
 mutable struct CompareRow
     name::String
     n::Int
@@ -27,6 +35,15 @@ function write_bench_table(data::Vector{Row}, file::String)
         write(io, "Name,N,Time\n")
         for row in data
             write(io, "$(row.name),$(row.n),$(row.time_ns)\n")
+        end
+    end
+end
+
+function write_bench_table_aos(data::Vector{RowAoS}, file::String)
+    open(file, "w") do io
+        write(io, "Name,Bytes,Vars,N,Time\n")
+        for row in data
+            write(io, "$(row.name),$(row.bytes),$(row.vars),$(row.n),$(row.time_ns)\n")
         end
     end
 end

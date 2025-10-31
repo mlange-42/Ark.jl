@@ -16,3 +16,21 @@ function process_benches(suite::BenchmarkGroup)::Vector{Row}
 
     return data
 end
+
+function process_benches_aos(suite::BenchmarkGroup)::Vector{RowAoS}
+    data = Vector{RowAoS}()
+    sorted_keys = sort(collect(keys(suite)))
+
+    for name in sorted_keys
+        bench = suite[name]
+        parts = split(name, " n=")
+        n = parse(Int, parts[end])
+        parts = split(parts[1], " bytes=")
+        bytes = parse(Int, parts[end])
+        mean_secs = median(map(s -> s.time, bench.samples))
+        ns_per_n = 1e9 * mean_secs / n
+        push!(data, RowAoS(parts[1], n, bytes, bytes / 8, ns_per_n))
+    end
+
+    return data
+end

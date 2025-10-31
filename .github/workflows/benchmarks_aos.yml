@@ -32,10 +32,14 @@ jobs:
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks
       run: julia --project=benchmark benchmark/run_array_of_structs.jl
-    - name: Rename file
-      run: mv bench.csv bench_aos.csv
+    - name: Move file
+      run: |
+        mkdir bench_aos
+        mv bench_aos.csv bench_aos/bench_aos.csv
+        mv bench_aos_light.svg bench_aos/bench_aos_light.svg
+        mv bench_aos_dark.svg bench_aos/bench_aos_dark.svg
     - name: Archive results
       uses: actions/upload-artifact@v5
       with:
         name: bench_aos
-        path: bench_aos.csv
+        path: bench_aos

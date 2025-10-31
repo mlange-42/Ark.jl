@@ -14,6 +14,7 @@ makedocs(;
         edit_link="main",
         prettyurls=false,
         sidebar_sitename=false,
+        assets=["assets/custom.css"],
     ),
     pages=[
         "Home" => "index.md",
@@ -27,7 +28,8 @@ makedocs(;
             "manual/resources.md",
             "manual/architecture.md",
         ],
-        "Public API" => "api.md"
+        "Public API" => "api.md",
+        "Benchmarks" => "benchmarks.md"
     ],
     warnonly=false,
 )
