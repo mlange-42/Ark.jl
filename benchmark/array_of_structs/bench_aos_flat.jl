@@ -17,7 +17,7 @@ function benchmark_flat_32B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_flat bytes=032 n=$n"] = @be setup_flat_32B($n) benchmark_flat_32B(_, $n) seconds = SECONDS
+    SUITE["benchmark_flat bytes=032 n=$n"] = @be setup_flat_32B($n) benchmark_flat_32B(_, $n) evals = 100 seconds = SECONDS
 end
 
 function setup_flat_64B(n_entities::Int)
@@ -38,7 +38,7 @@ function benchmark_flat_64B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_flat bytes=064 n=$n"] = @be setup_flat_64B($n) benchmark_flat_64B(_, $n) seconds = SECONDS
+    SUITE["benchmark_flat bytes=064 n=$n"] = @be setup_flat_64B($n) benchmark_flat_64B(_, $n) evals = 100 seconds = SECONDS
 end
 
 function setup_flat_128B(n_entities::Int)
@@ -59,5 +59,5 @@ function benchmark_flat_128B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_flat bytes=128 n=$n"] = @be setup_flat_128B($n) benchmark_flat_128B(_, $n) seconds = SECONDS
+    SUITE["benchmark_flat bytes=128 n=$n"] = @be setup_flat_128B($n) benchmark_flat_128B(_, $n) evals = 100 seconds = SECONDS
 end

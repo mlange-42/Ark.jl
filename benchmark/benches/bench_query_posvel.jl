@@ -6,12 +6,12 @@ function setup_query_posvel(n_entities::Int)
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
 
-    return world
+    return world, @Query(world, (Position, Velocity))
 end
 
 function benchmark_query_posvel(args, n)
-    world = args
-    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+    world, query = args
+    for (_, pos_column, vel_column) in query
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
@@ -22,5 +22,5 @@ function benchmark_query_posvel(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_query_posvel n=$n"] = @be setup_query_posvel($n) benchmark_query_posvel(_, $n) seconds = SECONDS
+    SUITE["benchmark_query_posvel n=$n"] = @be setup_query_posvel($n) benchmark_query_posvel(_, $n) evals = 100 seconds = SECONDS
 end
