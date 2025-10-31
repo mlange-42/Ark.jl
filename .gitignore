@@ -6,6 +6,7 @@
 *.mem
 *.csv
 *.html
+*.svg
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
