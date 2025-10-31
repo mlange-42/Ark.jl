@@ -1,6 +1,11 @@
 <div align="center" width="100%">
+<a href="https://github.com/mlange-42/ark.jl">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/154045c0-8fa9-44bf-8550-cfad2c82d6b2">
+  <img alt="Logo" src="https://github.com/user-attachments/assets/5cc1411b-68ea-4ed0-8ef7-a13ce379b120">
+</picture>
+</a>
 
-[![Ark.jl (logo)](https://github.com/user-attachments/assets/efd131c8-cadf-434e-9994-c02f5914f2fa)](https://github.com/mlange-42/ark.jl)
 [![Build Status](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/mlange-42/Ark.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/mlange-42/Ark.jl)
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue?logo=julia)](https://mlange-42.github.io/Ark.jl/stable/)
