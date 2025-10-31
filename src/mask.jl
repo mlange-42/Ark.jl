@@ -119,14 +119,11 @@ function _set_mask!(mask::_MutableMask, other::_Mask)
 end
 
 function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
-    return (mask1.bits[1] == mask2.bits[1]) *
-           (mask1.bits[2] == mask2.bits[2]) *
-           (mask1.bits[3] == mask2.bits[3]) *
-           (mask1.bits[4] == mask2.bits[4])
+    return mask1.bits.data == mask2.bits
 end
 
 function _Mask(mask::_MutableMask)
-    return _Mask(Tuple(mask.bits))
+    return _Mask(mask.bits.data)
 end
 
 @inline function _set_bit!(mask::_MutableMask, i::UInt8)
