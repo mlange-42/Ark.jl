@@ -107,4 +107,5 @@ remove_resource!(world, Tick)
 
 # output
 
+Tick(1)
 ```
