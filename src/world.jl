@@ -42,7 +42,7 @@ world = World(Position, Velocity)
 
 ```
 """
-World(comp_types::Type...; allow_mutable::Bool = false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
+World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
 
 @generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS <: Tuple, C}
     storage_types = CS.parameters
@@ -473,7 +473,7 @@ that can be used for initialization.
 - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
 - `iterate::Bool`: Whether to return a batch for individual entity initialization.
 """
-function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool = false)
+function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
@@ -703,8 +703,8 @@ macro exchange_components!(args...)
         exchange_components!(
             $(esc(world_expr)),
             $(esc(entity_expr));
-            add = $(esc(add_expr)),
-            remove = Val.($(esc(remove_expr))),
+            add=$(esc(add_expr)),
+            remove=Val.($(esc(remove_expr))),
         )
     end
 end
@@ -724,7 +724,7 @@ exchange_components!(world, entity;
 )
 ```
 """
-function exchange_components!(world::World, entity::Entity; add::Tuple = (), remove::Tuple = ())
+function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
         error("can't exchange components on a dead entity")
     end

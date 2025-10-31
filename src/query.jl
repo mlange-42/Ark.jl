@@ -97,10 +97,10 @@ macro Query(args...)
         Query(
             $(esc(world_expr)),
             Val.($(esc(comp_types_expr)));
-            with = Val.($(esc(with_expr))),
-            without = Val.($(esc(without_expr))),
-            optional = Val.($(esc(optional_expr))),
-            exclusive = Val($(esc(exclusive_expr))),
+            with=Val.($(esc(with_expr))),
+            without=Val.($(esc(without_expr))),
+            optional=Val.($(esc(optional_expr))),
+            exclusive=Val($(esc(exclusive_expr))),
         )
     end
 end
@@ -147,10 +147,10 @@ end
 function Query(
     world::World,
     comp_types::Tuple;
-    with::Tuple = (),
-    without::Tuple = (),
-    optional::Tuple = (),
-    exclusive::Val = Val(false),
+    with::Tuple=(),
+    without::Tuple=(),
+    optional::Tuple=(),
+    exclusive::Val=Val(false),
 )
     return _Query_from_types(world, comp_types, with, without, optional, exclusive)
 end

@@ -12,4 +12,4 @@ for r in result
 end
 
 plot_aos("bench_aos.csv", "bench_aos_light.svg")
-plot_aos("bench_aos.csv", "bench_aos_dark.svg"; dark = true)
+plot_aos("bench_aos.csv", "bench_aos_dark.svg"; dark=true)

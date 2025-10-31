@@ -20,7 +20,7 @@ end
 
 function benchmark_world_new_entities_1_def(args, n::Int)
     world = args
-    new_entities!(world, n, (Position(0, 0),); iterate = false)
+    new_entities!(world, n, (Position(0, 0),); iterate=false)
     return world
 end
 
