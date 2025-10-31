@@ -16,6 +16,7 @@ jobs:
       uses: julia-actions/setup-julia@v1
       with:
         version: '1.12'
+    - uses: julia-actions/cache@v2
     - name: Install ReLint.jl
       run: julia -e 'using Pkg; Pkg.add(url="https://github.com/RelationalAI-oss/ReLint.jl")'
     - name: Run ReLint
@@ -23,11 +24,8 @@ jobs:
         julia -e '
           using ReLint
           lint_result = ReLint.run_lint(".")
-          if !isempty(lint_result.results)
-            println("ReLint found linting issues:")
-            for r in lint_result.results
-              println("$(r.file):$(r.line) [$(r.severity)] $(r.message)")
-            end
+          if lint_result.fatalviolations_count > 0
+            println("ReLint found fatal violations")
             exit(1)
           end
         '

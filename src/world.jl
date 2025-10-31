@@ -51,7 +51,7 @@ World(comp_types::Type...; allow_mutable::Bool = false) = _World_from_types(Val{
             return :(UInt8($i))
         end
     end
-    return :(error(lazy"Component type $(string(C)) not found in the World"))
+    return :(error(lazy"Component type $C not found in the World"))
 end
 
 @generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS <: Tuple, C}
@@ -61,7 +61,7 @@ end
             return :(world._storages.$i)
         end
     end
-    return :(error(lazy"Component type $(string(C)) not found in the World"))
+    return :(error(lazy"Component type $C not found in the World"))
 end
 
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS <: Tuple, id}
