@@ -1,8 +1,10 @@
 ```@raw html
 <div style="text-align: center;">
+
+<img src="assets/ark-logo-text-light.svg" class="only-light" alt="Ark.jl (logo)" />
+<img src="assets/ark-logo-text-dark.svg" class="only-dark" alt="Ark.jl (logo)" />
 ```
 
-[![Ark.jl (logo)](https://github.com/user-attachments/assets/efd131c8-cadf-434e-9994-c02f5914f2fa)](https://github.com/mlange-42/ark.jl)
 [![Build Status](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/mlange-42/Ark.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/mlange-42/Ark.jl)
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue?logo=julia)](https://mlange-42.github.io/Ark.jl/stable/)
