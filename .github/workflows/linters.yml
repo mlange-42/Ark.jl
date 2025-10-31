@@ -11,6 +11,7 @@ jobs:
     name: Linters
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v5
     - name: Set up Julia
       uses: julia-actions/setup-julia@v1
       with:
@@ -18,9 +19,19 @@ jobs:
     - name: Install ReLint.jl
       run: julia -e 'using Pkg; Pkg.add(url="https://github.com/RelationalAI-oss/ReLint.jl")'
     - name: Run ReLint
-      run: julia -e 'using ReLint; ReLint.run_lint(".")'
-
-    - uses: actions/checkout@v5
+      run: |
+        julia -e '
+          using ReLint
+          results = ReLint.run_lint(".")
+          if !isempty(results)
+            println("ReLint found linting issues:")
+            for r in results
+              println("$(r.file):$(r.line) [$(r.severity)] $(r.message)")
+            end
+            exit(1)
+          end
+        '
+        
     - uses: julia-actions/julia-format@v4
       with:
         version: '1.0.62'
