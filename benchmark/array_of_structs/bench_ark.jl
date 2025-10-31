@@ -6,12 +6,12 @@ function setup_ark_32B(n_entities::Int)
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
 
-    return world, @Query(world, (Position, Velocity))
+    return world
 end
 
 function benchmark_ark_32B(args, n)
-    world, query = args
-    for (_, pos_column, vel_column) in query
+    world = args
+    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
         @inbounds for i in eachindex(pos_column)
             pos = pos_column[i]
             vel = vel_column[i]
@@ -32,12 +32,12 @@ function setup_ark_64B(n_entities::Int)
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Comp{1}(0, 0), Comp{2}(0, 0)))
     end
 
-    return world, @Query(world, (Position, Velocity))
+    return world
 end
 
 function benchmark_ark_64B(args, n)
-    world, query = args
-    for (_, pos_column, vel_column) in query
+    world = args
+    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
         @inbounds for i in eachindex(pos_column)
             pos = pos_column[i]
             vel = vel_column[i]
@@ -59,12 +59,12 @@ function setup_ark_128B(n_entities::Int)
             Comp{3}(0, 0), Comp{4}(0, 0), Comp{5}(0, 0), Comp{6}(0, 0)))
     end
 
-    return world, @Query(world, (Position, Velocity))
+    return world
 end
 
 function benchmark_ark_128B(args, n)
-    world, query = args
-    for (_, pos_column, vel_column) in query
+    world = args
+    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
         @inbounds for i in eachindex(pos_column)
             pos = pos_column[i]
             vel = vel_column[i]
