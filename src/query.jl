@@ -10,10 +10,10 @@ end
 
 A query for components.
 """
-struct Query{W <: World, CS <: Tuple, N, NR}
+struct Query{W<:World,CS<:Tuple,N,NR}
     _world::W
     _cursor::_Cursor
-    _ids::NTuple{NR, UInt8}
+    _ids::NTuple{NR,UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
     _has_excluded::Bool
@@ -37,12 +37,13 @@ Macro version of [`Query`](@ref) that allows ergonomic construction of queries u
 Queries can be stored and re-used. However, query creation is fast (<20ns), so this is not mandatory.
 
 # Arguments
-- `world`: The `World` instance to query.
-- `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
-- `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
-- `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
-- `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
-- `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+
+  - `world`: The `World` instance to query.
+  - `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
+  - `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
+  - `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
+  - `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
+  - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -122,12 +123,13 @@ Queries can be stored and re-used. However, query creation is fast (<20ns), so t
 For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 
 # Arguments
-- `world::World`: The world to use for this query.
-- `comp_types::Tuple`: Components the query filters for and that it provides access to.
-- `with::Tuple`: Additional components the entities must have.
-- `without::Tuple`: Components the entities must not have.
-- `optional::Tuple`: Makes components of the parameters optional.
-- `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+
+  - `world::World`: The world to use for this query.
+  - `comp_types::Tuple`: Components the query filters for and that it provides access to.
+  - `with::Tuple`: Additional components the entities must have.
+  - `without::Tuple`: Components the entities must not have.
+  - `optional::Tuple`: Makes components of the parameters optional.
+  - `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -162,7 +164,7 @@ end
     ::WO,
     ::OT,
     ::EX,
-) where {W <: World, CT <: Tuple, WT <: Tuple, WO <: Tuple, OT <: Tuple, EX <: Val}
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]
     without_types = [x.parameters[1] for x in WO.parameters]
@@ -203,7 +205,7 @@ end
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
-        Query{$W, $storage_tuple_type, $(length(comp_types)), $(length(required_types))}(
+        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
@@ -258,7 +260,7 @@ function close!(q::Query)
     _unlock(q._world._lock, q._cursor._lock)
 end
 
-@generated function _get_columns_at_index(q::Query{W, CS, N}) where {W <: World, CS <: Tuple, N}
+@generated function _get_columns_at_index(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
     push!(exprs, :(entities = archetype.entities))

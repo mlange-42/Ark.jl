@@ -2,13 +2,14 @@
 indent=4
 margin=256
 always_for_in=true
-whitespace_typedefs=true
+remove_extra_newlines=true
 import_to_using=true
 whitespace_in_kwargs=false
 align_struct_field=true
 align_assignment=true
 align_conditional=true
 align_pair_arrow=true
+format_docstrings=true
 normalize_line_endings="unix"
 align_matrix=true
 join_lines_based_on_source=true

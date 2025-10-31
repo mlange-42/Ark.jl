@@ -10,7 +10,7 @@ end
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-mutable struct Batch{W <: World, CS <: Tuple, N}
+mutable struct Batch{W<:World,CS<:Tuple,N}
     _world::W
     _archetypes::Vector{_BatchArchetype}
     _storages::CS
@@ -22,7 +22,7 @@ end
     world::W,
     archetypes::Vector{_BatchArchetype},
     ::Val{CT},
-) where {W <: World, CT <: Tuple}
+) where {W<:World,CT<:Tuple}
     comp_types = CT.parameters
 
     storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
@@ -32,7 +32,7 @@ end
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
-        Batch{$W, $storage_tuple_type, $(length(comp_types))}(
+        Batch{$W,$storage_tuple_type,$(length(comp_types))}(
             world,
             archetypes,
             $storages_tuple,
@@ -75,7 +75,7 @@ function close!(b::Batch)
     b._lock = 0
 end
 
-@generated function _get_columns_at_index(b::Batch{W, CS, N}) where {W <: World, CS <: Tuple, N}
+@generated function _get_columns_at_index(b::Batch{W,CS,N}) where {W<:World,CS<:Tuple,N}
     exprs = Expr[]
     push!(exprs, :(arch = b._archetypes[b._index]))
     push!(exprs, :(entities = view(arch.archetype.entities, arch.start_idx:arch.end_idx)))

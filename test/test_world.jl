@@ -198,7 +198,6 @@ end
     @test vel == Velocity(3, 4)
 end
 
-
 @testset "World new_entities! with types" begin
     world = World(Position, Velocity, Altitude)
 
