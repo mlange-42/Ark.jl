@@ -18,7 +18,7 @@ jobs:
     - name: Install ReLint.jl
       run: julia -e 'using Pkg; Pkg.add(url="https://github.com/RelationalAI-oss/ReLint.jl")'
     - name: Run ReLint
-      run: julia -e 'using ReLint; ReLint.lint(".")'
+      run: julia -e 'using ReLint; ReLint.run_lint(".")'
 
     - uses: actions/checkout@v5
     - uses: julia-actions/julia-format@v4
