@@ -96,8 +96,8 @@ end
 function initialize!(s::InitializerSystem, w::World)
     for (entities, positions, velocities) in @new_entities!(w, s.count, (Position, Velocity))
         @inbounds for i in eachindex(entities)
-            pos = Position(rand() * 100, rand() * 100)
-            vel = Velocity(randn(), randn())
+            positions[i] = Position(rand() * 100, rand() * 100)
+            velocities[i] = Velocity(randn(), randn())
         end
     end
 end
