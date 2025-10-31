@@ -4,6 +4,9 @@ function setup_immutable_32B(n_entities::Int)
     for _ in 1:n_entities
         push!(vec, AosImmutable_32B())
     end
+    @inbounds for (i, entity) in enumerate(vec)
+        vec[i] = AosImmutable_32B(entity.x + entity.dx, entity.y + entity.dy)
+    end
     return vec
 end
 
@@ -24,6 +27,9 @@ function setup_immutable_64B(n_entities::Int)
     for _ in 1:n_entities
         push!(vec, AosImmutable_64B())
     end
+    @inbounds for (i, entity) in enumerate(vec)
+        vec[i] = AosImmutable_64B(entity.x + entity.dx, entity.y + entity.dy)
+    end
     return vec
 end
 
@@ -43,6 +49,9 @@ function setup_immutable_128B(n_entities::Int)
     vec = Vector{AosImmutable_128B}()
     for _ in 1:n_entities
         push!(vec, AosImmutable_128B())
+    end
+    @inbounds for (i, entity) in enumerate(vec)
+        vec[i] = AosImmutable_128B(entity.x + entity.dx, entity.y + entity.dy)
     end
     return vec
 end

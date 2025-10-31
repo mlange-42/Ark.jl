@@ -4,6 +4,11 @@ function setup_outer_32B(n_entities::Int)
     for _ in 1:n_entities
         push!(vec, AosOuter_32B())
     end
+    @inbounds for entity in vec
+        pos = entity.pos
+        vel = entity.vel
+        entity.pos = Position(pos.x + vel.dx, pos.y + vel.dy)
+    end
     return vec
 end
 
@@ -26,6 +31,11 @@ function setup_outer_64B(n_entities::Int)
     for _ in 1:n_entities
         push!(vec, AosOuter_64B())
     end
+    @inbounds for entity in vec
+        pos = entity.pos
+        vel = entity.vel
+        entity.pos = Position(pos.x + vel.dx, pos.y + vel.dy)
+    end
     return vec
 end
 
@@ -47,6 +57,11 @@ function setup_outer_128B(n_entities::Int)
     vec = Vector{AosOuter_128B}()
     for _ in 1:n_entities
         push!(vec, AosOuter_128B())
+    end
+    @inbounds for entity in vec
+        pos = entity.pos
+        vel = entity.vel
+        entity.pos = Position(pos.x + vel.dx, pos.y + vel.dy)
     end
     return vec
 end

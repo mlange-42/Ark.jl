@@ -4,6 +4,10 @@ function setup_flat_32B(n_entities::Int)
     for _ in 1:n_entities
         push!(vec, AosFlat_32B())
     end
+    @inbounds for entity in vec
+        entity.x += entity.dx
+        entity.y += entity.dy
+    end
     return vec
 end
 
@@ -25,6 +29,10 @@ function setup_flat_64B(n_entities::Int)
     for _ in 1:n_entities
         push!(vec, AosFlat_64B())
     end
+    @inbounds for entity in vec
+        entity.x += entity.dx
+        entity.y += entity.dy
+    end
     return vec
 end
 
@@ -45,6 +53,10 @@ function setup_flat_128B(n_entities::Int)
     vec = Vector{AosFlat_128B}()
     for _ in 1:n_entities
         push!(vec, AosFlat_128B())
+    end
+    @inbounds for entity in vec
+        entity.x += entity.dx
+        entity.y += entity.dy
     end
     return vec
 end

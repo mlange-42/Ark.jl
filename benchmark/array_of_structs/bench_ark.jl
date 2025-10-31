@@ -6,6 +6,14 @@ function setup_ark_32B(n_entities::Int)
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
 
+    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+        @inbounds for i in eachindex(pos_column)
+            pos = pos_column[i]
+            vel = vel_column[i]
+            pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        end
+    end
+
     return world
 end
 
@@ -30,6 +38,14 @@ function setup_ark_64B(n_entities::Int)
 
     for i in 1:n_entities
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Comp{1}(0, 0), Comp{2}(0, 0)))
+    end
+
+    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+        @inbounds for i in eachindex(pos_column)
+            pos = pos_column[i]
+            vel = vel_column[i]
+            pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        end
     end
 
     return world
@@ -57,6 +73,14 @@ function setup_ark_128B(n_entities::Int)
     for i in 1:n_entities
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Comp{1}(0, 0), Comp{2}(0, 0),
             Comp{3}(0, 0), Comp{4}(0, 0), Comp{5}(0, 0), Comp{6}(0, 0)))
+    end
+
+    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+        @inbounds for i in eachindex(pos_column)
+            pos = pos_column[i]
+            vel = vel_column[i]
+            pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        end
     end
 
     return world

@@ -5,8 +5,15 @@ function setup_query_posvel_stored(n_entities::Int)
     for i in 1:n_entities
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
-
-    return world, @Query(world, (Position, Velocity))
+    query = @Query(world, (Position, Velocity))
+    for (_, pos_column, vel_column) in query
+        for i in eachindex(pos_column)
+            @inbounds pos = pos_column[i]
+            @inbounds vel = vel_column[i]
+            @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        end
+    end
+    return world, query
 end
 
 function benchmark_query_posvel_stored(args, n)
