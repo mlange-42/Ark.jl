@@ -1,4 +1,3 @@
-
 using Ark
 using Ark: _find_or_create_archetype!, _create_entity!, _move_entity!, _get_storage, _get_storage_by_id, _component_id
 using Ark: _new_entity, _EntityIndex, _ComponentStorage

@@ -1,4 +1,3 @@
-
 using Ark
 using BenchmarkTools
 using Chairmarks

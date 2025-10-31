@@ -37,12 +37,13 @@ Macro version of [`Query`](@ref) that allows ergonomic construction of queries u
 Queries can be stored and re-used. However, query creation is fast (<20ns), so this is not mandatory.
 
 # Arguments
-- `world`: The `World` instance to query.
-- `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
-- `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
-- `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
-- `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
-- `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+
+  - `world`: The `World` instance to query.
+  - `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
+  - `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
+  - `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
+  - `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
+  - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -122,12 +123,13 @@ Queries can be stored and re-used. However, query creation is fast (<20ns), so t
 For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 
 # Arguments
-- `world::World`: The world to use for this query.
-- `comp_types::Tuple`: Components the query filters for and that it provides access to.
-- `with::Tuple`: Additional components the entities must have.
-- `without::Tuple`: Components the entities must not have.
-- `optional::Tuple`: Makes components of the parameters optional.
-- `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+
+  - `world::World`: The world to use for this query.
+  - `comp_types::Tuple`: Components the query filters for and that it provides access to.
+  - `with::Tuple`: Additional components the entities must have.
+  - `without::Tuple`: Components the entities must not have.
+  - `optional::Tuple`: Makes components of the parameters optional.
+  - `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -150,7 +152,7 @@ function Query(
     with::Tuple=(),
     without::Tuple=(),
     optional::Tuple=(),
-    exclusive::Val=Val(false)
+    exclusive::Val=Val(false),
 )
     return _Query_from_types(world, comp_types, with, without, optional, exclusive)
 end
@@ -161,7 +163,7 @@ end
     ::WT,
     ::WO,
     ::OT,
-    ::EX
+    ::EX,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]

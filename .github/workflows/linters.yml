@@ -1,0 +1,35 @@
+name: Linters
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  linters:
+    name: Linters
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '1.12'
+    - uses: julia-actions/cache@v2
+    # - name: Install ReLint.jl
+    #   run: julia -e 'using Pkg; Pkg.add(url="https://github.com/RelationalAI-oss/ReLint.jl")'
+    # - name: Run ReLint
+    #   run: |
+    #     julia -e '
+    #       using ReLint
+    #       lint_result = ReLint.run_lint(".")
+    #       if lint_result.fatalviolations_count > 0
+    #         println("ReLint found fatal violations")
+    #         exit(1)
+    #       end
+    #     '
+        
+    - uses: julia-actions/julia-format@v4
+      with:
+        version: '1.0.62'

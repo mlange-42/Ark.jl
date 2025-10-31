@@ -15,4 +15,5 @@ function benchmark_query_create(args, n)
     return queries
 end
 
-SUITE["benchmark_query_create n=1000"] = @be setup_query_create($1000) benchmark_query_create(_, $1000) seconds = SECONDS
+SUITE["benchmark_query_create n=1000"] =
+    @be setup_query_create($1000) benchmark_query_create(_, $1000) seconds = SECONDS

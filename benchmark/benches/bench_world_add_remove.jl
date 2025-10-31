@@ -25,5 +25,6 @@ function benchmark_world_add_remove(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_add_remove n=$n"] = @be setup_world_add_remove($n) benchmark_world_add_remove(_, $n) seconds = SECONDS
+    SUITE["benchmark_world_add_remove n=$n"] =
+        @be setup_world_add_remove($n) benchmark_world_add_remove(_, $n) seconds = SECONDS
 end

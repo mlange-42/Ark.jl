@@ -72,9 +72,11 @@ end
 
 function _get_new_bit(p::_BitPool)::UInt8
     if p.length >= 64
-        error(string("run out of the maximum of 64 bits. ",
-            "This is likely caused by unclosed queries that lock the world. ",
-            "Make sure that all queries finish their iteration or are closed manually"))
+        error(
+            string("run out of the maximum of 64 bits. ",
+                "This is likely caused by unclosed queries that lock the world. ",
+                "Make sure that all queries finish their iteration or are closed manually"),
+        )
     end
     b = p.length + 1
     p.bits[p.length+1] = b
