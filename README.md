@@ -1,8 +1,9 @@
 <div align="center" width="100%">
 <a href="https://github.com/mlange-42/ark.jl">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/154045c0-8fa9-44bf-8550-cfad2c82d6b2">
-  <img alt="Logo" src="https://github.com/user-attachments/assets/5cc1411b-68ea-4ed0-8ef7-a13ce379b120">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/main/docs/src/assets/ark-logo-text-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/main/docs/src/assets/ark-logo-text-light.svg">
+  <img alt="Ark.jl Logo" src="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/main/docs/src/assets/ark-logo-text-light.svg">
 </picture>
 </a>
 
