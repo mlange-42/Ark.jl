@@ -4,7 +4,7 @@
 In effect, an entity is just an ID that can be associated with [Components](@ref),
 which contain the entity's properties or state variables.
 
-## Creating entities
+## [Creating entities](@id creating-entities)
 
 An entity can only exist in a [World](@ref), and thus can only be created through a World.
 

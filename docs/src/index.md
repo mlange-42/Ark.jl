@@ -1,8 +1,10 @@
 ```@raw html
 <div style="text-align: center;">
+
+<img src="assets/ark-logo-text-light.svg" class="only-light" alt="Ark.jl (logo)" />
+<img src="assets/ark-logo-text-dark.svg" class="only-dark" alt="Ark.jl (logo)" />
 ```
 
-[![Ark.jl (logo)](https://github.com/user-attachments/assets/efd131c8-cadf-434e-9994-c02f5914f2fa)](https://github.com/mlange-42/ark.jl)
 [![Build Status](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/mlange-42/Ark.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/mlange-42/Ark.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/mlange-42/Ark.jl)
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue?logo=julia)](https://mlange-42.github.io/Ark.jl/stable/)
@@ -22,13 +24,11 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 ## Features
 
-- ☑ Designed for performance and highly optimized.
-- ☑ Well-documented, type-safe API.
-- ☐ [Entity relationships](https://mlange-42.github.io/ark/relations/) as a first-class feature.
-- ☐ Extensible [event system](https://mlange-42.github.io/ark/events/) with filtering and custom event types.
-- ☐ Fast [batch operations](https://mlange-42.github.io/ark/batch/) for mass manipulation.
-- ☑ No systems. Just queries. Use your own structure.
-- ☑ Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
+- Designed for [performance](@ref Benchmarks) and highly optimized.
+- Well-documented, type-safe [API](@ref).
+- Blazing fast [batch entity creation](@ref creating-entities).
+- No [systems](@ref Systems). Just [queries](@ref Queries). Use your own structure.
+- Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
 
 ## Manual Outline
 
