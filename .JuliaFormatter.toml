@@ -2,7 +2,6 @@
 indent=4
 margin=256
 always_for_in=true
-for_in_replacement="∈"
 whitespace_typedefs=true
 import_to_using=true
 whitespace_in_kwargs=true
