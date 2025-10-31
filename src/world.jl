@@ -43,7 +43,8 @@ world = World(Position, Velocity)
 
 ```
 """
-World(comp_types::Type...; allow_mutable::Bool=false) = _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
+World(comp_types::Type...; allow_mutable::Bool=false) =
+    _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
 
 @generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     storage_types = CS.parameters
@@ -71,12 +72,22 @@ end
     return :(world._storages.$id::_ComponentStorage{$(QuoteNode(T))})
 end
 
-function _find_or_create_archetype!(world::World, entity::Entity, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+function _find_or_create_archetype!(
+    world::World,
+    entity::Entity,
+    add::Tuple{Vararg{UInt8}},
+    remove::Tuple{Vararg{UInt8}},
+)::UInt32
     index = world._entities[entity._id]
     return _find_or_create_archetype!(world, world._archetypes[index.archetype].node, add, remove)
 end
 
-function _find_or_create_archetype!(world::World, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::UInt32
+function _find_or_create_archetype!(
+    world::World,
+    start::_GraphNode,
+    add::Tuple{Vararg{UInt8}},
+    remove::Tuple{Vararg{UInt8}},
+)::UInt32
     node = _find_node(world._graph, start, add, remove)
 
     archetype = (node.archetype == typemax(UInt32)) ?
@@ -237,7 +248,9 @@ end
 
 function _check_locked(world::World)
     if _is_locked(world._lock)
-        error("cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed")
+        error(
+            "cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed",
+        )
     end
 end
 
@@ -483,7 +496,13 @@ function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=fals
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
-@generated function _new_entities_from_defaults!(world::World, n::UInt32, ::Val{TS}, values::Tuple, iterate::Bool) where {TS<:Tuple}
+@generated function _new_entities_from_defaults!(
+    world::World,
+    n::UInt32,
+    ::Val{TS},
+    values::Tuple,
+    iterate::Bool,
+) where {TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -596,11 +615,13 @@ end
     types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
     # TODO: do we really need this?
     ts_val_expr = Expr(:call, Expr(:curly, :Val, types_tuple_type_expr))
-    push!(exprs, :(batch =
-        _Batch_from_types(
-            world,
-            [_BatchArchetype(archetype, indices[1], indices[2])],
-            $ts_val_expr))
+    push!(
+        exprs,
+        :(batch =
+            _Batch_from_types(
+                world,
+                [_BatchArchetype(archetype, indices[1], indices[2])],
+                $ts_val_expr)),
     )
 
     push!(exprs, Expr(:return, :batch))
@@ -743,7 +764,13 @@ function exchange_components!(world::World, entity::Entity; add::Tuple=(), remov
     return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
 end
 
-@generated function _exchange_components!(world::World, entity::Entity, ::Val{ATS}, add::Tuple, ::RTS) where {ATS<:Tuple,RTS<:Tuple}
+@generated function _exchange_components!(
+    world::World,
+    entity::Entity,
+    ::Val{ATS},
+    add::Tuple,
+    ::RTS,
+) where {ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
     rem_types = [x.parameters[1] for x in RTS.parameters]
     exprs = []
@@ -841,7 +868,12 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _ensure_column_size_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, needed::UInt32) where {CS<:Tuple}
+@generated function _ensure_column_size_for_comp!(
+    world::World{CS},
+    comp::UInt8,
+    arch::UInt32,
+    needed::UInt32,
+) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -854,7 +886,13 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _move_component_data!(world::World{CS}, comp::UInt8, old_arch::UInt32, new_arch::UInt32, row::UInt32) where {CS<:Tuple}
+@generated function _move_component_data!(
+    world::World{CS},
+    comp::UInt8,
+    old_arch::UInt32,
+    new_arch::UInt32,
+    row::UInt32,
+) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -867,7 +905,12 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _swap_remove_in_column_for_comp!(world::World{CS}, comp::UInt8, arch::UInt32, row::UInt32) where {CS<:Tuple}
+@generated function _swap_remove_in_column_for_comp!(
+    world::World{CS},
+    comp::UInt8,
+    arch::UInt32,
+    row::UInt32,
+) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n

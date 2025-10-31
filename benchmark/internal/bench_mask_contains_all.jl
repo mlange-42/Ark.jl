@@ -21,7 +21,8 @@ function benchmark_mask_contains_all(args, n)
     return b
 end
 
-SUITE["benchmark_mask_contains_all n=1000"] = @be setup_mask_contains_all(1000) benchmark_mask_contains_all(_, 1000) seconds = SECONDS
+SUITE["benchmark_mask_contains_all n=1000"] =
+    @be setup_mask_contains_all(1000) benchmark_mask_contains_all(_, 1000) seconds = SECONDS
 
 function setup_mask_contains_all_small(n::Int)
     mask_a = _Mask(1)
@@ -45,4 +46,5 @@ function benchmark_mask_contains_all_small(args, n)
     return b
 end
 
-SUITE["benchmark_mask_contains_all_small n=1000"] = @be setup_mask_contains_all_small(1000) benchmark_mask_contains_all_small(_, 1000) seconds = SECONDS
+SUITE["benchmark_mask_contains_all_small n=1000"] =
+    @be setup_mask_contains_all_small(1000) benchmark_mask_contains_all_small(_, 1000) seconds = SECONDS
