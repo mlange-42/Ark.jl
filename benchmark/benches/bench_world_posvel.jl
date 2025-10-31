@@ -25,5 +25,5 @@ function benchmark_world_posvel(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000)
-    SUITE["benchmark_world_posvel n=$n"] = @be setup_world_posvel($n) benchmark_world_posvel(_, n) seconds = SECONDS
+    SUITE["benchmark_world_posvel n=$n"] = @be setup_world_posvel($n) benchmark_world_posvel(_, n) evals = 100 seconds = SECONDS
 end
