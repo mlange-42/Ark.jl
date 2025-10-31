@@ -2,6 +2,7 @@
 include("util/process.jl")
 include("util/compare.jl")
 include("util/plot.jl")
+
 include("array_of_structs/benchmarks.jl")
 
 result = process_benches_aos(SUITE)
