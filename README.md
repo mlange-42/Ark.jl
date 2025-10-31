@@ -20,13 +20,11 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 ## Features
 
-- [x] Designed for performance and highly optimized.
-- [x] Well-documented, type-safe API.
-- [ ] [Entity relationships](https://mlange-42.github.io/ark/relations/) as a first-class feature.
-- [ ] Extensible [event system](https://mlange-42.github.io/ark/events/) with filtering and custom event types.
-- [ ] Fast [batch operations](https://mlange-42.github.io/ark/batch/) for mass manipulation.
-- [x] No systems. Just queries. Use your own structure.
-- [x] Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
+- Designed for [performance](https://mlange-42.github.io/Ark.jl/dev/benchmarks) and highly optimized.
+- Well-[documented](https://mlange-42.github.io/Ark.jl/dev/), type-safe [API](https://mlange-42.github.io/Ark.jl/dev/api).
+- Blazing fast [batch entity creation](https://mlange-42.github.io/Ark.jl/dev/manual/entities.html#Creating-entities).
+- No [systems](https://mlange-42.github.io/Ark.jl/dev/manual/systems). Just [queries](https://mlange-42.github.io/Ark.jl/dev/manual/queries). Use your own structure.
+- Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
 
 ## Installation
 
