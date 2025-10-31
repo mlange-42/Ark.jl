@@ -1,4 +1,4 @@
-name: Benchmark
+name: Benchmark vs. AoS
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   benchmark:
-    name: Benchmarks vs. AoS
+    name: Benchmarks
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
