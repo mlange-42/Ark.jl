@@ -615,13 +615,12 @@ end
     types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
     # TODO: do we really need this?
     ts_val_expr = Expr(:call, Expr(:curly, :Val, types_tuple_type_expr))
-    push!(
-        exprs,
-        :(batch =
-            _Batch_from_types(
-                world,
-                [_BatchArchetype(archetype, indices[1], indices[2])],
-                $ts_val_expr)),
+    push!(exprs,
+        :(batch = _Batch_from_types(
+            world,
+            [_BatchArchetype(archetype, indices[1], indices[2])],
+            $ts_val_expr)
+        ),
     )
 
     push!(exprs, Expr(:return, :batch))
