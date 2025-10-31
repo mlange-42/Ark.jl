@@ -13,14 +13,22 @@ function plot_aos(in_file::String, out_file::String; dark::Bool=false)
     df = unstack(df_raw, [:Bytes, :Vars, :N], :Name, :Time)
 
     family = "Courier"
+
+    labels = [(Symbol("benchmark_ark"), "Ark"), (Symbol("benchmark_outer"), "AoS")]
+    colors_dark = ["#1abc9c", "#fff"]
+    colors_light = ["#2e63b8", "#000"]
+    colors = []
+
     default(background_color=:transparent)
     default(fontfamily=family)
     if dark
+        colors = colors_dark
         default(foreground_color=:white)
         default(legendfont=font(family, 10, color=:white))
         default(xtickfont=font(family, 10, color=:white))
         default(ytickfont=font(family, 10, color=:white))
     else
+        colors = colors_light
         default(foreground_color=:black)
         default(legendfont=font(family, 10, color=:black))
         default(xtickfont=font(family, 10, color=:black))
@@ -42,7 +50,7 @@ function plot_aos(in_file::String, out_file::String; dark::Bool=false)
 
     sizes = unique(select(df, [:Bytes, :Vars]))
 
-    for (impl, color, label) in [(Symbol("benchmark_ark"), :blue, "Ark"), (Symbol("benchmark_outer"), :red, "AoS")]
+    for ((impl, label), color) in zip(labels, colors)
         for row in eachrow(sizes)
             bytes = row.Bytes
             vars = row.Vars
