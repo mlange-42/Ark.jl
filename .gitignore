@@ -4,9 +4,11 @@
 *.json
 *.json.tmp
 *.mem
+
 *.csv
 *.html
-*.svg
+/*.svg
+
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
