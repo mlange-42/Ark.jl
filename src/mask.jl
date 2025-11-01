@@ -12,7 +12,7 @@ end
     for j in 1:N
         push!(exprs, :(begin
             b = bits[$j]
-            @assert b > 0 "Bit index must be between 1 and 256"
+            b > 0 || error("Bit index must be between 1 and 256")
             chunk = (b - 1) >>> 6
             offset = (b - 1) & 0x3F
             chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
@@ -27,7 +27,7 @@ end
     for j in 1:N
         push!(exprs, :(begin
             b = bits[$j]
-            @assert b > 0 "Bit index must be between 1 and 256"
+            b > 0 || error("Bit index must be between 1 and 256")
             chunk = (b - 1) >>> 6
             offset = (b - 1) & 0x3F
             mask = ~(UInt64(1) << offset)
@@ -43,7 +43,7 @@ end
     for j in 1:N
         push!(exprs, :(begin
             b = bits[$j]
-            @assert 1 ≤ b ≤ 256 "Bit index must be between 1 and 256"
+            1 ≤ b ≤ 256 || error("Bit index must be between 1 and 256")
             chunk = (b - 1) >>> 6
             offset = (b - 1) & 0x3F
             chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
