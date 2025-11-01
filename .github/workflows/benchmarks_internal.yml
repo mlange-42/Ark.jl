@@ -10,6 +10,9 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  BASE_REF: main
+
 jobs:
   benchmark:
     name: Benchmarks (internal)
@@ -47,11 +50,13 @@ jobs:
         name: bench_current_${{ matrix.repetition }}
         path: bench_current_${{ matrix.repetition }}.csv
 
-    - name: Checkout main branch
+    - name: Checkout code
       if: github.event_name == 'pull_request'
       uses: actions/checkout@v3
       with:
-        ref: main
+        fetch-depth: 0
+    - name: Switch to base commit
+      run: git checkout ${{ env.BASE_REF }}
     - name: Set up Julia
       if: github.event_name == 'pull_request'
       uses: julia-actions/setup-julia@v2
