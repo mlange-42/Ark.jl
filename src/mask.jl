@@ -7,43 +7,50 @@ function _Mask()
     return _Mask(ntuple(_ -> UInt64(0), 4))
 end
 
-function _Mask(bits::UInt8...)
-    chunks = ntuple(_ -> UInt64(0), 4)
-
-    for b in bits
-        @assert b > 0 "Bit index must be between 1 and 256"
-        chunk = (b - 1) >>> 6
-        offset = (b - 1) & 0x3F
-        chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
+@generated function _Mask(bits::NTuple{N,UInt8}) where N
+    exprs = Expr[]
+    for j in 1:N
+        push!(exprs, :(begin
+            b = bits[$j]
+            @assert b > 0 "Bit index must be between 1 and 256"
+            chunk = (b - 1) >>> 6
+            offset = (b - 1) & 0x3F
+            chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
+        end))
     end
-
-    return _Mask(chunks)
-end
-function _MaskNot(bits::UInt8...)
-    chunks = ntuple(_ -> typemax(UInt64), 4)  # 0xFFFFFFFFFFFFFFFF
-
-    for b in bits
-        @assert b > 0 "Bit index must be between 1 and 256"
-        chunk = (b - 1) >>> 6
-        offset = (b - 1) & 0x3F
-        mask = ~(UInt64(1) << offset)
-        chunks = Base.setindex(chunks, chunks[chunk+1] & mask, chunk + 1)
-    end
-
-    return _Mask(chunks)
+    init = :(chunks = (UInt64(0), UInt64(0), UInt64(0), UInt64(0)))
+    return Expr(:block, init, exprs..., :(return _Mask(chunks)))
 end
 
-function _Mask(bits::Integer...)
-    chunks = ntuple(_ -> UInt64(0), 4)
-
-    for b in bits
-        @assert 1 ≤ b ≤ 256 "Bit index must be between 1 and 256"
-        chunk = (b - 1) >>> 6
-        offset = (b - 1) & 0x3F
-        chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
+@generated function _MaskNot(bits::NTuple{N,UInt8}) where N
+    exprs = Expr[]
+    for j in 1:N
+        push!(exprs, :(begin
+            b = bits[$j]
+            @assert b > 0 "Bit index must be between 1 and 256"
+            chunk = (b - 1) >>> 6
+            offset = (b - 1) & 0x3F
+            mask = ~(UInt64(1) << offset)
+            chunks = Base.setindex(chunks, chunks[chunk+1] & mask, chunk + 1)
+        end))
     end
+    init = :(chunks = (typemax(UInt64), typemax(UInt64), typemax(UInt64), typemax(UInt64)))
+    return Expr(:block, init, exprs..., :(return _Mask(chunks)))
+end
 
-    return _Mask(chunks)
+@generated function _Mask(bits::NTuple{N,<:Integer}) where N
+    exprs = Expr[]
+    for j in 1:N
+        push!(exprs, :(begin
+            b = bits[$j]
+            @assert 1 ≤ b ≤ 256 "Bit index must be between 1 and 256"
+            chunk = (b - 1) >>> 6
+            offset = (b - 1) & 0x3F
+            chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
+        end))
+    end
+    init = :(chunks = (UInt64(0), UInt64(0), UInt64(0), UInt64(0)))
+    return Expr(:block, init, exprs..., :(return _Mask(chunks)))
 end
 
 function _contains_all(mask1::_Mask, mask2::_Mask)::Bool

@@ -1,8 +1,8 @@
 
 @testset "_Mask functionality" begin
     # Test constructor and bit setting
-    m1 = _Mask(UInt8(1))
-    m1 = _Mask(1, 64, 65, 128, 129, 192, 193)
+    m1 = _Mask((UInt8(1),))
+    m1 = _Mask((1, 64, 65, 128, 129, 192, 193))
     @test _get_bit(m1, UInt8(1)) == true
     @test _get_bit(m1, UInt8(64)) == true
     @test _get_bit(m1, UInt8(65)) == true
@@ -17,25 +17,25 @@
     @test _get_bit(m1, UInt8(255)) == false
 
     # Test _contains_all
-    m2 = _Mask(64, 128, 193)
+    m2 = _Mask((64, 128, 193))
     @test _contains_all(m1, m2) == true
     @test _contains_all(m2, m1) == false
 
     # Test _contains_any
-    m3 = _Mask(2, 3, 4)
+    m3 = _Mask((2, 3, 4))
     @test _contains_any(m1, m2) == true
     @test _contains_any(m1, m3) == false
     @test _contains_any(m2, m3) == false
 
-    m4 = _MaskNot(UInt8(1), UInt8(5))
+    m4 = _MaskNot((UInt8(1), UInt8(5)))
     @test _get_bit(m4, UInt8(1)) == false
     @test _get_bit(m4, UInt8(2)) == true
     @test _get_bit(m4, UInt8(5)) == false
 end
 
 @testset "_Mask clear_bits" begin
-    m1 = _Mask(1, 64, 65)
-    m2 = _Mask(1, 64)
+    m1 = _Mask((1, 64, 65))
+    m2 = _Mask((1, 64))
 
     @test _get_bit(m1, UInt8(1)) == true
     @test _get_bit(m1, UInt8(64)) == true
@@ -48,8 +48,8 @@ end
 end
 
 @testset "_Mask bitwise operations" begin
-    m1 = _Mask(1, 2, 3)       # bits 1, 2, 3 set
-    m2 = _Mask(3, 4, 5)       # bits 3, 4, 5 set
+    m1 = _Mask((1, 2, 3))       # bits 1, 2, 3 set
+    m2 = _Mask((3, 4, 5))       # bits 3, 4, 5 set
 
     mand = _and(m1, m2)
     mor = _or(m1, m2)
@@ -70,7 +70,7 @@ end
 
 @testset "_MutableMask bit operations" begin
     # Create a base _Mask with bits 1, 65, 129, 193 set (one per chunk)
-    base = _Mask(1, 65, 129, 193)
+    base = _Mask((1, 65, 129, 193))
     mm = _MutableMask(base)
 
     # Check initial state matches base mask
@@ -114,11 +114,11 @@ end
     @test _active_bit_indices(m0) == UInt8[]
 
     # Test with one bit set in each chunk
-    m1 = _Mask(1, 65, 129, 193)
+    m1 = _Mask((1, 65, 129, 193))
     @test sort(_active_bit_indices(m1)) == [1, 65, 129, 193]
 
     # Test with multiple bits set
-    m2 = _Mask(1, 2, 3, 64, 65, 66, 128, 129, 130, 192, 193, 194)
+    m2 = _Mask((1, 2, 3, 64, 65, 66, 128, 129, 130, 192, 193, 194))
     expected = UInt8[1, 2, 3, 64, 65, 66, 128, 129, 130, 192, 193, 194]
     @test sort(_active_bit_indices(m2)) == expected
 end

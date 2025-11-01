@@ -186,12 +186,12 @@ end
     non_exclude_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in non_exclude_types]
 
     # Mask construction
-    mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
+    mask_expr = :(_Mask(($(id_exprs...), $(with_ids_exprs...))))
 
     if EX === Val{true}
-        exclude_mask_expr = :(_MaskNot($(non_exclude_ids_exprs...)))
+        exclude_mask_expr = :(_MaskNot(($(non_exclude_ids_exprs...),)))
     else
-        exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
+        exclude_mask_expr = :(_Mask(($(without_ids_exprs...),)))
     end
 
     has_excluded = (length(without_types) > 0) || (EX === Val{true})
