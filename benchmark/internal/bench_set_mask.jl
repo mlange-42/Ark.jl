@@ -1,7 +1,7 @@
 using Ark: _Mask, _MutableMask, _set_mask!
 
 function setup_set_mask()
-    mask_a = _Mask(1, 65, 129, 193, 194, 195)
+    mask_a = _Mask((1, 65, 129, 193, 194, 195))
     mask_b = _MutableMask()
     return mask_a, mask_b
 end
