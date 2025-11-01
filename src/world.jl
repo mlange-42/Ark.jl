@@ -69,7 +69,7 @@ end
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
     S = CS.parameters[id]
     T = S.parameters[1]
-    return :(world._storages.$id::_ComponentStorage{$(QuoteNode(T))})
+    return :(world._storages.$id::_ComponentStorage{$T})
 end
 
 function _find_or_create_archetype!(
@@ -313,7 +313,7 @@ end
         stor_sym = Symbol("stor", i)
         val_sym = Symbol("v", i)
 
-        push!(exprs, :($(stor_sym) = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :($(stor_sym) = _get_storage(world, $T)))
         push!(exprs, :($(val_sym) = _get_component($(stor_sym), idx.archetype, idx.row)))
     end
 
@@ -381,7 +381,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
 
-        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
         push!(exprs, :(
             if length($col_sym) == 0
@@ -421,7 +421,7 @@ end
         stor_sym = Symbol("stor", i)
         val_expr = :(values.$i)
 
-        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(_set_component!($stor_sym, idx.archetype, idx.row, $val_expr)))
     end
 
@@ -447,7 +447,7 @@ end
     types = TS.parameters
     exprs = []
 
-    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    id_exprs = [:(_component_id(world, $T)) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
     push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
@@ -462,7 +462,7 @@ end
         col_sym = Symbol("col", i)
         val_expr = :(values.$i)
 
-        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
         push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
     end
@@ -506,7 +506,7 @@ end
     types = TS.parameters
     exprs = []
 
-    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    id_exprs = [:(_component_id(world, $T)) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
     push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
@@ -521,7 +521,7 @@ end
             col_sym = Symbol("col", i)
             val_expr = :(values.$i)
 
-            push!(body_exprs.args, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+            push!(body_exprs.args, :($stor_sym = _get_storage(world, $T)))
             push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[archetype_idx]))
             push!(body_exprs.args, :(fill!(view($col_sym, Int(indices[1]):Int(indices[2])), $val_expr)))
         end
@@ -532,7 +532,7 @@ end
         ))
     end
 
-    types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
+    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
     push!(exprs, :(
         if iterate
@@ -605,14 +605,14 @@ end
     types = [t.parameters[1] for t in TS.parameters]
     exprs = []
 
-    id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in types]
+    id_exprs = [:(_component_id(world, $T)) for T in types]
     push!(exprs, :(ids = ($(id_exprs...),)))
 
     push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
-    types_tuple_type_expr = Expr(:curly, :Tuple, [QuoteNode(T) for T in types]...)
+    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     # TODO: do we really need this?
     ts_val_expr = Expr(:call, Expr(:curly, :Val, types_tuple_type_expr))
     push!(exprs,
@@ -774,9 +774,9 @@ end
     rem_types = [x.parameters[1] for x in RTS.parameters]
     exprs = []
 
-    add_id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in add_types]
+    add_id_exprs = [:(_component_id(world, $T)) for T in add_types]
     push!(exprs, :(add_ids = ($(add_id_exprs...),)))
-    rem_id_exprs = [:(_component_id(world, $(QuoteNode(T)))) for T in rem_types]
+    rem_id_exprs = [:(_component_id(world, $T)) for T in rem_types]
     push!(exprs, :(rem_ids = ($(rem_id_exprs...),)))
     push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, add_ids, rem_ids)))
     push!(exprs, :(row = _move_entity!(world, entity, archetype)))
@@ -787,7 +787,7 @@ end
         col_sym = Symbol("col", i)
         val_expr = :(add.$i)
 
-        push!(exprs, :($stor_sym = _get_storage(world, $(QuoteNode(T)))))
+        push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
         push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
     end
@@ -813,18 +813,18 @@ end
         end
     end
 
-    component_types = map(T -> :(Type{$(QuoteNode(T))}), types)
+    component_types = map(T -> :(Type{$T}), types)
     component_tuple_type = :(Tuple{$(component_types...)})
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in types]
+    storage_types = [:(_ComponentStorage{$T}) for T in types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     # storage tuple value
-    storage_exprs = [:(_ComponentStorage{$(QuoteNode(T))}(1)) for T in types]
+    storage_exprs = [:(_ComponentStorage{$T}(1)) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
     # id registration tuple value
-    id_exprs = [:(_register_component!(registry, $(QuoteNode(T)))) for T in types]
+    id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
     return quote

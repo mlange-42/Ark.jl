@@ -178,12 +178,12 @@ end
     end
 
     # Component IDs
-    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in required_types]
+    id_exprs = Expr[:(_component_id(world, $T)) for T in required_types]
     ids_tuple = Expr(:tuple, id_exprs...)
 
-    with_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
-    without_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
-    non_exclude_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in non_exclude_types]
+    with_ids_exprs = Expr[:(_component_id(world, $T)) for T in with_types]
+    without_ids_exprs = Expr[:(_component_id(world, $T)) for T in without_types]
+    non_exclude_ids_exprs = Expr[:(_component_id(world, $T)) for T in non_exclude_types]
 
     # Mask construction
     mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
@@ -198,10 +198,10 @@ end
     has_excluded_expr = has_excluded ? :(true) : :(false)
 
     # Storage construction
-    storage_exprs = Expr[:(_get_storage(world, $(QuoteNode(T)))) for T in comp_types]
+    storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
-    storage_types = [:(_ComponentStorage{$(QuoteNode(T))}) for T in comp_types]
+    storage_types = [:(_ComponentStorage{$T}) for T in comp_types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
