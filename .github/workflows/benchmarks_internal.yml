@@ -51,7 +51,7 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: actions/checkout@v3
       with:
-        ref: 6d1e581a52f04f82368fccff6ff16d50bec6ecae
+        ref: main
     - name: Set up Julia
       if: github.event_name == 'pull_request'
       uses: julia-actions/setup-julia@v2
