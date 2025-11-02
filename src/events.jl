@@ -1,7 +1,3 @@
-include("function.jl")
-
-using .FunctionWrappers
-import .FunctionWrappers: FunctionWrapper
 
 struct EventType
     _id::UInt8
