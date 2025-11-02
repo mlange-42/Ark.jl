@@ -174,7 +174,7 @@ end
     non_exclude_types = union(comp_types, with_types)
 
     if EX === Val{true} && !isempty(without_types)
-        error("cannot use 'exclusive' with 'without'")
+        error("cannot use 'exclusive' together with 'without'")
     end
 
     function get_id(C)
