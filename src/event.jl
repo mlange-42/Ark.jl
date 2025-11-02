@@ -25,9 +25,9 @@ mutable struct _ObserverID
     id::UInt32
 end
 
-struct Observer
+struct Observer{W<:_AbstractWorld}
     _id::_ObserverID
-    _world::_AbstractWorld
+    _world::W
     _event::EventType
     _comps::_Mask
     _with::_Mask

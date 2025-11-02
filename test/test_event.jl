@@ -67,14 +67,14 @@ end
     @test length(world._event_manager.observers) == 1
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 2
 
-    @test_throws ErrorException register_observer!(world, obs1)
+    @test_throws ErrorException register_observer!(obs1)
 
-    unregister_observer!(world, obs1)
+    unregister_observer!(obs1)
     @test obs1._id.id == 0
     @test obs2._id.id == 1
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
 
-    @test_throws ErrorException unregister_observer!(world, obs1)
+    @test_throws ErrorException unregister_observer!(obs1)
 
     obs3 = @Observer(world, OnCreateEntity, register = false) do entity
         println(entity)
