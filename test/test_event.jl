@@ -48,7 +48,7 @@ end
     @test obs._has_excluded == true
 end
 
-@testset "Observer creation" begin
+@testset "Observer registration" begin
     world = World(Position, Velocity, Altitude, Health)
 
     obs1 = @Observer(world, OnCreateEntity) do entity
@@ -75,4 +75,10 @@ end
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
 
     @test_throws ErrorException unregister_observer!(world, obs1)
+
+    obs3 = @Observer(world, OnCreateEntity, register = false) do entity
+        println(entity)
+    end
+    @test obs3._id.id == 0
+    @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
 end
