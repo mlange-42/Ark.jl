@@ -1,4 +1,52 @@
 
+macro Observer(args...)
+    if length(args) < 3
+        error("@Observer requires at least a world, an event type and a callback")
+    end
+
+    fn_expr = args[1]
+    world_expr = args[2]
+    event_expr = args[3]
+
+    # Default values
+    comps_expr = :(())
+    with_expr = :(())
+    without_expr = :(())
+    exclusive_expr = :false
+
+    # Parse simulated keyword arguments
+    for arg in args[4:end]
+        if Base.isexpr(arg, :(=), 2)
+            name, value = arg.args
+            if name == :components
+                comps_expr = value
+            elseif name == :with
+                with_expr = value
+            elseif name == :without
+                without_expr = value
+            elseif name == :exclusive
+                exclusive_expr = value
+            else
+                error(lazy"Unknown keyword argument: $name")
+            end
+        else
+            error(lazy"Unexpected argument format: $arg")
+        end
+    end
+
+    quote
+        Observer(
+            $(esc(fn_expr)),
+            $(esc(world_expr)),
+            $(esc(event_expr));
+            components=Val.($(esc(comps_expr))),
+            with=Val.($(esc(with_expr))),
+            without=Val.($(esc(without_expr))),
+            exclusive=Val($(esc(exclusive_expr))),
+        )
+    end
+end
+
 function Observer(
     fn::Function,
     world::World,
