@@ -98,7 +98,9 @@ end
     has_excluded_expr = has_excluded ? :(true) : :(false)
 
     return quote
-        Observer(
+        obs = Observer(
+            _ObserverID(UInt32(0)),
+            world,
             event,
             $mask_expr,
             $with_mask_expr,
@@ -106,5 +108,7 @@ end
             $has_excluded_expr,
             fn,
         )
+        register_observer!(world, obs)
+        obs
     end
 end
