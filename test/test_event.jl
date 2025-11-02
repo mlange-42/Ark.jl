@@ -9,7 +9,9 @@
 end
 
 @testset "Observer creation" begin
-    obs2 = Observer(OnCreateEntity) do entity
+    world = World()
+
+    obs2 = Observer(world, OnCreateEntity) do entity
         println(entity)
     end
 
