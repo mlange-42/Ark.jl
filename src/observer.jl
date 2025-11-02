@@ -59,7 +59,7 @@ function Observer(
     with::Tuple=(),
     without::Tuple=(),
     exclusive::Val=Val(false),
-    register::Bool,
+    register::Bool=true,
 )
     _Observer_from_types(
         world, event,
