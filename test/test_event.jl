@@ -13,6 +13,17 @@ end
 
     obs = @Observer(world, OnCreateEntity,
         components = (Position, Velocity),
+    ) do entity
+        println(entity)
+    end
+
+    @test obs._comps == _Mask(1, 2)
+    @test obs._with == _Mask()
+    @test obs._without == _Mask()
+    @test obs._has_excluded == false
+
+    obs = @Observer(world, OnCreateEntity,
+        components = (Position, Velocity),
         with = (Altitude,),
         without = (Health,)
     ) do entity
@@ -22,15 +33,17 @@ end
     @test obs._comps == _Mask(1, 2)
     @test obs._with == _Mask(3)
     @test obs._without == _Mask(4)
-    @test obs._exclusive == false
+    @test obs._has_excluded == true
 
-    obs2 = @Observer(world, OnCreateEntity,
-        components = (Position, Velocity),
+    obs = @Observer(world, OnCreateEntity,
+        with = (Position, Velocity),
         exclusive = true,
     ) do entity
         println(entity)
     end
 
-    @test obs._comps == _Mask(1, 2)
-    @test obs._exclusive == true
+    @test obs._comps == _Mask()
+    @test obs._with == _Mask(1, 2)
+    @test obs._without == _MaskNot(1, 2)
+    @test obs._has_excluded == true
 end
