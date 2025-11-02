@@ -9,6 +9,7 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     return swapped
 end
 
+const DEBUG = Base.JLOptions().check_bounds == 1
 macro check(arg)
     DEBUG ? esc(:(@assert $arg)) : nothing
 end
