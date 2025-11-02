@@ -55,16 +55,6 @@ World(comp_types::Type...; allow_mutable::Bool=false) =
     return :(error(lazy"Component type $C not found in World"))
 end
 
-@generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
-        if S <: _ComponentStorage && S.parameters[1] === C
-            return :(UInt8($i))
-        end
-    end
-    return :(error(lazy"Component type $C not found in the World"))
-end
-
 @generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
