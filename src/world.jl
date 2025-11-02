@@ -46,6 +46,15 @@ world = World(Position, Velocity)
 World(comp_types::Type...; allow_mutable::Bool=false) =
     _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
 
+@generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return :(UInt8($i))
+        end
+    end
+    return :(error(lazy"Component type $C not found in World"))
+end
+
 @generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
