@@ -434,15 +434,15 @@ end
 end
 
 """
-    new_entity!(world::World, values::Tuple)::Entity
+    add_entity!(world::World, values::Tuple)::Entity
 
-Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
+Add a new [`Entity`](@ref) with the given component values to the world. Types are inferred from the values.
 """
-function new_entity!(world::World, values::Tuple)
-    return _new_entity!(world, Val{typeof(values)}(), values)
+function add_entity!(world::World, values::Tuple)
+    return _add_entity!(world, Val{typeof(values)}(), values)
 end
 
-@generated function _new_entity!(world::World, ::Val{TS}, values::Tuple) where {TS<:Tuple}
+@generated function _add_entity!(world::World, ::Val{TS}, values::Tuple) where {TS<:Tuple}
     types = TS.parameters
     exprs = []
 
@@ -476,7 +476,7 @@ end
 end
 
 """
-    new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Union{Batch,Nothing}
+    add_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Union{Batch,Nothing}
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 Component types are inferred from the provided default values.
@@ -491,7 +491,7 @@ that can be used for initialization.
   - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
   - `iterate::Bool`: Whether to return a batch for individual entity initialization.
 """
-function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
+function add_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
@@ -554,14 +554,14 @@ end
 end
 
 """
-    @new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
+    @add_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
 
 Creates the given number of [`Entity`](@ref).
 
 Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
 Note that components are not initialized/undef unless set in the iterator.
 
-Macro version of [`new_entities!`](@ref new_entities!(::World, n:Int, ::Tuple{Vararg{Val}}))
+Macro version of [`add_entities!`](@ref add_entities!(::World, n:Int, ::Tuple{Vararg{Val}}))
 for ergonomic construction of component mappers.
 
 # Arguments
@@ -570,9 +570,9 @@ for ergonomic construction of component mappers.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
 """
-macro new_entities!(world_expr, n_expr, comp_types_expr)
+macro add_entities!(world_expr, n_expr, comp_types_expr)
     quote
-        new_entities!(
+        add_entities!(
             $(esc(world_expr)),
             $(esc(n_expr)),
             Val.($(esc(comp_types_expr))),
@@ -581,14 +581,14 @@ macro new_entities!(world_expr, n_expr, comp_types_expr)
 end
 
 """
-    new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
+    add_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
 
 Creates the given number of [`Entity`](@ref).
 
 Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
 Note that components are not initialized/undef unless set in the iterator!
 
-For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provided.
+For a more convenient tuple syntax, the macro [`@add_entities!`](@ref) is provided.
 
 # Arguments
 
@@ -596,7 +596,7 @@ For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provid
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `Val.((Position, Velocity))`.
 """
-function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
+function add_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
     return _new_entities_from_types!(world, UInt32(n), comp_types)
 end
 

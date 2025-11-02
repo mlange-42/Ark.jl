@@ -19,7 +19,7 @@ function setup_world_add_remove_large_world(n_entities::Int)
 
     entities = Vector{Entity}()
     for i in 1:n_entities
-        e = new_entity!(world, (Position(i, i * 2),))
+        e = add_entity!(world, (Position(i, i * 2),))
         push!(entities, e)
     end
 

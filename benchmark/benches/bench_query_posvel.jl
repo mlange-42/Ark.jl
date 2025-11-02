@@ -2,7 +2,7 @@
 function setup_query_posvel_hot(n_entities::Int)
     world = World(Position, Velocity)
     for i in 1:n_entities
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
     for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
@@ -17,7 +17,7 @@ end
 function setup_query_posvel_cold(n_entities::Int)
     world = World(Position, Velocity)
     for i in 1:n_entities
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
     sum = 0
     for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))

@@ -5,7 +5,7 @@ function setup_world_new_entity_5(n::Int)
     # Run once to allocate memory
     entities = Vector{Entity}()
     for _ in 1:n
-        e = new_entity!(world, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
+        e = add_entity!(world, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
         push!(entities, e)
     end
 
@@ -19,7 +19,7 @@ end
 function benchmark_world_new_entity_5(args, n::Int)
     world = args
     for _ in 1:n
-        new_entity!(world, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
+        add_entity!(world, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
     end
 end
 
