@@ -200,7 +200,7 @@ end
     storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
-    ids_tuple = Tuple(required_ids)
+    ids_tuple = tuple(required_ids...)
 
     return quote
         Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(

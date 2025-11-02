@@ -451,14 +451,13 @@ function new_entity!(world::World, values::Tuple)
     return _new_entity!(world, Val{typeof(values)}(), values)
 end
 
-@generated function _new_entity!(world::World, ::Val{TS}, values::Tuple) where {TS<:Tuple}
+@generated function _new_entity!(world::W, ::Val{TS}, values::Tuple) where {W<:World,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
-    id_exprs = [:(_component_id(world, $T)) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))
+    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
@@ -505,19 +504,18 @@ function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=fals
 end
 
 @generated function _new_entities_from_defaults!(
-    world::World,
+    world::W,
     n::UInt32,
     ::Val{TS},
     values::Tuple,
     iterate::Bool,
-) where {TS<:Tuple}
+) where {W<:World,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
-    id_exprs = [:(_component_id(world, $T)) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))
+    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
@@ -609,14 +607,13 @@ function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
     return _new_entities_from_types!(world, UInt32(n), comp_types)
 end
 
-@generated function _new_entities_from_types!(world::World, n::UInt32, ::TS) where {TS<:Tuple}
+@generated function _new_entities_from_types!(world::W, n::UInt32, ::TS) where {W<:World,TS<:Tuple}
     types = [t.parameters[1] for t in TS.parameters]
     exprs = []
 
-    id_exprs = [:(_component_id(world, $T)) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))
+    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
