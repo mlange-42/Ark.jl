@@ -203,9 +203,9 @@ end
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
-            $(QuoteNode(mask)),
-            $(QuoteNode(exclude_mask)),
-            $(has_excluded ? :(true) : :(false)),
+            $(mask),
+            $(exclude_mask),
+            $(has_excluded ? true : false),
             $storages_tuple,
         )
     end
