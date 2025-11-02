@@ -68,7 +68,7 @@ function _get_bit(p::_BitPool)::UInt8
     p.bits[curr] = curr
 
     p.available -= 1
-    return p.bits[curr]
+    return curr
 end
 
 function _get_new_bit(p::_BitPool)::UInt8
