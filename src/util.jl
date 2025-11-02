@@ -9,7 +9,7 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     return swapped
 end
 
-const DEBUG = ("ARK_RUNNING_TESTS" in ENV && ENV["ARK_RUNNING_TESTS"])
+const DEBUG = ("ARK_RUNNING_TESTS" in keys(ENV) && ENV["ARK_RUNNING_TESTS"])
 
 macro check(arg)
     DEBUG ? esc(:(@assert $arg)) : nothing
