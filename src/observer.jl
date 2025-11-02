@@ -120,3 +120,11 @@ end
         obs
     end
 end
+
+function register_observer!(observer::Observer)
+    _add_observer!(observer._world._event_manager, observer)
+end
+
+function unregister_observer!(observer::Observer)
+    _remove_observer!(observer._world._event_manager, observer)
+end
