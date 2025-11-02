@@ -174,7 +174,7 @@ end
     non_exclude_types = union(comp_types, with_types)
 
     if EX === Val{true} && !isempty(without_types)
-        error("cannot use 'exclusive' with 'without'")
+        error("cannot use 'exclusive' together with 'without'")
     end
 
     function get_id(C)
@@ -203,8 +203,8 @@ end
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
-            $(QuoteNode(mask)),
-            $(QuoteNode(exclude_mask)),
+            $mask,
+            $exclude_mask,
             $(has_excluded ? :(true) : :(false)),
             $storages_tuple,
         )
