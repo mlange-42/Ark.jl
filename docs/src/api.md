@@ -27,9 +27,9 @@ can be attached to an entity.
 ```@docs
 Entity
 zero_entity
-new_entity!
-new_entities!
-@new_entities!
+add_entity!
+add_entities!
+@add_entities!
 remove_entity!
 is_alive
 is_zero

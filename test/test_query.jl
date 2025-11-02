@@ -3,9 +3,9 @@
     world = World(Position, Velocity, Altitude, Health)
 
     for i in 1:10
-        new_entity!(world, (Altitude(1), Health(2)))
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(world, (Position(i, i * 2), Health(3)))
+        add_entity!(world, (Altitude(1), Health(2)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        add_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
     query = @Query(world, (Position, Velocity))
@@ -22,7 +22,7 @@
                 vec_pos[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
                 count += 1
             end
-            @test_throws ErrorException new_entity!(world, (Altitude(1), Health(2)))
+            @test_throws ErrorException add_entity!(world, (Altitude(1), Health(2)))
             @test is_locked(world) == true
         end
         @test count == 10
@@ -34,8 +34,8 @@ end
     world = World(Position, Velocity, Altitude)
 
     for i in 1:10
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
     query = @Query(world, (Position, Velocity), with = (Altitude,))
@@ -55,8 +55,8 @@ end
     world = World(Position, Velocity, Altitude)
 
     for i in 1:10
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
     query = @Query(world, (Position, Velocity), without = (Altitude,))
@@ -76,8 +76,8 @@ end
     world = World(Position, Velocity, Altitude)
 
     for i in 1:10
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
     query = @Query(world, (Position, Velocity, Altitude), optional = (Altitude,))
@@ -104,9 +104,9 @@ end
     world = World(Position, Velocity, Altitude, Health)
 
     for i in 1:10
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
-        new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5), Health(6)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
+        add_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5), Health(6)))
     end
 
     @test_throws ErrorException @Query(world, (Position, Velocity), without = (Altitude,), exclusive = true)
@@ -130,7 +130,7 @@ end
     world = World(Position, Velocity)
 
     for i in 1:10
-        new_entity!(world, (Position(i, i * 2),))
+        add_entity!(world, (Position(i, i * 2),))
     end
 
     query = @Query(world, (Position, Velocity))
@@ -151,8 +151,8 @@ end
     world = World(Position, Velocity)
 
     for i in 1:10
-        new_entity!(world, (Position(i, i * 2),))
-        new_entity!(world, (Velocity(i, i * 2),))
+        add_entity!(world, (Position(i, i * 2),))
+        add_entity!(world, (Velocity(i, i * 2),))
     end
 
     query = @Query(world, ())

@@ -4,7 +4,7 @@ function setup_world_get_5(n_entities::Int)
 
     entities = Vector{Entity}()
     for i in 1:n_entities
-        e = new_entity!(world, (Position(i, i * 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
+        e = add_entity!(world, (Position(i, i * 2), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)))
         push!(entities, e)
     end
 

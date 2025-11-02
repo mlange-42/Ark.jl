@@ -1,8 +1,8 @@
 
 @testset "Batch iterator test" begin
     world = World(Position, Velocity, Altitude)
-    new_entity!(world, (Position(1, 2),))
-    new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    add_entity!(world, (Position(1, 2),))
+    add_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
     storages = (world._storages[1],)
     batch = Batch{typeof(world),typeof(storages),1}(world,
