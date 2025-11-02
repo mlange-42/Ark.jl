@@ -82,3 +82,31 @@ for n in (100, 1_000, 10_000, 100_000, 1_000_000)
     SUITE["benchmark_outer bytes=128 n=$n"] =
         @be setup_outer_128B($n) benchmark_outer_128B(_, $n) evals = 100 seconds = SECONDS
 end
+
+function setup_outer_256B(n_entities::Int)
+    vec = Vector{AosOuter_256B}()
+    for _ in 1:n_entities
+        push!(vec, AosOuter_256B())
+    end
+    @inbounds for entity in vec
+        pos = entity.pos
+        vel = entity.vel
+        entity.pos = Position(pos.x + vel.dx, pos.y + vel.dy)
+    end
+    return vec
+end
+
+function benchmark_outer_256B(args, n)
+    vec = args
+    @inbounds for entity in vec
+        pos = entity.pos
+        vel = entity.vel
+        entity.pos = Position(pos.x + vel.dx, pos.y + vel.dy)
+    end
+    return vec
+end
+
+for n in (100, 1_000, 10_000, 100_000, 1_000_000)
+    SUITE["benchmark_outer bytes=256 n=$n"] =
+        @be setup_outer_256B($n) benchmark_outer_256B(_, $n) evals = 100 seconds = SECONDS
+end

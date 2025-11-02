@@ -70,3 +70,27 @@ for n in (100, 1_000, 10_000, 100_000, 1_000_000)
     SUITE["benchmark_immutable bytes=128 n=$n"] =
         @be setup_immutable_128B($n) benchmark_immutable_128B(_, $n) evals = 100 seconds = SECONDS
 end
+
+function setup_immutable_256B(n_entities::Int)
+    vec = Vector{AosImmutable_256B}()
+    for _ in 1:n_entities
+        push!(vec, AosImmutable_256B())
+    end
+    @inbounds for (i, entity) in enumerate(vec)
+        vec[i] = AosImmutable_256B(entity.x + entity.dx, entity.y + entity.dy)
+    end
+    return vec
+end
+
+function benchmark_immutable_256B(args, n)
+    vec = args
+    @inbounds for (i, entity) in enumerate(vec)
+        vec[i] = AosImmutable_256B(entity.x + entity.dx, entity.y + entity.dy)
+    end
+    return vec
+end
+
+for n in (100, 1_000, 10_000, 100_000, 1_000_000)
+    SUITE["benchmark_immutable bytes=256 n=$n"] =
+        @be setup_immutable_256B($n) benchmark_immutable_256B(_, $n) evals = 100 seconds = SECONDS
+end
