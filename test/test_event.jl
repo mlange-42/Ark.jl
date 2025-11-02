@@ -28,7 +28,9 @@ end
     @test obs._comps == _Mask(1, 2)
     @test obs._with == _Mask()
     @test obs._without == _Mask()
-    @test obs._has_excluded == false
+    @test obs._has_comps == true
+    @test obs._has_with == false
+    @test obs._has_without == false
 
     obs = @observe!(world, OnAddComponents,
         components = (Position, Velocity),
@@ -41,7 +43,9 @@ end
     @test obs._comps == _Mask(1, 2)
     @test obs._with == _Mask(3)
     @test obs._without == _Mask(4)
-    @test obs._has_excluded == true
+    @test obs._has_comps == true
+    @test obs._has_with == true
+    @test obs._has_without == true
 
     obs = @observe!(world, OnAddComponents,
         with = (Position, Velocity),
@@ -53,7 +57,9 @@ end
     @test obs._comps == _Mask()
     @test obs._with == _Mask(1, 2)
     @test obs._without == _MaskNot(1, 2)
-    @test obs._has_excluded == true
+    @test obs._has_comps == false
+    @test obs._has_with == true
+    @test obs._has_without == true
 
     @test_throws ErrorException @observe!(world, OnCreateEntity,
         components = (Position, Velocity),

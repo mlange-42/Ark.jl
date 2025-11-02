@@ -36,7 +36,9 @@ struct Observer
     _comps::_Mask
     _with::_Mask
     _without::_Mask
-    _has_excluded::Bool
+    _has_comps::Bool
+    _has_with::Bool
+    _has_without::Bool
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
