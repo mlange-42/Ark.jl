@@ -17,6 +17,9 @@ function EventRegistry()
 end
 
 function new_event_type!(reg::EventRegistry)
+    if reg._next_index == typemax(UInt8)
+        error("reached maximum number of $(reg._next_index) event types")
+    end
     reg._next_index += 1
     return EventType(reg._next_index)
 end
@@ -40,23 +43,19 @@ struct _EventManager
 end
 
 function _EventManager()
-    _EventManager(Vector{Vector{Observer}}())
+    _EventManager(fill(Vector{Observer}(), typemax(UInt8)))
+end
+
+function _has_observers(m::_EventManager, event::EventType)
+    return length(m.observers[event._id]) > 0
 end
 
 function _add_observer!(m::_EventManager, o::Observer)
     if o._id.id > 0
         error("observer is already registered")
     end
-    event = o._event._id
-    old_length = length(m.observers)
-    if old_length < event
-        resize!(m.observers, event)
-        for i in (old_length+1):event
-            m.observers[i] = Vector{Observer}()
-        end
-    end
-    push!(m.observers[event], o)
-    o._id.id = UInt32(length(m.observers[event]))
+    push!(m.observers[o._event._id], o)
+    o._id.id = UInt32(length(m.observers[o._event._id]))
 end
 
 function _remove_observer!(m::_EventManager, o::Observer)
