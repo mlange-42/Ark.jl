@@ -7,5 +7,6 @@ const SUITE = BenchmarkGroup()
 
 include("bench_mask_contains_all.jl")
 include("bench_mask_contains_any.jl")
+include("bench_create_mask.jl")
 include("bench_set_mask.jl")
 include("bench_lock_unlock.jl")

@@ -11,7 +11,7 @@ function _Mask(bits::UInt8...)
     chunks = ntuple(_ -> UInt64(0), 4)
 
     for b in bits
-        @assert b > 0 "Bit index must be between 1 and 256"
+        @check b > 0
         chunk = (b - 1) >>> 6
         offset = (b - 1) & 0x3F
         chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
@@ -23,7 +23,7 @@ function _MaskNot(bits::UInt8...)
     chunks = ntuple(_ -> typemax(UInt64), 4)  # 0xFFFFFFFFFFFFFFFF
 
     for b in bits
-        @assert b > 0 "Bit index must be between 1 and 256"
+        @check b > 0
         chunk = (b - 1) >>> 6
         offset = (b - 1) & 0x3F
         mask = ~(UInt64(1) << offset)
@@ -37,7 +37,7 @@ function _Mask(bits::Integer...)
     chunks = ntuple(_ -> UInt64(0), 4)
 
     for b in bits
-        @assert 1 ≤ b ≤ 256 "Bit index must be between 1 and 256"
+        @check 1 ≤ b ≤ 256
         chunk = (b - 1) >>> 6
         offset = (b - 1) & 0x3F
         chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
