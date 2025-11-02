@@ -232,9 +232,7 @@ end
 end
 
 @inline function Base.iterate(q::Query)
-    if length(q._ids) == 0
-        q._cursor._archetypes = q._world._archetypes
-    else
+    if length(q._ids) != 0
         comps = q._world._index.components
         rare_component = argmin(length(comps[i]) for i in q._ids)
         q._cursor._archetypes = comps[rare_component]
