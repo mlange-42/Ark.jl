@@ -20,10 +20,11 @@ function _get_entity(p::_EntityPool)::Entity
     p.next = p.entities[p.next]._id
 
     temp = p.entities[curr]
-    p.entities[curr] = Entity(curr, temp._gen)
+    entity = Entity(curr, temp._gen)
+    p.entities[curr] = entity
 
     p.available -= 1
-    return p.entities[curr]
+    return entity
 end
 
 function _get_new_entity(p::_EntityPool)::Entity
