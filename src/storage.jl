@@ -3,8 +3,8 @@ struct _ComponentStorage{C}
     data::Vector{Vector{C}}
 end
 
-function _ComponentStorage{C}(archetypes::Int) where C
-    _ComponentStorage{C}(fill(Vector{C}(), archetypes))
+function _ComponentStorage{C}() where C
+    _ComponentStorage{C}([Vector{C}()])
 end
 
 function _get_component(s::_ComponentStorage{C}, arch::UInt32, row::UInt32) where C
