@@ -19,7 +19,7 @@ end
 @testset "Observer creation" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    obs = @observe!(world, OnCreateEntity,
+    obs = @observe!(world, OnAddComponents,
         components = (Position, Velocity),
     ) do entity
         println(entity)
@@ -30,7 +30,7 @@ end
     @test obs._without == _Mask()
     @test obs._has_excluded == false
 
-    obs = @observe!(world, OnCreateEntity,
+    obs = @observe!(world, OnAddComponents,
         components = (Position, Velocity),
         with = (Altitude,),
         without = (Health,)
@@ -43,7 +43,7 @@ end
     @test obs._without == _Mask(4)
     @test obs._has_excluded == true
 
-    obs = @observe!(world, OnCreateEntity,
+    obs = @observe!(world, OnAddComponents,
         with = (Position, Velocity),
         exclusive = true,
     ) do entity
@@ -54,6 +54,12 @@ end
     @test obs._with == _Mask(1, 2)
     @test obs._without == _MaskNot(1, 2)
     @test obs._has_excluded == true
+
+    @test_throws ErrorException @observe!(world, OnCreateEntity,
+        components = (Position, Velocity),
+    ) do entity
+        println(entity)
+    end
 end
 
 @testset "Observer registration" begin

@@ -7,6 +7,8 @@ end
 
 const OnCreateEntity::EventType = EventType(UInt8(1))
 const OnRemoveEntity::EventType = EventType(UInt8(2))
+const OnAddComponents::EventType = EventType(UInt8(3))
+const OnRemoveComponents::EventType = EventType(UInt8(4))
 
 mutable struct EventRegistry
     _next_index::UInt8
@@ -40,10 +42,21 @@ end
 
 struct _EventManager
     observers::Vector{Vector{Observer}}
+    union_comps::Vector{_Mask}
+    union_with::Vector{_Mask}
+    any_no_with::Vector{Bool}
+    any_no_comps::Vector{Bool}
 end
 
 function _EventManager()
-    _EventManager(fill(Vector{Observer}(), typemax(UInt8)))
+    len = typemax(UInt8)
+    _EventManager(
+        fill(Vector{Observer}(), len),
+        fill(_Mask(), len),
+        fill(_Mask(), len),
+        fill(false, len),
+        fill(false, len),
+    )
 end
 
 function _has_observers(m::_EventManager, event::EventType)

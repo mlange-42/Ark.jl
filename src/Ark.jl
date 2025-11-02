@@ -39,7 +39,7 @@ export close!
 export Entities
 
 export EventRegistry, new_event_type!
-export OnCreateEntity, OnRemoveEntity
+export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
 
 export Observer, observe!, @observe!
 
