@@ -174,13 +174,14 @@ end
     non_exclude_types = union(comp_types, with_types)
 
     if EX === Val{true} && !isempty(without_types)
-        error("cannot use 'exclusive' with 'without'")
+        error("cannot use 'exclusive' together with 'without'")
     end
 
     function get_id(C)
         _component_id(W.parameters[1], C)
     end
 
+    all_ids = map(get_id, comp_types)
     required_ids = map(get_id, required_types)
     with_ids = map(get_id, with_types)
     without_ids = map(get_id, without_types)
@@ -193,7 +194,7 @@ end
     storage_types = [_ComponentStorage{T} for T in comp_types]
     storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
 
-    storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
+    storage_exprs = Expr[:(world._storages[$(Int(i))]) for i in all_ids]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
     ids_tuple = tuple(required_ids...)
@@ -203,9 +204,9 @@ end
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
-            $(QuoteNode(mask)),
-            $(QuoteNode(exclude_mask)),
-            $(has_excluded ? :(true) : :(false)),
+            $(mask),
+            $(exclude_mask),
+            $(has_excluded ? true : false),
             $storages_tuple,
         )
     end
@@ -231,9 +232,7 @@ end
 end
 
 @inline function Base.iterate(q::Query)
-    if length(q._ids) == 0
-        q._cursor._archetypes = q._world._archetypes
-    else
+    if length(q._ids) != 0
         comps = q._world._index.components
         rare_component = argmin(length(comps[i]) for i in q._ids)
         q._cursor._archetypes = comps[rare_component]
