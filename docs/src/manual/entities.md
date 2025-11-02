@@ -25,11 +25,11 @@ DocTestSetup = quote
 end
 ```
 
-Here, we use [add_entity!](@ref) to add an entity with a `Position` and a `Velocity` components.
+Here, we use [new_entity!](@ref) to create an entity with a `Position` and a `Velocity` components.
 Note that component values are passed as a tuple!
 
 ```jldoctest; output = false
-entity = add_entity!(world, (
+entity = new_entity!(world, (
     Position(100, 100),
     Velocity(0, 0),
 ))
@@ -44,10 +44,10 @@ Components can be added to and removed from the entity later. This is described 
 Often, multiple entities with the same same set of components are created at the same time.
 For that sake, Ark provides batch entity creation, which is much faster than creating entities one by one. There are different ways to create entities in batches:
 
-From **default component values** using [add_entities!](@ref add_entities!(::World, ::Int, ::Tuple; ::Bool)). Here, we create 100 entities, all with the same `Position` and `Velocity`:
+From **default component values** using [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)). Here, we create 100 entities, all with the same `Position` and `Velocity`:
 
 ```jldoctest; output = false
-add_entities!(world, 100, (
+new_entities!(world, 100, (
     Position(100, 100),
     Velocity(0, 0),
 ))
@@ -58,10 +58,10 @@ add_entities!(world, 100, (
 
 This may be sufficient in some use cases, but most often we will use a second approach:
 
-From **component types** with subsequent manual initialization using the macro [@add_entities!](@ref):
+From **component types** with subsequent manual initialization using the macro [@new_entities!](@ref):
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in @add_entities!(world, 100, (Position, Velocity))
+for (entities, positions, velocities) in @new_entities!(world, 100, (Position, Velocity))
     for i in eachindex(entities)
         positions[i] = Position(i, i)
         velocities[i] = Velocity(0, 0)
@@ -73,7 +73,7 @@ end
 ```
 
 The nested loop shown here will be explained in detail in the chapter on [Queries](@ref),
-which work in the same way at the [Batch](@ref) iterator that is returned from [@add_entities!](@ref)
+which work in the same way at the [Batch](@ref) iterator that is returned from [@new_entities!](@ref)
 and that is used here.
 
 Note that with the second approach, all components of all entities should be set as they are otherwise uninitialized.
@@ -86,7 +86,7 @@ Removing an entity from the World is as easy as this:
 DocTestSetup = quote
     using Ark
     world = World()
-    entity = add_entity!(world, ())
+    entity = new_entity!(world, ())
 end
 ```
 
@@ -106,7 +106,7 @@ it may be necessary to check whether an entity is still alive:
 DocTestSetup = quote
     using Ark
     world = World()
-    entity = add_entity!(world, ())
+    entity = new_entity!(world, ())
 end
 ```
 

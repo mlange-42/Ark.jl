@@ -3,7 +3,7 @@ function setup_query_posvel_stored(n_entities::Int)
     world = World(Position, Velocity)
 
     for i in 1:n_entities
-        add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
     query = @Query(world, (Position, Velocity))
     for (_, pos_column, vel_column) in query

@@ -32,7 +32,7 @@ DocTestSetup = quote
     end
 
     world = World(Position, Velocity, Health)
-    add_entities!(world, 100, (Position(0,0), Velocity(0,0), Health(0)))
+    new_entities!(world, 100, (Position(0,0), Velocity(0,0), Health(0)))
 end
 ```
 

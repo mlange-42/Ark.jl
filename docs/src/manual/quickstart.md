@@ -37,7 +37,7 @@ world = World(Position, Velocity)
 
 for i in 1:1000
     # Create an entity with components
-    entity = add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+    entity = new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
 end
 
 # Time loop
