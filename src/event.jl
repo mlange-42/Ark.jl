@@ -79,7 +79,7 @@ function _add_observer!(m::_EventManager, o::Observer)
         m.any_no_with[e] = true
     end
 
-    if e == OnCreateEntity || e == OnRemoveEntity
+    if o._event == OnCreateEntity || o._event == OnRemoveEntity
         return
     end
 
@@ -115,7 +115,7 @@ function _remove_observer!(m::_EventManager, o::Observer)
     end
     m.union_with[e] = with_mask
 
-    if e == OnCreateEntity || e == OnRemoveEntity
+    if o._event == OnCreateEntity || o._event == OnRemoveEntity
         return
     end
 
@@ -139,10 +139,7 @@ function _fire_create_entity_if_has(m::_EventManager, entity::Entity, mask::_Mas
     return nothing
 end
 
-function _fire_remove_entity_if_has(m::_EventManager, entity::Entity, mask::_Mask)
-    if !_has_observers(m, OnRemoveEntity)
-        return
-    end
+function _fire_remove_entity(m::_EventManager, entity::Entity, mask::_Mask)
     _fire_create_or_remove_entity(m, entity, mask, OnRemoveEntity, true)
     return nothing
 end
