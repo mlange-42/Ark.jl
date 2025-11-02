@@ -10,10 +10,11 @@ end
 @testset "World creation 2" begin
     world = World(Position, Velocity)
     @test isa(world, World)
+    params = typeof(world).parameters[1]
 
-    @test _component_id(world, Velocity) == 2
-    @test _component_id(world, Position) == 1
-    @test_throws ErrorException _component_id(world, Altitude)
+    @test _component_id(params, Velocity) == 2
+    @test _component_id(params, Position) == 1
+    @test_throws ErrorException _component_id(params, Altitude)
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position})
     @test isa(_get_storage_by_id(world, Val(1)), _ComponentStorage{Position})
@@ -56,9 +57,10 @@ end
 
 @testset "World Component Registration" begin
     world = World(Int, Position)
+    params = typeof(world).parameters[1]
 
     # Register Int component
-    id_int = _component_id(world, Int)
+    id_int = _component_id(params, Int)
     @test isa(id_int, UInt8)
     @test world._registry.types[id_int] == Int
     @test length(world._storages) == 2
@@ -66,7 +68,7 @@ end
     @test length(world._storages[id_int].data) == 1
 
     # Register Position component
-    id_pos = _component_id(world, Position)
+    id_pos = _component_id(params, Position)
     @test isa(id_pos, UInt8)
     @test world._registry.types[id_pos] == Position
     @test length(world._storages) == 2
@@ -74,11 +76,11 @@ end
     @test length(world._storages[id_pos].data) == 1
 
     # Re-register Int component (should not add new storage)
-    id_int2 = _component_id(world, Int)
+    id_int2 = _component_id(params, Int)
     @test id_int2 == id_int
     @test length(world._storages) == 2
 
-    @test_throws ErrorException _component_id(world, Velocity)
+    @test_throws ErrorException _component_id(params, Velocity)
 
     @test_throws ErrorException World(Position, MutableComponent)
     _ = World(Position, MutableComponent; allow_mutable=true)
@@ -86,11 +88,12 @@ end
 
 @testset "_get_storage Tests" begin
     world = World(Int)
+    params = typeof(world).parameters[1]
 
     storage1 = _get_storage(world, Int)
     @test storage1 isa _ComponentStorage{Int}
 
-    id = _component_id(world, Int)
+    id = _component_id(params, Int)
     storage2 = _get_storage(world, Int)
     @test storage2 isa _ComponentStorage{Int}
 
@@ -101,15 +104,16 @@ end
 
 @testset "_find_or_create_archetype! Tests" begin
     world = World(Position, Velocity)
+    params = typeof(world).parameters[1]
 
-    pos_id = _component_id(world, Position)
+    pos_id = _component_id(params, Position)
     @test pos_id == UInt8(1)
 
     index = _find_or_create_archetype!(world, world._graph.nodes[1], (pos_id,), ())
     @test index == 2
     @test length(world._archetypes) == 2
 
-    vel_id = _component_id(world, Velocity)
+    vel_id = _component_id(params, Velocity)
     @test vel_id == UInt8(2)
 
     index = _find_or_create_archetype!(world, world._graph.nodes[1], (pos_id, vel_id), ())
@@ -136,8 +140,9 @@ end
 
 @testset "_create_entity! Tests" begin
     world = World(Position, Velocity)
-    pos_id = _component_id(world, Position)
-    vel_id = _component_id(world, Velocity)
+    params = typeof(world).parameters[1]
+    pos_id = _component_id(params, Position)
+    vel_id = _component_id(params, Velocity)
 
     arch_index = _find_or_create_archetype!(world, world._graph.nodes[1], (pos_id, vel_id), ())
     @test arch_index == 2

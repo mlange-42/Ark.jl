@@ -165,10 +165,10 @@ end
     ::OT,
     ::EX,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
-    comp_types = [x.parameters[1] for x in CT.parameters]
-    with_types = [x.parameters[1] for x in WT.parameters]
-    without_types = [x.parameters[1] for x in WO.parameters]
-    optional_types = [x.parameters[1] for x in OT.parameters]
+    comp_types = [T.parameters[1] for T in CT.parameters]
+    with_types = [T.parameters[1] for T in WT.parameters]
+    without_types = [T.parameters[1] for T in WO.parameters]
+    optional_types = [T.parameters[1] for T in OT.parameters]
 
     required_types = setdiff(comp_types, optional_types)
     non_exclude_types = union(comp_types, with_types)
@@ -177,41 +177,35 @@ end
         error("cannot use 'exclusive' with 'without'")
     end
 
-    # Component IDs
-    id_exprs = Expr[:(_component_id(world, $T)) for T in required_types]
-    ids_tuple = Expr(:tuple, id_exprs...)
-
-    with_ids_exprs = Expr[:(_component_id(world, $T)) for T in with_types]
-    without_ids_exprs = Expr[:(_component_id(world, $T)) for T in without_types]
-    non_exclude_ids_exprs = Expr[:(_component_id(world, $T)) for T in non_exclude_types]
-
-    # Mask construction
-    mask_expr = :(_Mask($(id_exprs...), $(with_ids_exprs...)))
-
-    if EX === Val{true}
-        exclude_mask_expr = :(_MaskNot($(non_exclude_ids_exprs...)))
-    else
-        exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
+    function get_id(C)
+        _component_id(W.parameters[1], C)
     end
 
-    has_excluded = (length(without_types) > 0) || (EX === Val{true})
-    has_excluded_expr = has_excluded ? :(true) : :(false)
+    required_ids = map(get_id, required_types)
+    with_ids = map(get_id, with_types)
+    without_ids = map(get_id, without_types)
+    non_exclude_ids = map(get_id, non_exclude_types)
 
-    # Storage construction
+    mask = _Mask(required_ids..., with_ids...)
+    exclude_mask = EX === Val{true} ? _MaskNot(non_exclude_ids...) : _Mask(without_ids...)
+    has_excluded = (length(without_ids) > 0) || (EX === Val{true})
+
+    storage_types = [_ComponentStorage{T} for T in comp_types]
+    storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
+
     storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
-    storage_types = [:(_ComponentStorage{$T}) for T in comp_types]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    ids_tuple = tuple(required_ids...)
 
     return quote
         Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
-            $mask_expr,
-            $exclude_mask_expr,
-            $has_excluded_expr,
+            $(QuoteNode(mask)),
+            $(QuoteNode(exclude_mask)),
+            $(has_excluded ? :(true) : :(false)),
             $storages_tuple,
         )
     end

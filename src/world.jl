@@ -46,14 +46,13 @@ world = World(Position, Velocity)
 World(comp_types::Type...; allow_mutable::Bool=false) =
     _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
 
-@generated function _component_id(world::World{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
+@generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
+    for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
             return :(UInt8($i))
         end
     end
-    return :(error(lazy"Component type $C not found in the World"))
+    return :(error(lazy"Component type $C not found in World"))
 end
 
 @generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
@@ -105,10 +104,8 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     index::UInt32 = length(world._archetypes)
     node.archetype = index
 
-    # type-stable: expand pushes to concrete storage fields
     _push_nothing_to_all!(world)
 
-    # type-stable: assign new column to each component's storage with concrete accesses
     for comp::UInt8 in components
         _assign_new_column_for_comp!(world, comp, index)
         push!(world._index.components[comp], arch)
@@ -178,7 +175,6 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        # comp casting to match generated helper signature
         _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
     end
 
@@ -214,7 +210,6 @@ function remove_entity!(world::World, entity::Entity)
 
     # Only operate on storages for components present in this archetype
     for comp::UInt8 in archetype.components
-        # ensure comp has the integer kind expected by the generated helper
         _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
     end
 
@@ -442,14 +437,13 @@ function new_entity!(world::World, values::Tuple)
     return _new_entity!(world, Val{typeof(values)}(), values)
 end
 
-@generated function _new_entity!(world::World, ::Val{TS}, values::Tuple) where {TS<:Tuple}
+@generated function _new_entity!(world::W, ::Val{TS}, values::Tuple) where {W<:World,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
-    id_exprs = [:(_component_id(world, $T)) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))
+    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
@@ -496,19 +490,18 @@ function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=fals
 end
 
 @generated function _new_entities_from_defaults!(
-    world::World,
+    world::W,
     n::UInt32,
     ::Val{TS},
     values::Tuple,
     iterate::Bool,
-) where {TS<:Tuple}
+) where {W<:World,TS<:Tuple}
     types = TS.parameters
     exprs = []
 
-    id_exprs = [:(_component_id(world, $T)) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))
+    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
@@ -600,14 +593,13 @@ function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
     return _new_entities_from_types!(world, UInt32(n), comp_types)
 end
 
-@generated function _new_entities_from_types!(world::World, n::UInt32, ::TS) where {TS<:Tuple}
+@generated function _new_entities_from_types!(world::W, n::UInt32, ::TS) where {W<:World,TS<:Tuple}
     types = [t.parameters[1] for t in TS.parameters]
     exprs = []
 
-    id_exprs = [:(_component_id(world, $T)) for T in types]
-    push!(exprs, :(ids = ($(id_exprs...),)))
+    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, ids, ())))
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
@@ -763,21 +755,19 @@ function exchange_components!(world::World, entity::Entity; add::Tuple=(), remov
 end
 
 @generated function _exchange_components!(
-    world::World,
+    world::W,
     entity::Entity,
     ::Val{ATS},
     add::Tuple,
     ::RTS,
-) where {ATS<:Tuple,RTS<:Tuple}
+) where {W<:World,ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
     rem_types = [x.parameters[1] for x in RTS.parameters]
     exprs = []
 
-    add_id_exprs = [:(_component_id(world, $T)) for T in add_types]
-    push!(exprs, :(add_ids = ($(add_id_exprs...),)))
-    rem_id_exprs = [:(_component_id(world, $T)) for T in rem_types]
-    push!(exprs, :(rem_ids = ($(rem_id_exprs...),)))
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, add_ids, rem_ids)))
+    add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
+    rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, $add_ids, $rem_ids)))
     push!(exprs, :(row = _move_entity!(world, entity, archetype)))
 
     for i in 1:length(add_types)
@@ -818,11 +808,9 @@ end
     storage_types = [:(_ComponentStorage{$T}) for T in types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
-    # storage tuple value
     storage_exprs = [:(_ComponentStorage{$T}(1)) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
-    # id registration tuple value
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
