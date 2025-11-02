@@ -30,7 +30,8 @@ function benchmark_ark_32B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_ark bytes=032 n=$n"] = @be setup_ark_32B($n) benchmark_ark_32B(_, $n) evals = 100 seconds = SECONDS
+    SUITE["benchmark_ark bytes=032 n=$(n)"] =
+        @be setup_ark_32B($n) benchmark_ark_32B(_, $n) evals = 100 seconds = SECONDS
 end
 
 function setup_ark_64B(n_entities::Int)
@@ -64,7 +65,8 @@ function benchmark_ark_64B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_ark bytes=064 n=$n"] = @be setup_ark_64B($n) benchmark_ark_64B(_, $n) evals = 100 seconds = SECONDS
+    SUITE["benchmark_ark bytes=064 n=$(n)"] =
+        @be setup_ark_64B($n) benchmark_ark_64B(_, $n) evals = 100 seconds = SECONDS
 end
 
 function setup_ark_128B(n_entities::Int)
@@ -102,6 +104,6 @@ function benchmark_ark_128B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_ark bytes=128 n=$n"] =
+    SUITE["benchmark_ark bytes=128 n=$(n)"] =
         @be setup_ark_128B($n) benchmark_ark_128B(_, $n) evals = 100 seconds = SECONDS
 end

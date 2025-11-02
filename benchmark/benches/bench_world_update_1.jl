@@ -25,6 +25,6 @@ function benchmark_world_update_1(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_update_1 n=$n"] =
+    SUITE["benchmark_world_update_1 n=$(n)"] =
         @be setup_world_update_1($n) benchmark_world_update_1(_, $n) evals = 100 seconds = SECONDS
 end

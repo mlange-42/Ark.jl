@@ -19,7 +19,7 @@ function benchmark_immutable_32B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_immutable bytes=032 n=$n"] =
+    SUITE["benchmark_immutable bytes=032 n=$(n)"] =
         @be setup_immutable_32B($n) benchmark_immutable_32B(_, $n) evals = 100 seconds = SECONDS
 end
 
@@ -43,7 +43,7 @@ function benchmark_immutable_64B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_immutable bytes=064 n=$n"] =
+    SUITE["benchmark_immutable bytes=064 n=$(n)"] =
         @be setup_immutable_64B($n) benchmark_immutable_64B(_, $n) evals = 100 seconds = SECONDS
 end
 
@@ -67,6 +67,6 @@ function benchmark_immutable_128B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_immutable bytes=128 n=$n"] =
+    SUITE["benchmark_immutable bytes=128 n=$(n)"] =
         @be setup_immutable_128B($n) benchmark_immutable_128B(_, $n) evals = 100 seconds = SECONDS
 end
