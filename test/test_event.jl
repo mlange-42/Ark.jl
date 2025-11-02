@@ -82,3 +82,24 @@ end
     @test obs3._id.id == 0
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
 end
+
+@testset "Observer exclusive error" begin
+    world = World()
+    @test_throws ErrorException @Observer(world, OnCreateEntity, without = (Altitude,), exclusive = true) do entity
+    end
+end
+
+@testset "Observer macro missing argument" begin
+    ex = Meta.parse("@Observer(world)")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "Observer macro unknown argument" begin
+    ex = Meta.parse("@Observer(world, OnCreateEntity, abc = 2) do entity end")
+    @test_throws LoadError eval(ex)
+end
+
+@testset "Observer macro invalid syntax" begin
+    ex = Meta.parse("@Observer(world, OnCreateEntity, xyz) do entity end")
+    @test_throws LoadError eval(ex)
+end
