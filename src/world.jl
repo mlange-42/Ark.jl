@@ -769,21 +769,19 @@ function exchange_components!(world::World, entity::Entity; add::Tuple=(), remov
 end
 
 @generated function _exchange_components!(
-    world::World,
+    world::W,
     entity::Entity,
     ::Val{ATS},
     add::Tuple,
     ::RTS,
-) where {ATS<:Tuple,RTS<:Tuple}
+) where {W<:World,ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
     rem_types = [x.parameters[1] for x in RTS.parameters]
     exprs = []
 
-    add_id_exprs = [:(_component_id(world, $T)) for T in add_types]
-    push!(exprs, :(add_ids = ($(add_id_exprs...),)))
-    rem_id_exprs = [:(_component_id(world, $T)) for T in rem_types]
-    push!(exprs, :(rem_ids = ($(rem_id_exprs...),)))
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, add_ids, rem_ids)))
+    add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
+    rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, $add_ids, $rem_ids)))
     push!(exprs, :(row = _move_entity!(world, entity, archetype)))
 
     for i in 1:length(add_types)
