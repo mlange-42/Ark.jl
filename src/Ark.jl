@@ -41,7 +41,6 @@ export Entities
 export EventRegistry, new_event_type!
 export OnCreateEntity, OnRemoveEntity
 
-export Observer, @Observer
-export register_observer!, unregister_observer!
+export Observer, observe!, @observe!
 
 end

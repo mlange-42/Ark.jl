@@ -1,7 +1,7 @@
 
-macro Observer(args...)
+macro observe!(args...)
     if length(args) < 3
-        error("@Observer requires at least a world, an event type and a callback")
+        error("observe! requires at least a world, an event type and a callback")
     end
 
     fn_expr = args[1]
@@ -38,7 +38,7 @@ macro Observer(args...)
     end
 
     quote
-        Observer(
+        observe!(
             $(esc(fn_expr)),
             $(esc(world_expr)),
             $(esc(event_expr));
@@ -51,7 +51,7 @@ macro Observer(args...)
     end
 end
 
-function Observer(
+function observe!(
     fn::Function,
     world::W,
     event::EventType;
@@ -104,9 +104,8 @@ end
     has_excluded_expr = has_excluded ? :(true) : :(false)
 
     return quote
-        obs = Observer{W}(
+        obs = Observer(
             _ObserverID(UInt32(0)),
-            world,
             event,
             $mask_expr,
             $with_mask_expr,
@@ -115,16 +114,16 @@ end
             fn,
         )
         if register
-            register_observer!(obs)
+            observe!(world, obs)
         end
         obs
     end
 end
 
-function register_observer!(observer::Observer)
-    _add_observer!(observer._world._event_manager, observer)
-end
-
-function unregister_observer!(observer::Observer)
-    _remove_observer!(observer._world._event_manager, observer)
+function observe!(world::World, observer::Observer; unregister=false)
+    if unregister
+        _remove_observer!(world._event_manager, observer)
+    else
+        _add_observer!(world._event_manager, observer)
+    end
 end
