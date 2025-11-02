@@ -23,7 +23,7 @@ function benchmark_outer_32B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_outer bytes=032 n=$n"] =
+    SUITE["benchmark_outer bytes=032 n=$(n)"] =
         @be setup_outer_32B($n) benchmark_outer_32B(_, $n) evals = 100 seconds = SECONDS
 end
 
@@ -51,7 +51,7 @@ function benchmark_outer_64B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_outer bytes=064 n=$n"] =
+    SUITE["benchmark_outer bytes=064 n=$(n)"] =
         @be setup_outer_64B($n) benchmark_outer_64B(_, $n) evals = 100 seconds = SECONDS
 end
 
@@ -79,6 +79,6 @@ function benchmark_outer_128B(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_outer bytes=128 n=$n"] =
+    SUITE["benchmark_outer bytes=128 n=$(n)"] =
         @be setup_outer_128B($n) benchmark_outer_128B(_, $n) evals = 100 seconds = SECONDS
 end

@@ -44,6 +44,6 @@ function benchmark_world_add_remove_8(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_add_remove_8 n=$n"] =
+    SUITE["benchmark_world_add_remove_8 n=$(n)"] =
         @be setup_world_add_remove_8($n) benchmark_world_add_remove_8(_, $n) seconds = SECONDS
 end

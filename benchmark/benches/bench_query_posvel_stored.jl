@@ -29,6 +29,6 @@ function benchmark_query_posvel_stored(args, n)
 end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
-    SUITE["benchmark_query_posvel_stored n=$n"] =
+    SUITE["benchmark_query_posvel_stored n=$(n)"] =
         @be setup_query_posvel_stored($n) benchmark_query_posvel_stored(_, $n) evals = 100 seconds = SECONDS
 end

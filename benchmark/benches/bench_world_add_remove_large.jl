@@ -40,6 +40,6 @@ function benchmark_world_add_remove_large_world(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_add_remove_large n=$n"] =
+    SUITE["benchmark_world_add_remove_large n=$(n)"] =
         @be setup_world_add_remove_large_world($n) benchmark_world_add_remove_large_world(_, $n) seconds = SECONDS
 end
