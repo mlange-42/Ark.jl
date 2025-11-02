@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,N}
+struct World{CS<:Tuple,CT<:Tuple,N} <: _AbstractWorld
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
@@ -21,6 +21,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _lock::_Lock
     _graph::_Graph
     _resources::Dict{DataType,Any}
+    _event_manager::_EventManager
 end
 
 """
@@ -210,6 +211,15 @@ function remove_entity!(world::World, entity::Entity)
 
     index = world._entities[entity._id]
     archetype = world._archetypes[index.archetype]
+
+    if _has_observers(world._event_manager, OnRemoveEntity)
+        l = _lock(world._lock)
+        _fire_remove_entity(
+            world._event_manager, entity,
+            world._archetypes[index.archetype].mask,
+        )
+        _unlock(world._lock, l)
+    end
 
     swapped = _swap_remove!(archetype.entities._data, index.row)
 
@@ -440,7 +450,9 @@ end
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
 """
 function new_entity!(world::World, values::Tuple)
-    return _new_entity!(world, Val{typeof(values)}(), values)
+    entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
+    _fire_create_entity_if_has(world._event_manager, entity, world._archetypes[arch].mask)
+    return entity
 end
 
 @generated function _new_entity!(world::World, ::Val{TS}, values::Tuple) where {TS<:Tuple}
@@ -467,7 +479,7 @@ end
         push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
     end
 
-    push!(exprs, Expr(:return, :entity))
+    push!(exprs, Expr(:return, Expr(:tuple, :entity, :archetype)))
 
     return quote
         @inbounds begin
@@ -820,7 +832,7 @@ end
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     # storage tuple value
-    storage_exprs = [:(_ComponentStorage{$T}(1)) for T in types]
+    storage_exprs = [:(_ComponentStorage{$T}()) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
     # id registration tuple value
@@ -841,6 +853,7 @@ end
             _Lock(),
             graph,
             Dict{DataType,Any}(),
+            _EventManager(),
         )
     end
 end

@@ -1,10 +1,13 @@
 module Ark
 
 using StaticArrays
+using FunctionWrappers: FunctionWrapper
 
+include("abstract.jl")
 include("util.jl")
 include("entity.jl")
 include("mask.jl")
+include("event.jl")
 include("vec_map.jl")
 include("storage.jl")
 include("graph.jl")
@@ -14,6 +17,7 @@ include("registry.jl")
 include("pool.jl")
 include("lock.jl")
 include("world.jl")
+include("observer.jl")
 include("query.jl")
 include("batch.jl")
 
@@ -33,5 +37,10 @@ export Query, @Query, Batch
 export close!
 
 export Entities
+
+export EventRegistry, new_event_type!
+export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
+
+export Observer, observe!, @observe!
 
 end
