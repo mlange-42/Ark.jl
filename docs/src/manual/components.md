@@ -38,7 +38,7 @@ DocTestSetup = quote
     end
 
     world = World(Position, Velocity, Health)
-    entity = add_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
 end
 ```
 
@@ -67,7 +67,7 @@ add components to and remove them from entities at runtime.
 This works similar to component access and can be done via [add_components!](@ref) and [@remove_components!](@ref):
 
 ```jldoctest; output = false
-entity = add_entity!(world, ())
+entity = new_entity!(world, ())
 
 add_components!(world, entity, (Position(0, 0), Velocity(1,1)))
 @remove_components!(world, entity, (Velocity,))
@@ -84,7 +84,7 @@ To allow for efficient exchange of components (i.e. add some and remove others i
 
 
 ```jldoctest; output = false
-entity = add_entity!(world, (Position(0, 0), Velocity(1,1)))
+entity = new_entity!(world, (Position(0, 0), Velocity(1,1)))
 
 @exchange_components!(world, entity, 
     add    = (Health(100),),

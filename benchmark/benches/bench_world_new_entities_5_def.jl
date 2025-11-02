@@ -3,7 +3,7 @@ function setup_world_new_entities_5_def(n::Int)
 
     # Run once to allocate memory
     entities = Vector{Entity}()
-    for (e, pos_col, vel_col, a_col, b_col, c_col) in @add_entities!(
+    for (e, pos_col, vel_col, a_col, b_col, c_col) in @new_entities!(
         world, n, (Position, Velocity, CompA, CompB, CompC))
         append!(entities, e)
         @inbounds for i in eachindex(e)
@@ -24,7 +24,7 @@ end
 
 function benchmark_world_new_entities_5_def(args, n::Int)
     world = args
-    add_entities!(world, n, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)); iterate=false)
+    new_entities!(world, n, (Position(0, 0), Velocity(0, 0), CompA(0, 0), CompB(0, 0), CompC(0, 0)); iterate=false)
 end
 
 for n in (100, 10_000)

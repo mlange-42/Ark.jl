@@ -14,4 +14,4 @@ end
 
 world = World(Position, Velocity)
 
-entity = add_entity!(world, (Position(0, 0), Velocity(0, 0)))
+entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))

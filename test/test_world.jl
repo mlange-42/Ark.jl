@@ -161,8 +161,8 @@ end
 @testset "World get/set components" begin
     world = World(Position, Velocity)
 
-    e1 = add_entity!(world, (Position(1, 2), Velocity(3, 4)))
-    e2 = add_entity!(world, ())
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    e2 = new_entity!(world, ())
 
     pos, vel = @get_components(world, e1, (Position, Velocity))
     @test pos == Position(1, 2)
@@ -182,14 +182,14 @@ end
     @test vel == Velocity(7, 8)
 end
 
-@testset "add_entity! Tests" begin
+@testset "new_entity! Tests" begin
     world = World(Position, Velocity)
 
-    entity = add_entity!(world, ())
+    entity = new_entity!(world, ())
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
 
-    entity = add_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(3, 0)
     @test is_alive(world, entity) == true
 
@@ -198,15 +198,15 @@ end
     @test vel == Velocity(3, 4)
 end
 
-@testset "World add_entities! with types" begin
+@testset "World new_entities! with types" begin
     world = World(Position, Velocity, Altitude)
 
-    add_entity!(world, (Position(1, 1), Velocity(3, 4)))
-    e = add_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in @add_entities!(world, 100, (Position, Velocity))
+    for (ent, pos_col, vel_col) in @new_entities!(world, 100, (Position, Velocity))
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
@@ -235,15 +235,15 @@ end
     @test count == 101
 end
 
-@testset "World add_entities! with values" begin
+@testset "World new_entities! with values" begin
     world = World(Position, Velocity, Altitude)
 
-    add_entity!(world, (Position(1, 1), Velocity(3, 4)))
-    e = add_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in add_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate=true)
+    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate=true)
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
@@ -273,7 +273,7 @@ end
     end
     @test count == 101
 
-    batch = add_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
+    batch = new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
     @test batch === nothing
     @test is_locked(world) == false
 
@@ -291,7 +291,7 @@ end
     end
     @test count == 201
 
-    for (ent,) in add_entities!(world, 100, (); iterate=true)
+    for (ent,) in new_entities!(world, 100, (); iterate=true)
         @test length(ent) == 100
     end
 end
@@ -299,10 +299,10 @@ end
 @testset "World add/remove components" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    e1 = add_entity!(world, ())
+    e1 = new_entity!(world, ())
     add_components!(world, e1, (Position(1, 2), Velocity(3, 4)))
 
-    e2 = add_entity!(world, (Position(5, 6), Velocity(7, 8)))
+    e2 = new_entity!(world, (Position(5, 6), Velocity(7, 8)))
 
     add_components!(world, e1, (Altitude(1), Health(2)))
     add_components!(world, e2, (Altitude(3), Health(4)))
@@ -333,7 +333,7 @@ end
 @testset "World exchange components" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    e1 = add_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
     @exchange_components!(world, e1, add = (Altitude(1),), remove = (Position,))
     alt, = @get_components(world, e1, (Altitude,))
@@ -368,9 +368,9 @@ end
 @testset "remove_entity! Tests" begin
     world = World(Position, Velocity)
 
-    e1 = add_entity!(world, (Position(1, 1), Velocity(1, 1)))
-    e2 = add_entity!(world, (Position(2, 2), Velocity(1, 1)))
-    e3 = add_entity!(world, (Position(3, 3), Velocity(1, 1)))
+    e1 = new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+    e2 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
+    e3 = new_entity!(world, (Position(3, 3), Velocity(1, 1)))
 
     remove_entity!(world, e2)
     @test is_alive(world, e1) == true

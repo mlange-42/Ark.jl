@@ -4,7 +4,7 @@ function setup_world_posvel(n_entities::Int)
 
     entities = Vector{Entity}()
     for i in 1:n_entities
-        e = add_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        e = new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
         push!(entities, e)
     end
 

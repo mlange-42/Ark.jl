@@ -5,7 +5,7 @@
     @test is_zero(zero_entity) == true
     @test is_zero(_new_entity(1, 0)) == true
 
-    entity = add_entity!(world, ())
+    entity = new_entity!(world, ())
     @test is_zero(entity) == false
 end
 
