@@ -1,3 +1,7 @@
+include("function.jl")
+
+using .FunctionWrappers
+import .FunctionWrappers: FunctionWrapper
 
 const OnCreateEntity = :OnCreateEntity
 const OnRemoveEntity = :OnRemoveEntity
@@ -25,6 +29,10 @@ end
 end
 
 struct Observer
+    id::UInt8
+    fn::FunctionWrapper{Int,Tuple{Int}}
+end
 
-
+function Observer(fn::Function)
+    Observer(UInt8(0), FunctionWrapper{Int,Tuple{Int}}(fn))
 end
