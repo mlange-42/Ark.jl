@@ -211,6 +211,7 @@ end
         @test length(pos_col) == 100
         @test length(vel_col) == 100
         for i in eachindex(ent)
+            @test is_alive(world, ent[i]) == true
             pos_col[i] = Position(i + 1, i + 1)
             vel_col[i] = Velocity(i + 1, i + 1)
             count += 1
@@ -226,6 +227,7 @@ end
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
         for i in eachindex(ent)
+            @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(i, i)
             count += 1
         end
@@ -246,6 +248,7 @@ end
         @test length(pos_col) == 100
         @test length(vel_col) == 100
         for i in eachindex(ent)
+            @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(99, 99)
             @test vel_col[i] == Velocity(99, 99)
             pos_col[i] = Position(i + 1, i + 1)
@@ -263,6 +266,7 @@ end
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
         for i in eachindex(ent)
+            @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(i, i)
             count += 1
         end
@@ -276,6 +280,7 @@ end
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
         for i in eachindex(ent)
+            @test is_alive(world, ent[i]) == true
             if i <= 101
                 @test pos_col[i] == Position(i, i)
             else
