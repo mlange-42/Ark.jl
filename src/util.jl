@@ -8,3 +8,7 @@ function _swap_remove!(v::Vector, i::UInt32)::Bool
     pop!(v)
     return swapped
 end
+
+macro check(arg)
+    DEBUG ? esc(:(@assert $arg)) : nothing
+end
