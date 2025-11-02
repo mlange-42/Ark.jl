@@ -181,6 +181,7 @@ end
         _component_id(W.parameters[1], C)
     end
 
+    all_ids = map(get_id, comp_types)
     required_ids = map(get_id, required_types)
     with_ids = map(get_id, with_types)
     without_ids = map(get_id, without_types)
@@ -193,7 +194,7 @@ end
     storage_types = [_ComponentStorage{T} for T in comp_types]
     storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
 
-    storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
+    storage_exprs = Expr[:(world._storages[$(Int(i))]) for i in all_ids]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
     ids_tuple = tuple(required_ids...)
