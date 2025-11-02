@@ -1,10 +1,17 @@
 
-@testset "Event type registration" begin
-    m = _EventManager()
+@testset "Event type creation" begin
+    reg = EventRegistry()
 
-    @test _event_index(m, Val{:OnCreateEntity}()) == 1
-    @test _event_index(m, Val{:OnRemoveEntity}()) == 2
+    e1 = new_event_type!(reg)
+    e2 = new_event_type!(reg)
+    @test e1._id == 3
+    @test e2._id == 4
+end
 
-    @test _register_event!(m, :OnCustomEvent) == 3
-    @test _event_index(m, Val{:OnCustomEvent}()) == 3
+@testset "Observer creation" begin
+    obs2 = Observer(OnCreateEntity) do entity
+        println(entity)
+    end
+
+    obs2._fn(zero_entity)
 end
