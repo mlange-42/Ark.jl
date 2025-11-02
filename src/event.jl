@@ -130,3 +130,30 @@ function _remove_observer!(m::_EventManager, o::Observer)
     end
     m.union_comps[e] = comps_mask
 end
+
+function _fire_create_entity_if_has(m::_EventManager, entity::Entity, mask::_Mask)
+    if !_has_observers(m, OnCreateEntity)
+        return
+    end
+    _fire_create_entity(m, entity, mask, true)
+    return nothing
+end
+
+function _fire_create_entity(m::_EventManager, entity::Entity, mask::_Mask, early_out::Bool)::Bool
+    evt = OnCreateEntity._id
+    if early_out && !m.any_no_with[evt] && !_contains_any(m.union_with[evt], mask)
+        return false
+    end
+    found = false
+    for o in m.observers[evt]
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
+end

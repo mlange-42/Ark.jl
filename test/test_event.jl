@@ -124,3 +124,40 @@ end
     ex = Meta.parse("@observe!(world, OnCreateEntity, xyz) do entity end")
     @test_throws LoadError eval(ex)
 end
+
+@testset "Fire OnCreateEntity" begin
+    world = World(Position, Velocity, Altitude)
+
+    counter = 0
+    obs = @observe!(world, OnCreateEntity) do entity
+        counter += 1
+    end
+
+    new_entity!(world, (Position(0, 0),))
+    @test counter == 1
+
+    observe!(world, obs; unregister=true)
+
+    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity)) do entity
+        counter += 1
+    end
+
+    new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    @test counter == 2
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+    @test counter == 3
+    new_entity!(world, (Position(0, 0),))
+    @test counter == 3
+    new_entity!(world, (Altitude(0),))
+    @test counter == 3
+
+    observe!(world, obs; unregister=true)
+
+    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity), without = (Altitude,)) do entity
+        counter += 1
+    end
+    new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    @test counter == 4
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+    @test counter == 4
+end
