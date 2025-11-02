@@ -24,17 +24,7 @@ jobs:
       uses: julia-actions/setup-julia@v2
       with:
         version: '1.12.1'
-    - name: Cache Julia packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.julia/artifacts
-          ~/.julia/packages
-          ~/.julia/compiled
-        key: ${{ runner.os }}-julia-current-${{ hashFiles('benchmark/Manifest.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-julia-current-
-          ${{ runner.os }}-julia-
+    - uses: julia-actions/cache@v2
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks for current
