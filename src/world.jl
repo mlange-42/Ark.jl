@@ -104,10 +104,8 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     index::UInt32 = length(world._archetypes)
     node.archetype = index
 
-    # type-stable: expand pushes to concrete storage fields
     _push_nothing_to_all!(world)
 
-    # type-stable: assign new column to each component's storage with concrete accesses
     for comp::UInt8 in components
         _assign_new_column_for_comp!(world, comp, index)
         push!(world._index.components[comp], arch)
@@ -177,7 +175,6 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        # comp casting to match generated helper signature
         _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
     end
 
@@ -213,7 +210,6 @@ function remove_entity!(world::World, entity::Entity)
 
     # Only operate on storages for components present in this archetype
     for comp::UInt8 in archetype.components
-        # ensure comp has the integer kind expected by the generated helper
         _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
     end
 
@@ -812,11 +808,9 @@ end
     storage_types = [:(_ComponentStorage{$T}) for T in types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
-    # storage tuple value
     storage_exprs = [:(_ComponentStorage{$T}(1)) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
-    # id registration tuple value
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 

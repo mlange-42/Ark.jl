@@ -165,7 +165,6 @@ end
     ::OT,
     ::EX,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
-    # Extract component types
     comp_types = [T.parameters[1] for T in CT.parameters]
     with_types = [T.parameters[1] for T in WT.parameters]
     without_types = [T.parameters[1] for T in WO.parameters]
@@ -187,16 +186,13 @@ end
     without_ids = map(get_id, without_types)
     non_exclude_ids = map(get_id, non_exclude_types)
 
-    # Construct masks at compile time
     mask = _Mask(required_ids..., with_ids...)
     exclude_mask = EX === Val{true} ? _MaskNot(non_exclude_ids...) : _Mask(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
-    # Storage type tuple
     storage_types = [_ComponentStorage{T} for T in comp_types]
     storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
 
-    # Storage access expressions
     storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
