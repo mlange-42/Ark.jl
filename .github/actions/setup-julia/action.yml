@@ -5,6 +5,9 @@ inputs:
   julia-version:
     description: Julia version to install
     required: true
+  project-file:
+    description: Project file toml for cache key
+    required: true
 
 runs:
   using: "composite" # <-- makes it re-usable
@@ -24,6 +27,6 @@ runs:
         ~/.julia/packages
         ~/.julia/registries
         ~/.julia/scratchspaces
-      key: ${{ runner.os }}-julia-${{ inputs.julia-version }}-${{ hashFiles('**/Project.toml') }}
+      key: ${{ runner.os }}-julia-${{ inputs.julia-version }}-${{ hashFiles(inputs.project-file) }}
       restore-keys: |
         ${{ runner.os }}-julia-${{ inputs.julia-version }}-
