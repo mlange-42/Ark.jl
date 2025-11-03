@@ -17,17 +17,20 @@ jobs:
   benchmark:
     name: Benchmarks (internal)
     runs-on: ubuntu-latest
+    permissions: # required for caching
+      actions: write
+      contents: read
     strategy:
       matrix:
         repetition: [1, 2, 3]
+        
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Set up Julia
-      uses: julia-actions/setup-julia@v2
+      uses: ./.github/actions/setup-julia
       with:
-        version: '1.12.1'
-    - uses: julia-actions/cache@v2
+        julia-version: '1.12.1'
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks for current
@@ -49,21 +52,9 @@ jobs:
       run: git checkout ${{ env.BASE_REF }}
     - name: Set up Julia
       if: github.event_name == 'pull_request'
-      uses: julia-actions/setup-julia@v2
+      uses: ./.github/actions/setup-julia
       with:
-        version: '1.12.1'
-    - name: Cache Julia packages
-      if: github.event_name == 'pull_request'
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.julia/artifacts
-          ~/.julia/packages
-          ~/.julia/compiled
-        key: ${{ runner.os }}-julia-main-${{ hashFiles('benchmark/Manifest.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-julia-main-
-          ${{ runner.os }}-julia-
+        julia-version: '1.12.1'
     - name: Install dependencies
       if: github.event_name == 'pull_request'
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
