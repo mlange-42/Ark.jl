@@ -10,6 +10,9 @@ jobs:
   benchmark:
     name: Benchmarks
     runs-on: ubuntu-latest
+    permissions: # required for caching
+      actions: write
+      contents: read
     steps:
     - name: Checkout code
       uses: actions/checkout@v3

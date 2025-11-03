@@ -17,6 +17,9 @@ jobs:
   benchmark:
     name: Benchmarks (internal)
     runs-on: ubuntu-latest
+    permissions: # required for caching
+      actions: write
+      contents: read
     strategy:
       matrix:
         repetition: [1, 2, 3]
