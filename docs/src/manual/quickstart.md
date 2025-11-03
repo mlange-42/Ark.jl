@@ -6,7 +6,7 @@ Finally, it points into possible directions to continue.
 
 ## Installation
 
-Ark.jl is not yet released. For now, run this in your project to use it:
+Run this to add Ark.jl to a Julia project:
 
 ```julia
 using Pkg
