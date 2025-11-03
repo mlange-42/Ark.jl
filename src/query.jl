@@ -63,13 +63,13 @@ end
 macro Query(world_expr, comp_types_expr)
     :(Query($(esc(world_expr)), Val.($(esc(comp_types_expr)))))
 end
-macro Query(kwargs_expr, world_expr, comp_types_expr)
+macro Query(kwargs_expr::Expr, world_expr, comp_types_expr)
     map(x -> (x.args[2] = :(Val.($(x.args[2])))), kwargs_expr.args)
     quote
         Query(
             $(esc(world_expr)),
             Val.($(esc(comp_types_expr)));
-            $(esc.(kwargs_expr.args)...)
+            $(esc.(kwargs_expr.args)...),
         )
     end
 end

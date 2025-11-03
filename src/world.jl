@@ -704,7 +704,7 @@ macro exchange_components!(kwargs_expr, world_expr, entity_expr)
         exchange_components!(
             $(esc(world_expr)),
             $(esc(entity_expr));
-            $(esc.(kwargs_expr.args)...)
+            $(esc.(kwargs_expr.args)...),
         )
     end
 end
