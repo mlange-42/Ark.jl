@@ -28,6 +28,7 @@ jobs:
       uses: ./.github/actions/setup-julia
       with:
         julia-version: '1.12.1'
+        project-file: 'benchmark/Project.toml'
         
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
@@ -52,6 +53,7 @@ jobs:
       uses: ./.github/actions/setup-julia
       with:
         julia-version: '1.12.1'
+        project-file: 'benchmark/Project.toml'
 
     - name: Install dependencies
       if: github.event_name == 'pull_request'
@@ -99,6 +101,7 @@ jobs:
       uses: ./.github/actions/setup-julia
       with:
         julia-version: '1.12.1'
+        project-file: 'benchmark/Project.toml'
     - name: Run comparison
       run: julia benchmark/compare_benchmarks.jl | tee compare.md
     - name: Archive results CSV
