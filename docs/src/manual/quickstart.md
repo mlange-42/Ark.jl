@@ -10,7 +10,7 @@ Ark.jl is not yet released. For now, run this in your project to use it:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/mlange-42/ark.jl")
+Pkg.add("Ark")
 ```
 
 ## Example

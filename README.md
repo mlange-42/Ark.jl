@@ -26,10 +26,10 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 ## Features
 
-- Designed for [performance](https://mlange-42.github.io/Ark.jl/dev/benchmarks) and highly optimized.
-- Well-[documented](https://mlange-42.github.io/Ark.jl/dev/), type-safe [API](https://mlange-42.github.io/Ark.jl/dev/api).
-- Blazing fast [batch entity creation](https://mlange-42.github.io/Ark.jl/dev/manual/entities.html#Creating-entities).
-- No [systems](https://mlange-42.github.io/Ark.jl/dev/manual/systems). Just [queries](https://mlange-42.github.io/Ark.jl/dev/manual/queries). Use your own structure.
+- Designed for [performance](https://mlange-42.github.io/Ark.jl/stable/benchmarks) and highly optimized.
+- Well-[documented](https://mlange-42.github.io/Ark.jl/stable/), type-safe [API](https://mlange-42.github.io/Ark.jl/stable/api).
+- Blazing fast [batch entity creation](https://mlange-42.github.io/Ark.jl/stable/manual/entities.html#Creating-entities).
+- No [systems](https://mlange-42.github.io/Ark.jl/stable/manual/systems). Just [queries](https://mlange-42.github.io/Ark.jl/stable/manual/queries). Use your own structure.
 - Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
 
 ## Installation
@@ -38,14 +38,14 @@ Ark.jl is not yet released. For now, run this in your project to use it:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/mlange-42/ark.jl")
+Pkg.add("Ark")
 ```
 
 ## Usage
 
 Here is the classical Position/Velocity example that every ECS shows in the docs.
 
-See the [Manual](https://mlange-42.github.io/Ark.jl/dev/) and [API docs](https://mlange-42.github.io/Ark.jl/dev/api) for more information.
+See the [Manual](https://mlange-42.github.io/Ark.jl/stable/) and [API docs](https://mlange-42.github.io/Ark.jl/stable/api) for more information.
 
 ```julia
 using Ark

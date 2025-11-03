@@ -12,7 +12,7 @@ makedocs(;
     authors  = "Martin Lange <martin_lange_@gmx.net>, Adriano Meligrana <adriano.meligrana@centai.eu>",
     format   = Documenter.HTML(;
         description="Ark.jl is an archetype-based entity component system (ECS) for Julia.",
-        canonical="https://mlange-42.github.io/Ark.jl/dev",
+        canonical="https://mlange-42.github.io/Ark.jl/stable",
         edit_link="main",
         prettyurls=false,
         sidebar_sitename=false,
