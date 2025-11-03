@@ -23,7 +23,7 @@ end
 """
     @Query(
         world::World,
-        comp_types::Tuple,
+        comp_types::Tuple;
         with::Tuple=(),
         without::Tuple=(),
         optional::Tuple=(),
