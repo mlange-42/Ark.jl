@@ -183,3 +183,9 @@ end
     ex = Meta.parse("@Query(world, (Position,), xyz)")
     @test_throws LoadError eval(ex)
 end
+
+@testset "Query error messages" begin
+    world = World(Position, Velocity)
+
+    @test_throws ErrorException Query(world, (Position, Velocity))
+end
