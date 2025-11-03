@@ -213,7 +213,6 @@ end
 end
 
 @inline function Base.iterate(q::Query, state::Int)
-    
     while state <= length(q._cursor._archetypes)
         archetype = q._cursor._archetypes[state]
         if length(archetype.entities) > 0 &&
@@ -226,7 +225,6 @@ end
         end
         state += 1
     end
-
     close!(q)
     return nothing
 end
