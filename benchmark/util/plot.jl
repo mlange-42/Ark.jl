@@ -35,7 +35,7 @@ function plot_aos(in_file::String, out_file::String; dark::Bool=false)
         default(ytickfont=font(family, 10, color=:black))
     end
 
-    xvals = [100, 1_000, 10_000, 100_000, 1_000_000]
+    xvals = [100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000]
     xtick_labels = map(x -> thousands(x), xvals)
     plt = plot(xscale=:log10,
         title="Benchmark vs. Array of Structs",
