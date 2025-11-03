@@ -165,10 +165,10 @@ end
     ::OT,
     ::EX,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
-    comp_types = [T.parameters[1] for T in CT.parameters]
-    with_types = [T.parameters[1] for T in WT.parameters]
-    without_types = [T.parameters[1] for T in WO.parameters]
-    optional_types = [T.parameters[1] for T in OT.parameters]
+    comp_types = _try_to_types(CT)
+    with_types = _try_to_types(WT)
+    without_types = _try_to_types(WO)
+    optional_types = _try_to_types(OT)
 
     required_types = setdiff(comp_types, optional_types)
     non_exclude_types = union(comp_types, with_types)

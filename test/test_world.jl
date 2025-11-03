@@ -413,3 +413,10 @@ end
 
     @test_throws ErrorException set_resource!(world, Tick(2))
 end
+
+@testset "World error messages" begin
+    world = World(Position, Velocity)
+
+    e = new_entity!(world, (Position(0, 0),))
+    @test_throws ErrorException get_components(world, e, (Position,))
+end

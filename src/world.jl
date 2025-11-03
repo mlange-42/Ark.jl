@@ -294,7 +294,7 @@ pos, vel = get_components(world, entity, Val.((Position, Velocity)))
 end
 
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
-    types = [x.parameters[1] for x in TS.parameters]
+    types = _try_to_types(TS)
     if length(types) == 0
         return :(())
     end
@@ -367,7 +367,7 @@ has = has_components(world, entity, Val.((Position, Velocity)))
 end
 
 @generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS<:Tuple}
-    types = [x.parameters[1] for x in TS.parameters]
+    types = _try_to_types(TS)
     exprs = []
 
     for i in 1:length(types)
@@ -594,7 +594,7 @@ function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
 end
 
 @generated function _new_entities_from_types!(world::W, n::UInt32, ::TS) where {W<:World,TS<:Tuple}
-    types = [t.parameters[1] for t in TS.parameters]
+    types = _try_to_types(TS)
     exprs = []
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
@@ -762,7 +762,7 @@ end
     ::RTS,
 ) where {W<:World,ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
-    rem_types = [x.parameters[1] for x in RTS.parameters]
+    rem_types = _try_to_types(RTS)
     exprs = []
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
