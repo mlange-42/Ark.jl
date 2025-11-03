@@ -86,7 +86,7 @@ To allow for efficient exchange of components (i.e. add some and remove others i
 ```jldoctest; output = false
 entity = new_entity!(world, (Position(0, 0), Velocity(1,1)))
 
-@exchange_components!(world, entity, 
+@exchange_components!(world, entity; 
     add    = (Health(100),),
     remove = (Position, Velocity),
 )
