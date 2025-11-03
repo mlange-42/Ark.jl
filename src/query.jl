@@ -213,18 +213,18 @@ end
 end
 
 @inline function Base.iterate(q::Query, state::Int)
-    q._cursor._index = state
-
-    while q._cursor._index <= length(q._cursor._archetypes)
-        archetype = q._cursor._archetypes[q._cursor._index]
+    
+    while state <= length(q._cursor._archetypes)
+        archetype = q._cursor._archetypes[state]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             result = _get_columns_at_index(q)
-            next_state = q._cursor._index + 1
+            q._cursor._index = state
+            next_state = state + 1
             return result, next_state
         end
-        q._cursor._index += 1
+        state += 1
     end
 
     close!(q)
