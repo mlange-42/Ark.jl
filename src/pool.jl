@@ -17,11 +17,11 @@ function _get_entity(p::_EntityPool)::Entity
         return _get_new_entity(p)
     end
     curr = p.next
-    p.next = p.entities[p.next]._id
+    @inbounds p.next = p.entities[p.next]._id
 
-    temp = p.entities[curr]
+    @inbounds temp = p.entities[curr]
     entity = Entity(curr, temp._gen)
-    p.entities[curr] = entity
+    @inbounds p.entities[curr] = entity
 
     p.available -= 1
     return entity
@@ -39,7 +39,7 @@ function _recycle(p::_EntityPool, e::Entity)
     end
     temp = p.next
     p.next = e._id
-    p.entities[e._id] = _new_entity(temp, e._gen + UInt32(1))
+    @inbounds p.entities[e._id] = _new_entity(temp, e._gen + UInt32(1))
     p.available += 1
     return nothing
 end
@@ -65,7 +65,7 @@ function _get_bit(p::_BitPool)::UInt8
     end
     curr = p.next
     p.next = p.bits[p.next]
-    p.bits[curr] = curr
+    @inbounds p.bits[curr] = curr
 
     p.available -= 1
     return curr
@@ -80,7 +80,7 @@ function _get_new_bit(p::_BitPool)::UInt8
         )
     end
     b = p.length + 1
-    p.bits[p.length+1] = b
+    @inbounds p.bits[p.length+1] = b
     p.length += 1
     return b
 end
@@ -88,7 +88,7 @@ end
 function _recycle(p::_BitPool, b::UInt8)
     temp = p.next
     p.next = b
-    p.bits[b] = temp
+    @inbounds p.bits[b] = temp
     p.available += 1
     return nothing
 end
