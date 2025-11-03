@@ -45,9 +45,9 @@ end
 @inline function Base.iterate(b::Batch, state::Int)
     b._index = state
 
-    if b._index <= length(b._archetypes)
+    if state <= length(b._archetypes)
         result = _get_columns_at_index(b)
-        next_state = b._index + 1
+        next_state = state + 1
         return result, next_state
     end
 
