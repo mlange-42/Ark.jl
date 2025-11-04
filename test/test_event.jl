@@ -75,50 +75,70 @@ end
 
 @testset "Observer registration" begin
     world = World(Position, Velocity, Altitude, Health)
-    @test _has_observers(world._event_manager, OnCreateEntity) == false
-    @test _has_observers(world._event_manager, OnRemoveEntity) == false
+    @test _has_observers(world._event_manager, OnAddComponents) == false
+    @test _has_observers(world._event_manager, OnRemoveComponents) == false
 
-    obs1 = @observe!(world, OnCreateEntity) do entity
+    @observe!(world, OnAddComponents) do entity
+        println(entity)
+    end
+    obs1 = @observe!(world, OnAddComponents) do entity
         println(entity)
     end
 
-    @test obs1._id.id == 1
-    @test obs1._event._id == 1
+    @test obs1._id.id == 2
+    @test obs1._event._id == 3
     @test length(world._event_manager.observers) == typemax(UInt8)
-    @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
-    @test length(world._event_manager.observers[OnRemoveEntity._id]) == 0
-    @test _has_observers(world._event_manager, OnCreateEntity) == true
-    @test _has_observers(world._event_manager, OnRemoveEntity) == false
+    @test length(world._event_manager.observers[OnAddComponents._id]) == 2
+    @test length(world._event_manager.observers[OnRemoveComponents._id]) == 0
+    @test _has_observers(world._event_manager, OnAddComponents) == true
+    @test _has_observers(world._event_manager, OnRemoveComponents) == false
 
-    obs2 = @observe!(world, OnCreateEntity) do entity
+    obs2 = @observe!(world, OnAddComponents, components = (Position,)) do entity
         println(entity)
     end
 
-    @test obs2._id.id == 2
-    @test length(world._event_manager.observers[OnCreateEntity._id]) == 2
+    @test obs2._id.id == 3
+    @test length(world._event_manager.observers[OnAddComponents._id]) == 3
 
     @test_throws ErrorException observe!(world, obs1)
 
     observe!(world, obs1, unregister=true)
     @test obs1._id.id == 0
-    @test obs2._id.id == 1
-    @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
+    @test obs2._id.id == 2
+    @test length(world._event_manager.observers[OnAddComponents._id]) == 2
+
+    obs2 = @observe!(world, OnAddComponents, with = (Position,)) do entity
+        println(entity)
+    end
+    observe!(world, obs2, unregister=true)
 
     @test_throws ErrorException observe!(world, obs1, unregister=true)
 
-    obs3 = @observe!(world, OnCreateEntity, register = false) do entity
+    obs3 = @observe!(world, OnAddComponents, register = false) do entity
         println(entity)
     end
     @test obs3._id.id == 0
-    @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
+    @test length(world._event_manager.observers[OnAddComponents._id]) == 2
 
-    @test length(world._event_manager.observers[OnRemoveEntity._id]) == 0
-    @test _has_observers(world._event_manager, OnRemoveEntity) == false
-    @observe!(world, OnRemoveEntity) do entity
+    @test length(world._event_manager.observers[OnRemoveComponents._id]) == 0
+    @test _has_observers(world._event_manager, OnRemoveComponents) == false
+    obs4 = @observe!(world, OnRemoveComponents) do entity
         println(entity)
     end
-    @test length(world._event_manager.observers[OnRemoveEntity._id]) == 1
-    @test _has_observers(world._event_manager, OnRemoveEntity) == true
+    @test length(world._event_manager.observers[OnRemoveComponents._id]) == 1
+    @test _has_observers(world._event_manager, OnRemoveComponents) == true
+
+    obs5 = @observe!(world, OnRemoveComponents, components = (Position,)) do entity
+        println(entity)
+    end
+    obs6 = @observe!(world, OnRemoveComponents, with = (Position,)) do entity
+        println(entity)
+    end
+    @test length(world._event_manager.observers[OnRemoveComponents._id]) == 3
+    observe!(world, obs4, unregister=true)
+    observe!(world, obs6, unregister=true)
+    observe!(world, obs5, unregister=true)
+    @test _has_observers(world._event_manager, OnRemoveComponents) == false
 end
 
 @testset "Observer exclusive error" begin
