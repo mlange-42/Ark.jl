@@ -90,7 +90,13 @@ end
 Base.length(sa::_StructArray) = sa.length
 Base.size(sa::_StructArray) = (sa.length,)
 Base.eachindex(sa::_StructArray) = 1:sa.length
-Base.eltype(::Type{_StructArray{C}}) where {C} = C
-Base.IndexStyle(::Type{_StructArray}) = IndexLinear()
-Base.firstindex(sa::_StructArray) = 1
+Base.eltype(::Type{<:_StructArray{C}}) where {C} = C
+Base.IndexStyle(::Type{<:_StructArray}) = IndexLinear()
+
+function Base.firstindex(sa::_StructArray)
+    # Do not simplify to this, as it is then not covered by the tests for some reason:
+    # Base.firstindex(sa::_StructArray) = 1
+    return 1
+end
+
 Base.lastindex(sa::_StructArray) = sa.length

@@ -54,11 +54,11 @@ end
     a = _StructArray(Position)
     resize!(a, 10)
 
-    @test firstindex(a) == 1
-    @test lastindex(a) == 10
+    @test Base.firstindex(a) == 1
+    @test Base.lastindex(a) == 10
 
-    eltype(_StructArray{Position}) == Position
-    eltype(_StructArray{Position}) == IndexLinear()
+    @test Base.eltype(_StructArray{Position}) == Position
+    @test Base.IndexStyle(_StructArray{Position}) == IndexLinear()
 end
 
 @testset "StructArray no fields" begin
