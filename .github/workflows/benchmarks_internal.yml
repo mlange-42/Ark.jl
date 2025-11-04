@@ -50,6 +50,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Switch to base commit
+      if: github.event_name == 'pull_request'
       run: git checkout ${{ env.BASE_REF }}
     - name: Set up Julia
       if: github.event_name == 'pull_request'
