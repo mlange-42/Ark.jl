@@ -21,14 +21,23 @@ function new_event_type!(reg::EventRegistry)
     return EventType(reg._next_index)
 end
 
-struct _EventManager
-end
-
 struct Observer
     _event::EventType
+    _comps::_Mask
+    _with::_Mask
+    _without::_Mask
+    _exclusive::Bool
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
-function Observer(fn::Function, event::EventType)
-    Observer(event, FunctionWrapper{Nothing,Tuple{Entity}}(fn))
+struct _EventManager
+    observers::Vector{Vector{Observer}}
+end
+
+function _add_observer(m::_EventManager, o::Observer)
+    if length(m.observers) < o._event
+        resize!(m.observers, o._event)
+        m.observers[o._event] = Vector{Observer}()
+    end
+    push!(m.observers[o._event], o)
 end
