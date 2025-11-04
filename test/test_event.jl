@@ -24,9 +24,7 @@ end
 @testset "Observer creation" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    obs = @observe!(world, OnAddComponents,
-        components = (Position, Velocity),
-    ) do entity
+    obs = @observe!(world, OnAddComponents, (Position, Velocity)) do entity
         println(entity)
     end
 
@@ -37,8 +35,7 @@ end
     @test obs._has_with == false
     @test obs._has_without == false
 
-    obs = @observe!(world, OnAddComponents,
-        components = (Position, Velocity),
+    obs = @observe!(world, OnAddComponents, (Position, Velocity),
         with = (Altitude,),
         without = (Health,)
     ) do entity
@@ -52,7 +49,7 @@ end
     @test obs._has_with == true
     @test obs._has_without == true
 
-    obs = @observe!(world, OnAddComponents,
+    obs = @observe!(world, OnAddComponents, (),
         with = (Position, Velocity),
         exclusive = true,
     ) do entity
@@ -66,9 +63,7 @@ end
     @test obs._has_with == true
     @test obs._has_without == true
 
-    @test_throws ErrorException @observe!(world, OnCreateEntity,
-        components = (Position, Velocity),
-    ) do entity
+    @test_throws ErrorException @observe!(world, OnCreateEntity, (Position, Velocity)) do entity
         println(entity)
     end
 end
@@ -78,10 +73,10 @@ end
     @test _has_observers(world._event_manager, OnAddComponents) == false
     @test _has_observers(world._event_manager, OnRemoveComponents) == false
 
-    @observe!(world, OnAddComponents) do entity
+    @observe!(world, OnAddComponents, ()) do entity
         println(entity)
     end
-    obs1 = @observe!(world, OnAddComponents) do entity
+    obs1 = @observe!(world, OnAddComponents, ()) do entity
         println(entity)
     end
 
@@ -93,7 +88,7 @@ end
     @test _has_observers(world._event_manager, OnAddComponents) == true
     @test _has_observers(world._event_manager, OnRemoveComponents) == false
 
-    obs2 = @observe!(world, OnAddComponents, components = (Position,)) do entity
+    obs2 = @observe!(world, OnAddComponents, (Position,)) do entity
         println(entity)
     end
 
@@ -107,14 +102,14 @@ end
     @test obs2._id.id == 2
     @test length(world._event_manager.observers[OnAddComponents._id]) == 2
 
-    obs2 = @observe!(world, OnAddComponents, with = (Position,)) do entity
+    obs2 = @observe!(world, OnAddComponents, (), with = (Position,)) do entity
         println(entity)
     end
     observe!(world, obs2, unregister=true)
 
     @test_throws ErrorException observe!(world, obs1, unregister=true)
 
-    obs3 = @observe!(world, OnAddComponents, register = false) do entity
+    obs3 = @observe!(world, OnAddComponents, (), register = false) do entity
         println(entity)
     end
     @test obs3._id.id == 0
@@ -122,16 +117,16 @@ end
 
     @test length(world._event_manager.observers[OnRemoveComponents._id]) == 0
     @test _has_observers(world._event_manager, OnRemoveComponents) == false
-    obs4 = @observe!(world, OnRemoveComponents) do entity
+    obs4 = @observe!(world, OnRemoveComponents, ()) do entity
         println(entity)
     end
     @test length(world._event_manager.observers[OnRemoveComponents._id]) == 1
     @test _has_observers(world._event_manager, OnRemoveComponents) == true
 
-    obs5 = @observe!(world, OnRemoveComponents, components = (Position,)) do entity
+    obs5 = @observe!(world, OnRemoveComponents, (Position,)) do entity
         println(entity)
     end
-    obs6 = @observe!(world, OnRemoveComponents, with = (Position,)) do entity
+    obs6 = @observe!(world, OnRemoveComponents, (), with = (Position,)) do entity
         println(entity)
     end
     @test length(world._event_manager.observers[OnRemoveComponents._id]) == 3
@@ -143,7 +138,7 @@ end
 
 @testset "Observer exclusive error" begin
     world = World()
-    @test_throws ErrorException @observe!(world, OnCreateEntity, without = (Altitude,), exclusive = true) do entity
+    @test_throws ErrorException @observe!(world, OnCreateEntity, (), without = (Altitude,), exclusive = true) do entity
     end
 end
 
@@ -153,12 +148,12 @@ end
 end
 
 @testset "Observer macro unknown argument" begin
-    ex = Meta.parse("@observe!(world, OnCreateEntity, abc = 2) do entity end")
+    ex = Meta.parse("@observe!(world, OnCreateEntity, (), abc = 2) do entity end")
     @test_throws LoadError eval(ex)
 end
 
 @testset "Observer macro invalid syntax" begin
-    ex = Meta.parse("@observe!(world, OnCreateEntity, xyz) do entity end")
+    ex = Meta.parse("@observe!(world, OnCreateEntity, (), xyz) do entity end")
     @test_throws LoadError eval(ex)
 end
 
@@ -166,13 +161,13 @@ end
     world = World(Position, Velocity, Altitude)
 
     counter = 0
-    obs = @observe!(world, OnCreateEntity) do entity
+    obs = @observe!(world, OnCreateEntity, ()) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == false
         counter += 1
     end
     counter_remove = 0
-    @observe!(world, OnRemoveEntity) do entity
+    @observe!(world, OnRemoveEntity, ()) do entity
         counter_remove += 1
     end
 
@@ -181,7 +176,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity)) do entity
+    obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity)) do entity
         counter += 1
     end
 
@@ -196,7 +191,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity), without = (Altitude,)) do entity
+    obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity), without = (Altitude,)) do entity
         counter += 1
     end
     new_entity!(world, (Position(0, 0), Velocity(0, 0)))
@@ -211,7 +206,7 @@ end
     world = World(Position, Velocity, Altitude)
 
     counter = 0
-    obs = @observe!(world, OnCreateEntity) do entity
+    obs = @observe!(world, OnCreateEntity, ()) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter += 1
@@ -230,7 +225,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity)) do entity
+    obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity)) do entity
         counter += 1
     end
 
@@ -245,7 +240,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity), without = (Altitude,)) do entity
+    obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity), without = (Altitude,)) do entity
         counter += 1
     end
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
@@ -258,7 +253,7 @@ end
     world = World(Position, Velocity, Altitude)
 
     counter = 0
-    obs = @observe!(world, OnRemoveEntity) do entity
+    obs = @observe!(world, OnRemoveEntity, ()) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter += 1
@@ -269,7 +264,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnRemoveEntity, with = (Position, Velocity)) do entity
+    obs = @observe!(world, OnRemoveEntity, (), with = (Position, Velocity)) do entity
         counter += 1
     end
 
@@ -284,7 +279,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnRemoveEntity, with = (Position, Velocity), without = (Altitude,)) do entity
+    obs = @observe!(world, OnRemoveEntity, (), with = (Position, Velocity), without = (Altitude,)) do entity
         counter += 1
     end
     remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0))))
@@ -298,12 +293,12 @@ end
 
     counter_add = 0
     counter_rem = 0
-    obs_add = @observe!(world, OnAddComponents) do entity
+    obs_add = @observe!(world, OnAddComponents, ()) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == false
         counter_add += 1
     end
-    obs_rem = @observe!(world, OnRemoveComponents) do entity
+    obs_rem = @observe!(world, OnRemoveComponents, ()) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter_rem += 1
@@ -320,15 +315,15 @@ end
     observe!(world, obs_add; unregister=true)
     observe!(world, obs_rem; unregister=true)
 
-    obs_add = @observe!(world, OnAddComponents, components = (Position, Velocity)) do entity
+    obs_add = @observe!(world, OnAddComponents, (Position, Velocity)) do entity
         counter_add += 1
     end
-    obs_rem = @observe!(world, OnRemoveComponents, components = (Position, Velocity)) do entity
+    obs_rem = @observe!(world, OnRemoveComponents, (Position, Velocity)) do entity
         counter_rem += 1
     end
-    obs_add_dummy = @observe!(world, OnAddComponents, components = (Position,)) do entity
+    obs_add_dummy = @observe!(world, OnAddComponents, (Position,)) do entity
     end
-    obs_rem_dummy = @observe!(world, OnRemoveComponents, components = (Position,)) do entity
+    obs_rem_dummy = @observe!(world, OnRemoveComponents, (Position,)) do entity
     end
 
     e = new_entity!(world, ())
@@ -353,15 +348,15 @@ end
 
     counter_add = 0
     counter_rem = 0
-    obs_add = @observe!(world, OnAddComponents, with = (Position, Velocity)) do entity
+    obs_add = @observe!(world, OnAddComponents, (), with = (Position, Velocity)) do entity
         counter_add += 1
     end
-    obs_rem = @observe!(world, OnRemoveComponents, with = (Position, Velocity)) do entity
+    obs_rem = @observe!(world, OnRemoveComponents, (), with = (Position, Velocity)) do entity
         counter_rem += 1
     end
-    obs_add_dummy = @observe!(world, OnAddComponents, with = (Position,)) do entity
+    obs_add_dummy = @observe!(world, OnAddComponents, (), with = (Position,)) do entity
     end
-    obs_rem_dummy = @observe!(world, OnRemoveComponents, with = (Position,)) do entity
+    obs_rem_dummy = @observe!(world, OnRemoveComponents, (), with = (Position,)) do entity
     end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
@@ -388,15 +383,15 @@ end
 
     counter_add = 0
     counter_rem = 0
-    obs_add = @observe!(world, OnAddComponents, without = (Position, Velocity)) do entity
+    obs_add = @observe!(world, OnAddComponents, (), without = (Position, Velocity)) do entity
         counter_add += 1
     end
-    obs_rem = @observe!(world, OnRemoveComponents, without = (Position, Velocity)) do entity
+    obs_rem = @observe!(world, OnRemoveComponents, (), without = (Position, Velocity)) do entity
         counter_rem += 1
     end
-    obs_add_dummy = @observe!(world, OnAddComponents, without = (Position,)) do entity
+    obs_add_dummy = @observe!(world, OnAddComponents, (), without = (Position,)) do entity
     end
-    obs_rem_dummy = @observe!(world, OnRemoveComponents, without = (Position,)) do entity
+    obs_rem_dummy = @observe!(world, OnRemoveComponents, (), without = (Position,)) do entity
     end
 
     e = new_entity!(world, (Altitude(0),))
@@ -427,7 +422,7 @@ end
     @emit_event!(world, OnUpdateComponents, e, ())
 
     counter = 0
-    obs = @observe!(world, OnUpdateComponents) do entity
+    obs = @observe!(world, OnUpdateComponents, ()) do entity
         if counter == 0
             @test is_zero(entity) == true
         else
@@ -446,10 +441,10 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnUpdateComponents, components = (Position, Velocity)) do entity
+    obs = @observe!(world, OnUpdateComponents, (Position, Velocity)) do entity
         counter += 1
     end
-    obs_dummy = @observe!(world, OnUpdateComponents, components = (Position,)) do entity
+    obs_dummy = @observe!(world, OnUpdateComponents, (Position,)) do entity
     end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
@@ -469,10 +464,10 @@ end
     world = World(Position, Velocity, Altitude, Health)
 
     counter = 0
-    obs = @observe!(world, OnUpdateComponents, with = (Position, Velocity)) do entity
+    obs = @observe!(world, OnUpdateComponents, (), with = (Position, Velocity)) do entity
         counter += 1
     end
-    obs_dummy = @observe!(world, OnUpdateComponents, with = (Position,)) do entity
+    obs_dummy = @observe!(world, OnUpdateComponents, (), with = (Position,)) do entity
     end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
@@ -494,10 +489,10 @@ end
     world = World(Position, Velocity, Altitude, Health)
 
     counter = 0
-    obs = @observe!(world, OnUpdateComponents, without = (Position, Velocity)) do entity
+    obs = @observe!(world, OnUpdateComponents, (), without = (Position, Velocity)) do entity
         counter += 1
     end
-    obs_dummy = @observe!(world, OnUpdateComponents, without = (Position,)) do entity
+    obs_dummy = @observe!(world, OnUpdateComponents, (), without = (Position,)) do entity
     end
 
     e = new_entity!(world, (Altitude(0),))
@@ -517,7 +512,7 @@ end
     reg = EventRegistry()
     OnUpdateComponents = new_event_type!(reg)
     world = World(Position, Velocity, Altitude, Health)
-    @observe!(world, OnUpdateComponents) do entity
+    @observe!(world, OnUpdateComponents, ()) do entity
     end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))

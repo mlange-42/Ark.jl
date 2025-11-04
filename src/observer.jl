@@ -1,27 +1,25 @@
 
 macro observe!(args...)
-    if length(args) < 3
-        error("observe! requires at least a world, an event type and a callback")
+    if length(args) < 4
+        error("observe! requires at least a world, an event type, a tuple of components and a callback")
     end
 
     fn_expr = args[1]
     world_expr = args[2]
     event_expr = args[3]
+    comps_expr = args[4]
 
     # Default values
-    comps_expr = :(())
     with_expr = :(())
     without_expr = :(())
     exclusive_expr = :false
     register_expr = :true
 
     # Parse simulated keyword arguments
-    for arg in args[4:end]
+    for arg in args[5:end]
         if Base.isexpr(arg, :(=), 2)
             name, value = arg.args
-            if name == :components
-                comps_expr = value
-            elseif name == :with
+            if name == :with
                 with_expr = value
             elseif name == :without
                 without_expr = value
@@ -41,8 +39,8 @@ macro observe!(args...)
         observe!(
             $(esc(fn_expr)),
             $(esc(world_expr)),
-            $(esc(event_expr));
-            components=Val.($(esc(comps_expr))),
+            $(esc(event_expr)),
+            Val.($(esc(comps_expr)));
             with=Val.($(esc(with_expr))),
             without=Val.($(esc(without_expr))),
             exclusive=Val($(esc(exclusive_expr))),
@@ -54,8 +52,8 @@ end
 function observe!(
     fn::Function,
     world::W,
-    event::EventType;
-    components::Tuple=(),
+    event::EventType,
+    components::Tuple;
     with::Tuple=(),
     without::Tuple=(),
     exclusive::Val=Val(false),
@@ -104,7 +102,7 @@ end
 
     return quote
         if (event == OnCreateEntity || event == OnRemoveEntity) && _is_not_zero($mask)
-            error("argument `components` not supported for event types OnCreateEntity and OnRemoveEntity")
+            error("components tuple must be empty for event types OnCreateEntity and OnRemoveEntity")
         end
         obs = Observer(
             _ObserverID(UInt32(0)),
