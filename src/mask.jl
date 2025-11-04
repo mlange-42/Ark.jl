@@ -117,6 +117,20 @@ end
     ))
 end
 
+@inline function _is_zero(m::_Mask)::Bool
+    return m.bits[1] == 0 &&
+           m.bits[2] == 0 &&
+           m.bits[3] == 0 &&
+           m.bits[4] == 0
+end
+
+@inline function _is_not_zero(m::_Mask)::Bool
+    return m.bits[1] != 0 ||
+           m.bits[2] != 0 ||
+           m.bits[3] != 0 ||
+           m.bits[4] != 0
+end
+
 function _active_bit_indices(mask::_Mask)::Vector{UInt8}
     indices = UInt8[]
     for chunk_index in 1:4

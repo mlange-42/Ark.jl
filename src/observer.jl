@@ -104,10 +104,14 @@ end
     has_excluded_expr = has_excluded ? :(true) : :(false)
 
     return quote
+        mask = $mask_expr
+        if (event == OnCreateEntity || event == OnRemoveEntity) && _is_not_zero(mask)
+            error("argument `components` not supported for event types OnCreateEntity and OnRemoveEntity")
+        end
         obs = Observer(
             _ObserverID(UInt32(0)),
             event,
-            $mask_expr,
+            mask,
             $with_mask_expr,
             $exclude_mask_expr,
             $has_excluded_expr,

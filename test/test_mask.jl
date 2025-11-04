@@ -38,6 +38,16 @@
     @test _get_bit(m4, UInt8(5)) == false
 end
 
+@testset "_Mask _is_zero and _is_not_zero" begin
+    m1 = _Mask(UInt8(234))
+    @test _is_zero(m1) == false
+    @test _is_not_zero(m1) == true
+
+    m2 = _Mask()
+    @test _is_zero(m2) == true
+    @test _is_not_zero(m2) == false
+end
+
 @testset "_Mask clear_bits" begin
     m1 = _Mask(1, 64, 65)
     m2 = _Mask(1, 64)
