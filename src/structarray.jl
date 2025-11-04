@@ -21,6 +21,18 @@ end
     end
 end
 
+@generated function _StructArray_type(::Type{C}) where {C}
+    names = fieldnames(C)
+    types = fieldtypes(C)
+    num_fields = length(types)
+
+    nt_type = :(NamedTuple{($(map(QuoteNode, names)...),),Tuple{$(map(t -> :(Vector{$t}), types)...)}})
+
+    return quote
+        _StructArray{C,$nt_type,$num_fields}
+    end
+end
+
 @generated function Base.getproperty(sa::_StructArray{C}, name::Symbol) where {C}
     # TODO: do we need this? Seems not called when doing `sa.components`.
     #if name == :components || name == :length

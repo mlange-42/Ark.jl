@@ -76,3 +76,8 @@ end
     @test isa(x, Vector{Float64})
     @test isa(y, Vector{Float64})
 end
+
+@testset "StructArray type" begin
+    tp = _StructArray_type(Position)
+    @test tp == _StructArray{Position,@NamedTuple{x::Vector{Float64}, y::Vector{Float64}},2}
+end
