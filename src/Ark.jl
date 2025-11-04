@@ -3,6 +3,7 @@ module Ark
 using StaticArrays
 using FunctionWrappers: FunctionWrapper
 
+include("abstract.jl")
 include("util.jl")
 include("entity.jl")
 include("mask.jl")
@@ -41,5 +42,6 @@ export EventRegistry, new_event_type!
 export OnCreateEntity, OnRemoveEntity
 
 export Observer, @Observer
+export register_observer!, unregister_observer!
 
 end

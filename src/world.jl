@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,N}
+struct World{CS<:Tuple,CT<:Tuple,N} <: _AbstractWorld
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
@@ -21,6 +21,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _lock::_Lock
     _graph::_Graph
     _resources::Dict{DataType,Any}
+    _event_manager::_EventManager
 end
 
 """
@@ -835,6 +836,7 @@ end
             _Lock(),
             graph,
             Dict{DataType,Any}(),
+            _EventManager(),
         )
     end
 end
@@ -967,4 +969,12 @@ Returns the removed resource.
 function remove_resource!(world::World, res_type::Type{T}) where T
     res = pop!(world._resources, res_type)
     return res::T
+end
+
+function register_observer!(world::World, observer::Observer)
+    _add_observer!(world._event_manager, observer)
+end
+
+function unregister_observer!(world::World, observer::Observer)
+    _remove_observer!(world._event_manager, observer)
 end
