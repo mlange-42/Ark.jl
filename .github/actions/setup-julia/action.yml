@@ -8,6 +8,9 @@ inputs:
   project-file:
     description: Project file toml for cache key
     required: true
+  key-suffix:
+    description: Suffix for unique cache key
+    required: false
 
 runs:
   using: "composite" # <-- makes it re-usable
@@ -27,6 +30,7 @@ runs:
         ~/.julia/packages
         ~/.julia/registries
         ~/.julia/scratchspaces
-      key: ${{ runner.os }}-julia-${{ inputs.julia-version }}-${{ hashFiles(inputs.project-file) }}
+      key: ${{ runner.os }}-julia-${{ inputs.julia-version }}-${{ hashFiles(inputs.project-file) }}-${{ inputs.key-suffix }}
       restore-keys: |
+        ${{ runner.os }}-julia-${{ inputs.julia-version }}-${{ hashFiles(inputs.project-file) }}-
         ${{ runner.os }}-julia-${{ inputs.julia-version }}-

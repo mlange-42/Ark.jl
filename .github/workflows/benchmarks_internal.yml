@@ -32,6 +32,7 @@ jobs:
       with:
         julia-version: '1.12.1'
         project-file: 'benchmark/Project.toml'
+        key-suffix: ${{ matrix.repetition }}
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
     - name: Run benchmarks for current
@@ -58,6 +59,7 @@ jobs:
       with:
         julia-version: '1.12.1'
         project-file: 'benchmark/Project.toml'
+        key-suffix: ${{ matrix.repetition }}
     - name: Install dependencies
       if: github.event_name == 'pull_request'
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
