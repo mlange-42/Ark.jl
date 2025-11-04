@@ -438,7 +438,9 @@ end
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
 """
 function new_entity!(world::World, values::Tuple)
-    return _new_entity!(world, Val{typeof(values)}(), values)
+    entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
+    _fire_create_entity_if_has(world._event_manager, entity, world._archetypes[arch].mask)
+    return entity
 end
 
 @generated function _new_entity!(world::W, ::Val{TS}, values::Tuple) where {W<:World,TS<:Tuple}
@@ -464,7 +466,7 @@ end
         push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
     end
 
-    push!(exprs, Expr(:return, :entity))
+    push!(exprs, Expr(:return, Expr(:tuple, :entity, :archetype)))
 
     return quote
         @inbounds begin
