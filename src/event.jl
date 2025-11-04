@@ -82,10 +82,8 @@ end
 
 mutable struct _EventManager
     const observers::Vector{Vector{Observer}}
-    const union_comps::Vector{_Mask}
-    const union_with::Vector{_Mask}
-    const any_no_with::Vector{Bool}
-    const any_no_comps::Vector{Bool}
+    const comps::Vector{Tuple{_Mask,Bool}}
+    const with::Vector{Tuple{_Mask,Bool}}
     num_observers::Int
 end
 
@@ -93,10 +91,8 @@ function _EventManager()
     len = typemax(UInt8)
     _EventManager(
         [Vector{Observer}() for _ in 1:len],
-        [_Mask() for _ in 1:len],
-        [_Mask() for _ in 1:len],
-        fill(false, len),
-        fill(false, len),
+        [(_Mask(), false) for _ in 1:len],
+        [(_Mask(), false) for _ in 1:len],
         0,
     )
 end
@@ -115,21 +111,25 @@ function _add_observer!(m::_EventManager, o::Observer)
     push!(m.observers[e], o)
     o._id.id = UInt32(length(m.observers[e]))
 
+    with, any_no_with = m.with[e]
     if o._has_with
-        m.union_with[e] = _or(m.union_with[e], o._with)
+        with = _or(with, o._with)
     else
-        m.any_no_with[e] = true
+        any_no_with = true
     end
+    m.with[e] = (with, any_no_with)
 
     if o._event == OnCreateEntity || o._event == OnRemoveEntity
         return
     end
 
+    comps, any_no_comps = m.comps[e]
     if o._has_comps
-        m.union_comps[e] = _or(m.union_comps[e], o._comps)
+        comps = _or(comps, o._comps)
     else
-        m.any_no_comps[e] = true
+        any_no_comps = true
     end
+    m.comps[e] = (comps, any_no_comps)
 end
 
 function _remove_observer!(m::_EventManager, o::Observer)
@@ -148,31 +148,31 @@ function _remove_observer!(m::_EventManager, o::Observer)
 
     # rebuild mask unions
 
-    m.any_no_with[e] = false
     with_mask = _Mask()
+    any_no_with = false
     for o in m.observers[e]
         if !o._has_with
-            m.any_no_with[e] = true
+            any_no_with = true
             break # skip, as the unions mask is irrelevant
         end
         with_mask = _or(with_mask, o._with)
     end
-    m.union_with[e] = with_mask
+    m.with[e] = (with_mask, any_no_with)
 
     if o._event == OnCreateEntity || o._event == OnRemoveEntity
         return
     end
 
-    m.any_no_comps[e] = false
     comps_mask = _Mask()
+    any_no_comps = false
     for o in m.observers[e]
         if !o._has_comps
-            m.any_no_comps[e] = true
+            any_no_comps = true
             break # skip, as the unions mask is irrelevant
         end
         comps_mask = _or(comps_mask, o._comps)
     end
-    m.union_comps[e] = comps_mask
+    m.comps[e] = (comps_mask, any_no_comps)
 end
 
 function _fire_create_entity(m::_EventManager, entity::Entity, mask::_Mask)
@@ -194,7 +194,8 @@ function _fire_create_or_remove_entity(
 )::Bool
     evt = event._id
     observers = m.observers[evt]
-    if early_out && length(observers) > 1 && !m.any_no_with[evt] && !_contains_any(m.union_with[evt], mask)
+    with, any_no_with = m.with[evt]
+    if early_out && length(observers) > 1 && !any_no_with && !_contains_any(with, mask)
         return false
     end
     found = false
@@ -215,7 +216,8 @@ function _fire_create_entities(m::_EventManager, arch::_BatchArchetype)
     evt = OnCreateEntity._id
     observers = m.observers[evt]
     mask = arch.archetype.mask
-    if length(observers) > 1 && !m.any_no_with[evt] && !_contains_any(m.union_with[evt], mask)
+    with, any_no_with = m.with[evt]
+    if length(observers) > 1 && !any_no_with && !_contains_any(with, mask)
         return
     end
     for o in observers
@@ -242,11 +244,13 @@ function _fire_add_components(
     evt = OnAddComponents._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
-        if !m.any_no_comps[evt] &&
-           (!_contains_any(m.union_comps[evt], new_mask) || _contains_all(old_mask, m.union_comps[evt]))
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps &&
+           (!_contains_any(comps, new_mask) || _contains_all(old_mask, comps))
             return false
         end
-        if !m.any_no_with[evt] && !_contains_any(m.union_with[evt], old_mask)
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, old_mask)
             return false
         end
     end
@@ -277,11 +281,13 @@ function _fire_remove_components(
     evt = OnRemoveComponents._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
-        if !m.any_no_comps[evt] &&
-           (!_contains_any(m.union_comps[evt], old_mask) || _contains_all(new_mask, m.union_comps[evt]))
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps &&
+           (!_contains_any(comps, old_mask) || _contains_all(new_mask, comps))
             return false
         end
-        if !m.any_no_with[evt] && !_contains_any(m.union_with[evt], old_mask)
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, old_mask)
             return false
         end
     end
@@ -312,10 +318,12 @@ function _fire_custom_event(
     evt = event._id
     observers = m.observers[evt]
     if length(observers) > 1
-        if !m.any_no_comps[evt] && !_contains_any(m.union_comps[evt], mask)
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
             return
         end
-        if !m.any_no_with[evt] && !_contains_any(m.union_with[evt], entity_mask)
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, entity_mask)
             return
         end
     end

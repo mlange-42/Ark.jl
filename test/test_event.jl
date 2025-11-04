@@ -176,6 +176,8 @@ end
 
     observe!(world, obs; unregister=true)
 
+    @observe!(world, OnCreateEntity, (), with = (Position,)) do entity
+    end
     obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity)) do entity
         counter += 1
     end
@@ -225,6 +227,8 @@ end
 
     observe!(world, obs; unregister=true)
 
+    @observe!(world, OnCreateEntity, (), with = (Position,)) do entity
+    end
     obs = @observe!(world, OnCreateEntity, with = (Position, Velocity)) do entity
         counter += 1
     end
