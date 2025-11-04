@@ -87,6 +87,24 @@ Batch
 close!(b::Batch)
 ```
 
+## [Event system](@id events-api)
+
+The event system allows user code to react on structural changes like entity creation and removal
+and component addition and removal.
+Further, custom events can be defined and emitted.
+
+```@docs
+EventType
+EventRegistry
+EventRegistry()
+new_event_type!
+Observer
+@observe!
+observe!
+@emit_event!
+emit_event!
+```
+
 ## Index
 
 ```@index

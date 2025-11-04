@@ -39,6 +39,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 - [Queries](@ref)
 - [Systems](@ref)
 - [Resources](@ref)
+- [Event system](@ref)
 - [Architecture](@ref)
 
 ## API Outline

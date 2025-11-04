@@ -19,6 +19,7 @@ function _Mask(bits::UInt8...)
 
     return _Mask(chunks)
 end
+
 function _MaskNot(bits::UInt8...)
     chunks = ntuple(_ -> typemax(UInt64), 4)  # 0xFFFFFFFFFFFFFFFF
 
@@ -41,6 +42,20 @@ function _Mask(bits::Integer...)
         chunk = (b - 1) >>> 6
         offset = (b - 1) & 0x3F
         chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
+    end
+
+    return _Mask(chunks)
+end
+
+function _MaskNot(bits::Integer...)
+    chunks = ntuple(_ -> typemax(UInt64), 4)  # 0xFFFFFFFFFFFFFFFF
+
+    for b in bits
+        @check 1 ≤ b ≤ 256
+        chunk = (b - 1) >>> 6
+        offset = (b - 1) & 0x3F
+        mask = ~(UInt64(1) << offset)
+        chunks = Base.setindex(chunks, chunks[chunk+1] & mask, chunk + 1)
     end
 
     return _Mask(chunks)
@@ -87,6 +102,20 @@ end
         a.bits[3] & ~b.bits[3],
         a.bits[4] & ~b.bits[4],
     ))
+end
+
+@inline function _is_zero(m::_Mask)::Bool
+    return m.bits[1] == 0 &&
+           m.bits[2] == 0 &&
+           m.bits[3] == 0 &&
+           m.bits[4] == 0
+end
+
+@inline function _is_not_zero(m::_Mask)::Bool
+    return m.bits[1] != 0 ||
+           m.bits[2] != 0 ||
+           m.bits[3] != 0 ||
+           m.bits[4] != 0
 end
 
 function _active_bit_indices(mask::_Mask)::Vector{UInt8}

@@ -9,6 +9,8 @@
     end
 
     query = @Query(world, (Position, Velocity))
+    @test query._has_excluded == false
+
     for i in 1:10
         count = 0
         for (entities, vec_pos, vec_vel) in query
