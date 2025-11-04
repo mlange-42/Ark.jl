@@ -23,6 +23,10 @@
 
     pop!(a)
     @test length(a) == 1
+end
+
+@testset "StructArray iteration" begin
+    a = _StructArray(Position)
 
     resize!(a, 10)
     @test length(a) == 10
@@ -37,6 +41,24 @@
         count += 1
     end
     @test count == 10
+
+    for pos in a
+        @test isa(pos, Position)
+    end
+    for (i, pos) in enumerate(a)
+        @test a[i] == Position(i, i)
+    end
+end
+
+@testset "StructArray misc functions" begin
+    a = _StructArray(Position)
+    resize!(a, 10)
+
+    @test firstindex(a) == 1
+    @test lastindex(a) == 10
+
+    eltype(_StructArray{Position}) == Position
+    eltype(_StructArray{Position}) == IndexLinear()
 end
 
 @testset "StructArray no fields" begin
