@@ -121,7 +121,7 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
   - `fn::Function`: A callback function to execute when a matching event is received. Can be used via a `do` block.
   - `world::World`: The [World](@ref) to observe.
   - `event::EventType`: The [EventType](@ref) to observe.
-  - `components::Tuple`: The component types to observe. Must be empty for `OnCreateEntity` and `OnRemoveEntity`.
+  - `components::Tuple=()`: The component types to observe. Must be empty for `OnCreateEntity` and `OnRemoveEntity`.
   - `with::Tuple=()`: Components the entity must have.
   - `without::Tuple=()`: Components the entity must not have.
   - `exclusive::Bool=false`: Makes the observer exclusive for entities that have exactly the components given be `with`.

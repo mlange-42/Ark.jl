@@ -101,6 +101,8 @@ new_event_type!
 Observer
 @observe!
 observe!
+@emit_event!
+emit_event!
 ```
 
 ## Index

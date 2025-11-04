@@ -419,10 +419,10 @@ end
     world = World(Position, Velocity, Altitude, Health)
 
     e = new_entity!(world, ())
-    @emit_event!(world, OnUpdateComponents, e, ())
+    @emit_event!(world, OnUpdateComponents, e)
 
     counter = 0
-    obs = @observe!(world, OnUpdateComponents, ()) do entity
+    obs = @observe!(world, OnUpdateComponents) do entity
         if counter == 0
             @test is_zero(entity) == true
         else
@@ -432,7 +432,7 @@ end
         counter += 1
     end
 
-    @emit_event!(world, OnUpdateComponents, zero_entity, ())
+    @emit_event!(world, OnUpdateComponents, zero_entity)
     @test counter == 1
 
     e = new_entity!(world, (Position(0, 0),))
@@ -471,15 +471,15 @@ end
     end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
-    @emit_event!(world, OnUpdateComponents, e, ())
+    @emit_event!(world, OnUpdateComponents, e)
     @test counter == 1
 
     e = new_entity!(world, (Altitude(0),))
-    @emit_event!(world, OnUpdateComponents, e, ())
+    @emit_event!(world, OnUpdateComponents, e)
     @test counter == 1
 
     e = new_entity!(world, (Position(0, 0),))
-    @emit_event!(world, OnUpdateComponents, e, ())
+    @emit_event!(world, OnUpdateComponents, e)
     @test counter == 1
 end
 
@@ -496,15 +496,15 @@ end
     end
 
     e = new_entity!(world, (Altitude(0),))
-    @emit_event!(world, OnUpdateComponents, e, ())
+    @emit_event!(world, OnUpdateComponents, e)
     @test counter == 1
 
     e = new_entity!(world, (Position(0, 0),))
-    @emit_event!(world, OnUpdateComponents, e, ())
+    @emit_event!(world, OnUpdateComponents, e)
     @test counter == 1
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
-    @emit_event!(world, OnUpdateComponents, e, ())
+    @emit_event!(world, OnUpdateComponents, e)
     @test counter == 1
 end
 
@@ -525,4 +525,9 @@ end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
     @test_throws ErrorException @emit_event!(world, OnUpdateComponents, e, (Position, Altitude))
+end
+
+@testset "@emit_event! macro wrong number of arguments" begin
+    ex = Meta.parse("@emit_event!(world, OnUpdateComponents)")
+    @test_throws LoadError eval(ex)
 end

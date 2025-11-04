@@ -1025,7 +1025,29 @@ function remove_resource!(world::World, res_type::Type{T}) where T
     return res::T
 end
 
-macro emit_event!(world_expr, event_expr, entity_expr, comps_expr)
+"""
+    @emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
+
+Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
+The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
+
+Macro version of [`emit_event!`](@ref) that allows more ergonomic event construction.
+
+  - `world::World`: The [World](@ref) to emit the event.
+  - `event::EventType`: The [EventType](@ref) to emit.
+  - `entity::Entity`: The [Entity](@ref) to emit the event for.
+  - `components::Tuple=()`: The component types to emit the event for. Optional.
+"""
+macro emit_event!(args...)
+    if length(args) == 3
+        world_expr, event_expr, entity_expr = args
+        comps_expr = :(())
+    elseif length(args) == 4
+        world_expr, event_expr, entity_expr, comps_expr = args
+    else
+        error("@emit_event! expects 3 or 4 arguments")
+    end
+
     quote
         emit_event!(
             $(esc(world_expr)),
@@ -1036,7 +1058,20 @@ macro emit_event!(world_expr, event_expr, entity_expr, comps_expr)
     end
 end
 
-function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple) where {W<:World}
+"""
+    emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
+
+Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
+The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
+
+For a more convenient tuple syntax, the macro [`@emit_event!`](@ref) is provided.
+
+  - `world::World`: The [World](@ref) to emit the event.
+  - `event::EventType`: The [EventType](@ref) to emit.
+  - `entity::Entity`: The [Entity](@ref) to emit the event for.
+  - `components::Tuple=()`: The component types to emit the event for. Optional.
+"""
+function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple=()) where {W<:World}
     if event._id < _custom_events._id
         error("only custom events can be emitted manually")
     end
