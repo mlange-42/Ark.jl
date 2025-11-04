@@ -1,6 +1,7 @@
 
-struct _StructArray{C,CS<:NamedTuple,N} <: AbstractArray{C,1}
+mutable struct _StructArray{C,CS<:NamedTuple,N} <: AbstractArray{C,1}
     components::CS
+    length::Int
 end
 
 function _StructArray(tp::Type{C}) where {C}
@@ -16,8 +17,17 @@ end
     kv_exprs = [:($name = Vector{$t}()) for (name, t) in zip(names, types)]
 
     return quote
-        _StructArray{C,$nt_type,$num_fields}((; $(kv_exprs...)))
+        _StructArray{C,$nt_type,$num_fields}((; $(kv_exprs...)), 0)
     end
+end
+
+@generated function Base.resize!(sa::_StructArray{C}, n::Int) where {C}
+    names = fieldnames(C)
+    resize_exprs = [
+        :(resize!(sa.components.$name, n)) for name in names
+    ]
+    inc_length = :(sa.length = n)
+    return Expr(:block, resize_exprs..., inc_length, :(sa))
 end
 
 @generated function Base.push!(sa::_StructArray{C}, c::C) where {C}
@@ -25,7 +35,17 @@ end
     push_exprs = [
         :(push!(sa.components.$name, c.$name)) for name in names
     ]
-    return Expr(:block, push_exprs..., :(sa))
+    inc_length = :(sa.length += 1)
+    return Expr(:block, push_exprs..., inc_length, :(sa))
+end
+
+@generated function Base.pop!(sa::_StructArray{C}) where {C}
+    names = fieldnames(C)
+    pop_exprs = [
+        :(pop!(sa.components.$name)) for name in names
+    ]
+    dec_length = :(sa.length -= 1)
+    return Expr(:block, pop_exprs..., dec_length, :(sa))
 end
 
 @generated function Base.getindex(sa::_StructArray{C}, i::Int) where {C}
@@ -43,3 +63,6 @@ end
     ]
     return Expr(:block, set_exprs..., :(sa))
 end
+
+Base.length(sa::_StructArray) = sa.length
+Base.size(sa::_StructArray) = (sa.length,)
