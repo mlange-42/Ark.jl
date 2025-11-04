@@ -19,11 +19,13 @@ using Ark: _VecMap, _get_map, _set_map!
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create
 using Ark: _BatchArchetype
 using Ark: _has_observers
+using Ark: _StructArray
 
 using Test
 
 include("TestTypes.jl")
 
+include("test_structarray.jl")
 include("test_readme.jl")
 include("test_entity.jl")
 include("test_pool.jl")
