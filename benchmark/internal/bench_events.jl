@@ -4,7 +4,7 @@ function setup_event_no_obs(n::Int)
 
     world = World(Position)
 
-    entities = []
+    entities = Entity[]
     for _ in 1:n
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
@@ -28,7 +28,7 @@ function setup_event_no_match(n::Int)
 
     world = World(Position, Velocity)
 
-    entities = []
+    entities = Entity[]
     for _ in 1:n
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
@@ -56,7 +56,7 @@ function setup_event_match_1(n::Int)
 
     world = World(Position, Velocity)
 
-    entities = []
+    entities = Entity[]
     for _ in 1:n
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
@@ -84,7 +84,7 @@ function setup_event_match_1_of_5(n::Int)
 
     world = World(Position, Velocity)
 
-    entities = []
+    entities = Entity[]
     for _ in 1:n
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
@@ -117,7 +117,7 @@ function setup_event_capture(n::Int)
 
     world = World(Position, Velocity)
 
-    entities = []
+    entities = Entity[]
     for _ in 1:n
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
