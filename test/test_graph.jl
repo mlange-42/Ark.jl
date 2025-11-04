@@ -32,11 +32,20 @@
     @test node4 === start
 
     # Test error on removing nonexistent component
-    @test_throws ErrorException _find_node(graph, start, (), (UInt8(7),))
+    @test_throws(
+        "ArgumentError: entity does not have component to remove",
+        _find_node(graph, start, (), (UInt8(7),))
+    )
 
     # Test error on adding duplicate component
-    @test_throws ErrorException _find_node(graph, node3, (UInt8(5),), ())
+    @test_throws(
+        "ArgumentError: entity already has component to add, or it was added twice",
+        _find_node(graph, node3, (UInt8(5),), ())
+    )
 
     # Test add and remove same
-    @test_throws ErrorException _find_node(graph, node3, (UInt8(5),), (UInt8(5),))
+    @test_throws(
+        "ArgumentError: component added and removed in the same exchange operation",
+        _find_node(graph, node3, (UInt8(5),), (UInt8(5),))
+    )
 end

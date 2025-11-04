@@ -52,7 +52,7 @@ World(comp_types::Type...; allow_mutable::Bool=false) =
             return :(UInt8($i))
         end
     end
-    return :(error(lazy"Component type $C not found in World"))
+    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
 @generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
@@ -62,7 +62,7 @@ end
             return :(world._storages.$i)
         end
     end
-    return :(error(lazy"Component type $C not found in the World"))
+    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
 @generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
@@ -199,7 +199,7 @@ Removes an [`Entity`](@ref) from the [`World`](@ref).
 """
 function remove_entity!(world::World, entity::Entity)
     if !is_alive(world, entity)
-        error("can't remove a dead entity")
+        throw(ArgumentError("can't remove a dead entity"))
     end
     _check_locked(world)
 
@@ -242,8 +242,11 @@ end
 
 function _check_locked(world::World)
     if _is_locked(world._lock)
-        error(
-            "cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed",
+        throw(
+            InvalidStateException(
+                "cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed",
+                :locked_world,
+            ),
         )
     end
 end
@@ -288,7 +291,7 @@ pos, vel = get_components(world, entity, Val.((Position, Velocity)))
 """
 @inline function get_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
-        error("can't get components of a dead entity")
+        throw(ArgumentError("can't get components of a dead entity"))
     end
     return @inline _get_components(world, entity, comp_types)
 end
@@ -360,7 +363,7 @@ has = has_components(world, entity, Val.((Position, Velocity)))
 """
 @inline function has_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
-        error("can't check components of a dead entity")
+        throw(ArgumentError("can't check components of a dead entity"))
     end
     index = world._entities[entity._id]
     return @inline _has_components(world, index, comp_types)
@@ -401,7 +404,7 @@ The entity must already have all these components.
 """
 @inline function set_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
-        error("can't set components of a dead entity")
+        throw(ArgumentError("can't set components of a dead entity"))
     end
     return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
 end
@@ -630,7 +633,7 @@ Adds the given component values to an [`Entity`](@ref). Types are inferred from 
 """
 function add_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
-        error("can't add components to a dead entity")
+        throw(ArgumentError("can't add components to a dead entity"))
     end
     return _exchange_components!(world, entity, Val{typeof(values)}(), values, ())
 end
@@ -674,7 +677,7 @@ remove_components!(world, entity, Val.((Position, Velocity)))
 """
 function remove_components!(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
-        error("can't remove components from a dead entity")
+        throw(ArgumentError("can't remove components from a dead entity"))
     end
     return _exchange_components!(world, entity, Val{Tuple{}}(), (), comp_types)
 end
@@ -697,7 +700,7 @@ Macro version of [`exchange_components!`](@ref) for more ergonomic component typ
 """
 macro exchange_components!(args...)
     if length(args) < 2
-        error("@exchange requires at least a world and an entity")
+        throw(ArgumentError("@exchange requires at least a world and an entity"))
     end
 
     world_expr = args[1]
@@ -714,10 +717,10 @@ macro exchange_components!(args...)
             elseif name == :remove
                 remove_expr = value
             else
-                error(lazy"Unknown keyword argument: $name")
+                throw(ArgumentError(lazy"Unknown keyword argument: $name"))
             end
         else
-            error(lazy"Unexpected argument format: $arg")
+            throw(ArgumentError(lazy"Unexpected argument format: $arg"))
         end
     end
 
@@ -749,7 +752,7 @@ exchange_components!(world, entity;
 """
 function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
-        error("can't exchange components on a dead entity")
+        throw(ArgumentError("can't exchange components on a dead entity"))
     end
     return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
 end
@@ -797,7 +800,11 @@ end
     if !allow_mutable
         for T in types
             if ismutabletype(T)
-                error(lazy"Component type $T must be immutable.")
+                throw(
+                    ArgumentError(
+                        lazy"Component type $T must be immutable unless 'allow_mutable' is used",
+                    ),
+                )
             end
         end
     end
@@ -934,7 +941,7 @@ Add the given resource to the world.
 Returns the newly added resource.
 """
 function add_resource!(world::World, res::T)::T where T
-    has_resource(world, T) && error(lazy"World already contains a resource of type $T.")
+    has_resource(world, T) && throw(ArgumentError(lazy"World already contains a resource of type $T"))
     setindex!(world._resources, res, T)
     return res
 end
@@ -946,7 +953,7 @@ Overwrites an existing resource in the world.
 Returns the newly overwritten resource.
 """
 function set_resource!(world::World, res::T)::T where T
-    !has_resource(world, T) && error(lazy"World does not contain a resource of type $T.")
+    !has_resource(world, T) && throw(ArgumentError(lazy"World does not contain a resource of type $T"))
     setindex!(world._resources, res, T)
     return res
 end

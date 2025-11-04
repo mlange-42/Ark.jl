@@ -20,9 +20,12 @@
     @test arches == 2
 
     # test closed batch
-    @test_throws ErrorException begin
-        for x in batch
-            nothing
+    @test_throws(
+        "InvalidStateException: batch closed, batches can't be used multiple times",
+        begin
+            for x in batch
+                nothing
+            end
         end
-    end
+    )
 end

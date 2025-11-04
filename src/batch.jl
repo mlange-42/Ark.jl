@@ -57,7 +57,7 @@ end
 
 @inline function Base.iterate(b::Batch)
     if b._lock == 0
-        error("batch closed, batches can't be used multiple times")
+        throw(InvalidStateException("batch closed, batches can't be used multiple times", :batch_closed))
     end
     return Base.iterate(b, 1)
 end

@@ -27,5 +27,8 @@
     @test lock.lock_bits == 0
 
     # Unlocking an already unlocked bit should throw
-    @test_throws ErrorException _unlock(lock, b1)
+    @test_throws(
+        "InvalidStateException: unbalanced unlock. Did you close a query that was already iterated?",
+        _unlock(lock, b1)
+    )
 end

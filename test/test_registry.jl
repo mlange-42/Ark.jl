@@ -15,5 +15,5 @@
 
     @test _get_id!(registry, Int) == id_int
 
-    @test_throws ErrorException _get_id!(registry, String)
+    @test_throws "ArgumentError: component type String is not registered" _get_id!(registry, String)
 end
