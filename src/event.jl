@@ -9,13 +9,14 @@ const OnCreateEntity::EventType = EventType(UInt8(1))
 const OnRemoveEntity::EventType = EventType(UInt8(2))
 const OnAddComponents::EventType = EventType(UInt8(3))
 const OnRemoveComponents::EventType = EventType(UInt8(4))
+const _custom_events::EventType = EventType(UInt8(5))
 
 mutable struct EventRegistry
     _next_index::UInt8
 end
 
 function EventRegistry()
-    EventRegistry(OnRemoveEntity._id)
+    EventRegistry(_custom_events._id - 1)
 end
 
 function new_event_type!(reg::EventRegistry)

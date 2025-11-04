@@ -4,8 +4,8 @@
 
     e1 = new_event_type!(reg)
     e2 = new_event_type!(reg)
-    @test e1._id == 3
-    @test e2._id == 4
+    @test e1._id == 5
+    @test e2._id == 6
 
     while true
         e = new_event_type!(reg)
@@ -420,87 +420,114 @@ end
 
 @testset "Fire custom event" begin
     reg = EventRegistry()
-    OnUpdateComponent = new_event_type!(reg)
+    OnUpdateComponents = new_event_type!(reg)
     world = World(Position, Velocity, Altitude, Health)
 
-    @emit_event!(world, OnUpdateComponent, e, ())
+    e = new_entity!(world, ())
+    @emit_event!(world, OnUpdateComponents, e, ())
 
     counter = 0
-    obs = @observe!(world, OnUpdateComponent) do entity
-        @test is_alive(world, entity) == true
+    obs = @observe!(world, OnUpdateComponents) do entity
+        if counter == 0
+            @test is_zero(entity) == true
+        else
+            @test is_alive(world, entity) == true
+        end
         @test is_locked(world) == false
         counter += 1
     end
 
-    e = new_entity!(world, (Position(0, 0),))
-    @emit_event!(world, OnUpdateComponent, e, (Position,))
+    @emit_event!(world, OnUpdateComponents, zero_entity, ())
     @test counter == 1
+
+    e = new_entity!(world, (Position(0, 0),))
+    @emit_event!(world, OnUpdateComponents, e, (Position,))
+    @test counter == 2
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnUpdateComponent, components = (Position, Velocity)) do entity
+    obs = @observe!(world, OnUpdateComponents, components = (Position, Velocity)) do entity
         counter += 1
     end
-    obs_dummy = @observe!(world, OnUpdateComponent, components = (Position,)) do entity
+    obs_dummy = @observe!(world, OnUpdateComponents, components = (Position,)) do entity
     end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
-    @emit_event!(world, OnUpdateComponent, e, (Position, Velocity))
-    @test counter == 2
+    @emit_event!(world, OnUpdateComponents, e, (Position, Velocity))
+    @test counter == 3
 
-    @emit_event!(world, OnUpdateComponent, e, (Altitude,))
-    @test counter == 2
+    @emit_event!(world, OnUpdateComponents, e, (Altitude,))
+    @test counter == 3
 
-    @emit_event!(world, OnUpdateComponent, e, (Position,))
-    @test counter == 2
+    @emit_event!(world, OnUpdateComponents, e, (Position,))
+    @test counter == 3
 end
 
 @testset "Fire custom event with" begin
     reg = EventRegistry()
-    OnUpdateComponent = new_event_type!(reg)
+    OnUpdateComponents = new_event_type!(reg)
     world = World(Position, Velocity, Altitude, Health)
 
     counter = 0
-    obs = @observe!(world, OnUpdateComponent, with = (Position, Velocity)) do entity
+    obs = @observe!(world, OnUpdateComponents, with = (Position, Velocity)) do entity
         counter += 1
     end
-    obs_dummy = @observe!(world, OnUpdateComponent, with = (Position,)) do entity
+    obs_dummy = @observe!(world, OnUpdateComponents, with = (Position,)) do entity
     end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
-    @emit_event!(world, OnUpdateComponent, e, ())
+    @emit_event!(world, OnUpdateComponents, e, ())
     @test counter == 1
 
     e = new_entity!(world, (Altitude(0),))
-    @emit_event!(world, OnUpdateComponent, e, ())
+    @emit_event!(world, OnUpdateComponents, e, ())
     @test counter == 1
 
     e = new_entity!(world, (Position(0, 0),))
-    @emit_event!(world, OnUpdateComponent, e, ())
+    @emit_event!(world, OnUpdateComponents, e, ())
     @test counter == 1
 end
 
 @testset "Fire custom event without" begin
     reg = EventRegistry()
-    OnUpdateComponent = new_event_type!(reg)
+    OnUpdateComponents = new_event_type!(reg)
     world = World(Position, Velocity, Altitude, Health)
 
     counter = 0
-    obs = @observe!(world, OnUpdateComponent, without = (Position, Velocity)) do entity
+    obs = @observe!(world, OnUpdateComponents, without = (Position, Velocity)) do entity
         counter += 1
     end
-    obs_dummy = @observe!(world, OnUpdateComponent, without = (Position,)) do entity
+    obs_dummy = @observe!(world, OnUpdateComponents, without = (Position,)) do entity
     end
 
     e = new_entity!(world, (Altitude(0),))
-    @emit_event!(world, OnUpdateComponent, e, ())
+    @emit_event!(world, OnUpdateComponents, e, ())
     @test counter == 1
 
     e = new_entity!(world, (Position(0, 0),))
-    @emit_event!(world, OnUpdateComponent, e, ())
+    @emit_event!(world, OnUpdateComponents, e, ())
     @test counter == 1
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
-    @emit_event!(world, OnUpdateComponent, e, ())
+    @emit_event!(world, OnUpdateComponents, e, ())
     @test counter == 1
+end
+
+@testset "Fire custom event errors" begin
+    reg = EventRegistry()
+    OnUpdateComponents = new_event_type!(reg)
+    world = World(Position, Velocity, Altitude, Health)
+    @observe!(world, OnUpdateComponents) do entity
+    end
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+
+    @test_throws ErrorException @emit_event!(world, OnCreateEntity, e, ())
+    @test_throws ErrorException @emit_event!(world, OnUpdateComponents, zero_entity, (Position,))
+
+    remove_entity!(world, e)
+    @test_throws ErrorException @emit_event!(world, OnUpdateComponents, e, ())
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    @test_throws ErrorException @emit_event!(world, OnUpdateComponents, e, (Position, Altitude))
 end

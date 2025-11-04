@@ -1037,6 +1037,12 @@ macro emit_event!(world_expr, event_expr, entity_expr, comps_expr)
 end
 
 function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple) where {W<:World}
+    if event._id < _custom_events._id
+        error("only custom events can be emitted manually")
+    end
+    if !_has_observers(world._event_manager, event)
+        return
+    end
     _emit_event!(world, event, entity, components)
 end
 
@@ -1047,14 +1053,11 @@ end
         _component_id(W.parameters[1], C)
     end
 
-    has_comps = length(comp_types) > 0
+    has_comps = (length(comp_types) > 0) ? :(true) : (false)
     ids = map(get_id, comp_types)
     mask = _Mask(ids...)
 
     return quote
-        if !_has_observers(world._event_manager, event)
-            return
-        end
         _do_emit_event!(world, event, $mask, $has_comps, entity)
     end
 end
@@ -1064,10 +1067,11 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
         if has_comps
             error("can't emit event with components for the zero entity")
         end
-    else
-        if !is_alive(world, entity)
-            error("can't emit event for a dead entity")
-        end
+        return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes[1].mask)
+    end
+
+    if !is_alive(world, entity)
+        error("can't emit event for a dead entity")
     end
     index = world._entities[entity._id]
     entity_mask = world._archetypes[index.archetype].mask
