@@ -35,6 +35,9 @@ export close!
 
 export Entities
 
+export EventRegistry, new_event_type!
+export OnCreateEntity, OnRemoveEntity
+
 export Observer
 
 end

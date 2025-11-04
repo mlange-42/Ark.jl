@@ -3,36 +3,36 @@ include("function.jl")
 using .FunctionWrappers
 import .FunctionWrappers: FunctionWrapper
 
-const OnCreateEntity = :OnCreateEntity
-const OnRemoveEntity = :OnRemoveEntity
+struct EventType
+    _id::UInt8
+
+    EventType(id::UInt8) = new(id)
+end
+
+const OnCreateEntity::EventType = EventType(UInt8(1))
+const OnRemoveEntity::EventType = EventType(UInt8(2))
+
+mutable struct EventRegistry
+    _next_index::UInt8
+end
+
+function EventRegistry()
+    EventRegistry(OnRemoveEntity._id)
+end
+
+function new_event_type!(reg::EventRegistry)
+    reg._next_index += 1
+    return EventType(reg._next_index)
+end
 
 struct _EventManager
-    registry::Dict{Symbol,Int}
-end
-
-function _EventManager()
-    registry = Dict{Symbol,Int}(
-        :OnCreateEntity => 1,
-        :OnRemoveEntity => 2,
-    )
-    _EventManager(registry)
-end
-
-function _register_event!(m::_EventManager, sym::Symbol)
-    get!(m.registry, sym) do
-        length(m.registry) + 1
-    end
-end
-
-@inline function _event_index(m::_EventManager, ::Val{sym}) where sym
-    return m.registry[sym]
 end
 
 struct Observer
-    id::UInt8
-    fn::FunctionWrapper{Int,Tuple{Int}}
+    _event::EventType
+    _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
-function Observer(fn::Function)
-    Observer(UInt8(0), FunctionWrapper{Int,Tuple{Int}}(fn))
+function Observer(fn::Function, event::EventType)
+    Observer(event, FunctionWrapper{Nothing,Tuple{Entity}}(fn))
 end

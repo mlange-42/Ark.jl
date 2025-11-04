@@ -16,7 +16,6 @@ using Ark: _ComponentStorage
 using Ark: _VecMap, _get_map, _set_map!
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create
 using Ark: _BatchArchetype
-using Ark: _EventManager, _register_event!, _event_index
 
 using Test
 
