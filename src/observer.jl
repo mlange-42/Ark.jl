@@ -82,23 +82,20 @@ end
     without_types = [x.parameters[1] for x in WO.parameters]
 
     if EX === Val{true} && !isempty(without_types)
-        error("cannot use 'exclusive' with 'without'")
+        error("cannot use 'exclusive' together with 'without'")
     end
 
-    # Component IDs
-    id_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in comp_types]
-    with_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in with_types]
-    without_ids_exprs = Expr[:(_component_id(world, $(QuoteNode(T)))) for T in without_types]
-
-    # Mask construction
-    mask_expr = :(_Mask($(id_exprs...)))
-    with_mask_expr = :(_Mask($(with_ids_exprs...)))
-
-    if EX === Val{true}
-        exclude_mask_expr = :(_MaskNot($(with_ids_exprs...)))
-    else
-        exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
+    function get_id(C)
+        _component_id(W.parameters[1], C)
     end
+
+    ids = map(get_id, comp_types)
+    with_ids = map(get_id, with_types)
+    without_ids = map(get_id, without_types)
+
+    mask = _Mask(ids...)
+    with_mask = _Mask(with_ids...)
+    exclude_mask = EX === Val{true} ? _MaskNot(with_ids...) : _Mask(without_ids...)
 
     has_comps_expr = (length(comp_types) > 0) ? :(true) : :(false)
     has_with_expr = (length(with_types) > 0) ? :(true) : :(false)
@@ -106,16 +103,15 @@ end
     has_without_expr = has_without ? :(true) : :(false)
 
     return quote
-        mask = $mask_expr
-        if (event == OnCreateEntity || event == OnRemoveEntity) && _is_not_zero(mask)
+        if (event == OnCreateEntity || event == OnRemoveEntity) && _is_not_zero($mask)
             error("argument `components` not supported for event types OnCreateEntity and OnRemoveEntity")
         end
         obs = Observer(
             _ObserverID(UInt32(0)),
             event,
-            mask,
-            $with_mask_expr,
-            $exclude_mask_expr,
+            $mask,
+            $with_mask,
+            $exclude_mask,
             $has_comps_expr,
             $has_with_expr,
             $has_without_expr,
