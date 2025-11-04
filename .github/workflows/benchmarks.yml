@@ -32,6 +32,8 @@ jobs:
         
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+    - name: Enable Transparent Huge Pages
+      run: echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
     - name: Run benchmarks for current
       run: julia --project=benchmark benchmark/run_benchmarks.jl
     - name: Rename file
