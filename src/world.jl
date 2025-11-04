@@ -873,11 +873,11 @@ end
     component_types = map(T -> :(Type{$T}), types)
     component_tuple_type = :(Tuple{$(component_types...)})
 
-    storage_types = [:(_ComponentStorage{$T}) for T in types]
+    storage_types = [:(_ComponentStorage{$T,Vector{$T}}) for T in types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     # storage tuple value
-    storage_exprs = [:(_ComponentStorage{$T}()) for T in types]
+    storage_exprs = [:(_ComponentStorage{$T,Vector{$T}}()) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
