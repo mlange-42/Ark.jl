@@ -13,6 +13,7 @@ macro Observer(args...)
     with_expr = :(())
     without_expr = :(())
     exclusive_expr = :false
+    register_expr = :true
 
     # Parse simulated keyword arguments
     for arg in args[4:end]
@@ -26,6 +27,8 @@ macro Observer(args...)
                 without_expr = value
             elseif name == :exclusive
                 exclusive_expr = value
+            elseif name == :register
+                register_expr = value
             else
                 error(lazy"Unknown keyword argument: $name")
             end
@@ -43,6 +46,7 @@ macro Observer(args...)
             with=Val.($(esc(with_expr))),
             without=Val.($(esc(without_expr))),
             exclusive=Val($(esc(exclusive_expr))),
+            register=$(esc(register_expr)),
         )
     end
 end
@@ -55,11 +59,12 @@ function Observer(
     with::Tuple=(),
     without::Tuple=(),
     exclusive::Val=Val(false),
+    register::Bool,
 )
     _Observer_from_types(
         world, event,
         FunctionWrapper{Nothing,Tuple{Entity}}(fn),
-        components, with, without, exclusive)
+        components, with, without, exclusive, register)
 end
 
 @generated function _Observer_from_types(
@@ -70,6 +75,7 @@ end
     ::WT,
     ::WO,
     ::EX,
+    register::Bool,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,EX<:Val}
     comp_types = [x.parameters[1] for x in CT.parameters]
     with_types = [x.parameters[1] for x in WT.parameters]
@@ -108,7 +114,9 @@ end
             $has_excluded_expr,
             fn,
         )
-        register_observer!(world, obs)
+        if register
+            register_observer!(world, obs)
+        end
         obs
     end
 end
