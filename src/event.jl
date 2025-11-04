@@ -53,9 +53,9 @@ end
 function _EventManager()
     len = typemax(UInt8)
     _EventManager(
-        fill(Vector{Observer}(), len),
-        fill(_Mask(), len),
-        fill(_Mask(), len),
+        [Vector{Observer}() for _ in 1:len],
+        [_Mask() for _ in 1:len],
+        [_Mask() for _ in 1:len],
         fill(false, len),
         fill(false, len),
     )
@@ -135,12 +135,26 @@ function _fire_create_entity_if_has(m::_EventManager, entity::Entity, mask::_Mas
     if !_has_observers(m, OnCreateEntity)
         return
     end
-    _fire_create_entity(m, entity, mask, true)
+    _fire_create_or_remove_entity(m, entity, mask, OnCreateEntity, true)
     return nothing
 end
 
-function _fire_create_entity(m::_EventManager, entity::Entity, mask::_Mask, early_out::Bool)::Bool
-    evt = OnCreateEntity._id
+function _fire_remove_entity_if_has(m::_EventManager, entity::Entity, mask::_Mask)
+    if !_has_observers(m, OnRemoveEntity)
+        return
+    end
+    _fire_create_or_remove_entity(m, entity, mask, OnRemoveEntity, true)
+    return nothing
+end
+
+function _fire_create_or_remove_entity(
+    m::_EventManager,
+    entity::Entity,
+    mask::_Mask,
+    event::EventType,
+    early_out::Bool,
+)::Bool
+    evt = event._id
     if early_out && !m.any_no_with[evt] && !_contains_any(m.union_with[evt], mask)
         return false
     end

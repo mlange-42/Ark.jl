@@ -14,6 +14,11 @@
         end
     end
     @test_throws ErrorException new_event_type!(reg)
+
+    @test OnCreateEntity._id == 1
+    @test OnRemoveEntity._id == 2
+    @test OnAddComponents._id == 3
+    @test OnRemoveComponents._id == 4
 end
 
 @testset "Observer creation" begin
@@ -71,15 +76,19 @@ end
 @testset "Observer registration" begin
     world = World(Position, Velocity, Altitude, Health)
     @test _has_observers(world._event_manager, OnCreateEntity) == false
+    @test _has_observers(world._event_manager, OnRemoveEntity) == false
 
     obs1 = @observe!(world, OnCreateEntity) do entity
         println(entity)
     end
 
     @test obs1._id.id == 1
+    @test obs1._event._id == 1
     @test length(world._event_manager.observers) == typemax(UInt8)
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
+    @test length(world._event_manager.observers[OnRemoveEntity._id]) == 0
     @test _has_observers(world._event_manager, OnCreateEntity) == true
+    @test _has_observers(world._event_manager, OnRemoveEntity) == false
 
     obs2 = @observe!(world, OnCreateEntity) do entity
         println(entity)
@@ -102,6 +111,14 @@ end
     end
     @test obs3._id.id == 0
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
+
+    @test length(world._event_manager.observers[OnRemoveEntity._id]) == 0
+    @test _has_observers(world._event_manager, OnRemoveEntity) == false
+    @observe!(world, OnRemoveEntity) do entity
+        println(entity)
+    end
+    @test length(world._event_manager.observers[OnRemoveEntity._id]) == 1
+    @test _has_observers(world._event_manager, OnRemoveEntity) == true
 end
 
 @testset "Observer exclusive error" begin
@@ -130,7 +147,13 @@ end
 
     counter = 0
     obs = @observe!(world, OnCreateEntity) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == false
         counter += 1
+    end
+    counter_remove = 0
+    @observe!(world, OnRemoveEntity) do entity
+        counter_remove += 1
     end
 
     new_entity!(world, (Position(0, 0),))
@@ -159,5 +182,46 @@ end
     new_entity!(world, (Position(0, 0), Velocity(0, 0)))
     @test counter == 4
     new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+    @test counter == 4
+
+    @test counter_remove == 0
+end
+
+@testset "Fire OnRemoveEntity" begin
+    world = World(Position, Velocity, Altitude)
+
+    counter = 0
+    obs = @observe!(world, OnRemoveEntity) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == true
+        counter += 1
+    end
+
+    remove_entity!(world, new_entity!(world, (Position(0, 0),)))
+    @test counter == 1
+
+    observe!(world, obs; unregister=true)
+
+    obs = @observe!(world, OnRemoveEntity, with = (Position, Velocity)) do entity
+        counter += 1
+    end
+
+    remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0))))
+    @test counter == 2
+    remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0))))
+    @test counter == 3
+    remove_entity!(world, new_entity!(world, (Position(0, 0),)))
+    @test counter == 3
+    remove_entity!(world, new_entity!(world, (Altitude(0),)))
+    @test counter == 3
+
+    observe!(world, obs; unregister=true)
+
+    obs = @observe!(world, OnRemoveEntity, with = (Position, Velocity), without = (Altitude,)) do entity
+        counter += 1
+    end
+    remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0))))
+    @test counter == 4
+    remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0))))
     @test counter == 4
 end

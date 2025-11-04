@@ -207,6 +207,15 @@ function remove_entity!(world::World, entity::Entity)
     index = world._entities[entity._id]
     archetype = world._archetypes[index.archetype]
 
+    if _has_observers(world._event_manager, OnRemoveEntity)
+        l = _lock(world._lock)
+        _fire_create_or_remove_entity(
+            world._event_manager, entity,
+            world._archetypes[index.archetype].mask, OnRemoveEntity, true,
+        )
+        _unlock(world._lock, l)
+    end
+
     swapped = _swap_remove!(archetype.entities._data, index.row)
 
     # Only operate on storages for components present in this archetype
@@ -818,7 +827,8 @@ end
     storage_types = [:(_ComponentStorage{$T}) for T in types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
-    storage_exprs = [:(_ComponentStorage{$T}(1)) for T in types]
+    # storage tuple value
+    storage_exprs = [:(_ComponentStorage{$T}()) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
