@@ -646,11 +646,11 @@ end
 
 Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
 """
-function add_components!(world::World, entity::Entity, values::Tuple)
+@inline function add_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't add components to a dead entity"))
     end
-    return _exchange_components!(world, entity, Val{typeof(values)}(), values, ())
+    return @inline _exchange_components!(world, entity, Val{typeof(values)}(), values, ())
 end
 
 """
@@ -690,11 +690,11 @@ For a more convenient tuple syntax, the macro [`@remove_components!`](@ref) is p
 remove_components!(world, entity, Val.((Position, Velocity)))
 ```
 """
-function remove_components!(world::World, entity::Entity, comp_types::Tuple)
+@inline function remove_components!(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't remove components from a dead entity"))
     end
-    return _exchange_components!(world, entity, Val{Tuple{}}(), (), comp_types)
+    return @inline _exchange_components!(world, entity, Val{Tuple{}}(), (), comp_types)
 end
 
 """
@@ -765,11 +765,11 @@ exchange_components!(world, entity;
 )
 ```
 """
-function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
+@inline function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
         throw(ArgumentError("can't exchange components on a dead entity"))
     end
-    return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
+    return @inline _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
 end
 
 @generated function _exchange_components!(
