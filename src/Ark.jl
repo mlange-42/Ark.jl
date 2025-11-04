@@ -1,6 +1,7 @@
 module Ark
 
 using StaticArrays
+using FunctionWrappers: FunctionWrapper
 
 include("util.jl")
 include("entity.jl")
