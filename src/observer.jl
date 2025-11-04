@@ -1,4 +1,33 @@
 
+"""
+    @observe!(
+        fn::Function,
+        world::World,
+        event::EventType,
+        components::Tuple;
+        with::Tuple=(),
+        without::Tuple=(),
+        exclusive::Val=Val(false),
+        register::Bool=true,
+    )
+
+Creates an [Observer](@ref) and (optionally, default) registers it.
+
+Macro version of [`observe!`](@ref) that allows ergonomic construction of observers using simulated keyword arguments.
+
+See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
+
+# Arguments
+
+  - `fn::Function`: A callback function to execute when a matching event is received. Can be used via a `do` block.
+  - `world::World`: The [World](@ref) to observe.
+  - `event::EventType`: The [EventType](@ref) to observe.
+  - `components::Tuple`: The component types to observe. Must be empty for `OnCreateEntity` and `OnRemoveEntity`.
+  - `with::Tuple=()`: Components the entity must have.
+  - `without::Tuple=()`: Components the entity must not have.
+  - `exclusive::Bool=false`: Makes the observer exclusive for entities that have exactly the components given be `with`.
+  - `register::Bool=true`: Whether the observer is registered immediately. Alternatively, register later with [observe!](@ref observe!(::World, ::Observer; ::Bool))
+"""
 macro observe!(args...)
     if length(args) < 4
         error("observe! requires at least a world, an event type, a tuple of components and a callback")
@@ -49,6 +78,35 @@ macro observe!(args...)
     end
 end
 
+"""
+    observe!(
+        fn::Function,
+        world::World,
+        event::EventType,
+        components::Tuple;
+        with::Tuple=(),
+        without::Tuple=(),
+        exclusive::Bool=false,
+        register::Bool=true,
+    )
+
+Creates an [Observer](@ref) and (optionally, default) registers it.
+
+For a more convenient tuple syntax, the macro [`@observe!`](@ref) is provided.
+
+See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
+
+# Arguments
+
+  - `fn::Function`: A callback function to execute when a matching event is received. Can be used via a `do` block.
+  - `world::World`: The [World](@ref) to observe.
+  - `event::EventType`: The [EventType](@ref) to observe.
+  - `components::Tuple`: The component types to observe. Must be empty for `OnCreateEntity` and `OnRemoveEntity`.
+  - `with::Tuple=()`: Components the entity must have.
+  - `without::Tuple=()`: Components the entity must not have.
+  - `exclusive::Bool=false`: Makes the observer exclusive for entities that have exactly the components given be `with`.
+  - `register::Bool=true`: Whether the observer is registered immediately. Alternatively, register later with [observe!](@ref observe!(::World, ::Observer; ::Bool))
+"""
 function observe!(
     fn::Function,
     world::W,
@@ -122,7 +180,13 @@ end
     end
 end
 
-function observe!(world::World, observer::Observer; unregister=false)
+"""
+    observe!(world::World, observer::Observer; unregister::Bool=false)
+
+Registers or un-registers the given [Observer](@ref).
+Note that observers created with [@observe!](@ref) are automatically registered by default.
+"""
+function observe!(world::World, observer::Observer; unregister::Bool=false)
     if unregister
         _remove_observer!(world._event_manager, observer)
     else

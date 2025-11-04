@@ -1,4 +1,17 @@
 
+"""
+    EventType
+
+Type for built-in and custom events.
+See [EventRegistry](@ref) for creating custom event types.
+
+# Built-in event types
+
+  - `OnCreateEntity`: Event emitted when a new entity is created.
+  - `OnRemoveEntity`: Event emitted when an entity is removed from the [World](@ref).
+  - `OnAddComponents`: Event emitted when components are added to an entity.
+  - `OnRemoveComponents`: Event emitted when components are removed from an entity.
+"""
 struct EventType
     _id::UInt8
 
@@ -11,14 +24,30 @@ const OnAddComponents::EventType = EventType(UInt8(3))
 const OnRemoveComponents::EventType = EventType(UInt8(4))
 const _custom_events::EventType = EventType(UInt8(5))
 
+"""
+    EventRegistry
+
+Serves for creating custom event types.
+"""
 mutable struct EventRegistry
     _next_index::UInt8
 end
 
+"""
+    EventRegistry()
+
+Creates a new [EventRegistry](@ref).
+"""
 function EventRegistry()
     EventRegistry(_custom_events._id - 1)
 end
 
+"""
+    new_event_type!(reg::EventRegistry)
+
+Creates a new custom [EventType](@ref).
+Custom event types are best stored in global constants.
+"""
 function new_event_type!(reg::EventRegistry)
     if reg._next_index == typemax(UInt8)
         error("reached maximum number of $(reg._next_index) event types")
@@ -31,6 +60,14 @@ mutable struct _ObserverID
     id::UInt32
 end
 
+"""
+    Observer
+
+Observer for reacting on built-in and custom events.
+
+See [@observe!](@ref) for details.
+See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
+"""
 struct Observer
     _id::_ObserverID
     _event::EventType
