@@ -224,7 +224,7 @@ function _fire_add_components(
     end
     found = false
     for o in m.observers[evt]
-        if o._has_comps && (!_contains_all(o._comps, new_mask) || _contains_any(old_mask, o._comps))
+        if o._has_comps && (!_contains_all(new_mask, o._comps) || _contains_any(old_mask, o._comps))
             continue
         end
         if o._has_with && !_contains_all(old_mask, o._with)
@@ -258,7 +258,7 @@ function _fire_remove_components(
     end
     found = false
     for o in m.observers[evt]
-        if o._has_comps && (!_contains_all(o._comps, old_mask) || _contains_any(new_mask, o._comps))
+        if o._has_comps && (!_contains_all(old_mask, o._comps) || _contains_any(new_mask, o._comps))
             continue
         end
         if o._has_with && !_contains_all(old_mask, o._with)
