@@ -3,6 +3,7 @@ module Ark
 using StaticArrays
 
 include("util.jl")
+include("function.jl")
 include("entity.jl")
 include("mask.jl")
 include("events.jl")

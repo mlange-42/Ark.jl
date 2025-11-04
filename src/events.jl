@@ -23,3 +23,8 @@ end
 @inline function _event_index(m::_EventManager, ::Val{sym}) where sym
     return m.registry[sym]
 end
+
+struct Observer
+
+
+end
