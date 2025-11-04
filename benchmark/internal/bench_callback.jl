@@ -1,18 +1,17 @@
 
 function setup_callback(n::Int)
     fns = Vector{Observer}()
-    push!(fns, Observer(entity -> is_zero(entity), OnCreateEntity))
-    push!(fns, Observer(entity -> is_zero(entity), OnCreateEntity))
-    push!(fns, Observer(entity -> is_zero(entity), OnCreateEntity))
+    push!(fns, Observer(entity -> nothing, OnCreateEntity))
+    push!(fns, Observer(entity -> nothing, OnCreateEntity))
+    push!(fns, Observer(entity -> nothing, OnCreateEntity))
 
-    return fns
+    return fns, [i%length(fns)+1 for i in 1:n]
 end
 
 function benchmark_callback(args, n)
-    fns = args
-    len = length(fns)
-    for i in 1:n
-        fns[i%len+1]._fn(zero_entity)
+    fns, ids = args
+    @inbounds for i in ids
+        fns[i]._fn(zero_entity)
     end
 end
 
