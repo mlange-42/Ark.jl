@@ -6,6 +6,14 @@
     e2 = new_event_type!(reg)
     @test e1._id == 3
     @test e2._id == 4
+
+    while true
+        e = new_event_type!(reg)
+        if e._id == typemax(UInt8)
+            break
+        end
+    end
+    @test_throws ErrorException new_event_type!(reg)
 end
 
 @testset "Observer creation" begin
@@ -50,21 +58,22 @@ end
 
 @testset "Observer registration" begin
     world = World(Position, Velocity, Altitude, Health)
+    @test _has_observers(world._event_manager, OnCreateEntity) == false
 
     obs1 = @observe!(world, OnCreateEntity) do entity
         println(entity)
     end
 
     @test obs1._id.id == 1
-    @test length(world._event_manager.observers) == 1
+    @test length(world._event_manager.observers) == typemax(UInt8)
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
+    @test _has_observers(world._event_manager, OnCreateEntity) == true
 
     obs2 = @observe!(world, OnCreateEntity) do entity
         println(entity)
     end
 
     @test obs2._id.id == 2
-    @test length(world._event_manager.observers) == 1
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 2
 
     @test_throws ErrorException observe!(world, obs1)
