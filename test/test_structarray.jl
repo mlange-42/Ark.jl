@@ -81,3 +81,43 @@ end
     tp = _StructArray_type(Position)
     @test tp == _StructArray{Position,@NamedTuple{x::Vector{Float64}, y::Vector{Float64}},2}
 end
+
+@testset "Vector view" begin
+    # template for tests below to ensure that StructArray views behave like Vector views
+    a = Vector{Position}()
+    for i in 1:10
+        push!(a, Position(i, i))
+    end
+
+    v = view(a, 5:10)
+    @test v[1] == Position(5, 5)
+    v[1] = Position(99, 99)
+    @test v[1] == Position(99, 99)
+
+    @test length(v) == 6
+    @test size(v) == (6,)
+    @test firstindex(v) == 1
+    @test lastindex(v) == 6
+    @test eachindex(v) == 1:6
+end
+
+@testset "StructArray view" begin
+    a = _StructArray(Position)
+    for i in 1:10
+        push!(a, Position(i, i))
+    end
+
+    v = view(a, 5:10)
+    @test v[1] == Position(5, 5)
+    v[1] = Position(99, 99)
+    @test v[1] == Position(99, 99)
+
+    @test length(v) == 6
+    @test size(v) == (6,)
+    @test firstindex(v) == 1
+    @test lastindex(v) == 6
+    @test eachindex(v) == 1:6
+
+    @test Base.eltype(typeof(v)) == Position
+    @test Base.IndexStyle(typeof(v)) == IndexLinear()
+end
