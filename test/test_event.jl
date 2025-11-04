@@ -227,6 +227,31 @@ end
     for (p, v) in new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)); iterate=true)
     end
     @test counter == 30
+
+    observe!(world, obs; unregister=true)
+
+    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity)) do entity
+        counter += 1
+    end
+
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
+    @test counter == 40
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+    @test counter == 50
+    new_entities!(world, 10, (Position(0, 0),))
+    @test counter == 50
+    new_entities!(world, 10, (Altitude(0),))
+    @test counter == 50
+
+    observe!(world, obs; unregister=true)
+
+    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity), without = (Altitude,)) do entity
+        counter += 1
+    end
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
+    @test counter == 60
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+    @test counter == 60
 end
 
 @testset "Fire OnRemoveEntity" begin
