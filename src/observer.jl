@@ -4,7 +4,7 @@
         fn::Function,
         world::World,
         event::EventType,
-        components::Tuple;
+        components::Tuple=(),
         with::Tuple=(),
         without::Tuple=(),
         exclusive::Val=Val(false),
@@ -22,30 +22,50 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
   - `fn::Function`: A callback function to execute when a matching event is received. Can be used via a `do` block.
   - `world::World`: The [World](@ref) to observe.
   - `event::EventType`: The [EventType](@ref) to observe.
-  - `components::Tuple`: The component types to observe. Must be empty for `OnCreateEntity` and `OnRemoveEntity`.
+  - `components::Tuple=()`: The component types to observe. Must be empty for `OnCreateEntity` and `OnRemoveEntity`.
   - `with::Tuple=()`: Components the entity must have.
   - `without::Tuple=()`: Components the entity must not have.
   - `exclusive::Bool=false`: Makes the observer exclusive for entities that have exactly the components given be `with`.
   - `register::Bool=true`: Whether the observer is registered immediately. Alternatively, register later with [observe!](@ref observe!(::World, ::Observer; ::Bool))
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+@observe!(world, OnAddComponents, (Position, Velocity), with = (Altitude,)) do entity
+    println(entity)
+end
+; # suppress print output
+
+# output
+
+```
 """
 macro observe!(args...)
-    if length(args) < 4
-        error("observe! requires at least a world, an event type, a tuple of components and a callback")
+    if length(args) < 3
+        error("observe! requires at least a callback, world, and event type")
     end
 
-    fn_expr = args[1]
+    fn_expr    = args[1]
     world_expr = args[2]
     event_expr = args[3]
-    comps_expr = args[4]
 
-    # Default values
-    with_expr = :(())
-    without_expr = :(())
+    # Determine if components were provided
+    if length(args) > 3 && !(Base.isexpr(args[4], :(=), 2))
+        comps_expr = args[4]
+        kw_args = args[5:end]
+    else
+        comps_expr = :(())
+        kw_args = args[4:end]
+    end
+
+    # Default keyword values
+    with_expr      = :(())
+    without_expr   = :(())
     exclusive_expr = :false
-    register_expr = :true
+    register_expr  = :true
 
     # Parse simulated keyword arguments
-    for arg in args[5:end]
+    for arg in kw_args
         if Base.isexpr(arg, :(=), 2)
             name, value = arg.args
             if name == :with
@@ -57,10 +77,10 @@ macro observe!(args...)
             elseif name == :register
                 register_expr = value
             else
-                error(lazy"Unknown keyword argument: $name")
+                error("Unknown keyword argument: $name")
             end
         else
-            error(lazy"Unexpected argument format: $arg")
+            error("Unexpected argument format: $arg")
         end
     end
 
@@ -83,7 +103,7 @@ end
         fn::Function,
         world::World,
         event::EventType,
-        components::Tuple;
+        components::Tuple=();
         with::Tuple=(),
         without::Tuple=(),
         exclusive::Bool=false,
@@ -106,12 +126,24 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
   - `without::Tuple=()`: Components the entity must not have.
   - `exclusive::Bool=false`: Makes the observer exclusive for entities that have exactly the components given be `with`.
   - `register::Bool=true`: Whether the observer is registered immediately. Alternatively, register later with [observe!](@ref observe!(::World, ::Observer; ::Bool))
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+observe!(world, OnAddComponents, Val.((Position, Velocity)); with=Val.((Altitude,))) do entity
+    println(entity)
+end
+; # suppress print output
+
+# output
+
+```
 """
 function observe!(
     fn::Function,
     world::W,
     event::EventType,
-    components::Tuple;
+    components::Tuple=();
     with::Tuple=(),
     without::Tuple=(),
     exclusive::Val=Val(false),

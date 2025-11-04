@@ -12,6 +12,10 @@ struct Velocity
     dy::Float64
 end
 
-world = World(Position, Velocity)
+struct Altitude
+    z::Float64
+end
+
+world = World(Position, Velocity, Altitude)
 
 entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))

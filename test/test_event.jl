@@ -161,13 +161,13 @@ end
     world = World(Position, Velocity, Altitude)
 
     counter = 0
-    obs = @observe!(world, OnCreateEntity, ()) do entity
+    obs = @observe!(world, OnCreateEntity) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == false
         counter += 1
     end
     counter_remove = 0
-    @observe!(world, OnRemoveEntity, ()) do entity
+    @observe!(world, OnRemoveEntity) do entity
         counter_remove += 1
     end
 
@@ -191,7 +191,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity), without = (Altitude,)) do entity
+    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity), without = (Altitude,)) do entity
         counter += 1
     end
     new_entity!(world, (Position(0, 0), Velocity(0, 0)))
@@ -206,7 +206,7 @@ end
     world = World(Position, Velocity, Altitude)
 
     counter = 0
-    obs = @observe!(world, OnCreateEntity, ()) do entity
+    obs = @observe!(world, OnCreateEntity) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter += 1
@@ -225,7 +225,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity)) do entity
+    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity)) do entity
         counter += 1
     end
 
@@ -240,7 +240,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnCreateEntity, (), with = (Position, Velocity), without = (Altitude,)) do entity
+    obs = @observe!(world, OnCreateEntity, with = (Position, Velocity), without = (Altitude,)) do entity
         counter += 1
     end
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
@@ -253,7 +253,7 @@ end
     world = World(Position, Velocity, Altitude)
 
     counter = 0
-    obs = @observe!(world, OnRemoveEntity, ()) do entity
+    obs = @observe!(world, OnRemoveEntity) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter += 1
@@ -264,7 +264,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnRemoveEntity, (), with = (Position, Velocity)) do entity
+    obs = @observe!(world, OnRemoveEntity, with = (Position, Velocity)) do entity
         counter += 1
     end
 
@@ -279,7 +279,7 @@ end
 
     observe!(world, obs; unregister=true)
 
-    obs = @observe!(world, OnRemoveEntity, (), with = (Position, Velocity), without = (Altitude,)) do entity
+    obs = @observe!(world, OnRemoveEntity, with = (Position, Velocity), without = (Altitude,)) do entity
         counter += 1
     end
     remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0))))
@@ -293,12 +293,12 @@ end
 
     counter_add = 0
     counter_rem = 0
-    obs_add = @observe!(world, OnAddComponents, ()) do entity
+    obs_add = @observe!(world, OnAddComponents) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == false
         counter_add += 1
     end
-    obs_rem = @observe!(world, OnRemoveComponents, ()) do entity
+    obs_rem = @observe!(world, OnRemoveComponents) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter_rem += 1
