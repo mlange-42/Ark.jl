@@ -110,3 +110,32 @@ end
 
 SUITE["benchmark_event_match_1_of_5 n=1000"] =
     @be setup_event_match_1_of_5(1000) benchmark_event_match_1_of_5(_, 1000) seconds = SECONDS
+
+function setup_event_capture(n::Int)
+    reg = EventRegistry()
+    evt = new_event_type!(reg)
+
+    world = World(Position, Velocity)
+
+    entities = []
+    for _ in 1:n
+        push!(entities, new_entity!(world, (Position(0, 0),)))
+    end
+
+    @observe!(world, evt, (Position,)) do entity
+        set_components!(world, entity, (Position(Float64(entity._id), 0),))
+    end
+
+    return world, entities, evt
+end
+
+function benchmark_event_capture(args, n)
+    world, entities, evt = args
+    for entity in entities
+        @emit_event!(world, evt, entity, (Position,))
+    end
+    world
+end
+
+SUITE["benchmark_event_capture n=1000"] =
+    @be setup_event_capture(1000) benchmark_event_capture(_, 1000) seconds = SECONDS
