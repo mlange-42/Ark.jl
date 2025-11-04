@@ -2,12 +2,13 @@
 function setup_callback(n::Int)
     world = World()
 
-    fns = Vector{Observer}()
-    push!(fns, Observer(entity -> nothing, world, OnCreateEntity))
-    push!(fns, Observer(entity -> nothing, world, OnCreateEntity))
-    push!(fns, Observer(entity -> nothing, world, OnCreateEntity))
+    Observer(entity -> nothing, world, OnCreateEntity)
+    Observer(entity -> nothing, world, OnCreateEntity)
+    Observer(entity -> nothing, world, OnCreateEntity)
 
-    return fns, [i % length(fns) + 1 for i in 1:n]
+    observers = world._event_manager.observers[OnCreateEntity._id]
+
+    return observers, [i % length(observers) + 1 for i in 1:n]
 end
 
 function benchmark_callback(args, n)

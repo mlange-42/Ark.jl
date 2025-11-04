@@ -21,7 +21,7 @@ struct World{CS<:Tuple,CT<:Tuple,N} <: _AbstractWorld
     _lock::_Lock
     _graph::_Graph
     _resources::Dict{DataType,Any}
-    _event_manager::_EventManager
+    _event_manager::_EventManager{World{CS,CT,N}}
 end
 
 """
@@ -836,7 +836,7 @@ end
             _Lock(),
             graph,
             Dict{DataType,Any}(),
-            _EventManager(),
+            _EventManager(World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}),
         )
     end
 end

@@ -36,15 +36,15 @@ struct Observer{W<:_AbstractWorld}
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
-struct _EventManager
-    observers::Vector{Vector{Observer}}
+struct _EventManager{W<:_AbstractWorld}
+    observers::Vector{Vector{Observer{W}}}
 end
 
-function _EventManager()
-    _EventManager(Vector{Vector{Observer}}())
+function _EventManager(::Type{W}) where {W<:_AbstractWorld}
+    _EventManager{W}(Vector{Vector{Observer{W}}}())
 end
 
-function _add_observer!(m::_EventManager, o::Observer)
+function _add_observer!(m::_EventManager{W}, o::Observer{W}) where {W<:_AbstractWorld}
     if o._id.id > 0
         error("observer is already registered")
     end
@@ -53,14 +53,14 @@ function _add_observer!(m::_EventManager, o::Observer)
     if old_length < event
         resize!(m.observers, event)
         for i in (old_length+1):event
-            m.observers[i] = Vector{Observer}()
+            m.observers[i] = Vector{Observer{W}}()
         end
     end
     push!(m.observers[event], o)
     o._id.id = UInt32(length(m.observers[event]))
 end
 
-function _remove_observer!(m::_EventManager, o::Observer)
+function _remove_observer!(m::_EventManager{W}, o::Observer{W}) where {W<:_AbstractWorld}
     if o._id.id == 0
         error("observer is not registered")
     end
