@@ -209,9 +209,9 @@ function remove_entity!(world::World, entity::Entity)
 
     if _has_observers(world._event_manager, OnRemoveEntity)
         l = _lock(world._lock)
-        _fire_create_or_remove_entity(
+        _fire_remove_entity(
             world._event_manager, entity,
-            world._archetypes[index.archetype].mask, OnRemoveEntity, true,
+            world._archetypes[index.archetype].mask,
         )
         _unlock(world._lock, l)
     end
