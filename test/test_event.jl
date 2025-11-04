@@ -417,3 +417,38 @@ end
     @test counter_add == 1
     @test counter_rem == 1
 end
+
+@testset "Fire custom event" begin
+    reg = EventRegistry()
+    OnUpdateComponent = new_event_type!(reg)
+    world = World(Position, Velocity, Altitude, Health)
+
+    counter = 0
+    obs = @observe!(world, OnUpdateComponent) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == false
+        counter += 1
+    end
+
+    e = new_entity!(world, (Position(0, 0),))
+    @emit_event!(world, OnUpdateComponent, e, (Position,))
+    @test counter == 1
+
+    observe!(world, obs; unregister=true)
+
+    obs = @observe!(world, OnUpdateComponent, components = (Position, Velocity)) do entity
+        counter += 1
+    end
+    obs_dummy = @observe!(world, OnUpdateComponent, components = (Position,)) do entity
+    end
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+    @emit_event!(world, OnUpdateComponent, e, (Position, Velocity))
+    @test counter == 2
+
+    @emit_event!(world, OnUpdateComponent, e, (Altitude,))
+    @test counter == 2
+
+    @emit_event!(world, OnUpdateComponent, e, (Position,))
+    @test counter == 2
+end

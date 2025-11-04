@@ -272,3 +272,31 @@ function _fire_remove_components(
     end
     return found
 end
+
+function _fire_custom_event(
+    m::_EventManager,
+    entity::Entity,
+    event::EventType,
+    mask::_Mask,
+    entity_mask::_Mask,
+)
+    evt = event._id
+    if !m.any_no_comps[evt] && !_contains_any(m.union_comps[evt], mask)
+        return
+    end
+    if !m.any_no_with[evt] && !_contains_any(m.union_with[evt], entity_mask)
+        return
+    end
+    for o in m.observers[evt]
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
+        if o._has_with && !_contains_all(entity_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(entity_mask, o._without)
+            continue
+        end
+        o._fn(entity)
+    end
+end
