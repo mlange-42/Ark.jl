@@ -56,7 +56,7 @@ World(comp_types::Type...; allow_mutable::Bool=false) =
     return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
-@generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
+@generated function _get_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
         if S <: _ComponentStorage && S.parameters[1] === C
@@ -64,12 +64,6 @@ end
         end
     end
     return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
-end
-
-@generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
-    S = CS.parameters[id]
-    T = S.parameters[1]
-    return :(world._storages.$id::_ComponentStorage{$T})
 end
 
 function _find_or_create_archetype!(
@@ -873,11 +867,11 @@ end
     component_types = map(T -> :(Type{$T}), types)
     component_tuple_type = :(Tuple{$(component_types...)})
 
-    storage_types = [:(_ComponentStorage{$T}) for T in types]
+    storage_types = [:(_ComponentStorage{$T,Vector{$T}}) for T in types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     # storage tuple value
-    storage_exprs = [:(_ComponentStorage{$T}()) for T in types]
+    storage_exprs = [:(_ComponentStorage{$T,Vector{$T}}()) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
     id_exprs = [:(_register_component!(registry, $T)) for T in types]

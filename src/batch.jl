@@ -23,7 +23,7 @@ end
     storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
-    storage_types = [:(_ComponentStorage{$T}) for T in comp_types]
+    storage_types = [:(_ComponentStorage{$T,Vector{$T}}) for T in comp_types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote

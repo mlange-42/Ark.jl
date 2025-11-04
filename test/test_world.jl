@@ -18,8 +18,7 @@ end
         "ArgumentError: Component type Altitude not found in the World",
         _component_id(params, Altitude))
 
-    @test isa(_get_storage(world, Position), _ComponentStorage{Position})
-    @test isa(_get_storage_by_id(world, Val(1)), _ComponentStorage{Position})
+    @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
 end
 
 @testset "World creation error" begin
@@ -68,7 +67,7 @@ end
     @test isa(id_int, UInt8)
     @test world._registry.types[id_int] == Int
     @test length(world._storages) == 2
-    @test world._storages[id_int] isa _ComponentStorage{Int}
+    @test world._storages[id_int] isa _ComponentStorage{Int,Vector{Int}}
     @test length(world._storages[id_int].data) == 1
 
     # Register Position component
@@ -76,7 +75,7 @@ end
     @test isa(id_pos, UInt8)
     @test world._registry.types[id_pos] == Position
     @test length(world._storages) == 2
-    @test world._storages[id_pos] isa _ComponentStorage{Position}
+    @test world._storages[id_pos] isa _ComponentStorage{Position,Vector{Position}}
     @test length(world._storages[id_pos].data) == 1
 
     # Re-register Int component (should not add new storage)
@@ -98,11 +97,11 @@ end
     params = typeof(world).parameters[1]
 
     storage1 = _get_storage(world, Int)
-    @test storage1 isa _ComponentStorage{Int}
+    @test storage1 isa _ComponentStorage{Int,Vector{Int}}
 
     id = _component_id(params, Int)
     storage2 = _get_storage(world, Int)
-    @test storage2 isa _ComponentStorage{Int}
+    @test storage2 isa _ComponentStorage{Int,Vector{Int}}
 
     @test storage1 === storage2
 
@@ -140,8 +139,8 @@ end
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
 
-    @test isa(pos_storage, _ComponentStorage{Position})
-    @test isa(vel_storage, _ComponentStorage{Velocity})
+    @test isa(pos_storage, _ComponentStorage{Position,Vector{Position}})
+    @test isa(vel_storage, _ComponentStorage{Velocity,Vector{Velocity}})
     @test length(pos_storage.data) == 3
     @test length(vel_storage.data) == 3
 end
