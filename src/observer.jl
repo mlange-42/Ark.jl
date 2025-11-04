@@ -100,8 +100,10 @@ end
         exclude_mask_expr = :(_Mask($(without_ids_exprs...)))
     end
 
-    has_excluded = (length(without_types) > 0) || (EX === Val{true})
-    has_excluded_expr = has_excluded ? :(true) : :(false)
+    has_comps_expr = (length(comp_types) > 0) ? :(true) : :(false)
+    has_with_expr = (length(with_types) > 0) ? :(true) : :(false)
+    has_without = (length(without_types) > 0) || (EX === Val{true})
+    has_without_expr = has_without ? :(true) : :(false)
 
     return quote
         mask = $mask_expr
@@ -114,7 +116,9 @@ end
             mask,
             $with_mask_expr,
             $exclude_mask_expr,
-            $has_excluded_expr,
+            $has_comps_expr,
+            $has_with_expr,
+            $has_without_expr,
             fn,
         )
         if register
