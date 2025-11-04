@@ -165,9 +165,9 @@ end
     ::EX,
     register::Bool,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,EX<:Val}
-    comp_types = [x.parameters[1] for x in CT.parameters]
-    with_types = [x.parameters[1] for x in WT.parameters]
-    without_types = [x.parameters[1] for x in WO.parameters]
+    comp_types = _try_to_types(CT)
+    with_types = _try_to_types(WT)
+    without_types = _try_to_types(WO)
 
     if EX === Val{true} && !isempty(without_types)
         error("cannot use 'exclusive' together with 'without'")
