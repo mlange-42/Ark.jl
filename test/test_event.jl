@@ -316,4 +316,30 @@ end
     @remove_components!(world, e, (Position,))
     @test counter_add == 1
     @test counter_rem == 1
+
+    observe!(world, obs_add; unregister=true)
+    observe!(world, obs_rem; unregister=true)
+
+    obs_add = @observe!(world, OnAddComponents, components = (Position, Velocity)) do entity
+        counter_add += 1
+    end
+    obs_rem = @observe!(world, OnRemoveComponents, components = (Position, Velocity)) do entity
+        counter_rem += 1
+    end
+
+    e = new_entity!(world, ())
+    add_components!(world, e, (Position(0, 0), Velocity(0, 0)))
+    @remove_components!(world, e, (Position, Velocity))
+    @test counter_add == 2
+    @test counter_rem == 2
+
+    add_components!(world, e, (Altitude(0),))
+    @remove_components!(world, e, (Altitude,))
+    @test counter_add == 2
+    @test counter_rem == 2
+
+    add_components!(world, e, (Position(0, 0),))
+    @remove_components!(world, e, (Position,))
+    @test counter_add == 2
+    @test counter_rem == 2
 end
