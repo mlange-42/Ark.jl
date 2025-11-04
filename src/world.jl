@@ -970,11 +970,3 @@ function remove_resource!(world::World, res_type::Type{T}) where T
     res = pop!(world._resources, res_type)
     return res::T
 end
-
-function register_observer!(observer::Observer)
-    _add_observer!(observer._world._event_manager, observer)
-end
-
-function unregister_observer!(observer::Observer)
-    _remove_observer!(observer._world._event_manager, observer)
-end
