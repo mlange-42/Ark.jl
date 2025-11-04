@@ -64,5 +64,20 @@ end
     return Expr(:block, set_exprs..., :(sa))
 end
 
+function Base.iterate(sa::_StructArray{C}) where {C}
+    sa.length == 0 && return nothing
+    return sa[1], 2
+end
+
+function Base.iterate(sa::_StructArray{C}, i::Int) where {C}
+    i > sa.length && return nothing
+    return sa[i], i + 1
+end
+
 Base.length(sa::_StructArray) = sa.length
 Base.size(sa::_StructArray) = (sa.length,)
+Base.eachindex(sa::_StructArray) = 1:sa.length
+Base.eltype(::Type{_StructArray{C}}) where {C} = C
+Base.IndexStyle(::Type{_StructArray}) = IndexLinear()
+Base.firstindex(sa::_StructArray) = 1
+Base.lastindex(sa::_StructArray) = sa.length

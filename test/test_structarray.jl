@@ -28,9 +28,13 @@
     for i in 1:10
         a[i] = Position(i, i)
     end
-    for i in 1:10
+
+    count = 0
+    for i in eachindex(a)
         @test a[i] == Position(i, i)
+        count += 1
     end
+    @test count == 10
 end
 
 @testset "StructArray no fields" begin
