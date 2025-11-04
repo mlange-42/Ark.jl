@@ -413,6 +413,26 @@ end
     @test counter_rem == 1
 end
 
+@testset "Observers combine" begin
+    world = World(Position, Velocity)
+
+    counter = 0
+    fn = (event::EventType, entity::Entity) -> begin
+        counter += 1
+    end
+    obs_add = @observe!(world, OnCreateEntity) do entity
+        fn(OnCreateEntity, entity)
+    end
+    obs_rem = @observe!(world, OnRemoveEntity) do entity
+        fn(OnRemoveEntity, entity)
+    end
+
+    e = new_entity!(world, ())
+    @test counter == 1
+    remove_entity!(world, e)
+    @test counter == 2
+end
+
 @testset "Fire custom event" begin
     reg = EventRegistry()
     OnUpdateComponents = new_event_type!(reg)
