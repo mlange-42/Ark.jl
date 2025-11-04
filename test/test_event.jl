@@ -294,7 +294,7 @@ end
 end
 
 @testset "Fire OnAddComponents/OnRemoveComponents" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(Position, Velocity, Altitude, Health)
 
     counter_add = 0
     counter_rem = 0
@@ -346,4 +346,74 @@ end
     @remove_components!(world, e, (Position,))
     @test counter_add == 2
     @test counter_rem == 2
+end
+
+@testset "Fire OnAddComponents/OnRemoveComponents with" begin
+    world = World(Position, Velocity, Altitude, Health)
+
+    counter_add = 0
+    counter_rem = 0
+    obs_add = @observe!(world, OnAddComponents, with = (Position, Velocity)) do entity
+        counter_add += 1
+    end
+    obs_rem = @observe!(world, OnRemoveComponents, with = (Position, Velocity)) do entity
+        counter_rem += 1
+    end
+    obs_add_dummy = @observe!(world, OnAddComponents, with = (Position,)) do entity
+    end
+    obs_rem_dummy = @observe!(world, OnRemoveComponents, with = (Position,)) do entity
+    end
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    add_components!(world, e, (Health(0),))
+    @remove_components!(world, e, (Health,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Altitude(0),))
+    add_components!(world, e, (Health(0),))
+    @remove_components!(world, e, (Health,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Position(0, 0),))
+    add_components!(world, e, (Health(0),))
+    @remove_components!(world, e, (Health,))
+    @test counter_add == 1
+    @test counter_rem == 1
+end
+
+@testset "Fire OnAddComponents/OnRemoveComponents without" begin
+    world = World(Position, Velocity, Altitude, Health)
+
+    counter_add = 0
+    counter_rem = 0
+    obs_add = @observe!(world, OnAddComponents, without = (Position, Velocity)) do entity
+        counter_add += 1
+    end
+    obs_rem = @observe!(world, OnRemoveComponents, without = (Position, Velocity)) do entity
+        counter_rem += 1
+    end
+    obs_add_dummy = @observe!(world, OnAddComponents, without = (Position,)) do entity
+    end
+    obs_rem_dummy = @observe!(world, OnRemoveComponents, without = (Position,)) do entity
+    end
+
+    e = new_entity!(world, (Altitude(0),))
+    add_components!(world, e, (Health(0),))
+    @remove_components!(world, e, (Health,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Position(0, 0),))
+    add_components!(world, e, (Health(0),))
+    @remove_components!(world, e, (Health,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    add_components!(world, e, (Health(0),))
+    @remove_components!(world, e, (Health,))
+    @test counter_add == 1
+    @test counter_rem == 1
 end
