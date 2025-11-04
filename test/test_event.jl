@@ -224,7 +224,7 @@ end
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
     @test counter == 20
 
-    for (p, v) in new_entities!(world, 10, (Position, Velocity); iterate=true)
+    for (p, v) in new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)); iterate=true)
     end
     @test counter == 30
 end
