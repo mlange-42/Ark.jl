@@ -3,7 +3,6 @@ module Ark
 using StaticArrays
 
 include("util.jl")
-include("function.jl")
 include("entity.jl")
 include("mask.jl")
 include("events.jl")
@@ -35,5 +34,7 @@ export Query, @Query, Batch
 export close!
 
 export Entities
+
+export Observer
 
 end

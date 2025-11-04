@@ -1,12 +1,10 @@
-using Ark
-using Ark: FunctionWrapper
 
 function setup_callback(n::Int)
-    fns = Vector{FunctionWrapper{Int,Tuple{Int}}}()
-    push!(fns, x::Int -> x * 2)
-    push!(fns, x::Int -> x - 3)
-    push!(fns, x::Int -> x * x)
-    push!(fns, x::Int -> 5)
+    fns = Vector{Observer}()
+    push!(fns, Observer(x::Int -> x * 2))
+    push!(fns, Observer(x::Int -> x - 3))
+    push!(fns, Observer(x::Int -> x * x))
+    push!(fns, Observer(x::Int -> 5))
 
     return fns
 end
@@ -16,7 +14,7 @@ function benchmark_callback(args, n)
     len = length(fns)
     sum = 0
     for i in 1:n
-        sum += fns[i%len+1](i)
+        sum += fns[i%len+1].fn(i)
     end
     return sum
 end
