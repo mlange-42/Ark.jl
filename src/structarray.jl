@@ -21,6 +21,19 @@ end
     end
 end
 
+@generated function Base.getproperty(sa::_StructArray{C}, name::Symbol) where {C}
+    # TODO: do we need this? Seems not called when doing `sa.components`.
+    #if name == :components || name == :length
+    #    return :(getfield(sa, name))
+    #end
+    component_names = fieldnames(C)
+    cases = [
+        :(name === $(QuoteNode(n)) && return sa.components.$n) for n in component_names
+    ]
+    fallback = :(return getfield(sa, name))
+    return Expr(:block, cases..., fallback)
+end
+
 @generated function Base.resize!(sa::_StructArray{C}, n::Int) where {C}
     names = fieldnames(C)
     resize_exprs = [

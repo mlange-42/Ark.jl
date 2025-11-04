@@ -2,6 +2,8 @@
 @testset "StructArray basic functionality" begin
     a = _StructArray(Position)
 
+    @test isa(a.x, Vector{Float64})
+    @test isa(a.y, Vector{Float64})
     @test isa(a.components.x, Vector{Float64})
     @test isa(a.components.y, Vector{Float64})
 
@@ -43,4 +45,12 @@ end
     push!(a, LabelComponent())
     @test length(a) == 1
     a[1] = LabelComponent()
+end
+
+@testset "StructArray unwrap" begin
+    a = _StructArray(Position)
+
+    x, y = a.components
+    @test isa(x, Vector{Float64})
+    @test isa(y, Vector{Float64})
 end
