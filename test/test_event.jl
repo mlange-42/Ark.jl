@@ -11,7 +11,7 @@ end
 @testset "Observer creation" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    obs = @Observer(world, OnCreateEntity,
+    obs = @observe!(world, OnCreateEntity,
         components = (Position, Velocity),
     ) do entity
         println(entity)
@@ -22,7 +22,7 @@ end
     @test obs._without == _Mask()
     @test obs._has_excluded == false
 
-    obs = @Observer(world, OnCreateEntity,
+    obs = @observe!(world, OnCreateEntity,
         components = (Position, Velocity),
         with = (Altitude,),
         without = (Health,)
@@ -35,7 +35,7 @@ end
     @test obs._without == _Mask(4)
     @test obs._has_excluded == true
 
-    obs = @Observer(world, OnCreateEntity,
+    obs = @observe!(world, OnCreateEntity,
         with = (Position, Velocity),
         exclusive = true,
     ) do entity
@@ -51,7 +51,7 @@ end
 @testset "Observer registration" begin
     world = World(Position, Velocity, Altitude, Health)
 
-    obs1 = @Observer(world, OnCreateEntity) do entity
+    obs1 = @observe!(world, OnCreateEntity) do entity
         println(entity)
     end
 
@@ -59,7 +59,7 @@ end
     @test length(world._event_manager.observers) == 1
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
 
-    obs2 = @Observer(world, OnCreateEntity) do entity
+    obs2 = @observe!(world, OnCreateEntity) do entity
         println(entity)
     end
 
@@ -67,16 +67,16 @@ end
     @test length(world._event_manager.observers) == 1
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 2
 
-    @test_throws ErrorException register_observer!(obs1)
+    @test_throws ErrorException observe!(world, obs1)
 
-    unregister_observer!(obs1)
+    observe!(world, obs1, unregister=true)
     @test obs1._id.id == 0
     @test obs2._id.id == 1
     @test length(world._event_manager.observers[OnCreateEntity._id]) == 1
 
-    @test_throws ErrorException unregister_observer!(obs1)
+    @test_throws ErrorException observe!(world, obs1, unregister=true)
 
-    obs3 = @Observer(world, OnCreateEntity, register = false) do entity
+    obs3 = @observe!(world, OnCreateEntity, register = false) do entity
         println(entity)
     end
     @test obs3._id.id == 0
@@ -85,21 +85,21 @@ end
 
 @testset "Observer exclusive error" begin
     world = World()
-    @test_throws ErrorException @Observer(world, OnCreateEntity, without = (Altitude,), exclusive = true) do entity
+    @test_throws ErrorException @observe!(world, OnCreateEntity, without = (Altitude,), exclusive = true) do entity
     end
 end
 
 @testset "Observer macro missing argument" begin
-    ex = Meta.parse("@Observer(world)")
+    ex = Meta.parse("@observe!(world)")
     @test_throws LoadError eval(ex)
 end
 
 @testset "Observer macro unknown argument" begin
-    ex = Meta.parse("@Observer(world, OnCreateEntity, abc = 2) do entity end")
+    ex = Meta.parse("@observe!(world, OnCreateEntity, abc = 2) do entity end")
     @test_throws LoadError eval(ex)
 end
 
 @testset "Observer macro invalid syntax" begin
-    ex = Meta.parse("@Observer(world, OnCreateEntity, xyz) do entity end")
+    ex = Meta.parse("@observe!(world, OnCreateEntity, xyz) do entity end")
     @test_throws LoadError eval(ex)
 end

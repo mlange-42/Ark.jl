@@ -2,9 +2,9 @@
 function setup_callback(n::Int)
     world = World()
 
-    Observer(entity -> nothing, world, OnCreateEntity)
-    Observer(entity -> nothing, world, OnCreateEntity)
-    Observer(entity -> nothing, world, OnCreateEntity)
+    observe!(entity -> nothing, world, OnCreateEntity)
+    observe!(entity -> nothing, world, OnCreateEntity)
+    observe!(entity -> nothing, world, OnCreateEntity)
 
     observers = world._event_manager.observers[OnCreateEntity._id]
 
