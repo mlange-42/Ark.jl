@@ -73,6 +73,14 @@ end
     return Expr(:block, pop_exprs..., dec_length, :(sa))
 end
 
+@generated function Base.fill!(sa::_StructArray{C}, value::C) where {C}
+    names = fieldnames(C)
+    fill_exprs = [
+        :(fill!(sa.components.$name, value.$name)) for name in names
+    ]
+    return Expr(:block, fill_exprs..., :(sa))
+end
+
 @generated function Base.getindex(sa::_StructArray{C}, i::Int) where {C}
     names = fieldnames(C)
     field_exprs = [
@@ -150,6 +158,14 @@ end
         :(sa.components.$name[i] = c.$name) for name in names
     ]
     return Expr(:block, set_exprs..., :(sa))
+end
+
+@generated function Base.fill!(sa::_StructArrayView{C}, value::C) where {C}
+    names = fieldnames(C)
+    fill_exprs = [
+        :(fill!(sa.components.$name, value.$name)) for name in names
+    ]
+    return Expr(:block, fill_exprs..., :(sa))
 end
 
 Base.size(sa::_StructArrayView) = (length(sa.indices),)

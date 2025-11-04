@@ -23,6 +23,11 @@
 
     pop!(a)
     @test length(a) == 1
+
+    fill!(a, Position(99, 99))
+    for pos in a
+        @test pos == Position(99, 99)
+    end
 end
 
 @testset "StructArray iteration" begin
@@ -120,4 +125,9 @@ end
 
     @test Base.eltype(typeof(v)) == Position
     @test Base.IndexStyle(typeof(v)) == IndexLinear()
+
+    fill!(v, Position(99, 99))
+    for pos in v
+        @test pos == Position(99, 99)
+    end
 end
