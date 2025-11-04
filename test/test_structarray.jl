@@ -113,6 +113,10 @@ end
     end
 
     v = view(a, 5:10)
+    x, y = v.components
+    @test isa(x, SubArray{Float64})
+    @test isa(y, SubArray{Float64})
+
     @test v[1] == Position(5, 5)
     v[1] = Position(99, 99)
     @test v[1] == Position(99, 99)
