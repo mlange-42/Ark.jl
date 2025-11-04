@@ -74,16 +74,6 @@ end
 
 function _find_or_create_archetype!(
     world::World,
-    entity::Entity,
-    add::Tuple{Vararg{UInt8}},
-    remove::Tuple{Vararg{UInt8}},
-)::UInt32
-    index = world._entities[entity._id]
-    return _find_or_create_archetype!(world, world._archetypes[index.archetype].node, add, remove)
-end
-
-function _find_or_create_archetype!(
-    world::World,
     start::_GraphNode,
     add::Tuple{Vararg{UInt8}},
     remove::Tuple{Vararg{UInt8}},
