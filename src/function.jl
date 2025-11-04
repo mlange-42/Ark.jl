@@ -24,8 +24,6 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__precompile__(true)
-
 if VERSION >= v"1.5.0"
     Base.@pure pass_by_value(T) = Base.allocatedinline(T)
 else
