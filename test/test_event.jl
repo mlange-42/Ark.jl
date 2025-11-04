@@ -326,6 +326,10 @@ end
     obs_rem = @observe!(world, OnRemoveComponents, components = (Position, Velocity)) do entity
         counter_rem += 1
     end
+    obs_add_dummy = @observe!(world, OnAddComponents, components = (Position,)) do entity
+    end
+    obs_rem_dummy = @observe!(world, OnRemoveComponents, components = (Position,)) do entity
+    end
 
     e = new_entity!(world, ())
     add_components!(world, e, (Position(0, 0), Velocity(0, 0)))
