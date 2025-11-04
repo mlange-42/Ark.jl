@@ -80,12 +80,13 @@ struct Observer
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
-struct _EventManager
-    observers::Vector{Vector{Observer}}
-    union_comps::Vector{_Mask}
-    union_with::Vector{_Mask}
-    any_no_with::Vector{Bool}
-    any_no_comps::Vector{Bool}
+mutable struct _EventManager
+    const observers::Vector{Vector{Observer}}
+    const union_comps::Vector{_Mask}
+    const union_with::Vector{_Mask}
+    const any_no_with::Vector{Bool}
+    const any_no_comps::Vector{Bool}
+    num_observers::Int
 end
 
 function _EventManager()
@@ -96,17 +97,20 @@ function _EventManager()
         [_Mask() for _ in 1:len],
         fill(false, len),
         fill(false, len),
+        0,
     )
 end
 
 function _has_observers(m::_EventManager, event::EventType)
-    return length(m.observers[event._id]) > 0
+    return m.num_observers > 0 && length(m.observers[event._id]) > 0
 end
 
 function _add_observer!(m::_EventManager, o::Observer)
     if o._id.id > 0
         error("observer is already registered")
     end
+    m.num_observers += 1
+
     e = o._event._id
     push!(m.observers[e], o)
     o._id.id = UInt32(length(m.observers[e]))
@@ -132,6 +136,8 @@ function _remove_observer!(m::_EventManager, o::Observer)
     if o._id.id == 0
         error("observer is not registered")
     end
+    m.num_observers -= 1
+
     e = o._event._id
     observers = m.observers[e]
     swapped = _swap_remove!(observers, o._id.id)
