@@ -5,6 +5,7 @@ using StaticArrays
 include("util.jl")
 include("entity.jl")
 include("mask.jl")
+include("events.jl")
 include("vec_map.jl")
 include("storage.jl")
 include("graph.jl")

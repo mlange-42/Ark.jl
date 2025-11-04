@@ -16,6 +16,7 @@ using Ark: _ComponentStorage
 using Ark: _VecMap, _get_map, _set_map!
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create
 using Ark: _BatchArchetype
+using Ark: _EventManager, _register_event!, _event_index
 
 using Test
 
@@ -26,6 +27,7 @@ include("test_entity.jl")
 include("test_pool.jl")
 include("test_lock.jl")
 include("test_mask.jl")
+include("test_events.jl")
 include("test_query.jl")
 include("test_batch.jl")
 include("test_registry.jl")
