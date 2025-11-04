@@ -13,7 +13,7 @@
             break
         end
     end
-    @test_throws ErrorException new_event_type!(reg)
+    @test_throws "InvalidStateException: reached maximum number of 255 event types" new_event_type!(reg)
 
     @test OnCreateEntity._id == 1
     @test OnRemoveEntity._id == 2
@@ -63,9 +63,12 @@ end
     @test obs._has_with == true
     @test obs._has_without == true
 
-    @test_throws ErrorException @observe!(world, OnCreateEntity, (Position, Velocity)) do entity
-        println(entity)
-    end
+    @test_throws(
+        "ArgumentError: components tuple must be empty for event types OnCreateEntity and OnRemoveEntity",
+        @observe!(world, OnCreateEntity, (Position, Velocity)) do entity
+            println(entity)
+        end,
+    )
 end
 
 @testset "Observer registration" begin
@@ -95,7 +98,7 @@ end
     @test obs2._id.id == 3
     @test length(world._event_manager.observers[OnAddComponents._id]) == 3
 
-    @test_throws ErrorException observe!(world, obs1)
+    @test_throws "InvalidStateException: observer is already registered" observe!(world, obs1)
 
     observe!(world, obs1, unregister=true)
     @test obs1._id.id == 0
@@ -107,7 +110,7 @@ end
     end
     observe!(world, obs2, unregister=true)
 
-    @test_throws ErrorException observe!(world, obs1, unregister=true)
+    @test_throws "InvalidStateException: observer is not registered" observe!(world, obs1, unregister=true)
 
     obs3 = @observe!(world, OnAddComponents, (), register = false) do entity
         println(entity)
@@ -138,8 +141,10 @@ end
 
 @testset "Observer exclusive error" begin
     world = World()
-    @test_throws ErrorException @observe!(world, OnCreateEntity, (), without = (Altitude,), exclusive = true) do entity
-    end
+    @test_throws("ArgumentError: cannot use 'exclusive' together with 'without'",
+        @observe!(world, OnCreateEntity, (), without = (Altitude,), exclusive = true) do entity
+        end
+    )
 end
 
 @testset "Observer macro missing argument" begin
@@ -541,14 +546,18 @@ end
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
 
-    @test_throws ErrorException @emit_event!(world, OnCreateEntity, e, ())
-    @test_throws ErrorException @emit_event!(world, OnUpdateComponents, zero_entity, (Position,))
+    @test_throws("ArgumentError: only custom events can be emitted manually",
+        @emit_event!(world, OnCreateEntity, e, ()))
+    @test_throws("ArgumentError: can't emit event with components for the zero entity",
+        @emit_event!(world, OnUpdateComponents, zero_entity, (Position,)))
 
     remove_entity!(world, e)
-    @test_throws ErrorException @emit_event!(world, OnUpdateComponents, e, ())
+    @test_throws("ArgumentError: can't emit event for a dead entity",
+        @emit_event!(world, OnUpdateComponents, e, ()))
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
-    @test_throws ErrorException @emit_event!(world, OnUpdateComponents, e, (Position, Altitude))
+    @test_throws("ArgumentError: entity does not have all components of the event emitted for it",
+        @emit_event!(world, OnUpdateComponents, e, (Position, Altitude)))
 end
 
 @testset "@emit_event! macro wrong number of arguments" begin

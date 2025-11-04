@@ -42,7 +42,7 @@ end
 """
 macro observe!(args...)
     if length(args) < 3
-        error("observe! requires at least a callback, world, and event type")
+        throw(ArgumentError("observe! requires at least a callback, world, and event type"))
     end
 
     fn_expr    = args[1]
@@ -77,10 +77,10 @@ macro observe!(args...)
             elseif name == :register
                 register_expr = value
             else
-                error("Unknown keyword argument: $name")
+                throw(ArgumentError("Unknown keyword argument: $name"))
             end
         else
-            error("Unexpected argument format: $arg")
+            throw(ArgumentError("Unexpected argument format: $arg"))
         end
     end
 
@@ -170,7 +170,7 @@ end
     without_types = _try_to_types(WO)
 
     if EX === Val{true} && !isempty(without_types)
-        error("cannot use 'exclusive' together with 'without'")
+        throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
     end
 
     function get_id(C)
@@ -192,7 +192,7 @@ end
 
     return quote
         if (event == OnCreateEntity || event == OnRemoveEntity) && _is_not_zero($mask)
-            error("components tuple must be empty for event types OnCreateEntity and OnRemoveEntity")
+            throw(ArgumentError("components tuple must be empty for event types OnCreateEntity and OnRemoveEntity"))
         end
         obs = Observer(
             _ObserverID(UInt32(0)),

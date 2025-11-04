@@ -1052,7 +1052,7 @@ macro emit_event!(args...)
     elseif length(args) == 4
         world_expr, event_expr, entity_expr, comps_expr = args
     else
-        error("@emit_event! expects 3 or 4 arguments")
+        throw(ArgumentError("@emit_event! expects 3 or 4 arguments"))
     end
 
     quote
@@ -1080,7 +1080,7 @@ For a more convenient tuple syntax, the macro [`@emit_event!`](@ref) is provided
 """
 function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple=()) where {W<:World}
     if event._id < _custom_events._id
-        error("only custom events can be emitted manually")
+        throw(ArgumentError("only custom events can be emitted manually"))
     end
     if !_has_observers(world._event_manager, event)
         return
@@ -1107,19 +1107,19 @@ end
 function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps::Bool, entity::Entity)
     if is_zero(entity)
         if has_comps
-            error("can't emit event with components for the zero entity")
+            throw(ArgumentError("can't emit event with components for the zero entity"))
         end
         return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes[1].mask)
     end
 
     if !is_alive(world, entity)
-        error("can't emit event for a dead entity")
+        throw(ArgumentError("can't emit event for a dead entity"))
     end
     index = world._entities[entity._id]
     entity_mask = world._archetypes[index.archetype].mask
 
     if !_contains_all(entity_mask, mask)
-        error("entity does not have all components of the event emitted for it")
+        throw(ArgumentError("entity does not have all components of the event emitted for it"))
     end
     _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
 end

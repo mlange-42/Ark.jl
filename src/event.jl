@@ -50,7 +50,7 @@ Custom event types are best stored in global constants.
 """
 function new_event_type!(reg::EventRegistry)
     if reg._next_index == typemax(UInt8)
-        error("reached maximum number of $(reg._next_index) event types")
+        throw(InvalidStateException("reached maximum number of $(reg._next_index) event types", :events_exhausted))
     end
     reg._next_index += 1
     return EventType(reg._next_index)
@@ -103,7 +103,7 @@ end
 
 function _add_observer!(m::_EventManager, o::Observer)
     if o._id.id > 0
-        error("observer is already registered")
+        throw(InvalidStateException("observer is already registered", :observer_already_registered))
     end
     m.num_observers += 1
 
@@ -134,7 +134,7 @@ end
 
 function _remove_observer!(m::_EventManager, o::Observer)
     if o._id.id == 0
-        error("observer is not registered")
+        throw(InvalidStateException("observer is not registered", :observer_not_registered))
     end
     m.num_observers -= 1
 
