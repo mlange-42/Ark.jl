@@ -971,10 +971,10 @@ function remove_resource!(world::World, res_type::Type{T}) where T
     return res::T
 end
 
-function register_observer!(world::World, observer::Observer)
-    _add_observer!(world._event_manager, observer)
+function register_observer!(observer::Observer)
+    _add_observer!(observer._world._event_manager, observer)
 end
 
-function unregister_observer!(world::World, observer::Observer)
-    _remove_observer!(world._event_manager, observer)
+function unregister_observer!(observer::Observer)
+    _remove_observer!(observer._world._event_manager, observer)
 end

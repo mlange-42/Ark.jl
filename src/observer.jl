@@ -53,14 +53,14 @@ end
 
 function Observer(
     fn::Function,
-    world::World,
+    world::W,
     event::EventType;
     components::Tuple=(),
     with::Tuple=(),
     without::Tuple=(),
     exclusive::Val=Val(false),
     register::Bool=true,
-)
+) where {W<:World}
     _Observer_from_types(
         world, event,
         FunctionWrapper{Nothing,Tuple{Entity}}(fn),
@@ -104,7 +104,7 @@ end
     has_excluded_expr = has_excluded ? :(true) : :(false)
 
     return quote
-        obs = Observer(
+        obs = Observer{W}(
             _ObserverID(UInt32(0)),
             world,
             event,
@@ -115,7 +115,7 @@ end
             fn,
         )
         if register
-            register_observer!(world, obs)
+            register_observer!(obs)
         end
         obs
     end
