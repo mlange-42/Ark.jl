@@ -46,6 +46,20 @@ function _Mask(bits::Integer...)
     return _Mask(chunks)
 end
 
+function _MaskNot(bits::Integer...)
+    chunks = ntuple(_ -> typemax(UInt64), 4)  # 0xFFFFFFFFFFFFFFFF
+
+    for b in bits
+        @check 1 ≤ b ≤ 256
+        chunk = (b - 1) >>> 6
+        offset = (b - 1) & 0x3F
+        mask = ~(UInt64(1) << offset)
+        chunks = Base.setindex(chunks, chunks[chunk+1] & mask, chunk + 1)
+    end
+
+    return _Mask(chunks)
+end
+
 function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
     return ((mask1.bits[1] & mask2.bits[1]) == mask2.bits[1]) *
            ((mask1.bits[2] & mask2.bits[2]) == mask2.bits[2]) *

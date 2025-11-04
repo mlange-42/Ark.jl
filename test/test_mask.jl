@@ -31,6 +31,11 @@
     @test _get_bit(m4, UInt8(1)) == false
     @test _get_bit(m4, UInt8(2)) == true
     @test _get_bit(m4, UInt8(5)) == false
+
+    m4 = _MaskNot(1, 5)
+    @test _get_bit(m4, UInt8(1)) == false
+    @test _get_bit(m4, UInt8(2)) == true
+    @test _get_bit(m4, UInt8(5)) == false
 end
 
 @testset "_Mask clear_bits" begin

@@ -26,7 +26,7 @@ struct Observer
     _comps::_Mask
     _with::_Mask
     _without::_Mask
-    _exclusive::Bool
+    _has_excluded::Bool
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
@@ -35,9 +35,12 @@ struct _EventManager
 end
 
 function _add_observer(m::_EventManager, o::Observer)
-    if length(m.observers) < o._event
+    old_length = length(m.observers)
+    if old_length < o._event
         resize!(m.observers, o._event)
-        m.observers[o._event] = Vector{Observer}()
+        for i in (old_length + 1) .. o._event
+            m.observers[i] = Vector{Observer}()
+        end
     end
     push!(m.observers[o._event], o)
 end
