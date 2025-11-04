@@ -541,18 +541,29 @@ end
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-    push!(exprs, :(
-        if iterate
-            batch = _Batch_from_types(
-                world,
-                [_BatchArchetype(archetype, indices...)],
-                $ts_val_expr,
-            )
-            return batch
-        else
-            return nothing
-        end
-    ))
+    push!(
+        exprs,
+        :(
+            if iterate
+                batch = _Batch_from_types(
+                    world,
+                    [_BatchArchetype(archetype, indices...)],
+                    $ts_val_expr,
+                )
+                return batch
+            else
+                if _has_observers(world._event_manager, OnCreateEntity)
+                    l = _lock(world._lock)
+                    _fire_create_entities(
+                        world._event_manager,
+                        _BatchArchetype(archetype, indices...),
+                    )
+                    _unlock(world._lock, l)
+                end
+                return nothing
+            end
+        ),
+    )
 
     return quote
         @inbounds begin

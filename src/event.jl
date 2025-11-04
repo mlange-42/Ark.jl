@@ -168,3 +168,31 @@ function _fire_create_or_remove_entity(
     end
     return found
 end
+
+function _fire_create_entities_if_has(m::_EventManager, arch::_BatchArchetype)
+    if !_has_observers(m, OnCreateEntity)
+        return
+    end
+    _fire_create_entities(m, arch)
+    return nothing
+end
+
+function _fire_create_entities(m::_EventManager, arch::_BatchArchetype)
+    evt = OnCreateEntity._id
+    mask = arch.archetype.mask
+    if !m.any_no_with[evt] && !_contains_any(m.union_with[evt], mask)
+        return
+    end
+    for o in m.observers[evt]
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        entities = arch.archetype.entities._data
+        for i in arch.start_idx:arch.end_idx
+            o._fn(entities[i])
+        end
+    end
+end

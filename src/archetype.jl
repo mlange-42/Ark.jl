@@ -21,3 +21,9 @@ function _add_entity!(arch::_Archetype, entity::Entity)::UInt32
 end
 
 Base.resize!(arch::_Archetype, length::Int) = Base.resize!(arch.entities._data, length)
+
+struct _BatchArchetype
+    archetype::_Archetype
+    start_idx::UInt32
+    end_idx::UInt32
+end

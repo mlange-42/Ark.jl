@@ -207,6 +207,28 @@ end
     @test counter_remove == 0
 end
 
+@testset "Fire OnCreateEntity batch" begin
+    world = World(Position, Velocity, Altitude)
+
+    counter = 0
+    obs = @observe!(world, OnCreateEntity) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == true
+        counter += 1
+    end
+
+    for (p, v) in @new_entities!(world, 10, (Position, Velocity))
+    end
+    @test counter == 10
+
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
+    @test counter == 20
+
+    for (p, v) in new_entities!(world, 10, (Position, Velocity); iterate=true)
+    end
+    @test counter == 30
+end
+
 @testset "Fire OnRemoveEntity" begin
     world = World(Position, Velocity, Altitude)
 
