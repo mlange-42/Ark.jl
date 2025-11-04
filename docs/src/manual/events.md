@@ -37,6 +37,8 @@ DocTestSetup = quote
     end
 
     world = World(Position, Velocity, Altitude)
+    entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    ui_element = new_entity!(world, ())
 end
 ```
 
@@ -58,13 +60,13 @@ Velocity(1.0, 1.0)
 
 ## Event types
 
-Observers are specific for different event types, and each observer can react only to one type.
+Observers are specific for different [event types](@ref EventType), and each observer can react only to one type.
 See [below](@ref combining-types) for how to react on multiple different types.
 
-- **OnCreateEntity**: Emitted after a new entity is created.  
-- **OnRemoveEntity**: Emitted before an entity is removed.
-- **OnAddComponents**: Emitted after components are added to an existing entity.
-- **OnRemoveComponents**: Emitted before components are removed from an entity.
+- **`OnCreateEntity`**: Emitted after a new entity is created.  
+- **`OnRemoveEntity`**: Emitted before an entity is removed.
+- **`OnAddComponents`**: Emitted after components are added to an existing entity.
+- **`OnRemoveComponents`**: Emitted before components are removed from an entity.
 
 If multiple components are added/removed for an entity,
 one event is emitted for the entire operation.
@@ -195,3 +197,74 @@ Note that observer order is undefined. Observers are not necessarily triggered
 in the same order as they were registered.
 
 ## [Custom events](@id custom-events)
+
+Custom events in Ark allow developers to define and emit their own event types,
+enabling application-specific logic such as UI interactions, game state changes,
+or other domain-specific triggers.
+These events support the same filtering and observer mechanisms as built-in events.
+
+Define custom event types using an [EventRegistry](@ref EventRegistry) and [new_event_type!](@ref new_event_type!):
+
+```jldoctest; output=false
+# Create an event registry
+registry = EventRegistry()
+
+# Create event types
+const OnCollisionDetected = new_event_type!(registry)
+const OnInputReceived     = new_event_type!(registry)
+const OnLevelLoaded       = new_event_type!(registry)
+const OnTimerElapsed      = new_event_type!(registry)
+
+# output
+
+EventType(0x08)
+```
+
+Ideally, custom event types are stored as global variables of the applications.
+
+Use [@emit_event!](@ref) to emit custom events:
+
+```jldoctest; output=false
+registry = EventRegistry()
+const OnTeleport = new_event_type!(registry)
+
+# Add an observer for the event type
+@observe!(world, OnTeleport, (Position,)) do entity
+    # ...
+end
+
+# Emit the event for an entity and component type(s)
+@emit_event!(world, OnTeleport, entity, (Position,))
+
+# output
+
+```
+
+Observers might not be interested in components, or in more than one component.
+This is also supported by custom events:
+
+```jldoctest; output=false
+registry = EventRegistry()
+const OnClick = new_event_type!(registry)
+
+@emit_event!(world, OnClick, ui_element)
+
+# output
+
+```
+
+Note that custom events can also be emitted for the [zero entity](@ref zero_entity):
+
+```jldoctest; output=false
+registry = EventRegistry()
+const OnGameOver = new_event_type!(registry)
+
+@emit_event!(world, OnGameOver, zero_entity)
+
+# output
+
+```
+
+For custom events, observer [filters](@ref Filters) work exactly the same as for predefined events.
+The components in the last (optional) non-keyword argument are matched against the components of the event.
+`with`, `without` and `exclusive` are matched against the entity for which the event is emitted.
