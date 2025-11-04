@@ -196,3 +196,79 @@ function _fire_create_entities(m::_EventManager, arch::_BatchArchetype)
         end
     end
 end
+
+function _fire_add_components_if_has(m::_EventManager, entity::Entity, old_mask::_Mask, new_mask::_Mask)
+    if !_has_observers(m, OnAddComponents)
+        return
+    end
+    _fire_add_components(m, entity, old_mask, new_mask, true)
+    return nothing
+end
+
+function _fire_add_components(
+    m::_EventManager,
+    entity::Entity,
+    old_mask::_Mask,
+    new_mask::_Mask,
+    early_out::Bool,
+)::Bool
+    evt = OnAddComponents._id
+    if early_out
+        if !m.any_no_comps[evt] &&
+           (!_contains_any(m.union_comps[evt], new_mask) || _contains_all(old_mask, m.union_comps[evt]))
+            return false
+        end
+        if !m.any_no_with[evt] && !_contains_any(m.union_with[evt], old_mask)
+            return false
+        end
+    end
+    found = false
+    for o in m.observers[evt]
+        if o._has_comps && (!_contains_any(o._comps, new_mask) || _contains_all(old_mask, o._comps))
+            continue
+        end
+        if o._has_with && !_contains_all(old_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(old_mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
+end
+
+function _fire_remove_components(
+    m::_EventManager,
+    entity::Entity,
+    old_mask::_Mask,
+    new_mask::_Mask,
+    early_out::Bool,
+)::Bool
+    evt = OnRemoveComponents._id
+    if early_out
+        if !m.any_no_comps[evt] &&
+           (!_contains_any(m.union_comps[evt], old_mask) || _contains_all(new_mask, m.union_comps[evt]))
+            return false
+        end
+        if !m.any_no_with[evt] && !_contains_any(m.union_with[evt], old_mask)
+            return false
+        end
+    end
+    found = false
+    for o in m.observers[evt]
+        if o._has_comps && (!_contains_any(o._comps, old_mask) || _contains_all(new_mask, o._comps))
+            continue
+        end
+        if o._has_with && !_contains_all(old_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(old_mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
+end

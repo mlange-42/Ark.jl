@@ -793,8 +793,37 @@ end
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, $add_ids, $rem_ids)))
-    push!(exprs, :(row = _move_entity!(world, entity, archetype)))
+
+    push!(exprs, :(index = world._entities[entity._id]))
+    push!(
+        exprs,
+        :(
+            new_arch_index =
+                _find_or_create_archetype!(
+                    world, world._archetypes[index.archetype].node, $add_ids, $rem_ids,
+                )
+        ),
+    )
+
+    if length(rem_types) > 0
+        push!(
+            exprs,
+            :(
+                if _has_observers(world._event_manager, OnRemoveComponents)
+                    l = _lock(world._lock)
+                    _fire_remove_components(
+                        world._event_manager, entity,
+                        world._archetypes[index.archetype].mask,
+                        world._archetypes[new_arch_index].mask,
+                        true,
+                    )
+                    _unlock(world._lock, l)
+                end
+            ),
+        )
+    end
+
+    push!(exprs, :(row = _move_entity!(world, entity, new_arch_index)))
 
     for i in 1:length(add_types)
         T = add_types[i]
@@ -803,8 +832,20 @@ end
         val_expr = :(add.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_arch_index]))
         push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
+    end
+
+    if length(add_types) > 0
+        push!(
+            exprs,
+            :(
+                _fire_add_components_if_has(
+                world._event_manager, entity,
+                world._archetypes[index.archetype].mask,
+                world._archetypes[new_arch_index].mask,
+            )),
+        )
     end
 
     push!(exprs, Expr(:return, :nothing))

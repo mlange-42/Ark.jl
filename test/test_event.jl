@@ -292,3 +292,28 @@ end
     remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0))))
     @test counter == 4
 end
+
+@testset "Fire OnAddComponents/OnRemoveComponents" begin
+    world = World(Position, Velocity, Altitude)
+
+    counter_add = 0
+    counter_rem = 0
+    obs_add = @observe!(world, OnAddComponents) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == false
+        counter_add += 1
+    end
+    obs_rem = @observe!(world, OnRemoveComponents) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == true
+        counter_rem += 1
+    end
+
+    e = new_entity!(world, ())
+    add_components!(world, e, (Position(0, 0),))
+    @test counter_add == 1
+    @test counter_rem == 0
+    @remove_components!(world, e, (Position,))
+    @test counter_add == 1
+    @test counter_rem == 1
+end
