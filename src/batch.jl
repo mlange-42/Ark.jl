@@ -67,7 +67,9 @@ Must be called if a batch is not fully iterated.
 function close!(b::Batch)
     # TODO: extend for different even types.
     # Note that for the other operations, the full list of archetypes is required.
-    _fire_create_entities_if_has(b._world._event_manager, b._archetypes[1])
+    if _has_observers(b._world._event_manager, OnCreateEntity)
+        _fire_create_entities(b._world._event_manager, b._archetypes[1])
+    end
     _unlock(b._world._lock, b._lock)
     b._index = 0
     b._lock = 0

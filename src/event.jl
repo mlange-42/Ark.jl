@@ -175,10 +175,7 @@ function _remove_observer!(m::_EventManager, o::Observer)
     m.union_comps[e] = comps_mask
 end
 
-function _fire_create_entity_if_has(m::_EventManager, entity::Entity, mask::_Mask)
-    if !_has_observers(m, OnCreateEntity)
-        return
-    end
+function _fire_create_entity(m::_EventManager, entity::Entity, mask::_Mask)
     _fire_create_or_remove_entity(m, entity, mask, OnCreateEntity, true)
     return nothing
 end
@@ -213,14 +210,6 @@ function _fire_create_or_remove_entity(
     return found
 end
 
-function _fire_create_entities_if_has(m::_EventManager, arch::_BatchArchetype)
-    if !_has_observers(m, OnCreateEntity)
-        return
-    end
-    _fire_create_entities(m, arch)
-    return nothing
-end
-
 function _fire_create_entities(m::_EventManager, arch::_BatchArchetype)
     evt = OnCreateEntity._id
     mask = arch.archetype.mask
@@ -239,14 +228,6 @@ function _fire_create_entities(m::_EventManager, arch::_BatchArchetype)
             o._fn(entities[i])
         end
     end
-end
-
-function _fire_add_components_if_has(m::_EventManager, entity::Entity, old_mask::_Mask, new_mask::_Mask)
-    if !_has_observers(m, OnAddComponents)
-        return
-    end
-    _fire_add_components(m, entity, old_mask, new_mask, true)
-    return nothing
 end
 
 function _fire_add_components(

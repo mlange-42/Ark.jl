@@ -201,7 +201,7 @@ function remove_entity!(world::World, entity::Entity)
         l = _lock(world._lock)
         _fire_remove_entity(
             world._event_manager, entity,
-            world._archetypes[index.archetype].mask,
+            archetype.mask,
         )
         _unlock(world._lock, l)
     end
@@ -438,7 +438,9 @@ Creates a new [`Entity`](@ref) with the given component values. Types are inferr
 """
 function new_entity!(world::World, values::Tuple)
     entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
-    _fire_create_entity_if_has(world._event_manager, entity, world._archetypes[arch].mask)
+    if _has_observers(world._event_manager, OnCreateEntity)
+        _fire_create_entity(world._event_manager, entity, world._archetypes[arch].mask)
+    end
     return entity
 end
 
@@ -785,12 +787,13 @@ end
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
 
     push!(exprs, :(index = world._entities[entity._id]))
+    push!(exprs, :(old_arch = world._archetypes[index.archetype]))
     push!(
         exprs,
         :(
             new_arch_index =
                 _find_or_create_archetype!(
-                    world, world._archetypes[index.archetype].node, $add_ids, $rem_ids,
+                    world, old_arch.node, $add_ids, $rem_ids,
                 )
         ),
     )
@@ -803,7 +806,7 @@ end
                     l = _lock(world._lock)
                     _fire_remove_components(
                         world._event_manager, entity,
-                        world._archetypes[index.archetype].mask,
+                        old_arch.mask,
                         world._archetypes[new_arch_index].mask,
                         true,
                     )
@@ -830,11 +833,15 @@ end
         push!(
             exprs,
             :(
-                _fire_add_components_if_has(
-                world._event_manager, entity,
-                world._archetypes[index.archetype].mask,
-                world._archetypes[new_arch_index].mask,
-            )),
+                if _has_observers(world._event_manager, OnAddComponents)
+                    _fire_add_components(
+                        world._event_manager, entity,
+                        old_arch.mask,
+                        world._archetypes[new_arch_index].mask,
+                        true,
+                    )
+                end
+            ),
         )
     end
 
