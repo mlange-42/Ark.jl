@@ -10,6 +10,9 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  BASE_REF: main
+
 jobs:
   benchmark:
     name: Benchmarks
@@ -29,6 +32,7 @@ jobs:
       with:
         julia-version: '1.12.1'
         project-file: 'benchmark/Project.toml'
+        key-suffix: ${{ matrix.repetition }}
         
     - name: Install dependencies
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
@@ -42,18 +46,22 @@ jobs:
         name: bench_current_${{ matrix.repetition }}
         path: bench_current_${{ matrix.repetition }}.csv
 
-    - name: Checkout main branch
+    - name: Checkout code
       if: github.event_name == 'pull_request'
       uses: actions/checkout@v3
       with:
-        ref: main
-        
+        fetch-depth: 0
+    - name: Switch to base commit
+      if: github.event_name == 'pull_request'
+      run: git checkout ${{ env.BASE_REF }}
+
     - name: Set up Julia
       if: github.event_name == 'pull_request'
       uses: ./.github/actions/setup-julia
       with:
         julia-version: '1.12.1'
         project-file: 'benchmark/Project.toml'
+        key-suffix: ${{ matrix.repetition }}
 
     - name: Install dependencies
       if: github.event_name == 'pull_request'
