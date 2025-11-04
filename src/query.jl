@@ -62,7 +62,7 @@ end
 """
 macro Query(args...)
     if length(args) < 2
-        error("@Query requires at least a world and component tuple")
+        throw(ArgumentError("@Query requires at least a world and component tuple"))
     end
 
     world_expr = args[1]
@@ -87,10 +87,10 @@ macro Query(args...)
             elseif name == :exclusive
                 exclusive_expr = value
             else
-                error(lazy"Unknown keyword argument: $name")
+                throw(ArgumentError(lazy"Unknown keyword argument: $name"))
             end
         else
-            error(lazy"Unexpected argument format: $arg")
+            throw(ArgumentError(lazy"Unexpected argument format: $arg"))
         end
     end
 
@@ -174,7 +174,7 @@ end
     non_exclude_types = union(comp_types, with_types)
 
     if EX === Val{true} && !isempty(without_types)
-        error("cannot use 'exclusive' together with 'without'")
+        throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
     end
 
     function get_id(C)

@@ -10,7 +10,7 @@ end
 function _get_component(s::_ComponentStorage{C}, arch::UInt32, row::UInt32) where C
     @inbounds col = s.data[arch]
     if length(col) == 0
-        error(lazy"entity has no $C component")
+        throw(ArgumentError(lazy"entity has no $C component"))
     end
     return @inbounds col[row]
 end
@@ -18,7 +18,7 @@ end
 function _set_component!(s::_ComponentStorage{C}, arch::UInt32, row::UInt32, value::C) where C
     @inbounds col = s.data[arch]
     if length(col) == 0
-        error(lazy"entity has no $C component")
+        throw(ArgumentError(lazy"entity has no $C component"))
     end
     return @inbounds col[row] = value
 end
