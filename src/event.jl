@@ -97,7 +97,7 @@ function _EventManager()
     )
 end
 
-function _has_observers(m::_EventManager, event::EventType)
+@inline function _has_observers(m::_EventManager, event::EventType)
     return m.num_observers > 0 && length(m.observers[event._id]) > 0
 end
 
