@@ -16,7 +16,7 @@ function benchmark_query_posvel_soa_unpack(args, n)
     world = args
     for columns in @Query(world, (PositionSoA, VelocitySoA))
         @unpack _, (x, y), (dx, dy) = columns
-        for i in eachindex(x, y)
+        for i in eachindex(x, y, dx, dy)
             x[i] += dx[i]
             y[i] += dy[i]
         end
