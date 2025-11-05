@@ -128,7 +128,7 @@ An observer that is triggered when a `Position` component is added to an entity
 that has `Velocity`, but not `Altitude` (or rather, had before the operation):
 
 ```jldoctest; output=false
-@observe!(world, OnAddComponents, (Position,),
+@observe!(world, OnAddComponents, (Position,);
         with    = (Velocity,),
         without = (Altitude,)
     ) do entity
@@ -143,7 +143,7 @@ end
 This observer is triggered when an entity with `Position` is created:
 
 ```jldoctest; output=false
-@observe!(world, OnCreateEntity,
+@observe!(world, OnCreateEntity;
         with    = (Velocity,)
     ) do entity
     # ...
@@ -157,7 +157,7 @@ end
 This observer is triggered when an entity with `Position` as well as `Velocity` is created:
 
 ```jldoctest; output=false
-@observe!(world, OnCreateEntity,
+@observe!(world, OnCreateEntity;
         with    = (Position, Velocity)
     ) do entity
     # ...
