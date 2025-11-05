@@ -833,11 +833,19 @@ end
     if !allow_mutable
         for T in types
             if ismutabletype(T)
-                throw(
-                    ArgumentError(
-                        lazy"Component type $T must be immutable unless 'allow_mutable' is used",
-                    ),
-                )
+                if T <: StructArrayComponent
+                    throw(
+                        ArgumentError(
+                            lazy"Component type $T must be immutable because it is a StructArrayComponent",
+                        ),
+                    )
+                else
+                    throw(
+                        ArgumentError(
+                            lazy"Component type $T must be immutable unless 'allow_mutable' is used",
+                        ),
+                    )
+                end
             end
         end
     end

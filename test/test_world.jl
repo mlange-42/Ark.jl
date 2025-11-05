@@ -8,7 +8,7 @@
 end
 
 @testset "World creation 2" begin
-    world = World(Position, Velocity)
+    world = World(Position, Velocity, SaoComp)
     @test isa(world, World)
     params = typeof(world).parameters[1]
 
@@ -19,6 +19,7 @@ end
         _component_id(params, Altitude))
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
+    @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,_StructArray_type(SaoComp)})
 end
 
 @testset "World creation error" begin
@@ -90,6 +91,9 @@ end
         World(Position, MutableComponent))
 
     _ = World(Position, MutableComponent; allow_mutable=true)
+
+    @test_throws("Component type MutableSaoComp must be immutable because it is a StructArrayComponent",
+        World(Position, MutableSaoComp))
 end
 
 @testset "_get_storage Tests" begin

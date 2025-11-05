@@ -12,13 +12,6 @@ function _new_vector_storage(::Type{C}) where {C}
 end
 
 function _new_struct_array_storage(::Type{C}) where {C}
-    if ismutabletype(C)
-        throw(
-            ArgumentError(
-                lazy"StructArray storage does not support mutable types ($T)",
-            ),
-        )
-    end
     _ComponentStorage{C,_StructArray_type(C)}([_StructArray(C)])
 end
 

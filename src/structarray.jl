@@ -46,7 +46,7 @@ end
     return Expr(:block, cases..., fallback)
 end
 
-@generated function Base.resize!(sa::_StructArray{C}, n::Int) where {C}
+@generated function Base.resize!(sa::_StructArray{C}, n::Integer) where {C}
     names = fieldnames(C)
     resize_exprs = [
         :(resize!(sa.components.$name, n)) for name in names

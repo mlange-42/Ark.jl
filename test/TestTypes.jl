@@ -17,6 +17,16 @@ struct Health
     health::Float64
 end
 
+struct SaoComp <: StructArrayComponent
+    x::Float64
+    y::Float64
+end
+
+mutable struct MutableSaoComp <: StructArrayComponent
+    x::Float64
+    y::Float64
+end
+
 struct LabelComponent end
 
 struct CompN{N} end
