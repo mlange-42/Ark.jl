@@ -79,7 +79,7 @@ macro observe!(kwargs_expr, fn_expr, world_expr, event_expr)
 end
 macro observe!(kwargs_expr, fn_expr, world_expr, event_expr, comps_expr)
     iskwargs = kwargs_expr isa Expr && kwargs_expr.head == :parameters
-    if !iskwargs 
+    if !iskwargs
         kwargs_expr, fn_expr = fn_expr, kwargs_expr
     end
     map(x -> (x.args[1] != :register && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
