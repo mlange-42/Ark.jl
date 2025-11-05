@@ -194,7 +194,7 @@ end
     end
 
     for arch in @Query(world, (Position, SaoComp))
-        e, pos, (x, y) = components.(arch)
+        e, pos, (x, y) = unpack.(arch)
         @test isa(e, Entities)
         @test isa(x, SubArray{Float64})
         @test isa(y, SubArray{Float64})

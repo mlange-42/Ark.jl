@@ -44,6 +44,6 @@ export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
 
 export Observer, observe!, @observe!, emit_event!, @emit_event!
 
-export StructArrayComponent, components
+export StructArrayComponent, unpack
 
 end

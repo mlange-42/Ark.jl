@@ -185,16 +185,16 @@ end
 Base.lastindex(sa::StructArrayView) = length(sa)
 
 """
-    components(a::StructArrayView)
+    unpack(a::StructArrayView)
 
-Retrieve the components (i.e. field vectors) of a StructArray-like column returned from a [Query](@ref).
-Can be used recursively on a query iteration tuple:
+Unpacks the components (i.e. field vectors) of a StructArray-like column returned from a [Query](@ref).
+Can be used recursively on a query iteration tuple.
 
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 for columns in Query(world, Val.((PositionSoA, VelocitySoA)))
-    entities, (x, y), (dx, sy) = components.(columns)
+    entities, (x, y), (dx, sy) = unpack.(columns)
     x .+= dx
     y .+= dy
 end
@@ -203,6 +203,6 @@ end
 
 ```
 """
-components(a::StructArrayView) = a._components
+unpack(a::StructArrayView) = a._components
 
-components(a::SubArray) = a
+unpack(a::SubArray) = a

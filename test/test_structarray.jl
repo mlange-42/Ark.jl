@@ -116,6 +116,9 @@ end
     x, y = v._components
     @test isa(x, SubArray{Float64})
     @test isa(y, SubArray{Float64})
+    x, y = unpack(v)
+    @test isa(x, SubArray{Float64})
+    @test isa(y, SubArray{Float64})
 
     @test v[1] == Position(5, 5)
     v[1] = Position(99, 99)

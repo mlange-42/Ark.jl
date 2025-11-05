@@ -63,4 +63,4 @@ Base.size(c::Entities) = (length(c),)
 Base.firstindex(c::Entities) = firstindex(c._data)
 Base.lastindex(c::Entities) = lastindex(c._data)
 
-components(col::Entities) = col
+unpack(col::Entities) = col

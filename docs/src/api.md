@@ -63,7 +63,7 @@ Query
 @Query
 close!(q::Query)
 Entities
-components
+unpack
 ```
 
 ## [Resources](@id resources-api)

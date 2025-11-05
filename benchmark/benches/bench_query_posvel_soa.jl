@@ -5,7 +5,7 @@ function setup_query_posvel_soa(n_entities::Int)
         new_entity!(world, (PositionSoA(i, i * 2), VelocitySoA(1, 1)))
     end
     for columns in @Query(world, (PositionSoA, VelocitySoA))
-        _, (x, y), (dx, dy) = components.(columns)
+        _, (x, y), (dx, dy) = unpack.(columns)
         @inbounds x .+= dx
         @inbounds y .+= dy
     end
@@ -15,7 +15,7 @@ end
 function benchmark_query_posvel_soa(args, n)
     world = args
     for columns in @Query(world, (PositionSoA, VelocitySoA))
-        _, (x, y), (dx, dy) = components.(columns)
+        _, (x, y), (dx, dy) = unpack.(columns)
         @inbounds x .+= dx
         @inbounds y .+= dy
     end
