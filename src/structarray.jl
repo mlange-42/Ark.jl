@@ -97,11 +97,11 @@ Base.view(sa::_StructArray, ::Colon) = view(sa, 1:length(sa))
         Tuple{$(map(t -> :(SubArray{$t,1,Vector{$t},Tuple{I},true}), types)...)},
     })
     return quote
-        StructArrayView{C,$nt_type,length($names),I}((; $(view_exprs...)), idx)
+        StructArrayView{C,$nt_type,I}((; $(view_exprs...)), idx)
     end
 end
 
-@generated function Base.getindex(sa::_StructArray{C}, i::Int) where {C}
+Base.@propagate_inbounds @generated function Base.getindex(sa::_StructArray{C}, i::Int) where {C}
     names = fieldnames(C)
     field_exprs = [
         :($(name) = sa._components.$name[i]) for name in names
@@ -109,7 +109,7 @@ end
     return Expr(:block, Expr(:call, C, field_exprs...))
 end
 
-@generated function Base.setindex!(sa::_StructArray{C}, c::C, i::Int) where {C}
+Base.@propagate_inbounds @generated function Base.setindex!(sa::_StructArray{C}, c, i::Int) where {C}
     names = fieldnames(C)
     set_exprs = [
         :(sa._components.$name[i] = c.$name) for name in names
@@ -117,12 +117,12 @@ end
     return Expr(:block, set_exprs..., :(sa))
 end
 
-function Base.iterate(sa::_StructArray{C}) where {C}
+Base.@propagate_inbounds function Base.iterate(sa::_StructArray{C}) where {C}
     sa._length == 0 && return nothing
     return sa[1], 2
 end
 
-function Base.iterate(sa::_StructArray{C}, i::Int) where {C}
+Base.@propagate_inbounds function Base.iterate(sa::_StructArray{C}, i::Int) where {C}
     i > sa._length && return nothing
     return sa[i], i + 1
 end
@@ -141,12 +141,12 @@ end
 
 Base.lastindex(sa::_StructArray) = sa._length
 
-struct StructArrayView{C,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
-    _components::CS # TODO: make this private?
+struct StructArrayView{C,CS<:NamedTuple,I} <: AbstractArray{C,1}
+    _components::CS
     _indices::I
 end
 
-@generated function Base.getindex(sa::StructArrayView{C}, i::Int) where {C}
+Base.@propagate_inbounds @generated function Base.getindex(sa::StructArrayView{C}, i::Int) where {C}
     names = fieldnames(C)
     field_exprs = [
         :($(name) = sa._components.$name[i]) for name in names
@@ -154,7 +154,7 @@ end
     return Expr(:block, Expr(:call, C, field_exprs...))
 end
 
-@generated function Base.setindex!(sa::StructArrayView{C}, c::C, i::Int) where {C}
+Base.@propagate_inbounds @generated function Base.setindex!(sa::StructArrayView{C}, c::C, i::Int) where {C}
     names = fieldnames(C)
     set_exprs = [
         :(sa._components.$name[i] = c.$name) for name in names
@@ -170,12 +170,12 @@ end
     return Expr(:block, fill_exprs..., :(sa))
 end
 
-function Base.iterate(sa::StructArrayView{C}) where {C}
+Base.@propagate_inbounds function Base.iterate(sa::StructArrayView{C}) where {C}
     length(sa) == 0 && return nothing
     return sa[1], 2
 end
 
-function Base.iterate(sa::StructArrayView{C}, i::Int) where {C}
+Base.@propagate_inbounds function Base.iterate(sa::StructArrayView{C}, i::Int) where {C}
     i > length(sa) && return nothing
     return sa[i], i + 1
 end
