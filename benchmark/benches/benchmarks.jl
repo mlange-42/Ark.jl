@@ -9,6 +9,7 @@ include("BenchTypes.jl")
 
 include("bench_query_create.jl")
 include("bench_query_posvel.jl")
+include("bench_query_posvel_soa.jl")
 include("bench_query_posvel_stored.jl")
 include("bench_world_posvel.jl")
 include("bench_world_get_1.jl")
