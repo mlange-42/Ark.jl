@@ -188,13 +188,22 @@ Base.lastindex(sa::StructArrayView) = length(sa)
     unpack(a::StructArrayView)
 
 Unpacks the components (i.e. field vectors) of a StructArray-like column returned from a [Query](@ref).
-Can be used recursively on a query iteration tuple.
+See also [@unpack](@ref).
+"""
+unpack(a::StructArrayView) = a._components
+
+unpack(a::SubArray) = a
+
+"""
+    @unpack ...
+
+Fully unpacks the tuple returned from a [Query](@ref).
 
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 for columns in Query(world, Val.((PositionSoA, VelocitySoA)))
-    entities, (x, y), (dx, sy) = unpack.(columns)
+    @unpack entities, (x, y), (dx, sy) = columns
     x .+= dx
     y .+= dy
 end
@@ -203,6 +212,18 @@ end
 
 ```
 """
-unpack(a::StructArrayView) = a._components
+macro unpack(expr)
+    @assert expr.head == :(=) "Expected assignment"
+    lhs, rhs = expr.args
 
-unpack(a::SubArray) = a
+    @assert lhs.head == :tuple "Left-hand side must be a tuple"
+
+    n = length(lhs.args)
+    rhs_exprs = [:(($rhs)[$i]) for i in 1:n]
+    for i in 2:n
+        rhs_exprs[i] = :(unpack(($rhs)[$i]))
+    end
+
+    new_rhs = Expr(:tuple, rhs_exprs...)
+    return Expr(:(=), esc(lhs), esc(new_rhs))
+end

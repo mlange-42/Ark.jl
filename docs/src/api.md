@@ -64,6 +64,7 @@ Query
 @Query
 close!(q::Query)
 Entities
+@unpack
 unpack
 ```
 
