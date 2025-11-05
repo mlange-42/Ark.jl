@@ -13,12 +13,12 @@ end
     if haskey(registry.components, C)
         return registry.components[C]
     end
-    error("component is not registered")
+    throw(ArgumentError(lazy"component type $C is not registered"))
 end
 
 function _register_component!(registry::_ComponentRegistry, ::Type{C})::UInt8 where C
     if haskey(registry.components, C)
-        error(lazy"duplicate component type $C during world creation")
+        throw(ArgumentError(lazy"duplicate component type $C during world creation"))
     end
     id = registry.counter
     registry.components[C] = id

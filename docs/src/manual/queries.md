@@ -148,7 +148,7 @@ end
 Note that it is possible to branch already outside of the inner loop,
 as all entities in an archetype either have a component or don't.
 
-## World lock
+## [World lock](@id world-lock)
 
 During query iteration, the World is locked for modifications like
 entity creation and removal and component addition and removal.

@@ -1,8 +1,3 @@
-struct _BatchArchetype
-    archetype::_Archetype
-    start_idx::UInt32
-    end_idx::UInt32
-end
 
 """
     Batch
@@ -28,7 +23,7 @@ end
     storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
-    storage_types = [:(_ComponentStorage{$T}) for T in comp_types]
+    storage_types = [:(_ComponentStorage{$T,Vector{$T}}) for T in comp_types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
@@ -57,7 +52,7 @@ end
 
 @inline function Base.iterate(b::Batch)
     if b._lock == 0
-        error("batch closed, batches can't be used multiple times")
+        throw(InvalidStateException("batch closed, batches can't be used multiple times", :batch_closed))
     end
     return Base.iterate(b, 1)
 end
@@ -70,6 +65,11 @@ Closes the batch iterator and unlocks the world.
 Must be called if a batch is not fully iterated.
 """
 function close!(b::Batch)
+    # TODO: extend for different even types.
+    # Note that for the other operations, the full list of archetypes is required.
+    if _has_observers(b._world._event_manager, OnCreateEntity)
+        _fire_create_entities(b._world._event_manager, b._archetypes[1])
+    end
     _unlock(b._world._lock, b._lock)
     b._index = 0
     b._lock = 0

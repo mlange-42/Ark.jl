@@ -14,14 +14,17 @@ end
 
     @test _component_id(params, Velocity) == 2
     @test _component_id(params, Position) == 1
-    @test_throws ErrorException _component_id(params, Altitude)
+    @test_throws(
+        "ArgumentError: Component type Altitude not found in the World",
+        _component_id(params, Altitude))
 
-    @test isa(_get_storage(world, Position), _ComponentStorage{Position})
-    @test isa(_get_storage_by_id(world, Val(1)), _ComponentStorage{Position})
+    @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
 end
 
 @testset "World creation error" begin
-    @test_throws ErrorException World(Position, Velocity, Velocity)
+    @test_throws(
+        "ArgumentError: duplicate component type Velocity during world creation",
+        World(Position, Velocity, Velocity))
 end
 
 @testset "World creation large" begin
@@ -64,7 +67,7 @@ end
     @test isa(id_int, UInt8)
     @test world._registry.types[id_int] == Int
     @test length(world._storages) == 2
-    @test world._storages[id_int] isa _ComponentStorage{Int}
+    @test world._storages[id_int] isa _ComponentStorage{Int,Vector{Int}}
     @test length(world._storages[id_int].data) == 1
 
     # Register Position component
@@ -72,7 +75,7 @@ end
     @test isa(id_pos, UInt8)
     @test world._registry.types[id_pos] == Position
     @test length(world._storages) == 2
-    @test world._storages[id_pos] isa _ComponentStorage{Position}
+    @test world._storages[id_pos] isa _ComponentStorage{Position,Vector{Position}}
     @test length(world._storages[id_pos].data) == 1
 
     # Re-register Int component (should not add new storage)
@@ -80,9 +83,12 @@ end
     @test id_int2 == id_int
     @test length(world._storages) == 2
 
-    @test_throws ErrorException _component_id(params, Velocity)
+    @test_throws("ArgumentError: Component type Velocity not found in the World",
+        _component_id(params, Velocity))
 
-    @test_throws ErrorException World(Position, MutableComponent)
+    @test_throws("ArgumentError: Component type MutableComponent must be immutable unless 'allow_mutable' is used",
+        World(Position, MutableComponent))
+
     _ = World(Position, MutableComponent; allow_mutable=true)
 end
 
@@ -91,15 +97,16 @@ end
     params = typeof(world).parameters[1]
 
     storage1 = _get_storage(world, Int)
-    @test storage1 isa _ComponentStorage{Int}
+    @test storage1 isa _ComponentStorage{Int,Vector{Int}}
 
     id = _component_id(params, Int)
     storage2 = _get_storage(world, Int)
-    @test storage2 isa _ComponentStorage{Int}
+    @test storage2 isa _ComponentStorage{Int,Vector{Int}}
 
     @test storage1 === storage2
 
-    @test_throws ErrorException _get_storage(world, Float64)
+    @test_throws("ArgumentError: Component type Float64 not found in the World",
+        _get_storage(world, Float64))
 end
 
 @testset "_find_or_create_archetype! Tests" begin
@@ -132,8 +139,8 @@ end
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
 
-    @test isa(pos_storage, _ComponentStorage{Position})
-    @test isa(vel_storage, _ComponentStorage{Velocity})
+    @test isa(pos_storage, _ComponentStorage{Position,Vector{Position}})
+    @test isa(vel_storage, _ComponentStorage{Velocity,Vector{Velocity}})
     @test length(pos_storage.data) == 3
     @test length(vel_storage.data) == 3
 end
@@ -174,9 +181,12 @@ end
     @test vel == Velocity(3, 4)
 
     # TODO: do we want that, or do we want it to return `nothing`?
-    @test_throws ErrorException get_components(world, e2, Val.((Position, Velocity)))
-    @test_throws ErrorException set_components!(world, e2, (Position(0, 0),))
-    @test_throws ErrorException get_components(world, zero_entity, Val.((Position, Velocity)))
+    @test_throws("ArgumentError: entity has no Position component",
+        get_components(world, e2, Val.((Position, Velocity))))
+    @test_throws("ArgumentError: entity has no Position component",
+        set_components!(world, e2, (Position(0, 0),)))
+    @test_throws("ArgumentError: can't get components of a dead entity",
+        get_components(world, zero_entity, Val.((Position, Velocity))))
 
     t = get_components(world, e1, Val.(()))
     @test t == ()
@@ -329,10 +339,14 @@ end
     @remove_components!(world, e1, (Position, Velocity))
     @test has_components(world, e1, Val.((Position, Velocity))) == false
 
-    @test_throws ErrorException set_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4)))
-    @test_throws ErrorException add_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4)))
-    @test_throws ErrorException remove_components!(world, zero_entity, Val.((Position, Velocity)))
-    @test_throws ErrorException has_components(world, zero_entity, Val.((Position, Velocity)))
+    @test_throws("ArgumentError: can't set components of a dead entity",
+        set_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4))))
+    @test_throws("ArgumentError: can't add components to a dead entity",
+        add_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4))))
+    @test_throws("ArgumentError: can't remove components from a dead entity",
+        remove_components!(world, zero_entity, Val.((Position, Velocity))))
+    @test_throws("ArgumentError: can't check components of a dead entity",
+        has_components(world, zero_entity, Val.((Position, Velocity))))
 end
 
 @testset "World exchange components" begin
@@ -352,7 +366,8 @@ end
     @exchange_components!(world, e1; remove=(Velocity,))
     @test @has_components(world, e1, (Velocity,)) == false
 
-    @test_throws ErrorException @exchange_components!(world, zero_entity; add=(Altitude(1),), remove=(Position,))
+    @test_throws("ArgumentError: can't exchange components on a dead entity",
+        @exchange_components!(world, zero_entity; add=(Altitude(1),), remove=(Position,)))
 end
 
 @testset "World exchange macro missing argument" begin
@@ -388,7 +403,8 @@ end
     pos, = get_components(world, e3, Val.((Position,)))
     @test pos == Position(3, 3)
 
-    @test_throws ErrorException remove_entity!(world, zero_entity)
+    @test_throws("ArgumentError: can't remove a dead entity",
+        remove_entity!(world, zero_entity))
 end
 
 @testset "World add/remove resources Tests" begin
@@ -400,7 +416,7 @@ end
     @test has_resource(world, Tick) == true
     res = get_resource(world, Tick)
     @test res isa Tick && res.time == 0
-    @test_throws ErrorException add_resource!(world, Tick(1))
+    @test_throws "ArgumentError: World already contains a resource of type Tick" add_resource!(world, Tick(1))
     @inferred Tick get_resource(world, Tick)
 
     set_resource!(world, Tick(2))
@@ -409,14 +425,18 @@ end
 
     remove_resource!(world, Tick)
     @test has_resource(world, Tick) == false
-    @test_throws KeyError get_resource(world, Tick)
+    @test_throws "KeyError: key Tick not found" get_resource(world, Tick)
 
-    @test_throws ErrorException set_resource!(world, Tick(2))
+    @test_throws "ArgumentError: World does not contain a resource of type Tick" set_resource!(world, Tick(2))
 end
 
 @testset "World error messages" begin
     world = World(Position, Velocity)
 
     e = new_entity!(world, (Position(0, 0),))
-    @test_throws ErrorException get_components(world, e, (Position,))
+    @test_throws(
+        "ArgumentError: expected a tuple of Val types like Val.((Position, Velocity)), got Tuple{DataType}. " *
+        "Consider using the related macro instead.",
+        get_components(world, e, (Position,))
+    )
 end

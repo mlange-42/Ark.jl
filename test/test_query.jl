@@ -9,6 +9,8 @@
     end
 
     query = @Query(world, (Position, Velocity))
+    @test query._has_excluded == false
+
     for i in 1:10
         count = 0
         for (entities, vec_pos, vec_vel) in query
@@ -22,7 +24,11 @@
                 vec_pos[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
                 count += 1
             end
-            @test_throws ErrorException new_entity!(world, (Altitude(1), Health(2)))
+            @test_throws(
+                "InvalidStateException: cannot modify a locked world: " *
+                "collect entities into a vector and apply changes after query iteration has completed",
+                new_entity!(world, (Altitude(1), Health(2)))
+            )
             @test is_locked(world) == true
         end
         @test count == 10
@@ -109,7 +115,10 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5), Health(6)))
     end
 
-    @test_throws ErrorException @Query(world, (Position, Velocity); without=(Altitude,), exclusive=true)
+    @test_throws(
+        "ArgumentError: cannot use 'exclusive' together with 'without'",
+        @Query(world, (Position, Velocity); without=(Altitude,), exclusive=true),
+    )
 
     query = @Query(world, (Position, Velocity); with=(Altitude,), exclusive=true)
     @test query._has_excluded == true
@@ -187,5 +196,9 @@ end
 @testset "Query error messages" begin
     world = World(Position, Velocity)
 
-    @test_throws ErrorException Query(world, (Position, Velocity))
+    @test_throws(
+        "ArgumentError: expected a tuple of Val types like Val.((Position, Velocity)), got Tuple{DataType, DataType}. " *
+        "Consider using the related macro instead.",
+        Query(world, (Position, Velocity))
+    )
 end

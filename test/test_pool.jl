@@ -51,7 +51,7 @@ end
     @test _is_alive(pool, e1) == false  # old generation
 
     # Test _recycle throws on reserved entity
-    @test_throws ErrorException _recycle(pool, zero_entity)
+    @test_throws "ArgumentError: can't recycle the reserved zero entity" _recycle(pool, zero_entity)
 end
 
 @testset "_BitPool basic functionality" begin
@@ -90,5 +90,10 @@ end
     @test pool.length == 64
 
     # Test overflow error
-    @test_throws ErrorException _get_bit(pool)
+    @test_throws(
+        "InvalidStateException: run out of the maximum of 64 bits. " *
+        "This is likely caused by unclosed queries that lock the world. " *
+        "Make sure that all queries finish their iteration or are closed manually",
+        _get_bit(pool)
+    )
 end

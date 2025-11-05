@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,N}
+struct World{CS<:Tuple,CT<:Tuple,N} <: _AbstractWorld
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
@@ -21,6 +21,7 @@ struct World{CS<:Tuple,CT<:Tuple,N}
     _lock::_Lock
     _graph::_Graph
     _resources::Dict{DataType,Any}
+    _event_manager::_EventManager
 end
 
 """
@@ -52,33 +53,17 @@ World(comp_types::Type...; allow_mutable::Bool=false) =
             return :(UInt8($i))
         end
     end
-    return :(error(lazy"Component type $C not found in World"))
+    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
-@generated function _get_storage(world::World{CS}, ::Type{C})::_ComponentStorage{C} where {CS<:Tuple,C}
+@generated function _get_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
         if S <: _ComponentStorage && S.parameters[1] === C
             return :(world._storages.$i)
         end
     end
-    return :(error(lazy"Component type $C not found in the World"))
-end
-
-@generated function _get_storage_by_id(world::World{CS}, ::Val{id}) where {CS<:Tuple,id}
-    S = CS.parameters[id]
-    T = S.parameters[1]
-    return :(world._storages.$id::_ComponentStorage{$T})
-end
-
-function _find_or_create_archetype!(
-    world::World,
-    entity::Entity,
-    add::Tuple{Vararg{UInt8}},
-    remove::Tuple{Vararg{UInt8}},
-)::UInt32
-    index = world._entities[entity._id]
-    return _find_or_create_archetype!(world, world._archetypes[index.archetype].node, add, remove)
+    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
 function _find_or_create_archetype!(
@@ -199,12 +184,21 @@ Removes an [`Entity`](@ref) from the [`World`](@ref).
 """
 function remove_entity!(world::World, entity::Entity)
     if !is_alive(world, entity)
-        error("can't remove a dead entity")
+        throw(ArgumentError("can't remove a dead entity"))
     end
     _check_locked(world)
 
     index = world._entities[entity._id]
     archetype = world._archetypes[index.archetype]
+
+    if _has_observers(world._event_manager, OnRemoveEntity)
+        l = _lock(world._lock)
+        _fire_remove_entity(
+            world._event_manager, entity,
+            archetype.mask,
+        )
+        _unlock(world._lock, l)
+    end
 
     swapped = _swap_remove!(archetype.entities._data, index.row)
 
@@ -242,8 +236,11 @@ end
 
 function _check_locked(world::World)
     if _is_locked(world._lock)
-        error(
-            "cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed",
+        throw(
+            InvalidStateException(
+                "cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed",
+                :locked_world,
+            ),
         )
     end
 end
@@ -288,7 +285,7 @@ pos, vel = get_components(world, entity, Val.((Position, Velocity)))
 """
 @inline function get_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
-        error("can't get components of a dead entity")
+        throw(ArgumentError("can't get components of a dead entity"))
     end
     return @inline _get_components(world, entity, comp_types)
 end
@@ -360,7 +357,7 @@ has = has_components(world, entity, Val.((Position, Velocity)))
 """
 @inline function has_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
-        error("can't check components of a dead entity")
+        throw(ArgumentError("can't check components of a dead entity"))
     end
     index = world._entities[entity._id]
     return @inline _has_components(world, index, comp_types)
@@ -401,7 +398,7 @@ The entity must already have all these components.
 """
 @inline function set_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
-        error("can't set components of a dead entity")
+        throw(ArgumentError("can't set components of a dead entity"))
     end
     return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
 end
@@ -434,7 +431,11 @@ end
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
 """
 function new_entity!(world::World, values::Tuple)
-    return _new_entity!(world, Val{typeof(values)}(), values)
+    entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
+    if _has_observers(world._event_manager, OnCreateEntity)
+        _fire_create_entity(world._event_manager, entity, world._archetypes[arch].mask)
+    end
+    return entity
 end
 
 @generated function _new_entity!(world::W, ::Val{TS}, values::Tuple) where {W<:World,TS<:Tuple}
@@ -460,7 +461,7 @@ end
         push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
     end
 
-    push!(exprs, Expr(:return, :entity))
+    push!(exprs, Expr(:return, Expr(:tuple, :entity, :archetype)))
 
     return quote
         @inbounds begin
@@ -526,18 +527,29 @@ end
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-    push!(exprs, :(
-        if iterate
-            batch = _Batch_from_types(
-                world,
-                [_BatchArchetype(archetype, indices...)],
-                $ts_val_expr,
-            )
-            return batch
-        else
-            return nothing
-        end
-    ))
+    push!(
+        exprs,
+        :(
+            if iterate
+                batch = _Batch_from_types(
+                    world,
+                    [_BatchArchetype(archetype, indices...)],
+                    $ts_val_expr,
+                )
+                return batch
+            else
+                if _has_observers(world._event_manager, OnCreateEntity)
+                    l = _lock(world._lock)
+                    _fire_create_entities(
+                        world._event_manager,
+                        _BatchArchetype(archetype, indices...),
+                    )
+                    _unlock(world._lock, l)
+                end
+                return nothing
+            end
+        ),
+    )
 
     return quote
         @inbounds begin
@@ -628,11 +640,11 @@ end
 
 Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
 """
-function add_components!(world::World, entity::Entity, values::Tuple)
+@inline function add_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
-        error("can't add components to a dead entity")
+        throw(ArgumentError("can't add components to a dead entity"))
     end
-    return _exchange_components!(world, entity, Val{typeof(values)}(), values, ())
+    return @inline _exchange_components!(world, entity, Val{typeof(values)}(), values, ())
 end
 
 """
@@ -672,11 +684,11 @@ For a more convenient tuple syntax, the macro [`@remove_components!`](@ref) is p
 remove_components!(world, entity, Val.((Position, Velocity)))
 ```
 """
-function remove_components!(world::World, entity::Entity, comp_types::Tuple)
+@inline function remove_components!(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
-        error("can't remove components from a dead entity")
+        throw(ArgumentError("can't remove components from a dead entity"))
     end
-    return _exchange_components!(world, entity, Val{Tuple{}}(), (), comp_types)
+    return @inline _exchange_components!(world, entity, Val{Tuple{}}(), (), comp_types)
 end
 
 """
@@ -725,11 +737,11 @@ exchange_components!(world, entity;
 )
 ```
 """
-function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
+@inline function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
-        error("can't exchange components on a dead entity")
+        throw(ArgumentError("can't exchange components on a dead entity"))
     end
-    return _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
+    return @inline _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
 end
 
 @generated function _exchange_components!(
@@ -745,8 +757,38 @@ end
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, entity, $add_ids, $rem_ids)))
-    push!(exprs, :(row = _move_entity!(world, entity, archetype)))
+
+    push!(exprs, :(index = world._entities[entity._id]))
+    push!(exprs, :(old_arch = world._archetypes[index.archetype]))
+    push!(
+        exprs,
+        :(
+            new_arch_index =
+                _find_or_create_archetype!(
+                    world, old_arch.node, $add_ids, $rem_ids,
+                )
+        ),
+    )
+
+    if length(rem_types) > 0
+        push!(
+            exprs,
+            :(
+                if _has_observers(world._event_manager, OnRemoveComponents)
+                    l = _lock(world._lock)
+                    _fire_remove_components(
+                        world._event_manager, entity,
+                        old_arch.mask,
+                        world._archetypes[new_arch_index].mask,
+                        true,
+                    )
+                    _unlock(world._lock, l)
+                end
+            ),
+        )
+    end
+
+    push!(exprs, :(row = _move_entity!(world, entity, new_arch_index)))
 
     for i in 1:length(add_types)
         T = add_types[i]
@@ -755,8 +797,24 @@ end
         val_expr = :(add.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_arch_index]))
         push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
+    end
+
+    if length(add_types) > 0
+        push!(
+            exprs,
+            :(
+                if _has_observers(world._event_manager, OnAddComponents)
+                    _fire_add_components(
+                        world._event_manager, entity,
+                        old_arch.mask,
+                        world._archetypes[new_arch_index].mask,
+                        true,
+                    )
+                end
+            ),
+        )
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -775,7 +833,11 @@ end
     if !allow_mutable
         for T in types
             if ismutabletype(T)
-                error(lazy"Component type $T must be immutable.")
+                throw(
+                    ArgumentError(
+                        lazy"Component type $T must be immutable unless 'allow_mutable' is used",
+                    ),
+                )
             end
         end
     end
@@ -783,10 +845,11 @@ end
     component_types = map(T -> :(Type{$T}), types)
     component_tuple_type = :(Tuple{$(component_types...)})
 
-    storage_types = [:(_ComponentStorage{$T}) for T in types]
+    storage_types = [:(_ComponentStorage{$T,Vector{$T}}) for T in types]
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
-    storage_exprs = [:(_ComponentStorage{$T}(1)) for T in types]
+    # storage tuple value
+    storage_exprs = [:(_ComponentStorage{$T,Vector{$T}}()) for T in types]
     storage_tuple = Expr(:tuple, storage_exprs...)
 
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
@@ -806,6 +869,7 @@ end
             _Lock(),
             graph,
             Dict{DataType,Any}(),
+            _EventManager(),
         )
     end
 end
@@ -912,7 +976,7 @@ Add the given resource to the world.
 Returns the newly added resource.
 """
 function add_resource!(world::World, res::T)::T where T
-    has_resource(world, T) && error(lazy"World already contains a resource of type $T.")
+    has_resource(world, T) && throw(ArgumentError(lazy"World already contains a resource of type $T"))
     setindex!(world._resources, res, T)
     return res
 end
@@ -924,7 +988,7 @@ Overwrites an existing resource in the world.
 Returns the newly overwritten resource.
 """
 function set_resource!(world::World, res::T)::T where T
-    !has_resource(world, T) && error(lazy"World does not contain a resource of type $T.")
+    !has_resource(world, T) && throw(ArgumentError(lazy"World does not contain a resource of type $T"))
     setindex!(world._resources, res, T)
     return res
 end
@@ -938,4 +1002,96 @@ Returns the removed resource.
 function remove_resource!(world::World, res_type::Type{T}) where T
     res = pop!(world._resources, res_type)
     return res::T
+end
+
+"""
+    @emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
+
+Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
+The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
+
+Macro version of [`emit_event!`](@ref) that allows more ergonomic event construction.
+
+  - `world::World`: The [World](@ref) to emit the event.
+  - `event::EventType`: The [EventType](@ref) to emit.
+  - `entity::Entity`: The [Entity](@ref) to emit the event for.
+  - `components::Tuple=()`: The component types to emit the event for. Optional.
+"""
+macro emit_event!(args...)
+    if length(args) == 3
+        world_expr, event_expr, entity_expr = args
+        comps_expr = :(())
+    elseif length(args) == 4
+        world_expr, event_expr, entity_expr, comps_expr = args
+    else
+        throw(ArgumentError("@emit_event! expects 3 or 4 arguments"))
+    end
+
+    quote
+        emit_event!(
+            $(esc(world_expr)),
+            $(esc(event_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comps_expr))),
+        )
+    end
+end
+
+"""
+    emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
+
+Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
+The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
+
+For a more convenient tuple syntax, the macro [`@emit_event!`](@ref) is provided.
+
+  - `world::World`: The [World](@ref) to emit the event.
+  - `event::EventType`: The [EventType](@ref) to emit.
+  - `entity::Entity`: The [Entity](@ref) to emit the event for.
+  - `components::Tuple=()`: The component types to emit the event for. Optional.
+"""
+function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple=()) where {W<:World}
+    if event._id < _custom_events._id
+        throw(ArgumentError("only custom events can be emitted manually"))
+    end
+    if !_has_observers(world._event_manager, event)
+        return
+    end
+    _emit_event!(world, event, entity, components)
+end
+
+@generated function _emit_event!(world::W, event::EventType, entity::Entity, ::CT) where {W<:World,CT<:Tuple}
+    comp_types = [x.parameters[1] for x in CT.parameters]
+
+    function get_id(C)
+        _component_id(W.parameters[1], C)
+    end
+
+    has_comps = (length(comp_types) > 0) ? :(true) : (false)
+    ids = map(get_id, comp_types)
+    mask = _Mask(ids...)
+
+    return quote
+        _do_emit_event!(world, event, $mask, $has_comps, entity)
+    end
+end
+
+function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps::Bool, entity::Entity)
+    if is_zero(entity)
+        if has_comps
+            throw(ArgumentError("can't emit event with components for the zero entity"))
+        end
+        return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes[1].mask)
+    end
+
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't emit event for a dead entity"))
+    end
+    index = world._entities[entity._id]
+    entity_mask = world._archetypes[index.archetype].mask
+
+    if !_contains_all(entity_mask, mask)
+        throw(ArgumentError("entity does not have all components of the event emitted for it"))
+    end
+    _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
 end

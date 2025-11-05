@@ -34,7 +34,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 ## Installation
 
-Ark.jl is not yet released. For now, run this in your project to use it:
+Run this to add Ark.jl to a Julia project:
 
 ```julia
 using Pkg

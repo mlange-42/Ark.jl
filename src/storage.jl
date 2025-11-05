@@ -1,33 +1,33 @@
 
-struct _ComponentStorage{C}
-    data::Vector{Vector{C}}
+struct _ComponentStorage{C,A<:AbstractArray{C,1}}
+    data::Vector{A}
 end
 
-function _ComponentStorage{C}(archetypes::Int) where C
-    _ComponentStorage{C}(fill(Vector{C}(), archetypes))
+function _ComponentStorage{C,A}() where {C,A<:AbstractArray}
+    _ComponentStorage{C,Vector{C}}([Vector{C}()])
 end
 
-function _get_component(s::_ComponentStorage{C}, arch::UInt32, row::UInt32) where C
+function _get_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     if length(col) == 0
-        error(lazy"entity has no $C component")
+        throw(ArgumentError(lazy"entity has no $C component"))
     end
     return @inbounds col[row]
 end
 
-function _set_component!(s::_ComponentStorage{C}, arch::UInt32, row::UInt32, value::C) where C
+function _set_component!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32, value::C) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     if length(col) == 0
-        error(lazy"entity has no $C component")
+        throw(ArgumentError(lazy"entity has no $C component"))
     end
     return @inbounds col[row] = value
 end
 
-function _add_column!(storage::_ComponentStorage{C}) where {C}
+function _add_column!(storage::_ComponentStorage{C,A}) where {C,A<:AbstractArray}
     push!(storage.data, Vector{C}())
 end
 
-function _assign_column!(storage::_ComponentStorage{C}, index::UInt32) where {C}
+function _assign_column!(storage::_ComponentStorage{C,A}, index::UInt32) where {C,A<:AbstractArray}
     storage.data[index] = Vector{C}()
 end
 

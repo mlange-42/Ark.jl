@@ -15,7 +15,12 @@ end
 
 function _unlock(lock::_Lock, b::UInt8)
     if ((lock.lock_bits >> (b - 1)) & 0x01) == 0
-        error("unbalanced unlock. Did you close a query that was already iterated?")
+        throw(
+            InvalidStateException(
+                "unbalanced unlock. Did you close a query that was already iterated?",
+                :unbalanced_lock,
+            ),
+        )
     end
     lock.lock_bits &= ~(UInt64(1) << (b - 1))
     _recycle(lock.pool, b)

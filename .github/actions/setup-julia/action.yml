@@ -1,0 +1,36 @@
+name: Julia setup
+description: Install Julia and manage cache
+
+inputs:
+  julia-version:
+    description: Julia version to install
+    required: true
+  project-file:
+    description: Project file toml for cache key
+    required: true
+  key-suffix:
+    description: Suffix for unique cache key
+    required: false
+
+runs:
+  using: "composite" # <-- makes it re-usable
+  steps:
+  - name: Set up Julia
+    uses: julia-actions/setup-julia@v2
+    with:
+      version: ${{ inputs.julia-version }}
+
+  - name: Julia cache
+    uses: actions/cache@v3
+    with:
+      path: |
+        ~/.julia/artifacts
+        ~/.julia/compiled
+        ~/.julia/logs
+        ~/.julia/packages
+        ~/.julia/registries
+        ~/.julia/scratchspaces
+      key: ${{ runner.os }}-julia-${{ inputs.julia-version }}-${{ hashFiles(inputs.project-file) }}-${{ inputs.key-suffix }}
+      restore-keys: |
+        ${{ runner.os }}-julia-${{ inputs.julia-version }}-${{ hashFiles(inputs.project-file) }}-
+        ${{ runner.os }}-julia-${{ inputs.julia-version }}-

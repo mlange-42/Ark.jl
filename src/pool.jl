@@ -35,7 +35,7 @@ end
 
 function _recycle(p::_EntityPool, e::Entity)
     if e._id < 2
-        error("can't recycle reserved zero entity")
+        throw(ArgumentError("can't recycle the reserved zero entity"))
     end
     temp = p.next
     p.next = e._id
@@ -73,10 +73,13 @@ end
 
 function _get_new_bit(p::_BitPool)::UInt8
     if p.length >= 64
-        error(
-            string("run out of the maximum of 64 bits. ",
-                "This is likely caused by unclosed queries that lock the world. ",
-                "Make sure that all queries finish their iteration or are closed manually"),
+        throw(
+            InvalidStateException(
+                string("run out of the maximum of 64 bits. ",
+                    "This is likely caused by unclosed queries that lock the world. ",
+                    "Make sure that all queries finish their iteration or are closed manually"),
+                :locks_exhausted,
+            ),
         )
     end
     b = p.length + 1

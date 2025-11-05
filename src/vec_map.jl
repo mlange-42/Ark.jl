@@ -19,7 +19,7 @@ end
 
 function _set_map!(m::_VecMap{T}, index::UInt8, value::T) where T
     if length(m.data) < index
-        size = div((index + _vec_map_chunk_size), _vec_map_chunk_size) * _vec_map_chunk_size
+        size = (index + _vec_map_chunk_size) & -_vec_map_chunk_size
         resize!(m.data, size)
     end
     _set_bit!(m.used, index)
