@@ -40,18 +40,49 @@ end
 
 ```
 """
-macro observe!(fn_expr, world_expr, event_expr, comps_expr)
-    quote
-        observe!(
-            $(esc(fn_expr)),
-            $(esc(world_expr)),
-            $(esc(event_expr)),
-            Val.($(esc(comps_expr))),
-        )
+macro observe!(fn_expr, world_expr, event_expr)
+    :(observe!($(esc(fn_expr)), $(esc(world_expr)), $(esc(event_expr))))
+end
+macro observe!(kwargs_expr, fn_expr, world_expr, event_expr)
+    iskwargs_1 = kwargs_expr isa Expr && kwargs_expr.head == :parameters
+    iskwargs_2 = fn_expr isa Expr && fn_expr.head == :parameters
+    if !iskwargs_1 && !iskwargs_2
+        quote
+            observe!(
+                $(esc(kwargs_expr)),
+                $(esc(fn_expr)),
+                $(esc(world_expr)),
+                Val.($(esc(event_expr))),
+            )
+        end
+    elseif iskwargs_1
+        map(x -> (x.args[1] != :register && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
+        quote
+            observe!(
+                $(esc(fn_expr)),
+                $(esc(world_expr)),
+                $(esc(event_expr));
+                $(esc.(kwargs_expr.args)...),
+            )
+        end
+    else
+        map(x -> (x.args[1] != :register && (x.args[2] = :(Val.($(x.args[2]))))), fn_expr.args)
+        quote
+            observe!(
+                $(esc(kwargs_expr)),
+                $(esc(world_expr)),
+                $(esc(event_expr));
+                $(esc.(fn_expr.args)...),
+            )
+        end
     end
 end
 macro observe!(kwargs_expr, fn_expr, world_expr, event_expr, comps_expr)
-    map(x -> (x.args[1] == :register && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
+    iskwargs = kwargs_expr isa Expr && kwargs_expr.head == :parameters
+    if !iskwargs 
+        kwargs_expr, fn_expr = fn_expr, kwargs_expr
+    end
+    map(x -> (x.args[1] != :register && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
     quote
         observe!(
             $(esc(fn_expr)),
