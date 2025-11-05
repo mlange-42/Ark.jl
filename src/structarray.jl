@@ -197,7 +197,9 @@ unpack(a::SubArray) = a
 """
     @unpack ...
 
-Fully unpacks the tuple returned from a [Query](@ref).
+Fully unpacks the tuple returned from a [Query](@ref) during iteration,
+including components (i.e. field vectors) of StructArray components
+(see [StructArrayComponent](@ref) and [StorageMode](@ref)).
 
 # Example
 

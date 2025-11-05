@@ -4,20 +4,24 @@ function setup_query_posvel_soa(n_entities::Int)
     for i in 1:n_entities
         new_entity!(world, (PositionSoA(i, i * 2), VelocitySoA(1, 1)))
     end
-    for columns in @Query(world, (PositionSoA, VelocitySoA))
-        @unpack _, (x, y), (dx, dy) = columns
-        @inbounds x .+= dx
-        @inbounds y .+= dy
+    for (_, pos_column, vel_column) in @Query(world, (PositionSoA, VelocitySoA))
+        for i in eachindex(pos_column)
+            @inbounds pos = pos_column[i]
+            @inbounds vel = vel_column[i]
+            @inbounds pos_column[i] = PositionSoA(pos.x + vel.dx, pos.y + vel.dy)
+        end
     end
     return world
 end
 
 function benchmark_query_posvel_soa(args, n)
     world = args
-    for columns in @Query(world, (PositionSoA, VelocitySoA))
-        @unpack _, (x, y), (dx, dy) = columns
-        @inbounds x .+= dx
-        @inbounds y .+= dy
+    for (_, pos_column, vel_column) in @Query(world, (PositionSoA, VelocitySoA))
+        for i in eachindex(pos_column)
+            @inbounds pos = pos_column[i]
+            @inbounds vel = vel_column[i]
+            @inbounds pos_column[i] = PositionSoA(pos.x + vel.dx, pos.y + vel.dy)
+        end
     end
     return world
 end

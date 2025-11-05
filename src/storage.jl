@@ -64,6 +64,8 @@ function _move_component_data!(
     new_arch::UInt32,
     row::UInt32,
 ) where {C,A<:AbstractArray}
+    # TODO: this can probably be optimized for StructArray storage
+    # by moving per component instead of unpacking/packing.
     old_vec = s.data[old_arch]
     new_vec = s.data[new_arch]
     push!(new_vec, old_vec[row])
