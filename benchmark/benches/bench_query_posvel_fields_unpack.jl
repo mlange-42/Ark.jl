@@ -16,8 +16,10 @@ function benchmark_query_posvel_fields_unpack(args, n)
     world = args
     for columns in @Query(world, (Position, Velocity); fields=true)
         @unpack _, (x, y), (dx, dy) = columns
-        @inbounds x .+= dx
-        @inbounds y .+= dy
+        @inbounds for i in eachindex(x, y, dx, dy)
+            x[i] += dx[i]
+            y[i] += dy[i]
+        end
     end
     return world
 end
