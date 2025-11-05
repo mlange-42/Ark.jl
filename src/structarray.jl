@@ -1,7 +1,7 @@
 
 mutable struct _StructArray{C,CS<:NamedTuple,N} <: AbstractArray{C,1}
-    components::CS
-    length::Int
+    _components::CS
+    _length::Int
 end
 
 function _StructArray(tp::Type{C}) where {C}
@@ -40,51 +40,71 @@ end
     #end
     component_names = fieldnames(C)
     cases = [
-        :(name === $(QuoteNode(n)) && return sa.components.$n) for n in component_names
+        :(name === $(QuoteNode(n)) && return sa._components.$n) for n in component_names
     ]
     fallback = :(return getfield(sa, name))
     return Expr(:block, cases..., fallback)
 end
 
-@generated function Base.resize!(sa::_StructArray{C}, n::Int) where {C}
+@generated function Base.resize!(sa::_StructArray{C}, n::Integer) where {C}
     names = fieldnames(C)
     resize_exprs = [
-        :(resize!(sa.components.$name, n)) for name in names
+        :(resize!(sa._components.$name, n)) for name in names
     ]
-    inc_length = :(sa.length = n)
+    inc_length = :(sa._length = n)
     return Expr(:block, resize_exprs..., inc_length, :(sa))
 end
 
 @generated function Base.push!(sa::_StructArray{C}, c::C) where {C}
     names = fieldnames(C)
     push_exprs = [
-        :(push!(sa.components.$name, c.$name)) for name in names
+        :(push!(sa._components.$name, c.$name)) for name in names
     ]
-    inc_length = :(sa.length += 1)
+    inc_length = :(sa._length += 1)
     return Expr(:block, push_exprs..., inc_length, :(sa))
 end
 
 @generated function Base.pop!(sa::_StructArray{C}) where {C}
     names = fieldnames(C)
     pop_exprs = [
-        :(pop!(sa.components.$name)) for name in names
+        :(pop!(sa._components.$name)) for name in names
     ]
-    dec_length = :(sa.length -= 1)
+    dec_length = :(sa._length -= 1)
     return Expr(:block, pop_exprs..., dec_length, :(sa))
 end
 
 @generated function Base.fill!(sa::_StructArray{C}, value::C) where {C}
     names = fieldnames(C)
     fill_exprs = [
-        :(fill!(sa.components.$name, value.$name)) for name in names
+        :(fill!(sa._components.$name, value.$name)) for name in names
     ]
     return Expr(:block, fill_exprs..., :(sa))
+end
+
+Base.view(sa::_StructArray, ::Colon) = view(sa, 1:length(sa))
+
+@generated function Base.view(
+    sa::S,
+    idx::I,
+) where {S<:_StructArray{C,CS,N},I<:AbstractUnitRange{Int}} where {C,CS<:NamedTuple,N}
+    names = fieldnames(C)
+    types = fieldtypes(C)
+    view_exprs = [
+        :($name = @view sa._components.$name[idx]) for name in names
+    ]
+    nt_type = :(NamedTuple{
+        ($(map(QuoteNode, names)...),),
+        Tuple{$(map(t -> :(SubArray{$t,1,Vector{$t},Tuple{I},true}), types)...)},
+    })
+    return quote
+        StructArrayView{C,$nt_type,length($names),I}((; $(view_exprs...)), idx)
+    end
 end
 
 @generated function Base.getindex(sa::_StructArray{C}, i::Int) where {C}
     names = fieldnames(C)
     field_exprs = [
-        :($(name) = sa.components.$name[i]) for name in names
+        :($(name) = sa._components.$name[i]) for name in names
     ]
     return Expr(:block, Expr(:call, C, field_exprs...))
 end
@@ -92,24 +112,24 @@ end
 @generated function Base.setindex!(sa::_StructArray{C}, c::C, i::Int) where {C}
     names = fieldnames(C)
     set_exprs = [
-        :(sa.components.$name[i] = c.$name) for name in names
+        :(sa._components.$name[i] = c.$name) for name in names
     ]
     return Expr(:block, set_exprs..., :(sa))
 end
 
 function Base.iterate(sa::_StructArray{C}) where {C}
-    sa.length == 0 && return nothing
+    sa._length == 0 && return nothing
     return sa[1], 2
 end
 
 function Base.iterate(sa::_StructArray{C}, i::Int) where {C}
-    i > sa.length && return nothing
+    i > sa._length && return nothing
     return sa[i], i + 1
 end
 
-Base.length(sa::_StructArray) = sa.length
-Base.size(sa::_StructArray) = (sa.length,)
-Base.eachindex(sa::_StructArray) = 1:sa.length
+Base.length(sa::_StructArray) = sa._length
+Base.size(sa::_StructArray) = (sa._length,)
+Base.eachindex(sa::_StructArray) = 1:sa._length
 Base.eltype(::Type{<:_StructArray{C}}) where {C} = C
 Base.IndexStyle(::Type{<:_StructArray}) = IndexLinear()
 
@@ -119,65 +139,103 @@ function Base.firstindex(sa::_StructArray)
     return 1
 end
 
-Base.lastindex(sa::_StructArray) = sa.length
+Base.lastindex(sa::_StructArray) = sa._length
 
-struct _StructArrayView{C,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
-    components::CS
-    indices::I
+struct StructArrayView{C,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
+    _components::CS # TODO: make this private?
+    _indices::I
 end
 
-@generated function Base.view(
-    sa::S,
-    idx::I,
-) where {S<:_StructArray{C,CS,N},I<:AbstractUnitRange{Int}} where {C,CS<:NamedTuple,N}
-    names = fieldnames(C)
-    types = fieldtypes(C)
-    view_exprs = [
-        :($name = @view sa.components.$name[idx]) for name in names
-    ]
-    nt_type = :(NamedTuple{
-        ($(map(QuoteNode, names)...),),
-        Tuple{$(map(t -> :(SubArray{$t,1,Vector{$t},Tuple{I},true}), types)...)},
-    })
-    return quote
-        _StructArrayView{C,$nt_type,length($names),I}((; $(view_exprs...)), idx)
-    end
-end
-
-@generated function Base.getindex(sa::_StructArrayView{C}, i::Int) where {C}
+@generated function Base.getindex(sa::StructArrayView{C}, i::Int) where {C}
     names = fieldnames(C)
     field_exprs = [
-        :($(name) = sa.components.$name[i]) for name in names
+        :($(name) = sa._components.$name[i]) for name in names
     ]
     return Expr(:block, Expr(:call, C, field_exprs...))
 end
 
-@generated function Base.setindex!(sa::_StructArrayView{C}, c::C, i::Int) where {C}
+@generated function Base.setindex!(sa::StructArrayView{C}, c::C, i::Int) where {C}
     names = fieldnames(C)
     set_exprs = [
-        :(sa.components.$name[i] = c.$name) for name in names
+        :(sa._components.$name[i] = c.$name) for name in names
     ]
     return Expr(:block, set_exprs..., :(sa))
 end
 
-@generated function Base.fill!(sa::_StructArrayView{C}, value::C) where {C}
+@generated function Base.fill!(sa::StructArrayView{C}, value::C) where {C}
     names = fieldnames(C)
     fill_exprs = [
-        :(fill!(sa.components.$name, value.$name)) for name in names
+        :(fill!(sa._components.$name, value.$name)) for name in names
     ]
     return Expr(:block, fill_exprs..., :(sa))
 end
 
-Base.size(sa::_StructArrayView) = (length(sa.indices),)
-Base.length(sa::_StructArrayView) = length(sa.indices)
-Base.eltype(::Type{<:_StructArrayView{C}}) where {C} = C
-Base.IndexStyle(::Type{<:_StructArrayView}) = IndexLinear()
-Base.eachindex(sa::_StructArrayView) = 1:length(sa)
+function Base.iterate(sa::StructArrayView{C}) where {C}
+    length(sa) == 0 && return nothing
+    return sa[1], 2
+end
 
-function Base.firstindex(sa::_StructArrayView)
+function Base.iterate(sa::StructArrayView{C}, i::Int) where {C}
+    i > length(sa) && return nothing
+    return sa[i], i + 1
+end
+
+Base.size(sa::StructArrayView) = (length(sa._indices),)
+Base.length(sa::StructArrayView) = length(sa._indices)
+Base.eltype(::Type{<:StructArrayView{C}}) where {C} = C
+Base.IndexStyle(::Type{<:StructArrayView}) = IndexLinear()
+Base.eachindex(sa::StructArrayView) = 1:length(sa)
+
+function Base.firstindex(sa::StructArrayView)
     # Do not simplify to this, as it is then not covered by the tests for some reason:
     # Base.firstindex(sa::_StructArray) = 1
     return 1
 end
 
-Base.lastindex(sa::_StructArrayView) = length(sa)
+Base.lastindex(sa::StructArrayView) = length(sa)
+
+"""
+    unpack(a::StructArrayView)
+
+Unpacks the components (i.e. field vectors) of a StructArray-like column returned from a [Query](@ref).
+See also [@unpack](@ref).
+"""
+unpack(a::StructArrayView) = a._components
+
+unpack(a::SubArray) = a
+
+"""
+    @unpack ...
+
+Fully unpacks the tuple returned from a [Query](@ref) during iteration,
+including components (i.e. field vectors) of StructArray components
+(see [StructArrayComponent](@ref)).
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for columns in Query(world, Val.((PositionSoA, VelocitySoA)))
+    @unpack entities, (x, y), (dx, sy) = columns
+    @inbounds x .+= dx
+    @inbounds y .+= dy
+end
+
+# output
+
+```
+"""
+macro unpack(expr)
+    @assert expr.head == :(=) "Expected assignment"
+    lhs, rhs = expr.args
+
+    @assert lhs.head == :tuple "Left-hand side must be a tuple"
+
+    n = length(lhs.args)
+    rhs_exprs = [:(($rhs)[$i]) for i in 1:n]
+    for i in 2:n
+        rhs_exprs[i] = :(unpack(($rhs)[$i]))
+    end
+
+    new_rhs = Expr(:tuple, rhs_exprs...)
+    return Expr(:(=), esc(lhs), esc(new_rhs))
+end

@@ -16,6 +16,8 @@ and [Resources](@ref resources-api).
 World
 World(::Type...; ::Bool)
 is_locked
+StructArrayComponent
+VectorComponent
 ```
 
 ## [Entities](@id entities-api)
@@ -62,6 +64,8 @@ Query
 @Query
 close!(q::Query)
 Entities
+@unpack
+unpack
 ```
 
 ## [Resources](@id resources-api)

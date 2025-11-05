@@ -94,3 +94,72 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1,1)))
 # output
 
 ```
+
+## [Component storages](@id component-storages)
+
+Components are stored in [archetypes](@ref Architecture),
+with the values for each component type stored in a separate array-like column.
+For these columns, Ark offers two storage modes:
+
+- **Vector storage** stores component object in a simple vector per column. This is the default.
+
+- **StructArray storage** stores components in an SoA data structure similar to  
+  [StructArrays](https://github.com/JuliaArrays/StructArrays.jl).  
+  This allows access to field vectors in [queries](@ref Queries), enabling SIMD-accelerated,  
+  vectorized operations and increased cache-friendliness if not all of the component's fields are used.  
+  However, this storage mode comes with an overhead of ≈10-20% for component operations and entity creation.  
+  Further, component access with [@get_components](@ref) and [set_components!](@ref) is also slower.
+
+The storage mode can be selected per component type.
+Either by declaring the component a sub-type of [StructArrayComponent](@ref),
+or by using [StructArrayComponent](@ref) or [VectorComponent](@ref) during world construction.
+
+```@meta
+DocTestSetup = quote
+    using Ark
+end
+```
+
+```jldoctest; output = false
+struct Position <: StructArrayComponent
+    x::Float64
+    y::Float64
+end
+
+struct Velocity
+    x::Float64
+    y::Float64
+end
+
+world = World(
+    Position,
+    Velocity,
+)
+; # suppress print output
+
+# output
+
+```
+
+```jldoctest; output = false
+struct Position
+    x::Float64
+    y::Float64
+end
+
+struct Velocity
+    x::Float64
+    y::Float64
+end
+
+world = World(
+    (Position, StructArrayComponent),
+    Velocity,
+)
+; # suppress print output
+
+# output
+
+```
+
+Both examples have the same effect.

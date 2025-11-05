@@ -63,6 +63,8 @@ and makes the iteration faster as it allows the compiler to skip bounds checks.
 
 ## Advanced queries
 
+Query filters can be configured further, to include or exclude additional components.
+
 ### `with`
 
 Queries provide an optional `with` argument that filters for additional components
@@ -147,6 +149,34 @@ end
 
 Note that it is possible to branch already outside of the inner loop,
 as all entities in an archetype either have a component or don't.
+
+## Storage modes
+
+Ark provides different [storage modes](@ref component-storages) for components.
+When using the StructArray storage mode, individual fields of components can be
+accessed as vectors in queries, e.g. using [@unpack](@ref).
+This allows for SIMD-accelerated vectorized operations.
+
+```jldoctest; setup = :(using Ark), output = false
+world = World(
+    (Position, StructArrayComponent),
+    (Velocity, StructArrayComponent),
+)
+
+# ...
+
+for columns in Query(world, Val.((Position, Velocity)))
+    @unpack entities, (x, y), (dx, sy) = columns
+    @inbounds x .+= dx
+    @inbounds y .+= dy
+end
+
+# output
+
+```
+
+However, when iterating components that use StructArray storage without unpacking individual fields,
+there is a certain overhead and SIMD optimization may not be possible.
 
 ## [World lock](@id world-lock)
 

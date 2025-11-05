@@ -178,6 +178,29 @@ end
     @test arches == 2
 end
 
+@testset "Query StructArray" begin
+    world = World(Position, SaoComp)
+
+    for i in 1:10
+        new_entity!(world, (Position(0, 0), SaoComp(i, i)))
+    end
+
+    for (entities, vec) in @Query(world, (SaoComp,))
+        @test isa(vec, StructArrayView)
+        for i in eachindex(vec)
+            pos = vec[i]
+            vec[i] = SaoComp(pos.x + 1, pos.y + 1)
+        end
+    end
+
+    for arch in @Query(world, (Position, SaoComp))
+        @unpack e, pos, (x, y) = arch
+        @test isa(e, Entities)
+        @test isa(x, SubArray{Float64})
+        @test isa(y, SubArray{Float64})
+    end
+end
+
 @testset "Query macro missing argument" begin
     ex = Meta.parse("@Query(world)")
     @test_throws LoadError eval(ex)

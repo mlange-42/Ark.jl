@@ -4,15 +4,15 @@
 
     @test isa(a.x, Vector{Float64})
     @test isa(a.y, Vector{Float64})
-    @test isa(a.components.x, Vector{Float64})
-    @test isa(a.components.y, Vector{Float64})
+    @test isa(a._components.x, Vector{Float64})
+    @test isa(a._components.y, Vector{Float64})
 
     push!(a, Position(1, 2))
 
     @test length(a) == 1
     @test size(a) == (1,)
-    @test length(a.components.x) == 1
-    @test length(a.components.y) == 1
+    @test length(a._components.x) == 1
+    @test length(a._components.y) == 1
     @test a[1] == Position(1, 2)
 
     a[1] = Position(3, 4)
@@ -77,7 +77,7 @@ end
 @testset "StructArray unwrap" begin
     a = _StructArray(Position)
 
-    x, y = a.components
+    x, y = a._components
     @test isa(x, Vector{Float64})
     @test isa(y, Vector{Float64})
 end
@@ -113,7 +113,10 @@ end
     end
 
     v = view(a, 5:10)
-    x, y = v.components
+    x, y = v._components
+    @test isa(x, SubArray{Float64})
+    @test isa(y, SubArray{Float64})
+    x, y = unpack(v)
     @test isa(x, SubArray{Float64})
     @test isa(y, SubArray{Float64})
 

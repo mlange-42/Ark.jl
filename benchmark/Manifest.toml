@@ -23,7 +23,7 @@ version = "1.1.2"
 deps = ["FunctionWrappers", "StaticArrays"]
 path = ".."
 uuid = "56664e29-41e4-4ea5-ab0e-825499acc647"
-version = "0.1.0-dev"
+version = "0.1.0"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
