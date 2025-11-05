@@ -122,8 +122,8 @@ end
 Base.lastindex(sa::_StructArray) = sa.length
 
 struct _StructArrayView{C,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
-    components::CS
-    indices::I
+    components::CS # TODO: make this private?
+    _indices::I
 end
 
 @generated function Base.view(
@@ -168,8 +168,8 @@ end
     return Expr(:block, fill_exprs..., :(sa))
 end
 
-Base.size(sa::_StructArrayView) = (length(sa.indices),)
-Base.length(sa::_StructArrayView) = length(sa.indices)
+Base.size(sa::_StructArrayView) = (length(sa._indices),)
+Base.length(sa::_StructArrayView) = length(sa._indices)
 Base.eltype(::Type{<:_StructArrayView{C}}) where {C} = C
 Base.IndexStyle(::Type{<:_StructArrayView}) = IndexLinear()
 Base.eachindex(sa::_StructArrayView) = 1:length(sa)
