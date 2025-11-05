@@ -16,8 +16,10 @@ function benchmark_query_posvel_soa_unpack(args, n)
     world = args
     for columns in @Query(world, (PositionSoA, VelocitySoA))
         @unpack _, (x, y), (dx, dy) = columns
-        @inbounds x .+= dx
-        @inbounds y .+= dy
+        for i in eachindex(x, y)
+            x[i] += dx[i]
+            y[i] += dy[i]
+        end
     end
     return world
 end
