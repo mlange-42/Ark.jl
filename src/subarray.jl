@@ -105,14 +105,14 @@ Base.@propagate_inbounds @inline @generated function Base.setindex!(
     end
 end
 
-Base.@propagate_inbounds function Base.iterate(a::FieldSubArray{C}) where {C}
+function Base.iterate(a::FieldSubArray{C}) where {C}
     length(a) == 0 && return nothing
     return a[1], 2
 end
 
-Base.@propagate_inbounds function Base.iterate(a::FieldSubArray{C}, i::Int) where {C}
+function Base.iterate(a::FieldSubArray{C}, i::Int) where {C}
     i > length(a) && return nothing
-    return a[i], i + 1
+    return (@inbounds a[i]), i + 1
 end
 
 Base.length(a::FieldSubArray) = Base.length(a._data)
