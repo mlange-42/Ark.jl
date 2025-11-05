@@ -29,3 +29,19 @@ for n in (100, 1_000, 10_000, 100_000, 1_000_000)
         @be setup_query_posvel_fields_unpack($n) benchmark_query_posvel_fields_unpack(_, $n) evals = 100 seconds =
             SECONDS
 end
+
+function benchmark_query_posvel_fields_unpack_vec(args, n)
+    world = args
+    for columns in @Query(world, (Position, Velocity); fields=true)
+        @unpack _, (x, y), (dx, dy) = columns
+        @inbounds x .+= dx
+        @inbounds y .+= dy
+    end
+    return world
+end
+
+for n in (100, 1_000, 10_000, 100_000, 1_000_000)
+    SUITE["benchmark_query_posvel_fields_unpack_vec n=$(n)"] =
+        @be setup_query_posvel_fields_unpack($n) benchmark_query_posvel_fields_unpack_vec(_, $n) evals = 100 seconds =
+            SECONDS
+end
