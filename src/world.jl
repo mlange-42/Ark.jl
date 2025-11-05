@@ -1017,16 +1017,7 @@ Macro version of [`emit_event!`](@ref) that allows more ergonomic event construc
   - `entity::Entity`: The [Entity](@ref) to emit the event for.
   - `components::Tuple=()`: The component types to emit the event for. Optional.
 """
-macro emit_event!(args...)
-    if length(args) == 3
-        world_expr, event_expr, entity_expr = args
-        comps_expr = :(())
-    elseif length(args) == 4
-        world_expr, event_expr, entity_expr, comps_expr = args
-    else
-        throw(ArgumentError("@emit_event! expects 3 or 4 arguments"))
-    end
-
+macro emit_event!(world_expr, event_expr, entity_expr, comps_expr=())
     quote
         emit_event!(
             $(esc(world_expr)),

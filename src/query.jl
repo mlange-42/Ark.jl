@@ -60,7 +60,6 @@ end
 
 ```
 """
-<<<<<<< HEAD
 macro Query(world_expr, comp_types_expr)
     :(Query($(esc(world_expr)), Val.($(esc(comp_types_expr)))))
 end
