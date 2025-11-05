@@ -133,6 +133,8 @@ end
     ::OT,
     ::EX,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
+    world_storage_modes = W.parameters[3].parameters
+
     comp_types = _try_to_types(CT)
     with_types = _try_to_types(WT)
     without_types = _try_to_types(WO)
@@ -160,7 +162,7 @@ end
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
     storage_types = [
-        T <: StructArrayComponent ?
+        world_storage_modes[Int(_component_id(W.parameters[1], T))] == Val{StructArrayStorage} ?
         _ComponentStorage{T,_StructArray_type(T)} :
         _ComponentStorage{T,Vector{T}}
         for T in comp_types

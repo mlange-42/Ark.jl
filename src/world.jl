@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,N} <: _AbstractWorld
+struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N} <: _AbstractWorld
     _entities::Vector{_EntityIndex}
     _storages::CS
     _archetypes::Vector{_Archetype}
@@ -44,8 +44,11 @@ world = World(Position, Velocity)
 
 ```
 """
-World(comp_types::Type...; allow_mutable::Bool=false) =
-    _World_from_types(Val{Tuple{comp_types...}}(), Val(allow_mutable))
+function World(comp_types::Union{Type,Tuple{Type,StorageMode}}...; allow_mutable=false)
+    types = map(arg -> arg isa Type ? arg : arg[1], comp_types)
+    storages = map(arg -> arg isa Type ? Val{InferredStorage} : Val{arg[2]}, comp_types)
+    _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
+end
 
 @generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     for (i, S) in enumerate(CS.parameters)
@@ -826,49 +829,59 @@ end
     end
 end
 
-@generated function _World_from_types(::Val{CS}, ::Val{MUT}) where {CS<:Tuple,MUT}
+@generated function _World_from_types(::Val{CS}, ::Val{ST}, ::Val{MUT}) where {CS<:Tuple,ST<:Tuple,MUT}
     types = CS.parameters
-
+    storage_val_types = ST.parameters
     allow_mutable = MUT::Bool
-    if !allow_mutable
-        for T in types
-            if ismutabletype(T)
-                if T <: StructArrayComponent
-                    throw(
-                        ArgumentError(
-                            lazy"Component type $T must be immutable because it is a StructArrayComponent",
-                        ),
-                    )
-                else
-                    throw(
-                        ArgumentError(
-                            lazy"Component type $T must be immutable unless 'allow_mutable' is used",
-                        ),
-                    )
-                end
+
+    # Resolve storage modes (Val{...} types)
+    resolved_val_types = [
+        S <: Val{InferredStorage} ?
+        (T <: StructArrayComponent ? Val{StructArrayStorage} : Val{VectorStorage}) :
+        S
+        for (T, S) in zip(types, storage_val_types)
+    ]
+
+    # Immutability checks
+    for (T, mode) in zip(types, resolved_val_types)
+        if ismutabletype(T)
+            if mode == Val{StructArrayStorage}
+                throw(
+                    ArgumentError("Component type $(nameof(T)) must be immutable because it uses StructArray storage"),
+                )
+            elseif !allow_mutable
+                throw(ArgumentError("Component type $(nameof(T)) must be immutable unless 'allow_mutable' is used"))
             end
         end
     end
 
+    # Component type tuple
     component_types = map(T -> :(Type{$T}), types)
     component_tuple_type = :(Tuple{$(component_types...)})
 
-    storage_types = [
-        T <: StructArrayComponent ?
-        :(_ComponentStorage{$T,_StructArray_type($T)}) :
-        :(_ComponentStorage{$T,Vector{$T}})
-        for T in types
-    ]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    # Storage type logic (based on resolved Val{...} types)
+    storage_types = Vector{Any}(undef, length(types))
+    storage_exprs = Vector{Any}(undef, length(types))
 
-    storage_exprs = [
-        T <: StructArrayComponent ?
-        :(_new_struct_array_storage($T)) :
-        :(_new_vector_storage($T))
-        for T in types
-    ]
+    for i in 1:length(types)
+        T = types[i]
+        mode = resolved_val_types[i]
+        if mode == Val{StructArrayStorage}
+            storage_types[i] = :(_ComponentStorage{$T,_StructArray_type($T)})
+            storage_exprs[i] = :(_new_struct_array_storage($T))
+        else
+            storage_types[i] = :(_ComponentStorage{$T,Vector{$T}})
+            storage_exprs[i] = :(_new_vector_storage($T))
+        end
+    end
+
+    # Final type and value tuples
+    storage_tuple_type = :(Tuple{$(storage_types...)})
     storage_tuple = Expr(:tuple, storage_exprs...)
 
+    storage_mode_type = :(Tuple{$(resolved_val_types...)})
+
+    # Component registration
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
@@ -876,7 +889,7 @@ end
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph()
-        World{$(storage_tuple_type),$(component_tuple_type),$(length(types))}(
+        World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types))}(
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],

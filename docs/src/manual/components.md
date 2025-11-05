@@ -94,3 +94,13 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1,1)))
 # output
 
 ```
+
+## Component storages
+
+Components are stored in [archetypes](@ref Architecture),
+with the values for each component type stored in a separate array-like column.
+For these columns, Ark offers two implementations:
+
+**Vector storage**
+
+**StructArray storage**

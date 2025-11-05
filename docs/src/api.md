@@ -17,6 +17,7 @@ World
 World(::Type...; ::Bool)
 is_locked
 StructArrayComponent
+StorageMode
 ```
 
 ## [Entities](@id entities-api)

@@ -24,6 +24,23 @@ end
     @test isa(_get_storage(world, SaoComp).data[1], _StructArray{SaoComp})
 end
 
+@testset "World storage type" begin
+    world = World(
+        Position,
+        SaoComp,
+        (Velocity, StructArrayStorage),
+    )
+
+    @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
+    @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,_StructArray_type(SaoComp)})
+    @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
+
+    world = World(
+        (SaoComp, VectorStorage),
+    )
+    @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,Vector{SaoComp}})
+end
+
 @testset "World creation error" begin
     @test_throws(
         "ArgumentError: duplicate component type Velocity during world creation",
@@ -94,7 +111,7 @@ end
 
     _ = World(Position, MutableComponent; allow_mutable=true)
 
-    @test_throws("Component type MutableSaoComp must be immutable because it is a StructArrayComponent",
+    @test_throws("ArgumentError: Component type MutableSaoComp must be immutable because it uses StructArray storage",
         World(Position, MutableSaoComp))
 end
 

@@ -19,12 +19,13 @@ end
     ::Val{CT},
 ) where {W<:World,CT<:Tuple}
     comp_types = CT.parameters
+    world_storage_modes = W.parameters[3].parameters
 
     storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
     storage_types = [
-        T <: StructArrayComponent ?
+        world_storage_modes[Int(_component_id(W.parameters[1], T))] == Val{StructArrayStorage} ?
         _ComponentStorage{T,_StructArray_type(T)} :
         _ComponentStorage{T,Vector{T}}
         for T in comp_types
