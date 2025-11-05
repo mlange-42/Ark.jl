@@ -27,6 +27,21 @@ function _set_component!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32, v
     return @inbounds col[row] = value
 end
 
+function _get_component_unchecked(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
+    @inbounds col = s.data[arch]
+    return @inbounds col[row]
+end
+
+function _set_component_unchecked!(
+    s::_ComponentStorage{C,A},
+    arch::UInt32,
+    row::UInt32,
+    value::C,
+) where {C,A<:AbstractArray}
+    @inbounds col = s.data[arch]
+    return @inbounds col[row] = value
+end
+
 @generated function _add_column!(storage::_ComponentStorage{C,A}) where {C,A<:AbstractArray}
     if A <: _StructArray
         return quote

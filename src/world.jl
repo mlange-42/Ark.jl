@@ -215,6 +215,8 @@ function remove_entity!(world::World, entity::Entity)
         world._entities[swap_entity._id] = index
     end
 
+    world._entities[entity._id] = _EntityIndex(0, 0)
+
     _recycle(world._entity_pool, entity)
     return nothing
 end
@@ -304,7 +306,7 @@ macro get_components_unchecked(world_expr, entity_expr, comp_types_expr)
 end
 
 @inline function get_components_unchecked(world::World, entity::Entity, comp_types::Tuple)
-    return @inline _get_components(world, entity, comp_types)
+    return @inline _get_components_unchecked(world, entity, comp_types)
 end
 
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
@@ -323,6 +325,34 @@ end
 
         push!(exprs, :($(stor_sym) = _get_storage(world, $T)))
         push!(exprs, :($(val_sym) = _get_component($(stor_sym), idx.archetype, idx.row)))
+    end
+
+    vals = [:($(Symbol("v", i))) for i in 1:length(types)]
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@generated function _get_components_unchecked(world::World, entity::Entity, ::TS) where {TS<:Tuple}
+    types = _try_to_types(TS)
+    if length(types) == 0
+        return :(())
+    end
+
+    exprs = Expr[]
+    push!(exprs, :(@inbounds idx = world._entities[entity._id]))
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        val_sym = Symbol("v", i)
+
+        push!(exprs, :($(stor_sym) = _get_storage(world, $T)))
+        push!(exprs, :($(val_sym) = _get_component_unchecked($(stor_sym), idx.archetype, idx.row)))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -421,7 +451,7 @@ The entity must already have all these components.
 end
 
 @inline function set_components_unchecked!(world::World, entity::Entity, values::Tuple)
-    return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
+    return @inline _set_components_unchecked!(world, entity, Val{typeof(values)}(), values)
 end
 
 @generated function _set_components!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS<:Tuple}
@@ -435,6 +465,28 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(_set_component!($stor_sym, idx.archetype, idx.row, $val_expr)))
+    end
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@generated function _set_components_unchecked!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS<:Tuple}
+    types = TS.parameters
+    exprs = [:(@inbounds idx = world._entities[entity._id])]
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        val_expr = :(values.$i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, $T)))
+        push!(exprs, :(_set_component_unchecked!($stor_sym, idx.archetype, idx.row, $val_expr)))
     end
 
     push!(exprs, Expr(:return, :nothing))
