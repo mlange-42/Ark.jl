@@ -31,7 +31,7 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-@observe!(world, OnAddComponents, (Position, Velocity), with = (Altitude,)) do entity
+@observe!(world, OnAddComponents, (Position, Velocity); with=(Altitude,)) do entity
     println(entity)
 end
 ; # suppress print output
