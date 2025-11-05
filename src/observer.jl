@@ -56,18 +56,7 @@ macro observe!(kwargs_expr, fn_expr, world_expr, event_expr)
             )
         end
     else
-        if iskwargs_2
-            kwargs_expr, fn_expr = fn_expr, kwargs_expr
-        end
-        map(x -> (x.args[1] != :register && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
-        quote
-            observe!(
-                $(esc(fn_expr)),
-                $(esc(world_expr)),
-                $(esc(event_expr));
-                $(esc.(kwargs_expr.args)...),
-            )
-        end
+        esc(:(@observe!($kwargs_expr, $fn_expr, $world_expr, $event_expr, ())))
     end
 end
 macro observe!(kwargs_expr, fn_expr, world_expr, event_expr, comps_expr)
