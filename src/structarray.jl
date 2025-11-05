@@ -114,7 +114,7 @@ Base.@propagate_inbounds @generated function Base.setindex!(sa::_StructArray{C},
     set_exprs = [
         :(sa._components.$name[i] = c.$name) for name in names
     ]
-    return Expr(:block, set_exprs..., :(sa))
+    return Expr(:block, set_exprs..., :(nothing))
 end
 
 Base.@propagate_inbounds function Base.iterate(sa::_StructArray{C}) where {C}
