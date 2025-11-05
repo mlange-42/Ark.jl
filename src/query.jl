@@ -23,7 +23,7 @@ end
 """
     @Query(
         world::World,
-        comp_types::Tuple,
+        comp_types::Tuple;
         with::Tuple=(),
         without::Tuple=(),
         optional::Tuple=(),
@@ -60,48 +60,16 @@ end
 
 ```
 """
-macro Query(args...)
-    if length(args) < 2
-        throw(ArgumentError("@Query requires at least a world and component tuple"))
-    end
-
-    world_expr = args[1]
-    comp_types_expr = args[2]
-
-    # Default values
-    with_expr = :(())
-    without_expr = :(())
-    optional_expr = :(())
-    exclusive_expr = :false
-
-    # Parse simulated keyword arguments
-    for arg in args[3:end]
-        if Base.isexpr(arg, :(=), 2)
-            name, value = arg.args
-            if name == :with
-                with_expr = value
-            elseif name == :without
-                without_expr = value
-            elseif name == :optional
-                optional_expr = value
-            elseif name == :exclusive
-                exclusive_expr = value
-            else
-                throw(ArgumentError(lazy"Unknown keyword argument: $name"))
-            end
-        else
-            throw(ArgumentError(lazy"Unexpected argument format: $arg"))
-        end
-    end
-
+macro Query(world_expr, comp_types_expr)
+    :(Query($(esc(world_expr)), Val.($(esc(comp_types_expr)))))
+end
+macro Query(kwargs_expr::Expr, world_expr, comp_types_expr)
+    map(x -> (x.args[2] = :(Val.($(x.args[2])))), kwargs_expr.args)
     quote
         Query(
             $(esc(world_expr)),
             Val.($(esc(comp_types_expr)));
-            with=Val.($(esc(with_expr))),
-            without=Val.($(esc(without_expr))),
-            optional=Val.($(esc(optional_expr))),
-            exclusive=Val($(esc(exclusive_expr))),
+            $(esc.(kwargs_expr.args)...),
         )
     end
 end

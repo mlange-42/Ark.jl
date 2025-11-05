@@ -692,7 +692,7 @@ remove_components!(world, entity, Val.((Position, Velocity)))
 end
 
 """
-    @exchange_components!(world::World, entity::Entity, add::Tuple, remove::Tuple)
+    @exchange_components!(world::World, entity::Entity; add::Tuple, remove::Tuple)
 
 Removes the given components from an [`Entity`](@ref).
 
@@ -707,38 +707,16 @@ Macro version of [`exchange_components!`](@ref) for more ergonomic component typ
 )
 ```
 """
-macro exchange_components!(args...)
-    if length(args) < 2
-        throw(ArgumentError("@exchange requires at least a world and an entity"))
-    end
-
-    world_expr = args[1]
-    entity_expr = args[2]
-
-    add_expr = :(())
-    remove_expr = :(())
-
-    for arg in args[3:end]
-        if Base.isexpr(arg, :(=), 2)
-            name, value = arg.args
-            if name == :add
-                add_expr = value
-            elseif name == :remove
-                remove_expr = value
-            else
-                throw(ArgumentError(lazy"Unknown keyword argument: $name"))
-            end
-        else
-            throw(ArgumentError(lazy"Unexpected argument format: $arg"))
-        end
-    end
-
+macro exchange_components!(world_expr, entity_expr)
+    :(Query($(esc(world_expr)), $(esc(entity_expr))))
+end
+macro exchange_components!(kwargs_expr, world_expr, entity_expr)
+    map(x -> (x.args[1] == :remove && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
     quote
         exchange_components!(
             $(esc(world_expr)),
             $(esc(entity_expr));
-            add=$(esc(add_expr)),
-            remove=Val.($(esc(remove_expr))),
+            $(esc.(kwargs_expr.args)...),
         )
     end
 end
@@ -1039,16 +1017,7 @@ Macro version of [`emit_event!`](@ref) that allows more ergonomic event construc
   - `entity::Entity`: The [Entity](@ref) to emit the event for.
   - `components::Tuple=()`: The component types to emit the event for. Optional.
 """
-macro emit_event!(args...)
-    if length(args) == 3
-        world_expr, event_expr, entity_expr = args
-        comps_expr = :(())
-    elseif length(args) == 4
-        world_expr, event_expr, entity_expr, comps_expr = args
-    else
-        throw(ArgumentError("@emit_event! expects 3 or 4 arguments"))
-    end
-
+macro emit_event!(world_expr, event_expr, entity_expr, comps_expr=())
     quote
         emit_event!(
             $(esc(world_expr)),

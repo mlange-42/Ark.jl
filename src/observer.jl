@@ -4,7 +4,7 @@
         fn::Function,
         world::World,
         event::EventType,
-        components::Tuple=(),
+        components::Tuple=();
         with::Tuple=(),
         without::Tuple=(),
         exclusive::Val=Val(false),
@@ -31,7 +31,7 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-@observe!(world, OnAddComponents, (Position, Velocity), with = (Altitude,)) do entity
+@observe!(world, OnAddComponents, (Position, Velocity); with=(Altitude,)) do entity
     println(entity)
 end
 ; # suppress print output
@@ -40,60 +40,38 @@ end
 
 ```
 """
-macro observe!(args...)
-    if length(args) < 3
-        throw(ArgumentError("observe! requires at least a callback, world, and event type"))
-    end
-
-    fn_expr    = args[1]
-    world_expr = args[2]
-    event_expr = args[3]
-
-    # Determine if components were provided
-    if length(args) > 3 && !(Base.isexpr(args[4], :(=), 2))
-        comps_expr = args[4]
-        kw_args = args[5:end]
-    else
-        comps_expr = :(())
-        kw_args = args[4:end]
-    end
-
-    # Default keyword values
-    with_expr      = :(())
-    without_expr   = :(())
-    exclusive_expr = :false
-    register_expr  = :true
-
-    # Parse simulated keyword arguments
-    for arg in kw_args
-        if Base.isexpr(arg, :(=), 2)
-            name, value = arg.args
-            if name == :with
-                with_expr = value
-            elseif name == :without
-                without_expr = value
-            elseif name == :exclusive
-                exclusive_expr = value
-            elseif name == :register
-                register_expr = value
-            else
-                throw(ArgumentError("Unknown keyword argument: $name"))
-            end
-        else
-            throw(ArgumentError("Unexpected argument format: $arg"))
+macro observe!(fn_expr, world_expr, event_expr)
+    esc(:(@observe!($fn_expr, $world_expr, $event_expr, ())))
+end
+macro observe!(kwargs_expr, fn_expr, world_expr, event_expr)
+    iskwargs_1 = kwargs_expr isa Expr && kwargs_expr.head == :parameters
+    iskwargs_2 = fn_expr isa Expr && fn_expr.head == :parameters
+    if !iskwargs_1 && !iskwargs_2
+        quote
+            observe!(
+                $(esc(kwargs_expr)),
+                $(esc(fn_expr)),
+                $(esc(world_expr)),
+                Val.($(esc(event_expr))),
+            )
         end
+    else
+        esc(:(@observe!($kwargs_expr, $fn_expr, $world_expr, $event_expr, ())))
     end
-
+end
+macro observe!(kwargs_expr, fn_expr, world_expr, event_expr, comps_expr)
+    iskwargs = kwargs_expr isa Expr && kwargs_expr.head == :parameters
+    if !iskwargs
+        kwargs_expr, fn_expr = fn_expr, kwargs_expr
+    end
+    map(x -> (x.args[1] != :register && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
     quote
         observe!(
             $(esc(fn_expr)),
             $(esc(world_expr)),
             $(esc(event_expr)),
             Val.($(esc(comps_expr)));
-            with=Val.($(esc(with_expr))),
-            without=Val.($(esc(without_expr))),
-            exclusive=Val($(esc(exclusive_expr))),
-            register=$(esc(register_expr)),
+            $(esc.(kwargs_expr.args)...),
         )
     end
 end

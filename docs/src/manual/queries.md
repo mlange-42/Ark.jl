@@ -70,7 +70,7 @@ that entities must have, but that are not used by the query.
 
 ```jldoctest; output = false
 for (entities, positions, velocities) in @Query(world,
-            (Position, Velocity),
+            (Position, Velocity);
             with=(Health,)
         )
     @inbounds for i in eachindex(entities)
@@ -88,7 +88,7 @@ The optional `without` argument allows to exclude entities that have certain com
 
 ```jldoctest; output = false
 for (entities, positions, velocities) in @Query(world,
-            (Position, Velocity),
+            (Position, Velocity);
             without=(Health,)
         )
     @inbounds for i in eachindex(entities)
@@ -107,7 +107,7 @@ and those specified by `with`. So it acts like an exhaustive `without`:
 
 ```jldoctest; output = false
 for (entities, positions, velocities) in @Query(world,
-            (Position, Velocity),
+            (Position, Velocity);
             exclusive=true
         )
     @inbounds for i in eachindex(entities)
@@ -132,7 +132,7 @@ but they are `nothing` if the current [archetype](@ref Architecture) does not ha
 
 ```jldoctest; output = false
 for (entities, positions, velocities) in @Query(world,
-            (Position, Velocity),
+            (Position, Velocity);
             optional=(Velocity,)
         )
     has_velocity = velocities !== nothing

@@ -44,7 +44,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = @Query(world, (Position, Velocity), with = (Altitude,))
+    query = @Query(world, (Position, Velocity); with=(Altitude,))
 
     count = 0
     for (ent, vec_pos, vec_vel) in query
@@ -65,7 +65,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = @Query(world, (Position, Velocity), without = (Altitude,))
+    query = @Query(world, (Position, Velocity); without=(Altitude,))
 
     count = 0
     for (ent, vec_pos, vec_vel) in query
@@ -86,7 +86,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = @Query(world, (Position, Velocity, Altitude), optional = (Altitude,))
+    query = @Query(world, (Position, Velocity, Altitude); optional=(Altitude,))
 
     count = 0
     indices = Vector{Int}()
@@ -117,10 +117,10 @@ end
 
     @test_throws(
         "ArgumentError: cannot use 'exclusive' together with 'without'",
-        @Query(world, (Position, Velocity), without = (Altitude,), exclusive = true),
+        @Query(world, (Position, Velocity); without=(Altitude,), exclusive=true),
     )
 
-    query = @Query(world, (Position, Velocity), with = (Altitude,), exclusive = true)
+    query = @Query(world, (Position, Velocity); with=(Altitude,), exclusive=true)
     @test query._has_excluded == true
 
     count = 0
@@ -184,8 +184,8 @@ end
 end
 
 @testset "Query macro unknown argument" begin
-    ex = Meta.parse("@Query(world, (Position,), abc = 2)")
-    @test_throws LoadError eval(ex)
+    ex = Meta.parse("@Query(world, (Position,); abc = 2)")
+    @test_throws UndefVarError eval(ex)
 end
 
 @testset "Query macro invalid syntax" begin
