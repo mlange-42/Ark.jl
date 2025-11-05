@@ -81,7 +81,7 @@ end
     end
 end
 
-Base.@propagate_inbounds @generated function Base.getindex(
+Base.@propagate_inbounds @inline @generated function Base.getindex(
     a::FieldSubArray{C,T,Val{F},A},
     i::Int,
 ) where {C,T,F,A<:SubArray{T}}
@@ -90,7 +90,7 @@ Base.@propagate_inbounds @generated function Base.getindex(
     end
 end
 
-Base.@propagate_inbounds @generated function Base.setindex!(
+Base.@propagate_inbounds @inline @generated function Base.setindex!(
     a::FieldSubArray{C,T,Val{F},A},
     v,
     i::Int,
