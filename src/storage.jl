@@ -28,7 +28,7 @@ function _set_component!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32, v
 end
 
 @generated function _add_column!(storage::_ComponentStorage{C,A}) where {C,A<:AbstractArray}
-    if C <: StructArrayComponent
+    if A <: _StructArray
         return quote
             push!(storage.data, _StructArray(C))
         end
@@ -40,7 +40,7 @@ end
 end
 
 @generated function _assign_column!(storage::_ComponentStorage{C,A}, index::UInt32) where {C,A<:AbstractArray}
-    if C <: StructArrayComponent
+    if A <: _StructArray
         return quote
             storage.data[index] = _StructArray(C)
         end
