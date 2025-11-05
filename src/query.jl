@@ -159,7 +159,12 @@ end
     exclude_mask = EX === Val{true} ? _MaskNot(non_exclude_ids...) : _Mask(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
-    storage_types = [_ComponentStorage{T,Vector{T}} for T in comp_types]
+    storage_types = [
+        T <: StructArrayComponent ?
+        _ComponentStorage{T,_StructArray_type(T)} :
+        _ComponentStorage{T,Vector{T}}
+        for T in comp_types
+    ]
     storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
 
     storage_exprs = Expr[:(world._storages[$(Int(i))]) for i in all_ids]

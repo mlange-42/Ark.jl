@@ -7,6 +7,14 @@ function _ComponentStorage{C,A}() where {C,A<:AbstractArray}
     _ComponentStorage{C,Vector{C}}([Vector{C}()])
 end
 
+function _new_vector_storage(::Type{C}) where {C}
+    _ComponentStorage{C,Vector{C}}([Vector{C}()])
+end
+
+function _new_struct_array_storage(::Type{C}) where {C}
+    _ComponentStorage{C,_StructArray_type(C)}([_StructArray(C)])
+end
+
 function _get_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     if length(col) == 0
@@ -23,12 +31,28 @@ function _set_component!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32, v
     return @inbounds col[row] = value
 end
 
-function _add_column!(storage::_ComponentStorage{C,A}) where {C,A<:AbstractArray}
-    push!(storage.data, Vector{C}())
+@generated function _add_column!(storage::_ComponentStorage{C,A}) where {C,A<:AbstractArray}
+    if C <: StructArrayComponent
+        return quote
+            push!(storage.data, _StructArray(C))
+        end
+    else
+        return quote
+            push!(storage.data, Vector{C}())
+        end
+    end
 end
 
-function _assign_column!(storage::_ComponentStorage{C,A}, index::UInt32) where {C,A<:AbstractArray}
-    storage.data[index] = Vector{C}()
+@generated function _assign_column!(storage::_ComponentStorage{C,A}, index::UInt32) where {C,A<:AbstractArray}
+    if C <: StructArrayComponent
+        return quote
+            storage.data[index] = _StructArray(C)
+        end
+    else
+        return quote
+            storage.data[index] = Vector{C}()
+        end
+    end
 end
 
 function _ensure_column_size!(storage::_ComponentStorage, arch::UInt32, needed::UInt32)
