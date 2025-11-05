@@ -170,6 +170,16 @@ end
     return Expr(:block, fill_exprs..., :(sa))
 end
 
+function Base.iterate(sa::StructArrayView{C}) where {C}
+    length(sa) == 0 && return nothing
+    return sa[1], 2
+end
+
+function Base.iterate(sa::StructArrayView{C}, i::Int) where {C}
+    i > length(sa) && return nothing
+    return sa[i], i + 1
+end
+
 Base.size(sa::StructArrayView) = (length(sa._indices),)
 Base.length(sa::StructArrayView) = length(sa._indices)
 Base.eltype(::Type{<:StructArrayView{C}}) where {C} = C
