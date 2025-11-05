@@ -293,6 +293,20 @@ pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     return @inline _get_components(world, entity, comp_types)
 end
 
+macro get_components_unchecked(world_expr, entity_expr, comp_types_expr)
+    quote
+        get_components_unchecked(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr))),
+        )
+    end
+end
+
+@inline function get_components_unchecked(world::World, entity::Entity, comp_types::Tuple)
+    return @inline _get_components(world, entity, comp_types)
+end
+
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
     types = _try_to_types(TS)
     if length(types) == 0
@@ -403,6 +417,10 @@ The entity must already have all these components.
     if !is_alive(world, entity)
         throw(ArgumentError("can't set components of a dead entity"))
     end
+    return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
+end
+
+@inline function set_components_unchecked!(world::World, entity::Entity, values::Tuple)
     return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
 end
 
@@ -890,7 +908,7 @@ end
         ids = $id_tuple
         graph = _Graph()
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types))}(
-            [_EntityIndex(typemax(UInt32), 0)],
+            [_EntityIndex(0, 0)],
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex($(length(types))),
