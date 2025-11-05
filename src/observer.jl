@@ -41,7 +41,7 @@ end
 ```
 """
 macro observe!(fn_expr, world_expr, event_expr)
-    :(observe!($(esc(fn_expr)), $(esc(world_expr)), $(esc(event_expr))))
+    esc(:(@observe!($fn_expr, $world_expr, $event_expr, ())))
 end
 macro observe!(kwargs_expr, fn_expr, world_expr, event_expr)
     iskwargs_1 = kwargs_expr isa Expr && kwargs_expr.head == :parameters
