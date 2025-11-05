@@ -1,13 +1,4 @@
 
-"""
-Component storage mode for world construction.
-
-  - `VectorStorage`: Component stored as AoS.
-  - `StructArrayStorage`: Component stored as SoA.
-  - `InferredStorage`: Storage type inferred from presence of [StructArrayComponent](@ref).
-"""
-@enum StorageMode VectorStorage StructArrayStorage InferredStorage
-
 abstract type _AbstractWorld end
 
 """
@@ -15,7 +6,8 @@ abstract type _AbstractWorld end
 
 Marker trait for component types that use a StructArray-like storage.
 
-Can be overwritten by using [StorageMode](@ref) during world construction.
+Can be overwritten by using it during world construction.
+See also [VectorComponent](@ref).
 
 # Example
 
@@ -30,3 +22,16 @@ end
 ```
 """
 abstract type StructArrayComponent end
+
+"""
+    StructArrayComponent
+
+Marker trait for component types that use a Vector storage.
+As this is the default storage mode, components don't need to be a sub-type of this.
+
+However, it can be used during world construction to overwrite the storage mode.
+See also [StructArrayComponent](@ref).
+"""
+abstract type VectorComponent end
+
+abstract type _InferredComponent end

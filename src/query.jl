@@ -162,7 +162,7 @@ end
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
     storage_types = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))] == Val{StructArrayStorage} ?
+        world_storage_modes[Int(_component_id(W.parameters[1], T))] == StructArrayComponent ?
         _ComponentStorage{T,_StructArray_type(T)} :
         _ComponentStorage{T,Vector{T}}
         for T in comp_types

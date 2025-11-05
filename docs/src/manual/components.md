@@ -99,7 +99,7 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1,1)))
 
 Components are stored in [archetypes](@ref Architecture),
 with the values for each component type stored in a separate array-like column.
-For these columns, Ark offers two [storage modes](@ref StorageMode):
+For these columns, Ark offers two storage modes:
 
 - **Vector storage** stores component object in a simple vector per column. This is the default.
 
@@ -112,7 +112,7 @@ For these columns, Ark offers two [storage modes](@ref StorageMode):
 
 The storage mode can be selected per component type.
 Either by declaring the component a sub-type of [StructArrayComponent](@ref),
-or by using [StorageMode](@ref) during world construction.
+or by using [StructArrayComponent](@ref) or [VectorComponent](@ref) during world construction.
 
 ```@meta
 DocTestSetup = quote
@@ -153,7 +153,7 @@ struct Velocity
 end
 
 world = World(
-    (Position, StructArrayStorage),
+    (Position, StructArrayComponent),
     Velocity,
 )
 ; # suppress print output

@@ -28,7 +28,7 @@ end
     world = World(
         Position,
         SaoComp,
-        (Velocity, StructArrayStorage),
+        (Velocity, StructArrayComponent),
     )
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
@@ -36,7 +36,7 @@ end
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
 
     world = World(
-        (SaoComp, VectorStorage),
+        (SaoComp, VectorComponent),
     )
     @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,Vector{SaoComp}})
 end

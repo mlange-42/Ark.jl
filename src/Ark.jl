@@ -43,7 +43,8 @@ export EventType, EventRegistry, new_event_type!
 export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
 
 export Observer, observe!, @observe!, emit_event!, @emit_event!
+export unpack, @unpack
 
-export StructArrayComponent, unpack, @unpack, StorageMode, StructArrayStorage, VectorStorage, InferredStorage
+export StructArrayComponent, VectorComponent
 
 end

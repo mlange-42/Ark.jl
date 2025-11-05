@@ -25,7 +25,7 @@ end
     storages_tuple = Expr(:tuple, storage_exprs...)
 
     storage_types = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))] == Val{StructArrayStorage} ?
+        world_storage_modes[Int(_component_id(W.parameters[1], T))] <: StructArrayComponent ?
         _ComponentStorage{T,_StructArray_type(T)} :
         _ComponentStorage{T,Vector{T}}
         for T in comp_types
