@@ -6,6 +6,7 @@ using FunctionWrappers: FunctionWrapper
 include("abstract.jl")
 include("util.jl")
 include("structarray.jl")
+include("subarray.jl")
 include("entity.jl")
 include("mask.jl")
 include("vec_map.jl")

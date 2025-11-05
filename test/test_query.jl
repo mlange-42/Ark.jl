@@ -201,6 +201,31 @@ end
     end
 end
 
+@testset "Query FieldsView" begin
+    world = World(
+        Position,
+        (Velocity, StructArrayComponent),
+    )
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i), Velocity(i, i)))
+    end
+
+    for (_, pos, vel) in @Query(world, (Position, Velocity); fields=true)
+        @test pos isa FieldsView
+        @test pos[1] == Position(1, 1)
+    end
+
+    for columns in @Query(world, (Position, Velocity); fields=true)
+        @unpack _, (x, y), (dx, dy) = columns
+        @test x isa FieldSubArray
+        @test y isa FieldSubArray
+        @test length(x) == 10
+        @test x[1] == 1
+        @test x[10] == 10
+    end
+end
+
 @testset "Query macro missing argument" begin
     ex = Meta.parse("@Query(world)")
     @test_throws LoadError eval(ex)

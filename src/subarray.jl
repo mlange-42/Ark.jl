@@ -1,0 +1,125 @@
+
+struct FieldsView{C,S<:SubArray,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
+    _subarray::S
+    _components::CS
+    _indices::I
+end
+
+@generated function FieldsView(vec::Vector{C}, idx::I) where {C,I}
+    if !isbitstype(C)
+        return quote
+            throw(ArgumentError("non-isbits type $(C) not supported by FieldsView"))
+        end
+    end
+
+    names = fieldnames(C)
+    types = fieldtypes(C)
+
+    view_expr = :(vview)  # placeholder for the local view variable
+    field_types = [
+        :(FieldSubArray{$t,C,Val{$(QuoteNode(n))},typeof($view_expr)})
+        for (n, t) in zip(names, types)
+    ]
+    nt_type = :(NamedTuple{($(map(QuoteNode, names)...),),Tuple{$(field_types...)}})
+
+    field_exprs = [
+        :($(n) = _new_field_subarray($view_expr, Val($(QuoteNode(n)))))
+        for n in names
+    ]
+
+    return quote
+        vview = view(vec, idx)
+        FieldsView{C,typeof(vview),$nt_type,$(length(names)),I}(
+            vview,
+            (; $(field_exprs...)),
+            idx,
+        )
+    end
+end
+
+@generated function Base.getproperty(a::FieldsView{C}, name::Symbol) where {C}
+    component_names = fieldnames(C)
+    cases = [
+        :(name === $(QuoteNode(n)) && return a._components.$n) for n in component_names
+    ]
+    fallback = :(return getfield(a, name))
+    return Expr(:block, cases..., fallback)
+end
+
+Base.@propagate_inbounds Base.getindex(a::FieldsView, idx::Integer) = Base.getindex(a._subarray, idx)
+Base.@propagate_inbounds Base.setindex!(a::FieldsView, v, idx::Integer) = Base.setindex!(a._subarray, v, idx)
+Base.@propagate_inbounds Base.iterate(a::FieldsView{C}) where {C} = Base.iterate(a._subarray)
+
+Base.@propagate_inbounds function Base.iterate(a::FieldsView{C}, i::Int) where {C}
+    Base.iterate(a._subarray, i)
+end
+
+Base.size(a::FieldsView) = size(a._subarray)
+Base.length(a::FieldsView) = length(a._subarray)
+Base.eachindex(a::FieldsView) = Base.eachindex(a._subarray)
+Base.firstindex(a::FieldsView) = Base.firstindex(a._subarray)
+Base.lastindex(a::FieldsView) = Base.lastindex(a._subarray)
+
+Base.eltype(::Type{<:FieldsView{C}}) where {C} = C
+Base.IndexStyle(::Type{<:FieldsView}) = IndexLinear()
+
+unpack(a::FieldsView) = a._components
+
+struct FieldSubArray{C,T,F,A<:SubArray{T}} <: AbstractArray{C,1}
+    _data::A
+    _field::F
+    _ptr::Ptr{UInt8}
+end
+
+@generated function _new_field_subarray(
+    data::A,
+    ::Val{F},
+) where {A<:SubArray{T},F} where {T}
+    ftype = fieldtype(T, F)
+    quote
+        FieldSubArray{$(ftype),T,Val{F},A}(data, Val(F), Base.unsafe_convert(Ptr{UInt8}, pointer(data)))
+    end
+end
+
+Base.@propagate_inbounds @generated function Base.getindex(
+    a::FieldSubArray{C,T,Val{F},A},
+    i::Int,
+) where {C,T,F,A<:SubArray{T}}
+    quote
+        a._data[i].$(F)
+    end
+end
+
+Base.@propagate_inbounds @generated function Base.setindex!(
+    a::FieldSubArray{C,T,Val{F},A},
+    v,
+    i::Int,
+) where {C,T,F,A<:SubArray{T}}
+    idx = Base.fieldindex(T, F)
+    offset = fieldoffset(T, idx)
+    size = sizeof(T)
+    return quote
+        raw = Ptr{C}(a._ptr + (i - 1) * $size + $(offset))
+        unsafe_store!(raw, v)
+        nothing
+    end
+end
+
+Base.@propagate_inbounds function Base.iterate(a::FieldSubArray{C}) where {C}
+    length(a) == 0 && return nothing
+    return a[1], 2
+end
+
+Base.@propagate_inbounds function Base.iterate(a::FieldSubArray{C}, i::Int) where {C}
+    i > length(a) && return nothing
+    return a[i], i + 1
+end
+
+Base.length(a::FieldSubArray) = Base.length(a._data)
+Base.size(a::FieldSubArray) = Base.size(a._data)
+Base.eachindex(a::FieldSubArray) = Base.eachindex(a._data)
+Base.firstindex(a::FieldSubArray) = Base.firstindex(a._data)
+Base.lastindex(a::FieldSubArray) = Base.lastindex(a._data)
+
+Base.eltype(::Type{<:FieldSubArray{C,T}}) where {C,T} = C
+Base.IndexStyle(::Type{<:FieldSubArray}) = IndexLinear()
