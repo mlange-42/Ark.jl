@@ -206,8 +206,8 @@ including components (i.e. field vectors) of StructArray components
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 for columns in Query(world, Val.((PositionSoA, VelocitySoA)))
     @unpack entities, (x, y), (dx, sy) = columns
-    x .+= dx
-    y .+= dy
+    @inbounds x .+= dx
+    @inbounds y .+= dy
 end
 
 # output

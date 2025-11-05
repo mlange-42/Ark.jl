@@ -95,13 +95,20 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1,1)))
 
 ```
 
-## Component storages
+## [Component storages](@id component-storages)
 
 Components are stored in [archetypes](@ref Architecture),
 with the values for each component type stored in a separate array-like column.
-For these columns, Ark offers two implementations:
+For these columns, Ark offers two [storage modes](@ref StorageMode):
 
-**Vector storage** stores component object in a simple vector per column. This is the default.
+- **Vector storage** stores component object in a simple vector per column. This is the default.
 
-**StructArray storage** stores components in a [StructArray](https://github.com/JuliaArrays/StructArrays.jl)-like
-SoA data structure. This allows access to...
+- **StructArray storage** stores components in an SoA data structure similar to  
+  [StructArrays](https://github.com/JuliaArrays/StructArrays.jl).  
+  This allows access to field vectors in [queries](@ref Queries), enabling SIMD-accelerated,  
+  vectorized operations and increased cache-friendliness if not all of the component's fields are used.  
+  However, this storage mode comes with an overhead of ≈10-20% for component operations and entity creation.
+
+The storage mode can be selected per component type.
+Either by declaring the component a sub-type of [StructArrayComponent](@ref),
+or by using [StorageMode](@ref) during world construction.
