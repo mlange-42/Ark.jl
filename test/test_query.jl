@@ -178,6 +178,22 @@ end
     @test arches == 2
 end
 
+@testset "Query StructArray" begin
+    world = World(SaoComp)
+
+    for i in 1:10
+        new_entity!(world, (SaoComp(i, i),))
+    end
+
+    for (entities, vec) in @Query(world, (SaoComp,))
+        @test isa(vec, _StructArrayView)
+        for i in eachindex(vec)
+            pos = vec[i]
+            vec[i] = SaoComp(pos.x + 1, pos.y + 1)
+        end
+    end
+end
+
 @testset "Query macro missing argument" begin
     ex = Meta.parse("@Query(world)")
     @test_throws LoadError eval(ex)

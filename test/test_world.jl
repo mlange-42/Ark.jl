@@ -19,7 +19,9 @@ end
         _component_id(params, Altitude))
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
+    @test isa(_get_storage(world, Position).data[1], Vector{Position})
     @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,_StructArray_type(SaoComp)})
+    @test isa(_get_storage(world, SaoComp).data[1], _StructArray{SaoComp})
 end
 
 @testset "World creation error" begin

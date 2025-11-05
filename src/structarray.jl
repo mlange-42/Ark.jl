@@ -81,6 +81,26 @@ end
     return Expr(:block, fill_exprs..., :(sa))
 end
 
+Base.view(sa::_StructArray, ::Colon) = view(sa, 1:length(sa))
+
+@generated function Base.view(
+    sa::S,
+    idx::I,
+) where {S<:_StructArray{C,CS,N},I<:AbstractUnitRange{Int}} where {C,CS<:NamedTuple,N}
+    names = fieldnames(C)
+    types = fieldtypes(C)
+    view_exprs = [
+        :($name = @view sa.components.$name[idx]) for name in names
+    ]
+    nt_type = :(NamedTuple{
+        ($(map(QuoteNode, names)...),),
+        Tuple{$(map(t -> :(SubArray{$t,1,Vector{$t},Tuple{I},true}), types)...)},
+    })
+    return quote
+        _StructArrayView{C,$nt_type,length($names),I}((; $(view_exprs...)), idx)
+    end
+end
+
 @generated function Base.getindex(sa::_StructArray{C}, i::Int) where {C}
     names = fieldnames(C)
     field_exprs = [
@@ -124,24 +144,6 @@ Base.lastindex(sa::_StructArray) = sa.length
 struct _StructArrayView{C,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
     components::CS # TODO: make this private?
     _indices::I
-end
-
-@generated function Base.view(
-    sa::S,
-    idx::I,
-) where {S<:_StructArray{C,CS,N},I<:AbstractUnitRange{Int}} where {C,CS<:NamedTuple,N}
-    names = fieldnames(C)
-    types = fieldtypes(C)
-    view_exprs = [
-        :($name = @view sa.components.$name[idx]) for name in names
-    ]
-    nt_type = :(NamedTuple{
-        ($(map(QuoteNode, names)...),),
-        Tuple{$(map(t -> :(SubArray{$t,1,Vector{$t},Tuple{I},true}), types)...)},
-    })
-    return quote
-        _StructArrayView{C,$nt_type,length($names),I}((; $(view_exprs...)), idx)
-    end
 end
 
 @generated function Base.getindex(sa::_StructArrayView{C}, i::Int) where {C}
