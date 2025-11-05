@@ -53,13 +53,6 @@ jobs:
     - name: Switch to base commit
       if: github.event_name == 'pull_request'
       run: git checkout ${{ env.BASE_REF }}
-    - name: Set up Julia
-      if: github.event_name == 'pull_request'
-      uses: ./.github/actions/setup-julia
-      with:
-        julia-version: '1.12.1'
-        project-file: 'benchmark/Project.toml'
-        key-suffix: ${{ matrix.repetition }}
     - name: Install dependencies
       if: github.event_name == 'pull_request'
       run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
