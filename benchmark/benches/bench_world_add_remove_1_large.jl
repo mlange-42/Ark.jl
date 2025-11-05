@@ -1,5 +1,5 @@
 
-function setup_world_add_remove_large_world(n_entities::Int)
+function setup_world_add_remove_1_large_world(n_entities::Int)
     world = World(
         CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
         CompN{6}, CompN{7}, CompN{8}, CompN{9}, CompN{10},
@@ -31,7 +31,7 @@ function setup_world_add_remove_large_world(n_entities::Int)
     return (entities, world)
 end
 
-function benchmark_world_add_remove_large_world(args, n)
+function benchmark_world_add_remove_1_large_world(args, n)
     entities, world = args
     for e in entities
         add_components!(world, e, (Velocity(0, 0),))
@@ -40,6 +40,6 @@ function benchmark_world_add_remove_large_world(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_add_remove_large n=$(n)"] =
-        @be setup_world_add_remove_large_world($n) benchmark_world_add_remove_large_world(_, $n) seconds = SECONDS
+    SUITE["benchmark_world_add_remove_1_large n=$(n)"] =
+        @be setup_world_add_remove_large_1_world($n) benchmark_world_add_remove_1_large_world(_, $n) seconds = SECONDS
 end

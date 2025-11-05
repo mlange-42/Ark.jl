@@ -1,5 +1,5 @@
 
-function setup_world_add_remove_soa(n_entities::Int)
+function setup_world_add_remove_1_soa(n_entities::Int)
     world = World((Position, StructArrayStorage), (Velocity, StructArrayStorage))
 
     entities = Vector{Entity}()
@@ -16,7 +16,7 @@ function setup_world_add_remove_soa(n_entities::Int)
     return (entities, world)
 end
 
-function benchmark_world_add_remove_soa(args, n)
+function benchmark_world_add_remove_1_soa(args, n)
     entities, world = args
     for e in entities
         add_components!(world, e, (Velocity(0, 0),))
@@ -25,6 +25,6 @@ function benchmark_world_add_remove_soa(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_add_remove_soa n=$(n)"] =
-        @be setup_world_add_remove_soa($n) benchmark_world_add_remove_soa(_, $n) seconds = SECONDS
+    SUITE["benchmark_world_add_remove_1_soa n=$(n)"] =
+        @be setup_world_add_remove_1_soa($n) benchmark_world_add_remove_1_soa(_, $n) seconds = SECONDS
 end

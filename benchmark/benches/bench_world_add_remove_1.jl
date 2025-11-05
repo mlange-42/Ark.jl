@@ -1,5 +1,5 @@
 
-function setup_world_add_remove(n_entities::Int)
+function setup_world_add_remove_1(n_entities::Int)
     world = World(Position, Velocity)
 
     entities = Vector{Entity}()
@@ -16,7 +16,7 @@ function setup_world_add_remove(n_entities::Int)
     return (entities, world)
 end
 
-function benchmark_world_add_remove(args, n)
+function benchmark_world_add_remove_1(args, n)
     entities, world = args
     for e in entities
         add_components!(world, e, (Velocity(0, 0),))
@@ -25,6 +25,6 @@ function benchmark_world_add_remove(args, n)
 end
 
 for n in (100, 10_000)
-    SUITE["benchmark_world_add_remove n=$(n)"] =
-        @be setup_world_add_remove($n) benchmark_world_add_remove(_, $n) seconds = SECONDS
+    SUITE["benchmark_world_add_remove_1 n=$(n)"] =
+        @be setup_world_add_remove_1($n) benchmark_world_add_remove_1(_, $n) seconds = SECONDS
 end
