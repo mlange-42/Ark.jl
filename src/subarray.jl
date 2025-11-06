@@ -167,4 +167,16 @@ function Base.Broadcast.copyto!(
     return dest
 end
 
+function Base.Broadcast.copyto!(
+    dest::FieldSubArray{C,T,F,A},
+    bc::Base.Broadcast.Broadcasted{S},
+) where {C,T,F,A,S<:Base.Broadcast.BroadcastStyle}
+    bc_inst = Broadcast.instantiate(bc)
+    @assert axes(dest) == axes(bc_inst)
+    @inbounds @simd for i in eachindex(dest)
+        dest[i] = bc_inst[i]
+    end
+    return dest
+end
+
 Base.similar(a::FieldSubArray{C}, ::Type{C}, dims::Dims) where {C} = similar(a._data, C, dims)
