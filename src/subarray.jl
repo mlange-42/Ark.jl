@@ -127,7 +127,7 @@ Base.firstindex(a::FieldSubArray) = Base.firstindex(a._data)
 Base.lastindex(a::FieldSubArray) = Base.lastindex(a._data)
 
 Base.eltype(::Type{<:FieldSubArray{C,T}}) where {C,T} = C
-Base.IndexStyle(::Type{<:FieldSubArray}) = IndexLinear()
+Base.IndexStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = IndexStyle(A)
 
 Base.Broadcast.BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = Base.Broadcast.BroadcastStyle(A)
 
