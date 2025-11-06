@@ -10,6 +10,7 @@
 
 - Adds an event system with events for structural changes as well as custom events (#155)
 - Adds storage modes Vector and StructArray, which can be selected per component type (#207)
+- Adds field view, so field access for query columns works equally for Vector and StructArray storages (#213)
 
 ### Other
 
