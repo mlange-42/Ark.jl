@@ -89,7 +89,5 @@ end
 
     v = view(arr, :)
 
-    x, y = unpack(v)
-    @test x isa FieldView
-    @test y isa FieldView
+    @test unpack(v) == v
 end

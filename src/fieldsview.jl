@@ -147,4 +147,4 @@ Base.strides(a::FieldView) = strides(a._data)
 Base.pointer(a::FieldView) = pointer(a._data)
 Base.pointer(a::FieldView, i::Integer) = pointer(a._data, i)
 
-unpack(a::SubArray) = _new_fields_view(a)._components
+unpack(a::SubArray) = a
