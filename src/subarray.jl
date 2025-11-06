@@ -131,18 +131,40 @@ Base.IndexStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = IndexStyle(A
 
 Base.Broadcast.BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = Base.Broadcast.BroadcastStyle(A)
 
-for N in (0, 1, 2)
-    @eval function Base.Broadcast.copyto!(
-        dest::FieldSubArray,
-        bc::Base.Broadcast.Broadcasted{Base.Broadcast.AbstractArrayStyle{$N}},
-    )
-        bc_inst = Broadcast.instantiate(bc)
-        @assert axes(dest) == axes(bc_inst)
-        @inbounds @simd for i in eachindex(dest)
-            dest[i] = bc_inst[i]
-        end
-        return dest
+function Base.Broadcast.copyto!(
+    dest::FieldSubArray,
+    bc::Base.Broadcast.Broadcasted{Base.Broadcast.AbstractArrayStyle},
+)
+    bc_inst = Broadcast.instantiate(bc)
+    @assert axes(dest) == axes(bc_inst)
+    @inbounds @simd for i in eachindex(dest)
+        dest[i] = bc_inst[i]
     end
+    return dest
+end
+
+function Base.Broadcast.copyto!(
+    dest::FieldSubArray,
+    bc::Base.Broadcast.Broadcasted{Base.Broadcast.AbstractArrayStyle{0}},
+)
+    bc_inst = Broadcast.instantiate(bc)
+    @assert axes(dest) == axes(bc_inst)
+    @inbounds @simd for i in eachindex(dest)
+        dest[i] = bc_inst[i]
+    end
+    return dest
+end
+
+function Base.Broadcast.copyto!(
+    dest::FieldSubArray,
+    bc::Base.Broadcast.Broadcasted{Base.Broadcast.AbstractArrayStyle{1}},
+)
+    bc_inst = Broadcast.instantiate(bc)
+    @assert axes(dest) == axes(bc_inst)
+    @inbounds @simd for i in eachindex(dest)
+        dest[i] = bc_inst[i]
+    end
+    return dest
 end
 
 Base.similar(a::FieldSubArray{C}, ::Type{C}, dims::Dims) where {C} = similar(a._data, C, dims)
