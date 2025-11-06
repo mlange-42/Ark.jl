@@ -61,8 +61,6 @@ Base.lastindex(a::FieldsView) = Base.lastindex(a._subarray)
 Base.eltype(::Type{<:FieldsView{C}}) where {C} = C
 Base.IndexStyle(::Type{<:FieldsView}) = IndexLinear()
 
-unpack(a::FieldsView) = a._components
-
 struct FieldSubArray{C,T,F,A<:SubArray{T}} <: AbstractArray{C,1}
     _data::A
     _field::F
@@ -137,6 +135,6 @@ function Base.Broadcast.copyto!(
     return dest
 end
 
-Base.similar(a::FieldSubArray{C}, ::Type{C}, dims::Dims) where {C} = similar(a._data, C, dims)
+Base.similar(a::FieldSubArray, ::Type{T}, dims::Dims) where {T} = similar(a._data, T, dims)
 
 unpack(a::SubArray) = FieldsView(a)._components
