@@ -100,8 +100,10 @@ Base.@propagate_inbounds @inline @generated function Base.setindex!(
     size = sizeof(T)
     return quote
         @boundscheck checkbounds(a, i)
-        raw = Ptr{C}(a._ptr + (i - 1) * $size + $(offset))
-        unsafe_store!(raw, v)
+        GC.@preserve a begin
+            raw = Ptr{C}(a._ptr + (i - 1) * $size + $(offset))
+            unsafe_store!(raw, v)
+        end
         nothing
     end
 end
