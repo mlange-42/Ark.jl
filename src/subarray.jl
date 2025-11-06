@@ -46,9 +46,9 @@ end
 
 Base.@propagate_inbounds Base.getindex(a::_FieldsView, idx::Integer) = Base.getindex(a._subarray, idx)
 Base.@propagate_inbounds Base.setindex!(a::_FieldsView, v, idx::Integer) = Base.setindex!(a._subarray, v, idx)
-Base.@propagate_inbounds Base.iterate(a::_FieldsView{C}) where {C} = Base.iterate(a._subarray)
+Base.@propagate_inbounds Base.iterate(a::_FieldsView) = Base.iterate(a._subarray)
 
-Base.@propagate_inbounds function Base.iterate(a::_FieldsView{C}, i::Int) where {C}
+Base.@propagate_inbounds function Base.iterate(a::_FieldsView, i::Int)
     Base.iterate(a._subarray, i)
 end
 
@@ -96,12 +96,12 @@ Base.@propagate_inbounds @inline function Base.setindex!(
     end
 end
 
-function Base.iterate(a::FieldSubArray{C}) where {C}
+function Base.iterate(a::FieldSubArray)
     length(a) == 0 && return nothing
     return (@inbounds a[1]), 2
 end
 
-function Base.iterate(a::FieldSubArray{C}, i::Int) where {C}
+function Base.iterate(a::FieldSubArray, i::Int)
     i > length(a) && return nothing
     return (@inbounds a[i]), i + 1
 end
@@ -117,10 +117,7 @@ Base.IndexStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = IndexStyle(A
 
 Base.Broadcast.BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = Base.Broadcast.BroadcastStyle(A)
 
-@inline function Base.Broadcast.copyto!(
-    dest::FieldSubArray{C,T,F,A},
-    bc::Base.Broadcast.Broadcasted{S},
-) where {C,T,F,A,S<:Base.Broadcast.DefaultArrayStyle}
+@inline function Base.Broadcast.copyto!(dest::FieldSubArray, bc::Base.Broadcast.Broadcasted)
     bc_inst = Broadcast.instantiate(bc)
     @assert axes(dest) == axes(bc_inst)
     @inbounds @simd for i in eachindex(dest)
