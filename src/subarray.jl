@@ -117,7 +117,7 @@ Base.IndexStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = IndexStyle(A
 
 Base.Broadcast.BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = Base.Broadcast.BroadcastStyle(A)
 
-@inline function Base.Broadcast.copyto!(dest::FieldSubArray, bc::Base.Broadcast.Broadcasted)
+@inline function Base.Broadcast.copyto!(dest::FieldSubArray, bc::Base.Broadcast.Broadcasted{<:Base.Broadcast.DefaultArrayStyle})
     bc_inst = Broadcast.instantiate(bc)
     @assert axes(dest) == axes(bc_inst)
     @inbounds @simd for i in eachindex(dest)
