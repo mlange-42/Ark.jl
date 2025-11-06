@@ -139,5 +139,7 @@ Base.parent(a::FieldSubArray) = a._data
 Base.similar(a::FieldSubArray, ::Type{T}, dims::Dims) where {T} = similar(a._data, T, dims)
 Base.axes(a::FieldSubArray) = axes(a._data)
 Base.broadcastable(a::FieldSubArray) = a
+Base.strides(a::FieldSubArray) = strides(a._data)
+Base.pointer(a::FieldSubArray) = pointer(a._data)
 
 unpack(a::SubArray) = FieldsView(a)._components
