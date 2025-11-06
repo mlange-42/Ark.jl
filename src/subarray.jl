@@ -131,7 +131,10 @@ Base.IndexStyle(::Type{<:FieldSubArray}) = IndexLinear()
 
 BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = BroadcastStyle(A)
 
-function copyto!(dest::FieldSubArray, bc::Broadcast.Broadcasted{<:BroadcastStyle})
+function Base.Broadcast.copyto!(
+    dest::FieldSubArray,
+    bc::Base.Broadcast.Broadcasted{Base.Broadcast.AbstractArrayStyle{0}},
+)
     @assert axes(dest) == axes(bc)
     for i in eachindex(dest)
         @inbounds dest[i] = bc[i]
