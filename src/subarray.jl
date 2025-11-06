@@ -110,7 +110,7 @@ end
 
 function Base.iterate(a::FieldSubArray{C}) where {C}
     length(a) == 0 && return nothing
-    return a[1], 2
+    return (@inbounds a[1]), 2
 end
 
 function Base.iterate(a::FieldSubArray{C}, i::Int) where {C}
