@@ -20,7 +20,7 @@ jobs:
       - name: Set up Julia
         uses: ./.github/actions/setup-julia
         with:
-          julia-version: '1.12.1'
+          julia-version: '1'
           project-file: 'docs/Project.toml'
       - name: Install dependencies
         shell: julia --color=yes --project=docs {0}

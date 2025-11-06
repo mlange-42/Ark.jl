@@ -29,11 +29,11 @@ jobs:
     - name: Set up Julia
       uses: ./.github/actions/setup-julia
       with:
-        julia-version: '1.12.1'
+        julia-version: '1'
         project-file: 'benchmark/Project.toml'
         key-suffix: ${{ matrix.repetition }}
     - name: Install dependencies
-      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+      run: julia --project=benchmark -e 'using Pkg; Pkg.develop(url="https://github.com/mlange-42/Ark.jl.git"); Pkg.instantiate()'
     - name: Run benchmarks for current
       run: julia --project=benchmark benchmark/run_benchmarks.jl
     - name: Rename file
@@ -54,7 +54,7 @@ jobs:
       run: git checkout ${{ env.BASE_REF }}
     - name: Install dependencies
       if: github.event_name == 'pull_request'
-      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+      run: julia --project=benchmark -e 'using Pkg; Pkg.develop(url="https://github.com/mlange-42/Ark.jl.git"); Pkg.instantiate()'
     - name: Run benchmarks for main
       if: github.event_name == 'pull_request'
       run: julia --project=benchmark benchmark/run_benchmarks.jl
@@ -97,7 +97,7 @@ jobs:
     - name: Set up Julia
       uses: ./.github/actions/setup-julia
       with:
-        julia-version: '1.12.1'
+        julia-version: '1'
         project-file: 'benchmark/Project.toml'
     - name: Run comparison
       run: julia benchmark/compare_benchmarks.jl | tee compare.md
