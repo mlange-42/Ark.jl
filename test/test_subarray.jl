@@ -38,6 +38,7 @@
     @test similar(xs, Float64, (3,)) isa Vector{Float64}
     @test parent(xs) == xs._data
     @test pointer(xs) == pointer(xs._data)
+    @test pointer(xs, 1) == pointer(xs._data, 1)
     @test strides(xs) == strides(xs._data)
 end
 

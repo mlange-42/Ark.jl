@@ -63,20 +63,14 @@ Base.IndexStyle(::Type{<:FieldsView}) = IndexLinear()
 
 struct FieldSubArray{C,T,F,A<:SubArray{T}} <: AbstractArray{C,1}
     _data::A
-    _field::F
     _offset::Int
 end
 
-@generated function _new_field_subarray(
-    data::A,
-    ::Val{F},
-) where {A<:SubArray{T},F} where {T}
+function _new_field_subarray(data::A, ::Val{F}) where {A<:SubArray{T},F} where {T}
     ftype = fieldtype(T, F)
     idx = Base.fieldindex(T, F)
     offset = fieldoffset(T, idx)
-    quote
-        FieldSubArray{$(ftype),T,Val{F},A}(data, Val(F), $offset)
-    end
+    FieldSubArray{ftype,T,Val{F},A}(data, offset)
 end
 
 Base.@propagate_inbounds @inline function Base.getindex(
@@ -141,5 +135,6 @@ Base.axes(a::FieldSubArray) = axes(a._data)
 Base.broadcastable(a::FieldSubArray) = a
 Base.strides(a::FieldSubArray) = strides(a._data)
 Base.pointer(a::FieldSubArray) = pointer(a._data)
+Base.pointer(a::FieldSubArray, i::Integer) = pointer(a._data, i)
 
 unpack(a::SubArray) = FieldsView(a)._components
