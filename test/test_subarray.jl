@@ -54,6 +54,10 @@ end
     end
     @test count == 6
 
+    @test iterate(v, 1) == (Position(1, 1), (1, nothing))
+    @test iterate(v, 2) == (Position(2, 2), (2, nothing))
+    @test_throws BoundsError iterate(v, 7)
+
     v[3] = Position(99, 99)
     @test v[3] == Position(99, 99)
 
