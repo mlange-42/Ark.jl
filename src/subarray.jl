@@ -67,6 +67,8 @@ struct FieldSubArray{C,T,F,A<:SubArray{T}} <: AbstractArray{C,1}
     _data::A
     _field::F
     _ptr::Ptr{UInt8}
+    _size::Int
+    _offset::Int
 end
 
 @generated function _new_field_subarray(
@@ -74,36 +76,32 @@ end
     ::Val{F},
 ) where {A<:SubArray{T},F} where {T}
     ftype = fieldtype(T, F)
+    idx = Base.fieldindex(T, F)
+    offset = fieldoffset(T, idx)
+    size = sizeof(T)
     quote
-        FieldSubArray{$(ftype),T,Val{F},A}(data, Val(F), Base.unsafe_convert(Ptr{UInt8}, pointer(data)))
+        FieldSubArray{$(ftype),T,Val{F},A}(data, Val(F), Base.unsafe_convert(Ptr{UInt8}, pointer(data)), $size, $offset)
     end
 end
 
-Base.@propagate_inbounds @inline @generated function Base.getindex(
+Base.@propagate_inbounds @inline function Base.getindex(
     a::FieldSubArray{C,T,Val{F},A},
     i::Int,
 ) where {C,T,F,A<:SubArray{T}}
-    quote
-        a._data[i].$(F)
-    end
+    getfield(a._data[i], F)
 end
 
-Base.@propagate_inbounds @inline @generated function Base.setindex!(
+Base.@propagate_inbounds @inline function Base.setindex!(
     a::FieldSubArray{C,T,Val{F},A},
     v,
     i::Int,
 ) where {C,T,F,A<:SubArray{T}}
-    idx = Base.fieldindex(T, F)
-    offset = fieldoffset(T, idx)
-    size = sizeof(T)
-    return quote
-        @boundscheck checkbounds(a, i)
-        GC.@preserve a begin
-            raw = Ptr{C}(a._ptr + (i - 1) * $size + $(offset))
-            unsafe_store!(raw, v)
-        end
-        nothing
+    @boundscheck checkbounds(a, i)
+    GC.@preserve a begin
+        raw = Ptr{C}(a._ptr + (i - 1) * a._size + a._offset)
+        unsafe_store!(raw, v)
     end
+    nothing
 end
 
 function Base.iterate(a::FieldSubArray{C}) where {C}
