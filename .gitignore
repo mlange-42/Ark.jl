@@ -11,6 +11,7 @@
 
 /Manifest*.toml
 /docs/Manifest*.toml
+/benchmark/Manifest*.toml
 /docs/build/
 statprof/
 .vscode
