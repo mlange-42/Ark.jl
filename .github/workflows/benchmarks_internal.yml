@@ -55,7 +55,7 @@ jobs:
       run: git checkout ${{ env.BASE_REF }}
     - name: Install dependencies
       if: github.event_name == 'pull_request'
-      run: julia --project=benchmark -e 'using Pkg; Pkg.instantiate()'
+      run: julia --project=benchmark -e 'using Pkg; Pkg.dev("https://github.com/mlange-42/Ark.jl.git"); Pkg.instantiate()'
     - name: Run benchmarks for main
       if: github.event_name == 'pull_request'
       run: julia --project=benchmark benchmark/run_internal.jl
