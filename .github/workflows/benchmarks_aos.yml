@@ -22,7 +22,7 @@ jobs:
         julia-version: '1'
         project-file: 'benchmark/Project.toml'
     - name: Install dependencies
-      run: julia --project=benchmark -e 'using Pkg; Pkg.develop("https://github.com/mlange-42/Ark.jl.git"); Pkg.instantiate()'
+      run: julia --project=benchmark -e 'using Pkg; Pkg.develop(url="https://github.com/mlange-42/Ark.jl.git"); Pkg.instantiate()'
     - name: Run benchmarks
       run: julia --project=benchmark benchmark/run_array_of_structs.jl
     - name: Move file
