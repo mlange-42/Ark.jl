@@ -1,6 +1,7 @@
 using Ark
 using BenchmarkTools
 using Chairmarks
+using ThreadPinning
 
 const SECONDS = 0.5
 const SUITE = BenchmarkGroup()
