@@ -202,8 +202,6 @@ See also [@unpack](@ref).
 """
 unpack(a::StructArrayView) = a._components
 
-unpack(a::SubArray) = a
-
 """
     @unpack ...
 
@@ -238,4 +236,16 @@ macro unpack(expr)
 
     new_rhs = Expr(:tuple, rhs_exprs...)
     return Expr(:(=), esc(lhs), esc(new_rhs))
+end
+
+unpack(a::SubArray) = _field_views(FieldViewable(a))
+
+@generated function _field_views(v::FieldViewable{T}) where {T}
+    fields = fieldnames(T)
+    view_exprs = [
+        :(FieldView{$(QuoteNode(f))}(v)) for f in fields
+    ]
+    return quote
+        ($(view_exprs...),)
+    end
 end

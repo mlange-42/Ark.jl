@@ -1,6 +1,7 @@
 module Ark
 
 using StaticArrays
+using FieldViews
 using FunctionWrappers: FunctionWrapper
 
 include("abstract.jl")
