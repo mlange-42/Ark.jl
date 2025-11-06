@@ -129,8 +129,8 @@ function Base.Broadcast.copyto!(
 ) where {C,T,F,A,S<:Base.Broadcast.DefaultArrayStyle}
     bc_inst = Broadcast.instantiate(bc)
     @assert axes(dest) == axes(bc_inst)
-    @inbounds @simd for i in eachindex(dest)
-        dest[i] = bc_inst[i]
+    @simd for i in eachindex(dest)
+        @inbounds dest[i] = bc_inst[i]
     end
     return dest
 end
