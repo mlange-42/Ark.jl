@@ -14,8 +14,8 @@
     for i in 1:10
         count = 0
         for (entities, vec_pos, vec_vel) in query
-            @test isa(vec_pos, SubArray{Position}) == true
-            @test isa(vec_vel, SubArray{Velocity}) == true
+            @test isa(vec_pos, FieldsView{Position}) == true
+            @test isa(vec_vel, FieldsView{Velocity}) == true
             @test length(entities) == length(vec_pos)
             @test length(entities) == length(vec_vel)
             for i in eachindex(vec_pos)
@@ -201,23 +201,29 @@ end
     end
 end
 
-@testset "Query _FieldsView" begin
+@testset "Query FieldsView" begin
     world = World(
         Position,
         (Velocity, StructArrayComponent),
+        NoIsBits,
     )
 
     for i in 1:10
-        new_entity!(world, (Position(i, i), Velocity(i, i)))
+        new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([])))
     end
 
     for columns in @Query(world, (Position, Velocity))
         @unpack _, (x, y), (dx, dy) = columns
-        @test x isa FieldSubArray
-        @test y isa FieldSubArray
+        @test x isa FieldView
+        @test y isa FieldView
         @test length(x) == 10
         @test x[1] == 1
         @test x[10] == 10
+    end
+
+    for (_, positions, no_isbits) in @Query(world, (Position, NoIsBits))
+        @test positions isa FieldsView
+        @test no_isbits isa SubArray
     end
 end
 

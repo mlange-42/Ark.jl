@@ -1,5 +1,5 @@
 
-@testset "FieldSubArray basic functionality" begin
+@testset "FieldView basic functionality" begin
     arr = [Position(1, 1), Position(2, 2), Position(3, 3)]
     v = view(arr, :)
     xs = _new_field_subarray(v, Val(:x))
@@ -42,14 +42,14 @@
     @test strides(xs) == strides(xs._data)
 end
 
-@testset "_FieldsView basic functionality" begin
-    @test_throws "non-isbits type NoIsBits not supported by _FieldsView" _FieldsView(
+@testset "FieldsView basic functionality" begin
+    @test_throws "non-isbits type NoIsBits not supported by FieldsView" _new_fields_view(
         view([NoIsBits([]), NoIsBits([])], :),
     )
 
     arr = [Position(1, 1), Position(2, 2), Position(3, 3)]
 
-    v = _FieldsView(view(arr, :))
+    v = _new_fields_view(view(arr, :))
 
     count = 0
     for (i, p) in enumerate(v)
@@ -80,6 +80,6 @@ end
     @test Base.firstindex(v) == 1
     @test Base.lastindex(v) == 3
 
-    @test Base.eltype(_FieldsView{Position}) == Position
-    @test Base.IndexStyle(_FieldsView{Position}) == IndexLinear()
+    @test Base.eltype(FieldsView{Position}) == Position
+    @test Base.IndexStyle(FieldsView{Position}) == IndexLinear()
 end
