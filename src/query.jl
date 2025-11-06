@@ -10,7 +10,7 @@ end
 
 A query for components.
 """
-struct Query{W<:World,CS<:Tuple,N,NR,FV}
+struct Query{W<:World,CS<:Tuple,N,NR}
     _world::W
     _cursor::_Cursor
     _ids::NTuple{NR,UInt8}
@@ -121,9 +121,8 @@ function Query(
     without::Tuple=(),
     optional::Tuple=(),
     exclusive::Val=Val(false),
-    fields::Val=Val(false),
 )
-    return _Query_from_types(world, comp_types, with, without, optional, exclusive, fields)
+    return _Query_from_types(world, comp_types, with, without, optional, exclusive)
 end
 
 @generated function _Query_from_types(
@@ -133,8 +132,7 @@ end
     ::WO,
     ::OT,
     ::EX,
-    ::FV,
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val,FV<:Val}
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     world_storage_modes = W.parameters[3].parameters
 
     comp_types = _try_to_types(CT)
@@ -177,7 +175,7 @@ end
     ids_tuple = tuple(required_ids...)
 
     return quote
-        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types)),FV}(
+        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
             world,
             _Cursor(world._archetypes, 0, UInt8(0)),
             $ids_tuple,
@@ -230,7 +228,7 @@ function close!(q::Query)
     _unlock(q._world._lock, q._cursor._lock)
 end
 
-@generated function _get_columns_at_index(q::Query{W,CS,N,NR,FV}) where {W<:World,CS<:Tuple,N,NR,FV}
+@generated function _get_columns_at_index(q::Query{W,CS,N,NR}) where {W<:World,CS<:Tuple,N,NR}
     storage_types = CS.parameters
     exprs = Expr[]
     push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
@@ -243,11 +241,7 @@ end
         push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
-        if FV === Val{true} && !(storage_types[i].parameters[2] <: _StructArray)
-            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : FieldsView(view($col_sym, :))))
-        else
-            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
-        end
+        push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
     end
     result_exprs = [:entities]
     for i in 1:N

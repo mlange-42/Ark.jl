@@ -141,4 +141,4 @@ end
 
 Base.similar(a::FieldSubArray{C}, ::Type{C}, dims::Dims) where {C} = similar(a._data, C, dims)
 
-unpack(a::SubArray) = a
+unpack(a::SubArray) = FieldsView(a)._components

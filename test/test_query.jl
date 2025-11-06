@@ -211,12 +211,7 @@ end
         new_entity!(world, (Position(i, i), Velocity(i, i)))
     end
 
-    for (_, pos, vel) in @Query(world, (Position, Velocity); fields=true)
-        @test pos isa FieldsView
-        @test pos[1] == Position(1, 1)
-    end
-
-    for columns in @Query(world, (Position, Velocity); fields=true)
+    for columns in @Query(world, (Position, Velocity))
         @unpack _, (x, y), (dx, dy) = columns
         @test x isa FieldSubArray
         @test y isa FieldSubArray
