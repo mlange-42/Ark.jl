@@ -150,12 +150,11 @@ end
 Note that it is possible to branch already outside of the inner loop,
 as all entities in an archetype either have a component or don't.
 
-## Storage modes
+## Component field views
 
-Ark provides different [storage modes](@ref component-storages) for components.
-When using the StructArray storage mode, individual fields of components can be
-accessed as vectors in queries, e.g. using [@unpack](@ref).
-This allows for SIMD-accelerated vectorized operations.
+Individual fields of components can be accessed as vectors in queries, e.g. using [@unpack](@ref).
+This is particularly useful for components that use the StructArray [storage modes](@ref component-storages),
+as it allows for SIMD-accelerated vectorized operations.
 
 ```jldoctest; setup = :(using Ark), output = false
 world = World(

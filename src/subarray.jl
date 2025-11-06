@@ -1,15 +1,15 @@
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle
 import Base.Broadcast: copyto!
 
-struct FieldsView{C,S<:SubArray,CS<:NamedTuple,N} <: AbstractArray{C,1}
+struct _FieldsView{C,S<:SubArray,CS<:NamedTuple,N} <: AbstractArray{C,1}
     _subarray::S
     _components::CS
 end
 
-@generated function FieldsView(vec::A) where {A<:SubArray{C}} where {C}
+@generated function _FieldsView(vec::A) where {A<:SubArray{C}} where {C}
     if !isbitstype(C)
         return quote
-            throw(ArgumentError("non-isbits type $(C) not supported by FieldsView"))
+            throw(ArgumentError("non-isbits type $(C) not supported by _FieldsView"))
         end
     end
 
@@ -28,14 +28,14 @@ end
     ]
 
     return quote
-        FieldsView{C,A,$nt_type,$(length(names))}(
+        _FieldsView{C,A,$nt_type,$(length(names))}(
             vec,
             (; $(field_exprs...)),
         )
     end
 end
 
-@generated function Base.getproperty(a::FieldsView{C}, name::Symbol) where {C}
+@generated function Base.getproperty(a::_FieldsView{C}, name::Symbol) where {C}
     component_names = fieldnames(C)
     cases = [
         :(name === $(QuoteNode(n)) && return a._components.$n) for n in component_names
@@ -44,22 +44,22 @@ end
     return Expr(:block, cases..., fallback)
 end
 
-Base.@propagate_inbounds Base.getindex(a::FieldsView, idx::Integer) = Base.getindex(a._subarray, idx)
-Base.@propagate_inbounds Base.setindex!(a::FieldsView, v, idx::Integer) = Base.setindex!(a._subarray, v, idx)
-Base.@propagate_inbounds Base.iterate(a::FieldsView{C}) where {C} = Base.iterate(a._subarray)
+Base.@propagate_inbounds Base.getindex(a::_FieldsView, idx::Integer) = Base.getindex(a._subarray, idx)
+Base.@propagate_inbounds Base.setindex!(a::_FieldsView, v, idx::Integer) = Base.setindex!(a._subarray, v, idx)
+Base.@propagate_inbounds Base.iterate(a::_FieldsView{C}) where {C} = Base.iterate(a._subarray)
 
-Base.@propagate_inbounds function Base.iterate(a::FieldsView{C}, i::Int) where {C}
+Base.@propagate_inbounds function Base.iterate(a::_FieldsView{C}, i::Int) where {C}
     Base.iterate(a._subarray, i)
 end
 
-Base.size(a::FieldsView) = size(a._subarray)
-Base.length(a::FieldsView) = length(a._subarray)
-Base.eachindex(a::FieldsView) = Base.eachindex(a._subarray)
-Base.firstindex(a::FieldsView) = Base.firstindex(a._subarray)
-Base.lastindex(a::FieldsView) = Base.lastindex(a._subarray)
+Base.size(a::_FieldsView) = size(a._subarray)
+Base.length(a::_FieldsView) = length(a._subarray)
+Base.eachindex(a::_FieldsView) = Base.eachindex(a._subarray)
+Base.firstindex(a::_FieldsView) = Base.firstindex(a._subarray)
+Base.lastindex(a::_FieldsView) = Base.lastindex(a._subarray)
 
-Base.eltype(::Type{<:FieldsView{C}}) where {C} = C
-Base.IndexStyle(::Type{<:FieldsView}) = IndexLinear()
+Base.eltype(::Type{<:_FieldsView{C}}) where {C} = C
+Base.IndexStyle(::Type{<:_FieldsView}) = IndexLinear()
 
 struct FieldSubArray{C,T,F,A<:SubArray{T}} <: AbstractArray{C,1}
     _data::A
@@ -137,4 +137,10 @@ Base.strides(a::FieldSubArray) = strides(a._data)
 Base.pointer(a::FieldSubArray) = pointer(a._data)
 Base.pointer(a::FieldSubArray, i::Integer) = pointer(a._data, i)
 
-unpack(a::SubArray) = FieldsView(a)._components
+"""
+    unpack(a::SubArray)
+
+Unpacks the components (i.e. field vectors) of a [VectorComponent](@ref) column returned from a [Query](@ref).
+See also [@unpack](@ref).
+"""
+unpack(a::SubArray) = _FieldsView(a)._components

@@ -42,14 +42,14 @@
     @test strides(xs) == strides(xs._data)
 end
 
-@testset "FieldsView basic functionality" begin
-    @test_throws "non-isbits type NoIsBits not supported by FieldsView" FieldsView(
+@testset "_FieldsView basic functionality" begin
+    @test_throws "non-isbits type NoIsBits not supported by _FieldsView" _FieldsView(
         view([NoIsBits([]), NoIsBits([])], :),
     )
 
     arr = [Position(1, 1), Position(2, 2), Position(3, 3)]
 
-    v = FieldsView(view(arr, :))
+    v = _FieldsView(view(arr, :))
 
     count = 0
     for (i, p) in enumerate(v)
@@ -80,6 +80,6 @@ end
     @test Base.firstindex(v) == 1
     @test Base.lastindex(v) == 3
 
-    @test Base.eltype(FieldsView{Position}) == Position
-    @test Base.IndexStyle(FieldsView{Position}) == IndexLinear()
+    @test Base.eltype(_FieldsView{Position}) == Position
+    @test Base.IndexStyle(_FieldsView{Position}) == IndexLinear()
 end

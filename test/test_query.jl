@@ -201,7 +201,7 @@ end
     end
 end
 
-@testset "Query FieldsView" begin
+@testset "Query _FieldsView" begin
     world = World(
         Position,
         (Velocity, StructArrayComponent),
