@@ -80,7 +80,7 @@ Base.@propagate_inbounds @inline function Base.getindex(
     @boundscheck checkbounds(a, i)
     GC.@preserve a begin
         ptr::Ptr{C} = pointer(a._data, i) + a._offset
-        unsafe_load(ptr)
+        unsafe_load(ptr)::C
     end
 end
 
@@ -117,14 +117,14 @@ Base.IndexStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = IndexStyle(A
 
 Base.Broadcast.BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = Base.Broadcast.BroadcastStyle(A)
 
-function Base.Broadcast.copyto!(
+@inline function Base.Broadcast.copyto!(
     dest::FieldSubArray{C,T,F,A},
     bc::Base.Broadcast.Broadcasted{S},
 ) where {C,T,F,A,S<:Base.Broadcast.DefaultArrayStyle}
     bc_inst = Broadcast.instantiate(bc)
     @assert axes(dest) == axes(bc_inst)
-    @simd for i in eachindex(dest)
-        @inbounds dest[i] = bc_inst[i]
+    @inbounds @simd for i in eachindex(dest)
+        dest[i] = bc_inst[i]
     end
     return dest
 end
