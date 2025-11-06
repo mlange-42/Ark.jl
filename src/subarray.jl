@@ -74,11 +74,13 @@ struct FieldView{C,T,F,A<:SubArray{T}} <: AbstractArray{C,1}
     _offset::Int
 end
 
-function _new_field_subarray(data::A, ::Val{F}) where {A<:SubArray{T},F} where {T}
+@generated function _new_field_subarray(data::A, ::Val{F}) where {A<:SubArray{T},F} where {T}
     ftype = fieldtype(T, F)
     idx = Base.fieldindex(T, F)
     offset = fieldoffset(T, idx)
-    FieldView{ftype,T,Val{F},A}(data, offset)
+    quote
+        FieldView{$(ftype),T,Val{$(QuoteNode(F))},A}(data, $(offset))
+    end
 end
 
 Base.@propagate_inbounds @inline function Base.getindex(
