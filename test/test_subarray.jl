@@ -36,6 +36,7 @@
     @test sum[2] == 104
 
     @test similar(xs, Float64, (3,)) isa Vector{Float64}
+    @test parent(xs) == xs._data
 end
 
 @testset "FieldsView basic functionality" begin

@@ -135,6 +135,7 @@ function Base.Broadcast.copyto!(
     return dest
 end
 
+Base.parent(a::FieldSubArray) = a._data
 Base.similar(a::FieldSubArray, ::Type{T}, dims::Dims) where {T} = similar(a._data, T, dims)
 
 unpack(a::SubArray) = FieldsView(a)._components
