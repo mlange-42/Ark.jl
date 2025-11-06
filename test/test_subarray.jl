@@ -83,3 +83,13 @@ end
     @test Base.eltype(FieldsView{Position}) == Position
     @test Base.IndexStyle(FieldsView{Position}) == IndexLinear()
 end
+
+@testset "SubArray unpack" begin
+    arr = [Position(1, 1), Position(2, 2), Position(3, 3)]
+
+    v = view(arr, :)
+
+    x, y = unpack(v)
+    @test x isa FieldView
+    @test y isa FieldView
+end
