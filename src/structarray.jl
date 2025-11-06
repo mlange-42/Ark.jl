@@ -197,25 +197,24 @@ Base.lastindex(sa::StructArrayView) = length(sa)
 """
     unpack(a::StructArrayView)
 
-Unpacks the components (i.e. field vectors) of a StructArray-like column returned from a [Query](@ref).
+Unpacks the components (i.e. field vectors) of a [StructArrayComponent](@ref) column returned from a [Query](@ref).
 See also [@unpack](@ref).
 """
 unpack(a::StructArrayView) = a._components
 
-unpack(a::SubArray) = a
-
 """
     @unpack ...
 
-Fully unpacks the tuple returned from a [Query](@ref) during iteration,
-including components (i.e. field vectors) of StructArray components
-(see [StructArrayComponent](@ref)).
+Unpacks the tuple returned from a [Query](@ref) during iteration into field vectors.
+Field vectors are particularly useful for [StructArrayComponent](@ref)s,
+but can also be used with [VectorComponent](@ref)s, although those are currently not
+equally efficient in broadcasted operations.
 
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for columns in Query(world, Val.((PositionSoA, VelocitySoA)))
-    @unpack entities, (x, y), (dx, sy) = columns
+for columns in Query(world, Val.((Position, Velocity)))
+    @unpack entities, (x, y), (dx, dy) = columns
     @inbounds x .+= dx
     @inbounds y .+= dy
 end

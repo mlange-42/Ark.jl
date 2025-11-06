@@ -4,14 +4,16 @@ function setup_query_posvel_hot(n_entities::Int)
     for i in 1:n_entities
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
+    sum = 0
     for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
             @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
         end
+        sum += length(pos_column) + length(vel_column)
     end
-    return world
+    return world, sum
 end
 
 function setup_query_posvel_cold(n_entities::Int)
@@ -21,14 +23,13 @@ function setup_query_posvel_cold(n_entities::Int)
     end
     sum = 0
     for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
-        sum += length(pos_column)
+        sum += length(pos_column) + length(vel_column)
     end
-    sum
-    return world
+    return world, sum
 end
 
 function benchmark_query_posvel(args, n)
-    world = args
+    world, _ = args
     for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]

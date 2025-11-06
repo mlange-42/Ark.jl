@@ -20,11 +20,13 @@ using Ark: _Graph, _GraphNode, _find_node, _find_or_create
 using Ark: _BatchArchetype
 using Ark: _has_observers
 using Ark: _StructArray, _StructArray_type, StructArrayView
+using Ark: FieldsView, FieldView, _new_fields_view, _new_field_subarray
 
 using Test
 
 include("TestTypes.jl")
 
+include("test_subarray.jl")
 include("test_structarray.jl")
 include("test_readme.jl")
 include("test_entity.jl")

@@ -228,7 +228,8 @@ function close!(q::Query)
     _unlock(q._world._lock, q._cursor._lock)
 end
 
-@generated function _get_columns_at_index(q::Query{W,CS,N}) where {W<:World,CS<:Tuple,N}
+@generated function _get_columns_at_index(q::Query{W,CS,N,NR}) where {W<:World,CS<:Tuple,N,NR}
+    storage_types = CS.parameters
     exprs = Expr[]
     push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
     push!(exprs, :(entities = archetype.entities))
@@ -238,9 +239,12 @@ end
         vec_sym = Symbol("vec", i)
         push!(exprs, :($stor_sym = q._storage.$i))
         push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
-        # TODO: return nothing if the component is not present.
-        # Required for optional components. Should we remove optional?
-        push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
+
+        if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)
+            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : _new_fields_view(view($col_sym, :))))
+        else
+            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
+        end
     end
     result_exprs = [:entities]
     for i in 1:N

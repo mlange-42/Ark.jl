@@ -35,6 +35,10 @@ mutable struct MutableComponent
     dummy::Int64
 end
 
+struct NoIsBits
+    v::Vector{Int}
+end
+
 mutable struct Tick
     time::Int
 end
