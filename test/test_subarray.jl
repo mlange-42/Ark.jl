@@ -18,8 +18,8 @@
     @test xs[2] == 100
 
     xs .+= ys
-    @test xs[1] = 100
-    @test xs[2] = 102
+    @test xs[1] == 100
+    @test xs[2] == 102
 
     @test length(xs) == 3
     @test size(xs) == (3,)
