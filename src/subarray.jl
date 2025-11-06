@@ -129,15 +129,18 @@ Base.lastindex(a::FieldSubArray) = Base.lastindex(a._data)
 Base.eltype(::Type{<:FieldSubArray{C,T}}) where {C,T} = C
 Base.IndexStyle(::Type{<:FieldSubArray}) = IndexLinear()
 
-BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = BroadcastStyle(A)
+Base.Broadcast.BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = Base.Broadcast.BroadcastStyle(A)
 
 function Base.Broadcast.copyto!(
     dest::FieldSubArray,
-    bc::Base.Broadcast.Broadcasted{Base.Broadcast.AbstractArrayStyle{0}},
+    bc::Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle},
 )
-    @assert axes(dest) == axes(bc)
-    for i in eachindex(dest)
-        @inbounds dest[i] = bc[i]
+    bc_inst = Broadcast.instantiate(bc)
+    @assert axes(dest) == axes(bc_inst)
+    @inbounds @simd for i in eachindex(dest)
+        dest[i] = bc_inst[i]
     end
     return dest
 end
+
+Base.similar(a::FieldSubArray{C}, ::Type{C}, dims::Dims) where {C} = similar(a._data, C, dims)
