@@ -22,6 +22,11 @@ struct SaoComp <: StructArrayComponent
     y::Float64
 end
 
+struct VecComp <: VectorComponent
+    x::Float64
+    y::Float64
+end
+
 mutable struct MutableSaoComp <: StructArrayComponent
     x::Float64
     y::Float64

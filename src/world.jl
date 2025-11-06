@@ -837,8 +837,21 @@ end
     # Resolve storage modes (Val{...} types)
     resolved_val_types = [
         S <: _InferredComponent ?
-        (T <: StructArrayComponent ? StructArrayComponent : VectorComponent) :
-        S
+        (
+            T <: StructArrayComponent ? StructArrayComponent : VectorComponent
+        ) :
+        (
+            (
+                (S <: VectorComponent && T <: StructArrayComponent) ||
+                (S <: StructArrayComponent && T <: VectorComponent)
+            ) ?
+            throw(
+                ArgumentError(
+                    lazy"can't overwrite storage mode for component $T, as its mode is defined by the type definition",
+                ),
+            ) :
+            S
+        )
         for (T, S) in zip(types, storage_val_types)
     ]
 

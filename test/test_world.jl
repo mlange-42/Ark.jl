@@ -35,10 +35,16 @@ end
     @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,_StructArray_type(SaoComp)})
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
 
-    world = World(
-        (SaoComp, VectorComponent),
+    @test_throws(
+        "ArgumentError: can't overwrite storage mode for component SaoComp," *
+        " as its mode is defined by the type definition",
+        World((SaoComp, VectorComponent))
     )
-    @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,Vector{SaoComp}})
+    @test_throws(
+        "ArgumentError: can't overwrite storage mode for component VecComp," *
+        " as its mode is defined by the type definition",
+        World((VecComp, StructArrayComponent))
+    )
 end
 
 @testset "World creation error" begin
