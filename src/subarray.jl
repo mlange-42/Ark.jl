@@ -1,3 +1,5 @@
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle
+import Base.Broadcast: copyto!
 
 struct FieldsView{C,S<:SubArray,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
     _subarray::S
@@ -126,3 +128,13 @@ Base.lastindex(a::FieldSubArray) = Base.lastindex(a._data)
 
 Base.eltype(::Type{<:FieldSubArray{C,T}}) where {C,T} = C
 Base.IndexStyle(::Type{<:FieldSubArray}) = IndexLinear()
+
+BroadcastStyle(::Type{<:FieldSubArray{C,T,F,A}}) where {C,T,F,A} = BroadcastStyle(A)
+
+function copyto!(dest::FieldSubArray, bc::Broadcast.Broadcasted{<:BroadcastStyle})
+    @assert axes(dest) == axes(bc)
+    for i in eachindex(dest)
+        @inbounds dest[i] = bc[i]
+    end
+    return dest
+end
