@@ -202,8 +202,6 @@ See also [@unpack](@ref).
 """
 unpack(a::StructArrayView) = a._components
 
-unpack(a::SubArray) = a
-
 """
     @unpack ...
 

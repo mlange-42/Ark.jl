@@ -1,13 +1,12 @@
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle
 import Base.Broadcast: copyto!
 
-struct FieldsView{C,S<:SubArray,CS<:NamedTuple,N,I} <: AbstractArray{C,1}
+struct FieldsView{C,S<:SubArray,CS<:NamedTuple,N} <: AbstractArray{C,1}
     _subarray::S
     _components::CS
-    _indices::I
 end
 
-@generated function FieldsView(vec::Vector{C}, idx::I) where {C,I}
+@generated function FieldsView(vec::A) where {A<:SubArray{C}} where {C}
     if !isbitstype(C)
         return quote
             throw(ArgumentError("non-isbits type $(C) not supported by FieldsView"))
@@ -17,24 +16,21 @@ end
     names = fieldnames(C)
     types = fieldtypes(C)
 
-    view_expr = :(vview)  # placeholder for the local view variable
     field_types = [
-        :(FieldSubArray{$t,C,Val{$(QuoteNode(n))},typeof($view_expr)})
+        :(FieldSubArray{$t,C,Val{$(QuoteNode(n))},A})
         for (n, t) in zip(names, types)
     ]
     nt_type = :(NamedTuple{($(map(QuoteNode, names)...),),Tuple{$(field_types...)}})
 
     field_exprs = [
-        :($(n) = _new_field_subarray($view_expr, Val($(QuoteNode(n)))))
+        :($(n) = _new_field_subarray(vec, Val($(QuoteNode(n)))))
         for n in names
     ]
 
     return quote
-        vview = view(vec, idx)
-        FieldsView{C,typeof(vview),$nt_type,$(length(names)),I}(
-            vview,
+        FieldsView{C,A,$nt_type,$(length(names))}(
+            vec,
             (; $(field_exprs...)),
-            idx,
         )
     end
 end
@@ -144,3 +140,5 @@ function Base.Broadcast.copyto!(
 end
 
 Base.similar(a::FieldSubArray{C}, ::Type{C}, dims::Dims) where {C} = similar(a._data, C, dims)
+
+unpack(a::SubArray) = a

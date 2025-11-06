@@ -31,17 +31,19 @@
     @test xs[1] == 100
     @test xs[2] == 102
 
-    sum = xs .+ ys
+    sum = collect(xs .+ ys)
     @test sum[1] == 101
     @test sum[2] == 104
 end
 
 @testset "FieldsView basic functionality" begin
-    @test_throws "non-isbits type NoIsBits not supported by FieldsView" FieldsView([NoIsBits([]), NoIsBits([])], :)
+    @test_throws "non-isbits type NoIsBits not supported by FieldsView" FieldsView(
+        view([NoIsBits([]), NoIsBits([])], :),
+    )
 
     arr = [Position(1, 1), Position(2, 2), Position(3, 3)]
 
-    v = FieldsView(arr, :)
+    v = FieldsView(view(arr, :))
 
     count = 0
     for (i, p) in enumerate(v)

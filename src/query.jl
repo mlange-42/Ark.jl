@@ -244,7 +244,7 @@ end
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
         if FV === Val{true} && !(storage_types[i].parameters[2] <: _StructArray)
-            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : FieldsView($col_sym, :)))
+            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : FieldsView(view($col_sym, :))))
         else
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
         end
