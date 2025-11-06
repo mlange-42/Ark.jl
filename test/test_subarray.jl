@@ -34,6 +34,8 @@
     sum = collect(xs .+ ys)
     @test sum[1] == 101
     @test sum[2] == 104
+
+    @test similar(xs, Float64, (3,)) isa Vector{Float64}
 end
 
 @testset "FieldsView basic functionality" begin
