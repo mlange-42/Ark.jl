@@ -64,8 +64,6 @@ Base.IndexStyle(::Type{<:FieldsView}) = IndexLinear()
 struct FieldSubArray{C,T,F,A<:SubArray{T}} <: AbstractArray{C,1}
     _data::A
     _field::F
-    _ptr::Ptr{UInt8}
-    _size::Int
     _offset::Int
 end
 
@@ -76,30 +74,32 @@ end
     ftype = fieldtype(T, F)
     idx = Base.fieldindex(T, F)
     offset = fieldoffset(T, idx)
-    size = sizeof(T)
     quote
-        FieldSubArray{$(ftype),T,Val{F},A}(data, Val(F), Base.unsafe_convert(Ptr{UInt8}, pointer(data)), $size, $offset)
+        FieldSubArray{$(ftype),T,Val{F},A}(data, Val(F), $offset)
     end
 end
 
 Base.@propagate_inbounds @inline function Base.getindex(
     a::FieldSubArray{C,T,Val{F},A},
-    i::Int,
+    i::Integer,
 ) where {C,T,F,A<:SubArray{T}}
-    getfield(a._data[i], F)
+    @boundscheck checkbounds(a, i)
+    GC.@preserve a begin
+        ptr::Ptr{C} = pointer(a._data, i) + a._offset
+        unsafe_load(ptr)
+    end
 end
 
 Base.@propagate_inbounds @inline function Base.setindex!(
     a::FieldSubArray{C,T,Val{F},A},
-    v,
-    i::Int,
+    x,
+    i::Integer,
 ) where {C,T,F,A<:SubArray{T}}
     @boundscheck checkbounds(a, i)
     GC.@preserve a begin
-        raw = Ptr{C}(a._ptr + (i - 1) * a._size + a._offset)
-        unsafe_store!(raw, v)
+        ptr::Ptr{C} = pointer(a._data, i) + a._offset
+        unsafe_store!(ptr, convert(C, x)::C)
     end
-    nothing
 end
 
 function Base.iterate(a::FieldSubArray{C}) where {C}
