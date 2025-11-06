@@ -3,6 +3,7 @@
     arr = [Position(1, 1), Position(2, 2), Position(3, 3)]
     v = view(arr, :)
     xs = _new_field_subarray(v, Val(:x))
+    ys = _new_field_subarray(v, Val(:y))
 
     @test xs[1] == 1
     @test xs[2] == 2
@@ -15,6 +16,10 @@
     xs[2] = 100
     @test xs[1] == 99
     @test xs[2] == 100
+
+    xs .+= ys
+    @test xs[1] = 100
+    @test xs[2] = 102
 
     @test length(xs) == 3
     @test size(xs) == (3,)
