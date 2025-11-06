@@ -17,10 +17,6 @@
     @test xs[1] == 99
     @test xs[2] == 100
 
-    xs .+= ys
-    @test xs[1] == 100
-    @test xs[2] == 102
-
     @test length(xs) == 3
     @test size(xs) == (3,)
     @test eachindex(xs) == 1:3
@@ -30,9 +26,15 @@
 
     @test Base.eltype(typeof(xs)) == Float64
     @test Base.IndexStyle(typeof(xs)) == IndexLinear()
-end
 
-import Base.Broadcast: broadcasted
+    xs .+= ys
+    @test xs[1] == 100
+    @test xs[2] == 102
+
+    sum = xs .+ ys
+    @test sum[1] == 101
+    @test sum[2] == 104
+end
 
 @testset "FieldsView basic functionality" begin
     @test_throws "non-isbits type NoIsBits not supported by FieldsView" FieldsView([NoIsBits([]), NoIsBits([])], :)
