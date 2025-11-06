@@ -32,6 +32,8 @@
     @test Base.IndexStyle(typeof(xs)) == IndexLinear()
 end
 
+import Base.Broadcast: broadcasted
+
 @testset "FieldsView basic functionality" begin
     @test_throws "non-isbits type NoIsBits not supported by FieldsView" FieldsView([NoIsBits([]), NoIsBits([])], :)
 
