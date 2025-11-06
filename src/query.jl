@@ -1,7 +1,6 @@
 
 mutable struct _Cursor
     _archetypes::Vector{_Archetype}
-    _index::Int
     _lock::UInt8
 end
 
@@ -177,7 +176,7 @@ end
     return quote
         Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
             world,
-            _Cursor(world._archetypes, 0, UInt8(0)),
+            _Cursor(world._archetypes, UInt8(0)),
             $ids_tuple,
             $(mask),
             $(exclude_mask),
@@ -188,18 +187,15 @@ end
 end
 
 @inline function Base.iterate(q::Query, state::Int)
-    q._cursor._index = state
-
-    while q._cursor._index <= length(q._cursor._archetypes)
-        archetype = q._cursor._archetypes[q._cursor._index]
+    while state <= length(q._cursor._archetypes)
+        archetype = q._cursor._archetypes[state]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = _get_columns_at_index(q)
-            next_state = q._cursor._index + 1
-            return result, next_state
+            result = _get_columns(q, archetype)
+            return result, state + 1
         end
-        q._cursor._index += 1
+        state += 1
     end
 
     close!(q)
@@ -224,14 +220,12 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
-    q._cursor._index = 0
     _unlock(q._world._lock, q._cursor._lock)
 end
 
-@generated function _get_columns_at_index(q::Query{W,CS,N,NR}) where {W<:World,CS<:Tuple,N,NR}
+@generated function _get_columns(q::Query{W,CS,N,NR}, archetype::_Archetype) where {W<:World,CS<:Tuple,N,NR}
     storage_types = CS.parameters
     exprs = Expr[]
-    push!(exprs, :(archetype = q._cursor._archetypes[q._cursor._index]))
     push!(exprs, :(entities = archetype.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
