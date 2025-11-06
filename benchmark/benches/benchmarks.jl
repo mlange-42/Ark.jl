@@ -3,6 +3,7 @@ using BenchmarkTools
 using Chairmarks
 using ThreadPinning
 
+pinthreads(:cores)
 const SECONDS = 0.5
 const SUITE = BenchmarkGroup()
 
