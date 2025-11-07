@@ -164,32 +164,25 @@ end
     ids_tuple = tuple(required_ids...)
 
     return quote
-        ids = $ids_tuple
-        rare_component = 0
-        archetypes = if length(ids) == 0
-            world._archetypes
-        else
-            min_archetypes = typemax(Int)
-            comps = world._index.components
-            for i in ids
-                num_arches = length(comps[i])
-                if num_arches < min_archetypes
-                    min_archetypes = num_arches
-                    rare_component = i
-                end
-            end
-            comps[rare_component]
-        end
-
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             $(mask),
             $(exclude_mask),
             _get_entity(world._handles),
             world,
-            archetypes,
+            _get_archetypes(world, $ids_tuple),
             _lock(world._lock),
             $(has_excluded ? true : false),
         )
+    end
+end
+
+function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
+    if length(ids) == 0
+        return world._archetypes
+    else
+        comps = world._index.components
+        rare_component = argmin(length(comps[i]) for i in ids)
+        return comps[rare_component]
     end
 end
 
