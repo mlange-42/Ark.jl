@@ -246,8 +246,8 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = q._world._storages[q._ids[$i]]))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
+        push!(exprs, :(@inbounds $stor_sym = q._world._storages[q._ids[$i]]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
         if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : _new_fields_view(view($col_sym, :))))
