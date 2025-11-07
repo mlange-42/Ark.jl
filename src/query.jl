@@ -4,11 +4,10 @@
 
 A query for components.
 """
-struct Query{W<:World,CS<:Tuple,N,NR}
+struct Query{W<:World,CS<:Tuple,N}
     _mask::_Mask
     _exclude_mask::_Mask
-    _storage::CS
-    _ids::NTuple{NR,UInt8}
+    _ids::NTuple{N,UInt8}
     _entity_handle::Entity
     _world::W
     _rare_component::UInt8
@@ -165,13 +164,11 @@ end
     ]
     storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
 
-    storage_exprs = Expr[:(world._storages[$(Int(i))]) for i in all_ids]
-    storages_tuple = Expr(:tuple, storage_exprs...)
-
-    ids_tuple = tuple(required_ids...)
+    required_ids_tuple = tuple(required_ids...)
+    ids_tuple = tuple(all_ids...)
 
     return quote
-        ids = $ids_tuple
+        ids = $required_ids_tuple
         rare_component = 0
         if length(ids) != 0
             min_archetypes = typemax(Int)
@@ -187,11 +184,10 @@ end
         entity = _get_entity(world._query_pool)
         lock = _lock(world._lock)
 
-        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
+        Query{$W,$storage_tuple_type,$(length(comp_types))}(
             $(mask),
             $(exclude_mask),
-            $storages_tuple,
-            ids,
+            $ids_tuple,
             entity,
             world,
             rare_component,
@@ -242,7 +238,7 @@ function close!(q::Query)
     _recycle(q._world._query_pool, q._entity_handle)
 end
 
-@generated function _get_columns(q::Query{W,CS,N,NR}, archetype::_Archetype) where {W<:World,CS<:Tuple,N,NR}
+@generated function _get_columns(q::Query{W,CS,N}, archetype::_Archetype) where {W<:World,CS<:Tuple,N}
     storage_types = CS.parameters
     exprs = Expr[]
     push!(exprs, :(entities = archetype.entities))
@@ -250,7 +246,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = q._storage.$i))
+        push!(exprs, :($stor_sym = q._world._storages[q._ids[$i]]))
         push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
 
         if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)
