@@ -8,11 +8,10 @@
         new_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
-    query = @Query(world, (Position, Velocity))
-    @test query._has_excluded == false
-
     for i in 1:10
         count = 0
+        query = @Query(world, (Position, Velocity))
+        @test query._has_excluded == false
         for (entities, vec_pos, vec_vel) in query
             @test isa(vec_pos, FieldsView{Position}) == true
             @test isa(vec_vel, FieldsView{Velocity}) == true

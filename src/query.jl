@@ -1,9 +1,4 @@
 
-mutable struct _Cursor
-    _archetypes::Vector{_Archetype}
-    _lock::UInt8
-end
-
 """
     Query
 
@@ -14,8 +9,10 @@ struct Query{W<:World,CS<:Tuple,N,NR}
     _exclude_mask::_Mask
     _storage::CS
     _ids::NTuple{NR,UInt8}
+    _entity_handle::Entity
     _world::W
-    _cursor::_Cursor
+    _rare_component::UInt8
+    _lock::UInt8
     _has_excluded::Bool
 end
 
@@ -174,21 +171,45 @@ end
     ids_tuple = tuple(required_ids...)
 
     return quote
+        ids = $ids_tuple
+        rare_component = 0
+        if length(ids) != 0
+            min_archetypes = typemax(Int)
+            comps = world._index.components
+            for i in ids
+                num_arches = length(comps[i])
+                if num_arches < min_archetypes
+                    min_archetypes = num_arches
+                    rare_component = i
+                end
+            end
+        end
+        entity = _get_entity(world._query_pool)
+        lock = _lock(world._lock)
+
         Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
             $(mask),
             $(exclude_mask),
             $storages_tuple,
-            $ids_tuple,
+            ids,
+            entity,
             world,
-            _Cursor(world._archetypes, UInt8(0)),
+            rare_component,
+            lock,
             $(has_excluded ? true : false),
         )
     end
 end
 
 @inline function Base.iterate(q::Query, state::Int)
-    while state <= length(q._cursor._archetypes)
-        archetype = q._cursor._archetypes[state]
+    archetypes = if q._rare_component == 0
+        q._world._archetypes
+    else
+        q._world._index.components[q._rare_component]
+    end
+
+    while state <= length(archetypes)
+        archetype = archetypes[state]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
@@ -203,12 +224,9 @@ end
 end
 
 @inline function Base.iterate(q::Query)
-    if length(q._ids) != 0
-        comps = q._world._index.components
-        rare_component = argmin(length(comps[i]) for i in q._ids)
-        q._cursor._archetypes = comps[rare_component]
+    if !_is_alive(q._world._query_pool, q._entity_handle)
+        throw(InvalidStateException("query closed, queries can't be used multiple times", :query_closed))
     end
-    q._cursor._lock = _lock(q._world._lock)
     return Base.iterate(q, 1)
 end
 
@@ -220,7 +238,8 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
-    _unlock(q._world._lock, q._cursor._lock)
+    _unlock(q._world._lock, q._lock)
+    _recycle(q._world._query_pool, q._entity_handle)
 end
 
 @generated function _get_columns(q::Query{W,CS,N,NR}, archetype::_Archetype) where {W<:World,CS<:Tuple,N,NR}

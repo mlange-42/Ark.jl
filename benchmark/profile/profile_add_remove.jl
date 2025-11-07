@@ -24,6 +24,6 @@ function profile_add_remove()
     end
 end
 
-Profile.clear()
 profile_add_remove()
+Profile.clear()
 @profilehtml profile_add_remove()

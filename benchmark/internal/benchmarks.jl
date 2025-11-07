@@ -9,6 +9,7 @@ include("BenchTypes.jl")
 
 include("bench_callback.jl")
 include("bench_events.jl")
+include("bench_pool_get_recycle.jl")
 include("bench_mask_contains_all.jl")
 include("bench_mask_contains_any.jl")
 include("bench_create_mask.jl")

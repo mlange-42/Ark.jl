@@ -18,6 +18,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N} <: _AbstractWorld
     const _index::_ComponentIndex
     const _registry::_ComponentRegistry
     const _entity_pool::_EntityPool
+    const _query_pool::_EntityPool
     const _lock::_Lock
     const _graph::_Graph
     const _resources::Dict{DataType,Any}
@@ -905,7 +906,8 @@ end
             [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex($(length(types))),
             registry,
-            _EntityPool(UInt32(1024)),
+            _EntityPool(UInt32(1024)), # entities
+            _EntityPool(UInt32(64)), # query handles
             _Lock(),
             graph,
             Dict{DataType,Any}(),
