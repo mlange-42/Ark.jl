@@ -1,17 +1,21 @@
 
+mutable struct _QueryLock
+    closed::Bool
+end
+
 """
     Query
 
 A query for components.
 """
-mutable struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
-    const _mask::_Mask
-    const _exclude_mask::_Mask
-    const _handle::Entity
-    const _world::W
-    const _archetypes::Vector{_Archetype}
-    const _lock::UInt8
-    const _has_excluded::Bool
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
+    _mask::_Mask
+    _exclude_mask::_Mask
+    _world::W
+    _archetypes::Vector{_Archetype}
+    _q_lock::_QueryLock
+    _lock::UInt8
+    _has_excluded::Bool
 end
 
 """
@@ -167,9 +171,9 @@ end
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             $(mask),
             $(exclude_mask),
-            _get_entity(world._handles),
             world,
             _get_archetypes(world, $ids_tuple),
+            _QueryLock(false),
             _lock(world._lock),
             $(has_excluded ? true : false),
         )
@@ -192,7 +196,7 @@ end
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = _get_columns(q, archetype)
+            result = _get_columns(q, state)
             return result, state + 1
         end
         state += 1
@@ -203,10 +207,10 @@ end
 end
 
 @inline function Base.iterate(q::Query)
-    if !_is_alive(q._world._handles, q._handle)
+    if q._q_lock.closed
         throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
     end
-    _recycle(q._world._handles, q._handle)
+    q._q_lock.closed = true
 
     return Base.iterate(q, 1)
 end
@@ -219,19 +223,18 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
-    if _is_alive(q._world._handles, q._handle)
-        _recycle(q._world._handles, q._handle)
-    end
     _unlock(q._world._lock, q._lock)
+    q._q_lock.closed = true
 end
 
 @generated function _get_columns(
     q::Query{W,TS,SM,N},
-    archetype::_Archetype,
+    idx::Int,
 ) where {W<:World,TS<:Tuple,SM<:Tuple,N}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     exprs = Expr[]
+    push!(exprs, :(archetype = q._archetypes[idx]))
     push!(exprs, :(entities = archetype.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
