@@ -112,10 +112,7 @@ end
 end
 
 @inline function _is_not_zero(m::_Mask)::Bool
-    return !((m.bits[1] == 0) *
-             (m.bits[2] == 0) *
-             (m.bits[3] == 0) *
-             (m.bits[4] == 0))
+    return !_is_zero(m)
 end
 
 function _active_bit_indices(mask::_Mask)::Vector{UInt8}
