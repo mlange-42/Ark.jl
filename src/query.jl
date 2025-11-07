@@ -4,14 +4,14 @@
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
-    _mask::_Mask
-    _exclude_mask::_Mask
-    _handle::Entity
-    _world::W
-    _archetypes::Vector{_Archetype}
-    _lock::UInt8
-    _has_excluded::Bool
+mutable struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
+    const _mask::_Mask
+    const _exclude_mask::_Mask
+    const _handle::Entity
+    const _world::W
+    const _archetypes::Vector{_Archetype}
+    const _lock::UInt8
+    const _has_excluded::Bool
 end
 
 """
