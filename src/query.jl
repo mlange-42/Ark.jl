@@ -13,7 +13,6 @@ struct Query{W<:World,CS<:Tuple,TS<:Tuple,N,NR}
     _mask::_Mask
     _exclude_mask::_Mask
     _ids::NTuple{NR,UInt8}
-    _all_ids::NTuple{N,UInt8}
     _world::W
     _cursor::_Cursor
     _has_excluded::Bool
@@ -150,7 +149,6 @@ end
         _component_id(W.parameters[1], C)
     end
 
-    all_ids = map(get_id, comp_types)
     required_ids = map(get_id, required_types)
     with_ids = map(get_id, with_types)
     without_ids = map(get_id, without_types)
@@ -170,14 +168,12 @@ end
     comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
 
     ids_tuple = tuple(required_ids...)
-    all_ids_tuple = tuple(all_ids...)
 
     return quote
         Query{$W,$storage_tuple_type,$comp_tuple_type,$(length(comp_types)),$(length(required_types))}(
             $(mask),
             $(exclude_mask),
             $ids_tuple,
-            $all_ids_tuple,
             world,
             _Cursor(world._archetypes, UInt8(0)),
             $(has_excluded ? true : false),
@@ -239,7 +235,7 @@ end
         push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
-        if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)
+        if isbitstype(comp_types[i]) && !(storage_types[i].parameters[2] <: _StructArray)
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : _new_fields_view(view($col_sym, :))))
         else
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
