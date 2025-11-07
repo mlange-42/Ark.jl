@@ -11,17 +11,17 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N} <: _AbstractWorld
-    _entities::Vector{_EntityIndex}
-    _storages::CS
-    _archetypes::Vector{_Archetype}
-    _index::_ComponentIndex
-    _registry::_ComponentRegistry
-    _entity_pool::_EntityPool
-    _lock::_Lock
-    _graph::_Graph
-    _resources::Dict{DataType,Any}
-    _event_manager::_EventManager
+mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N} <: _AbstractWorld
+    const _entities::Vector{_EntityIndex}
+    const _storages::CS
+    const _archetypes::Vector{_Archetype}
+    const _index::_ComponentIndex
+    const _registry::_ComponentRegistry
+    const _entity_pool::_EntityPool
+    const _lock::_Lock
+    const _graph::_Graph
+    const _resources::Dict{DataType,Any}
+    const _event_manager::_EventManager
 end
 
 """
