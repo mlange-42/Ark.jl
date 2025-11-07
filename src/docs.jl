@@ -12,20 +12,10 @@ struct Velocity
     dy::Float64
 end
 
-struct PositionSoA <: StructArrayComponent
-    x::Float64
-    y::Float64
-end
-
-struct VelocitySoA <: StructArrayComponent
-    dx::Float64
-    dy::Float64
-end
-
 struct Altitude
     z::Float64
 end
 
-world = World(Position, Velocity, Altitude, PositionSoA, VelocitySoA)
+world = World(Position, Velocity, Altitude)
 
 entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))

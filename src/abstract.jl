@@ -2,36 +2,46 @@
 abstract type _AbstractWorld end
 
 """
-    StructArrayComponent
+    StructArrayStorage
 
-Marker trait for component types that use a StructArray-like storage.
+Marks component types for using StructArray-like storage in world constructor.
 
-Can be overwritten by using it during world construction.
-See also [VectorComponent](@ref).
+See also [VectorStorage](@ref).
 
 # Example
 
-```jldoctest; setup = :(using Ark), output = false
-struct Position <: StructArrayComponent
-    x::Float64
-    y::Float64
-end
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+world = World(
+    Position => StructArrayStorage,
+    Velocity => StructArrayStorage,
+)
+; # suppress print output
 
 # output
 
 ```
 """
-abstract type StructArrayComponent end
+abstract type StructArrayStorage end
 
 """
-    StructArrayComponent
+    VectorStorage
 
-Marker trait for component types that use a Vector storage.
-As this is the default storage mode, components don't need to be a sub-type of this.
+Marks component types for using Vector storage in world constructor.
+As this is the default storage mode if the storage type is not specified.
 
-However, it can be used during world construction to overwrite the storage mode.
-See also [StructArrayComponent](@ref).
+See also [StructArrayStorage](@ref).
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+world = World(
+    Position => VectorStorage,
+    Velocity => VectorStorage,
+)
+; # suppress print output
+
+# output
+
+```
 """
-abstract type VectorComponent end
-
-abstract type _InferredComponent end
+abstract type VectorStorage end

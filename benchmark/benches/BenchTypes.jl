@@ -9,16 +9,6 @@ struct Velocity
     dy::Float64
 end
 
-struct PositionSoA <: StructArrayComponent
-    x::Float64
-    y::Float64
-end
-
-struct VelocitySoA <: StructArrayComponent
-    dx::Float64
-    dy::Float64
-end
-
 struct CompA
     x::Float64
     y::Float64

@@ -179,32 +179,35 @@ end
 end
 
 @testset "Query StructArray" begin
-    world = World(Position, SaoComp)
+    world = World(
+        Position,
+        Velocity => StructArrayStorage,
+    )
 
     for i in 1:10
-        new_entity!(world, (Position(0, 0), SaoComp(i, i)))
+        new_entity!(world, (Position(0, 0), Velocity(i, i)))
     end
 
-    for (entities, vec) in @Query(world, (SaoComp,))
+    for (entities, vec) in @Query(world, (Velocity,))
         @test isa(vec, StructArrayView)
         for i in eachindex(vec)
             pos = vec[i]
-            vec[i] = SaoComp(pos.x + 1, pos.y + 1)
+            vec[i] = Velocity(pos.dx + 1, pos.dy + 1)
         end
     end
 
-    for arch in @Query(world, (Position, SaoComp))
-        @unpack e, pos, (x, y) = arch
+    for arch in @Query(world, (Position, Velocity))
+        @unpack e, pos, (dx, dy) = arch
         @test isa(e, Entities)
-        @test isa(x, SubArray{Float64})
-        @test isa(y, SubArray{Float64})
+        @test isa(dx, SubArray{Float64})
+        @test isa(dy, SubArray{Float64})
     end
 end
 
 @testset "Query FieldsView" begin
     world = World(
         Position,
-        (Velocity, StructArrayComponent),
+        Velocity => StructArrayStorage,
         NoIsBits,
     )
 

@@ -1,8 +1,8 @@
 
 function setup_world_new_entity_1_soa(n::Int)
     world = World(
-        (Position, StructArrayComponent),
-        (Velocity, StructArrayComponent),
+        Position => StructArrayStorage,
+        Velocity => StructArrayStorage,
     )
 
     # Run once to allocate memory
