@@ -6,9 +6,9 @@ A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
 mutable struct Batch{W<:World,CS<:Tuple,N}
-    _world::W
-    _archetypes::Vector{_BatchArchetype}
-    _storages::CS
+    const _world::W
+    const _archetypes::Vector{_BatchArchetype}
+    const _storages::CS
     _index::Int
     _lock::UInt8
 end
