@@ -16,7 +16,7 @@ function setup_query_posvel_stored(n_entities::Int)
     return world, query
 end
 
-function benchmark_query_posvel_stored(args::Tuple{W,Query{W,CS,N,RN}}, n) where {W<:World,CS<:Tuple,N,RN}
+function benchmark_query_posvel_stored(args, n)
     world, query = args
     for (_, pos_column, vel_column) in query
         for i in eachindex(pos_column)

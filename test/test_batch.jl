@@ -9,7 +9,7 @@
         [
             _BatchArchetype(world._archetypes[2], 1, 1),
             _BatchArchetype(world._archetypes[3], 1, 1),
-        ], storages, 0, _lock(world._lock))
+        ], (UInt8(1),), 0, _lock(world._lock))
 
     arches = 0
     for (ent, pos_col) in batch

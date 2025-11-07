@@ -8,7 +8,7 @@ This is returned from batch operations and serves for initializing newly added c
 mutable struct Batch{W<:World,CS<:Tuple,N}
     const _world::W
     const _archetypes::Vector{_BatchArchetype}
-    const _storages::CS
+    _ids::NTuple{N,UInt8}
     _index::Int
     _lock::UInt8
 end
@@ -21,8 +21,11 @@ end
     comp_types = CT.parameters
     world_storage_modes = W.parameters[3].parameters
 
-    storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
-    storages_tuple = Expr(:tuple, storage_exprs...)
+    function get_id(C)
+        _component_id(W.parameters[1], C)
+    end
+    all_ids = map(get_id, comp_types)
+    ids_tuple = tuple(all_ids...)
 
     storage_types = [
         world_storage_modes[Int(_component_id(W.parameters[1], T))] <: StructArrayStorage ?
@@ -36,7 +39,7 @@ end
         Batch{$W,$storage_tuple_type,$(length(comp_types))}(
             world,
             archetypes,
-            $storages_tuple,
+            $ids_tuple,
             0,
             _lock(world._lock),
         )
@@ -89,8 +92,8 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = b._storages.$i))
-        push!(exprs, :($col_sym = $stor_sym.data[Int(arch.archetype.id)]))
+        push!(exprs, :(@inline $stor_sym = b._world._storages[b._ids[$i]]))
+        push!(exprs, :(@inline $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
         push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : view($col_sym, arch.start_idx:arch.end_idx)))
