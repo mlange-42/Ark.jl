@@ -1,6 +1,6 @@
 
-struct _Mask
-    bits::NTuple{4,UInt64}
+struct _Mask{N}
+    bits::NTuple{N,UInt64}
 end
 
 function _Mask()
@@ -104,19 +104,15 @@ end
     ))
 end
 
-@inline function _is_zero(m::_Mask)::Bool
-    return m.bits[1] == 0 &&
-           m.bits[2] == 0 &&
-           m.bits[3] == 0 &&
-           m.bits[4] == 0
+@inline function _is_zero(m::_Mask{N})::Bool where N
+    expr = Expr[]
+    for i in 1:N
+        push!(expr, :((m.bits[$i] == 0)))
+    end
+    return Expr(:call, :*, expr...)
 end
 
-@inline function _is_not_zero(m::_Mask)::Bool
-    return m.bits[1] != 0 ||
-           m.bits[2] != 0 ||
-           m.bits[3] != 0 ||
-           m.bits[4] != 0
-end
+_is_not_zero(m::_Mask)::Bool = !_is_zero(m)
 
 function _active_bit_indices(mask::_Mask)::Vector{UInt8}
     indices = UInt8[]
@@ -132,16 +128,16 @@ function _active_bit_indices(mask::_Mask)::Vector{UInt8}
     return indices
 end
 
-struct _MutableMask
-    bits::MVector{4,UInt64}
+struct _MutableMask{N}
+    bits::MVector{N,UInt64}
 end
 
 function _MutableMask()
     return _MutableMask(MVector{4,UInt64}(0, 0, 0, 0))
 end
 
-function _MutableMask(mask::_Mask)
-    return _MutableMask(MVector{4,UInt64}(mask.bits))
+function _MutableMask(mask::_Mask{N}) where N
+    return _MutableMask(MVector{N,UInt64}(mask.bits))
 end
 
 function _set_mask!(mask::_MutableMask, other::_Mask)
@@ -149,11 +145,12 @@ function _set_mask!(mask::_MutableMask, other::_Mask)
     return mask
 end
 
-function _equals(mask1::_MutableMask, mask2::_Mask)::Bool
-    return (mask1.bits[1] == mask2.bits[1]) *
-           (mask1.bits[2] == mask2.bits[2]) *
-           (mask1.bits[3] == mask2.bits[3]) *
-           (mask1.bits[4] == mask2.bits[4])
+@generated function _equals(mask1::_MutableMask{N}, mask2::_Mask{N})::Bool where N
+    expr = Expr[]
+    for i in 1:N
+        push!(expr, :((mask1.bits[$i] == mask2.bits[$i])))
+    end
+    return Expr(:call, :*, expr...)
 end
 
 function _Mask(mask::_MutableMask)
