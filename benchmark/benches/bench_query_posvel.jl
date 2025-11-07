@@ -40,9 +40,26 @@ function benchmark_query_posvel(args, n)
     return world
 end
 
+function benchmark_query_posvel_var(args, n)
+    world, _ = args
+    query = @Query(world, (Position, Velocity))
+    for (_, pos_column, vel_column) in query
+        for i in eachindex(pos_column)
+            @inbounds pos = pos_column[i]
+            @inbounds vel = vel_column[i]
+            @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        end
+    end
+    return world
+end
+
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
     SUITE["benchmark_query_posvel_hot n=$(n)"] =
         @be setup_query_posvel_hot($n) benchmark_query_posvel(_, $n) evals = 100 seconds = SECONDS
+end
+for n in (100, 1_000, 10_000, 100_000, 1_000_000)
+    SUITE["benchmark_query_posvel_hot_var n=$(n)"] =
+        @be setup_query_posvel_hot($n) benchmark_query_posvel_var(_, $n) evals = 100 seconds = SECONDS
 end
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
     SUITE["benchmark_query_posvel_cold n=$(n)"] =
