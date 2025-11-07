@@ -1,6 +1,10 @@
 
 @testset "Batch iterator test" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(
+        Position,
+        Velocity => StructArrayStorage,
+        Altitude,
+    )
     new_entity!(world, (Position(1, 2),))
     new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
@@ -9,7 +13,7 @@
         [
             _BatchArchetype(world._archetypes[2], 1, 1),
             _BatchArchetype(world._archetypes[3], 1, 1),
-        ], (UInt8(1),), 0, _lock(world._lock))
+        ], 0, _lock(world._lock))
 
     arches = 0
     for (ent, pos_col) in batch

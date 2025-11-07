@@ -8,7 +8,6 @@ This is returned from batch operations and serves for initializing newly added c
 mutable struct Batch{W<:World,CS<:Tuple,TS<:Tuple,N}
     const _world::W
     const _archetypes::Vector{_BatchArchetype}
-    _ids::NTuple{N,UInt8}
     _index::Int
     _lock::UInt8
 end
@@ -21,12 +20,7 @@ end
     comp_types = CT.parameters
     world_storage_modes = W.parameters[3].parameters
 
-    function get_id(C)
-        _component_id(W.parameters[1], C)
-    end
-    all_ids = map(get_id, comp_types)
-    ids_tuple = tuple(all_ids...)
-
+    # TODO: keeping this for now to make iteration consistent with queries
     storage_types = [
         world_storage_modes[Int(_component_id(W.parameters[1], T))] <: StructArrayStorage ?
         _ComponentStorage{T,_StructArray_type(T)} :
@@ -40,7 +34,6 @@ end
         Batch{$W,$storage_tuple_type,$comp_tuple_type,$(length(comp_types))}(
             world,
             archetypes,
-            $ids_tuple,
             0,
             _lock(world._lock),
         )
