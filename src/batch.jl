@@ -5,7 +5,7 @@
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-mutable struct Batch{W<:World,CS<:Tuple,N}
+mutable struct Batch{W<:World,CS<:Tuple,TS<:Tuple,N}
     const _world::W
     const _archetypes::Vector{_BatchArchetype}
     _ids::NTuple{N,UInt8}
@@ -34,9 +34,10 @@ end
         for T in comp_types
     ]
     storage_tuple_type = :(Tuple{$(storage_types...)})
+    comp_tuple_type = :(Tuple{$(comp_types...)})
 
     return quote
-        Batch{$W,$storage_tuple_type,$(length(comp_types))}(
+        Batch{$W,$storage_tuple_type,$comp_tuple_type,$(length(comp_types))}(
             world,
             archetypes,
             $ids_tuple,
@@ -84,8 +85,9 @@ function close!(b::Batch)
     b._lock = 0
 end
 
-@generated function _get_columns_at_index(b::Batch{W,CS,N}) where {W<:World,CS<:Tuple,N}
+@generated function _get_columns_at_index(b::Batch{W,CS,TS,N}) where {W<:World,CS<:Tuple,TS<:Tuple,N}
     storage_types = CS.parameters
+    comp_types = TS.parameters
     exprs = Expr[]
     push!(exprs, :(arch = b._archetypes[b._index]))
     push!(exprs, :(entities = view(arch.archetype.entities, arch.start_idx:arch.end_idx)))
@@ -93,8 +95,8 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :(@inline $stor_sym = b._world._storages[b._ids[$i]]::$(storage_types[i])))
-        push!(exprs, :(@inline $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
         push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : view($col_sym, arch.start_idx:arch.end_idx)))

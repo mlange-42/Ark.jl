@@ -9,7 +9,7 @@ end
 
 A query for components.
 """
-struct Query{W<:World,CS<:Tuple,N,NR}
+struct Query{W<:World,CS<:Tuple,TS<:Tuple,N,NR}
     _mask::_Mask
     _exclude_mask::_Mask
     _ids::NTuple{NR,UInt8}
@@ -167,12 +167,13 @@ end
         for T in comp_types
     ]
     storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
+    comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
 
     ids_tuple = tuple(required_ids...)
     all_ids_tuple = tuple(all_ids...)
 
     return quote
-        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
+        Query{$W,$storage_tuple_type,$comp_tuple_type,$(length(comp_types)),$(length(required_types))}(
             $(mask),
             $(exclude_mask),
             $ids_tuple,
@@ -223,7 +224,11 @@ function close!(q::Query)
     q._cursor._lock = 0
 end
 
-@generated function _get_columns(q::Query{W,CS,N,NR}, archetype::_Archetype) where {W<:World,CS<:Tuple,N,NR}
+@generated function _get_columns(
+    q::Query{W,CS,TS,N,NR},
+    archetype::_Archetype,
+) where {W<:World,CS<:Tuple,TS<:Tuple,N,NR}
+    comp_types = TS.parameters
     storage_types = CS.parameters
     exprs = Expr[]
     push!(exprs, :(entities = archetype.entities))
@@ -231,7 +236,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :(@inbounds $stor_sym = q._world._storages[q._all_ids[$i]]::$(storage_types[i])))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
         if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)

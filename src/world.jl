@@ -620,8 +620,7 @@ end
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
-    # TODO: do we really need this?
-    ts_val_expr = Expr(:call, Expr(:curly, :Val, types_tuple_type_expr))
+    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
     push!(exprs,
         :(batch = _Batch_from_types(
             world,
