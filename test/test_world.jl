@@ -44,6 +44,14 @@ end
     @test_throws(
         "ArgumentError: duplicate component type Velocity during world creation",
         World(Position, Velocity, Velocity))
+
+    @test_throws(
+        "ArgumentError: can't use VectorStorage as component as it is not a concrete type",
+        World(Position, Velocity, VectorStorage))
+
+    @test_throws(
+        "ArgumentError: Health is not a valid storage mode, must be StructArrayStorage or VectorStorage",
+        World(Position, Velocity, Altitude => Health))
 end
 
 @testset "World creation large" begin

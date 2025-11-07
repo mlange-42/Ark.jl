@@ -838,14 +838,16 @@ end
     for T in types
         if !isconcretetype(T)
             throw(
-                ArgumentError("can't use $T as component as it is not a concrete type"),
+                ArgumentError("can't use $(nameof(T)) as component as it is not a concrete type"),
             )
         end
     end
     for mode in storage_val_types
         if !(mode <: StructArrayStorage || mode <: VectorStorage)
             throw(
-                ArgumentError("$mode is not a valid storage mode, must be StructArrayStorage or VectorStorage"),
+                ArgumentError(
+                    "$(nameof(mode)) is not a valid storage mode, must be StructArrayStorage or VectorStorage",
+                ),
             )
         end
     end
