@@ -111,13 +111,13 @@ For these columns, Ark offers two storage modes:
   Further, component access with [@get_components](@ref) and [set_components!](@ref) is also slower.
 
 The storage mode can be selected per component type.
-Either by declaring the component a sub-type of [StructArrayComponent](@ref),
-or by using [StructArrayComponent](@ref) or [VectorComponent](@ref) during world construction.
+Either by declaring the component a sub-type of [StructArrayStorage](@ref),
+or by using [StructArrayStorage](@ref) or [VectorStorage](@ref) during world construction.
 
 ```jldoctest; output = false
 world = World(
-    Position => StructArrayComponent,
-    Velocity => StructArrayComponent,
+    Position => StructArrayStorage,
+    Velocity => StructArrayStorage,
 )
 ; # suppress print output
 

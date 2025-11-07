@@ -46,7 +46,7 @@ world = World(Position, Velocity)
 """
 function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; allow_mutable=false)
     types = map(arg -> arg isa Type ? arg : arg.first, comp_types)
-    storages = map(arg -> arg isa Type ? VectorComponent : arg.second, comp_types)
+    storages = map(arg -> arg isa Type ? VectorStorage : arg.second, comp_types)
 
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
 end
@@ -843,9 +843,9 @@ end
         end
     end
     for mode in storage_val_types
-        if !(mode <: StructArrayComponent || mode <: VectorComponent)
+        if !(mode <: StructArrayStorage || mode <: VectorStorage)
             throw(
-                ArgumentError("$mode is not a valid storage mode, must be StructArrayComponent or VectorComponent"),
+                ArgumentError("$mode is not a valid storage mode, must be StructArrayStorage or VectorStorage"),
             )
         end
     end
@@ -853,7 +853,7 @@ end
     # Immutability checks
     for (T, mode) in zip(types, storage_val_types)
         if ismutabletype(T)
-            if mode <: StructArrayComponent
+            if mode <: StructArrayStorage
                 throw(
                     ArgumentError("Component type $(nameof(T)) must be immutable because it uses StructArray storage"),
                 )
@@ -874,7 +874,7 @@ end
     for i in 1:length(types)
         T = types[i]
         mode = storage_val_types[i]
-        if mode <: StructArrayComponent
+        if mode <: StructArrayStorage
             storage_types[i] = :(_ComponentStorage{$T,_StructArray_type($T)})
             storage_exprs[i] = :(_new_struct_array_storage($T))
         else

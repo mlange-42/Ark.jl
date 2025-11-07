@@ -181,7 +181,7 @@ end
 @testset "Query StructArray" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
     )
 
     for i in 1:10
@@ -207,7 +207,7 @@ end
 @testset "Query FieldsView" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
         NoIsBits,
     )
 

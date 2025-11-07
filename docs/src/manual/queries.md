@@ -158,8 +158,8 @@ as it allows for SIMD-accelerated vectorized operations.
 
 ```jldoctest; setup = :(using Ark), output = false
 world = World(
-    Position => StructArrayComponent,
-    Velocity => StructArrayComponent,
+    Position => StructArrayStorage,
+    Velocity => StructArrayStorage,
 )
 
 # ...

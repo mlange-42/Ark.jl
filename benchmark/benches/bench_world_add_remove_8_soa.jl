@@ -1,15 +1,15 @@
 
 function setup_world_add_remove_8_soa(n_entities::Int)
     world = World(
-        Position => StructArrayComponent,
-        CompN{1} => StructArrayComponent,
-        CompN{2} => StructArrayComponent,
-        CompN{3} => StructArrayComponent,
-        CompN{4} => StructArrayComponent,
-        CompN{5} => StructArrayComponent,
-        CompN{6} => StructArrayComponent,
-        CompN{7} => StructArrayComponent,
-        CompN{8} => StructArrayComponent,
+        Position => StructArrayStorage,
+        CompN{1} => StructArrayStorage,
+        CompN{2} => StructArrayStorage,
+        CompN{3} => StructArrayStorage,
+        CompN{4} => StructArrayStorage,
+        CompN{5} => StructArrayStorage,
+        CompN{6} => StructArrayStorage,
+        CompN{7} => StructArrayStorage,
+        CompN{8} => StructArrayStorage,
     )
 
     entities = Vector{Entity}()

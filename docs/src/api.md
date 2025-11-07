@@ -16,8 +16,8 @@ and [Resources](@ref resources-api).
 World
 World(::Type...; ::Bool)
 is_locked
-StructArrayComponent
-VectorComponent
+StructArrayStorage
+VectorStorage
 ```
 
 ## [Entities](@id entities-api)

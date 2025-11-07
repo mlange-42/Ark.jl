@@ -1,8 +1,8 @@
 
 function setup_world_add_remove_1_soa(n_entities::Int)
     world = World(
-        Position => StructArrayComponent,
-        Velocity => StructArrayComponent,
+        Position => StructArrayStorage,
+        Velocity => StructArrayStorage,
     )
 
     entities = Vector{Entity}()

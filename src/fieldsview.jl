@@ -64,7 +64,7 @@ Base.IndexStyle(::Type{<:FieldsView}) = IndexLinear()
 """
     unpack(a::FieldsView)
 
-Unpacks the components (i.e. field vectors) of a [VectorComponent](@ref) column returned from a [Query](@ref).
+Unpacks the components (i.e. field vectors) of a [VectorStorage](@ref) column returned from a [Query](@ref).
 See also [@unpack](@ref).
 """
 unpack(a::FieldsView) = a._components

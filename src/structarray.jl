@@ -197,7 +197,7 @@ Base.lastindex(sa::StructArrayView) = length(sa)
 """
     unpack(a::StructArrayView)
 
-Unpacks the components (i.e. field vectors) of a [StructArrayComponent](@ref) column returned from a [Query](@ref).
+Unpacks the components (i.e. field vectors) of a [StructArrayStorage](@ref) column returned from a [Query](@ref).
 See also [@unpack](@ref).
 """
 unpack(a::StructArrayView) = a._components
@@ -206,8 +206,8 @@ unpack(a::StructArrayView) = a._components
     @unpack ...
 
 Unpacks the tuple returned from a [Query](@ref) during iteration into field vectors.
-Field vectors are particularly useful for [StructArrayComponent](@ref)s,
-but can also be used with [VectorComponent](@ref)s, although those are currently not
+Field vectors are particularly useful for [StructArrayStorage](@ref)s,
+but can also be used with [VectorStorage](@ref)s, although those are currently not
 equally efficient in broadcasted operations.
 
 # Example

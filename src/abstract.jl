@@ -2,18 +2,18 @@
 abstract type _AbstractWorld end
 
 """
-    StructArrayComponent
+    StructArrayStorage
 
 Marks component types for using StructArray-like storage in world constructor.
 
-See also [VectorComponent](@ref).
+See also [VectorStorage](@ref).
 
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 world = World(
-    Position => StructArrayComponent,
-    Velocity => StructArrayComponent,
+    Position => StructArrayStorage,
+    Velocity => StructArrayStorage,
 )
 ; # suppress print output
 
@@ -21,22 +21,22 @@ world = World(
 
 ```
 """
-abstract type StructArrayComponent end
+abstract type StructArrayStorage end
 
 """
-    VectorComponent
+    VectorStorage
 
 Marks component types for using Vector storage in world constructor.
 As this is the default storage mode if the storage type is not specified.
 
-See also [StructArrayComponent](@ref).
+See also [StructArrayStorage](@ref).
 
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 world = World(
-    Position => VectorComponent,
-    Velocity => VectorComponent,
+    Position => VectorStorage,
+    Velocity => VectorStorage,
 )
 ; # suppress print output
 
@@ -44,4 +44,4 @@ world = World(
 
 ```
 """
-abstract type VectorComponent end
+abstract type VectorStorage end

@@ -10,7 +10,7 @@ end
 @testset "World creation 2" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
         Altitude,
     )
     @test isa(world, World)
@@ -33,7 +33,7 @@ end
 @testset "World storage type" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
     )
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
@@ -111,7 +111,7 @@ end
     _ = World(Position, MutableComponent; allow_mutable=true)
 
     @test_throws("ArgumentError: Component type MutableComponent must be immutable because it uses StructArray storage",
-        World(Position, MutableComponent => StructArrayComponent))
+        World(Position, MutableComponent => StructArrayStorage))
 end
 
 @testset "_get_storage Tests" begin
@@ -195,7 +195,7 @@ end
 @testset "World get/set components" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
     )
 
     e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
@@ -225,7 +225,7 @@ end
 @testset "new_entity! Tests" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
     )
 
     entity = new_entity!(world, ())
@@ -244,7 +244,7 @@ end
 @testset "World new_entities! with types" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
         Altitude,
     )
 
@@ -285,7 +285,7 @@ end
 @testset "World new_entities! with values" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
         Altitude,
     )
 
@@ -350,7 +350,7 @@ end
 @testset "World add/remove components" begin
     world = World(
         Position,
-        Velocity => StructArrayComponent,
+        Velocity => StructArrayStorage,
         Altitude,
         Health,
     )

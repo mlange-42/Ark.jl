@@ -1,8 +1,8 @@
 
 function setup_query_posvel_soa_unpack(n_entities::Int)
     world = World(
-        Position => StructArrayComponent,
-        Velocity => StructArrayComponent,
+        Position => StructArrayStorage,
+        Velocity => StructArrayStorage,
     )
     for i in 1:n_entities
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
