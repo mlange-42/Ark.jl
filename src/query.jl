@@ -10,13 +10,13 @@ end
 A query for components.
 """
 struct Query{W<:World,CS<:Tuple,N,NR}
-    _world::W
-    _cursor::_Cursor
-    _ids::NTuple{NR,UInt8}
     _mask::_Mask
     _exclude_mask::_Mask
-    _has_excluded::Bool
     _storage::CS
+    _ids::NTuple{NR,UInt8}
+    _world::W
+    _cursor::_Cursor
+    _has_excluded::Bool
 end
 
 """
@@ -175,13 +175,13 @@ end
 
     return quote
         Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
-            world,
-            _Cursor(world._archetypes, UInt8(0)),
-            $ids_tuple,
             $(mask),
             $(exclude_mask),
-            $(has_excluded ? true : false),
             $storages_tuple,
+            $ids_tuple,
+            world,
+            _Cursor(world._archetypes, UInt8(0)),
+            $(has_excluded ? true : false),
         )
     end
 end
