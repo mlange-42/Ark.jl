@@ -12,8 +12,8 @@ See also [VectorComponent](@ref).
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 world = World(
-    (Position, StructArrayComponent),
-    (Velocity, StructArrayComponent),
+    Position => StructArrayComponent,
+    Velocity => StructArrayComponent,
 )
 ; # suppress print output
 
@@ -35,8 +35,8 @@ See also [StructArrayComponent](@ref).
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 world = World(
-    (Position, VectorComponent),
-    (Velocity, VectorComponent),
+    Position => VectorComponent,
+    Velocity => VectorComponent,
 )
 ; # suppress print output
 

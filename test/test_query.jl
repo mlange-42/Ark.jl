@@ -179,7 +179,10 @@ end
 end
 
 @testset "Query StructArray" begin
-    world = World(Position, (Velocity, StructArrayComponent))
+    world = World(
+        Position,
+        Velocity => StructArrayComponent,
+    )
 
     for i in 1:10
         new_entity!(world, (Position(0, 0), Velocity(i, i)))
@@ -204,7 +207,7 @@ end
 @testset "Query FieldsView" begin
     world = World(
         Position,
-        (Velocity, StructArrayComponent),
+        Velocity => StructArrayComponent,
         NoIsBits,
     )
 

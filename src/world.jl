@@ -44,13 +44,9 @@ world = World(Position, Velocity)
 
 ```
 """
-function World(comp_types::Union{Type,Tuple{Type},Tuple{Type,Type}}...; allow_mutable=false)
-    types = map(arg -> arg isa Type ? arg : arg[1], comp_types)
-    storages = map(arg ->
-            arg isa Type ?
-            VectorComponent :
-            (length(arg) < 2 ? VectorComponent : arg[2]),
-        comp_types)
+function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; allow_mutable=false)
+    types = map(arg -> arg isa Type ? arg : arg.first, comp_types)
+    storages = map(arg -> arg isa Type ? VectorComponent : arg.second, comp_types)
 
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
 end
@@ -838,6 +834,21 @@ end
     types = CS.parameters
     storage_val_types = ST.parameters
     allow_mutable = MUT::Bool
+
+    for T in types
+        if !isconcretetype(T)
+            throw(
+                ArgumentError("can't use $T as component as it is not a concrete type"),
+            )
+        end
+    end
+    for mode in storage_val_types
+        if !(mode <: StructArrayComponent || mode <: VectorComponent)
+            throw(
+                ArgumentError("$mode is not a valid storage mode, must be StructArrayComponent or VectorComponent"),
+            )
+        end
+    end
 
     # Immutability checks
     for (T, mode) in zip(types, storage_val_types)

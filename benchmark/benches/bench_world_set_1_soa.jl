@@ -1,8 +1,8 @@
 
 function setup_world_set_1_soa(n_entities::Int)
     world = World(
-        (Position, StructArrayComponent),
-        (Velocity, StructArrayComponent),
+        Position => StructArrayComponent,
+        Velocity => StructArrayComponent,
     )
 
     entities = Vector{Entity}()

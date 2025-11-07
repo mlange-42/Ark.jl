@@ -116,8 +116,8 @@ or by using [StructArrayComponent](@ref) or [VectorComponent](@ref) during world
 
 ```jldoctest; output = false
 world = World(
-    (Position, StructArrayComponent),
-    (Velocity, StructArrayComponent),
+    Position => StructArrayComponent,
+    Velocity => StructArrayComponent,
 )
 ; # suppress print output
 

@@ -10,8 +10,8 @@ end
 @testset "World creation 2" begin
     world = World(
         Position,
-        (Velocity, StructArrayComponent),
-        (Altitude,),
+        Velocity => StructArrayComponent,
+        Altitude,
     )
     @test isa(world, World)
     params = typeof(world).parameters[1]
@@ -33,7 +33,7 @@ end
 @testset "World storage type" begin
     world = World(
         Position,
-        (Velocity, StructArrayComponent),
+        Velocity => StructArrayComponent,
     )
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
@@ -111,7 +111,7 @@ end
     _ = World(Position, MutableComponent; allow_mutable=true)
 
     @test_throws("ArgumentError: Component type MutableComponent must be immutable because it uses StructArray storage",
-        World(Position, (MutableComponent, StructArrayComponent)))
+        World(Position, MutableComponent => StructArrayComponent))
 end
 
 @testset "_get_storage Tests" begin
@@ -193,7 +193,10 @@ end
 end
 
 @testset "World get/set components" begin
-    world = World(Position, (Velocity, StructArrayComponent))
+    world = World(
+        Position,
+        Velocity => StructArrayComponent,
+    )
 
     e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     e2 = new_entity!(world, ())
@@ -220,7 +223,10 @@ end
 end
 
 @testset "new_entity! Tests" begin
-    world = World(Position, (Velocity, StructArrayComponent))
+    world = World(
+        Position,
+        Velocity => StructArrayComponent,
+    )
 
     entity = new_entity!(world, ())
     @test entity == _new_entity(2, 0)
@@ -238,7 +244,7 @@ end
 @testset "World new_entities! with types" begin
     world = World(
         Position,
-        (Velocity, StructArrayComponent),
+        Velocity => StructArrayComponent,
         Altitude,
     )
 
@@ -279,7 +285,7 @@ end
 @testset "World new_entities! with values" begin
     world = World(
         Position,
-        (Velocity, StructArrayComponent),
+        Velocity => StructArrayComponent,
         Altitude,
     )
 
@@ -344,7 +350,7 @@ end
 @testset "World add/remove components" begin
     world = World(
         Position,
-        (Velocity, StructArrayComponent),
+        Velocity => StructArrayComponent,
         Altitude,
         Health,
     )
