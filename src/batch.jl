@@ -85,6 +85,7 @@ function close!(b::Batch)
 end
 
 @generated function _get_columns_at_index(b::Batch{W,CS,N}) where {W<:World,CS<:Tuple,N}
+    storage_types = CS.parameters
     exprs = Expr[]
     push!(exprs, :(arch = b._archetypes[b._index]))
     push!(exprs, :(entities = view(arch.archetype.entities, arch.start_idx:arch.end_idx)))
@@ -92,7 +93,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :(@inline $stor_sym = b._world._storages[b._ids[$i]]))
+        push!(exprs, :(@inline $stor_sym = b._world._storages[b._ids[$i]]::$(storage_types[i])))
         push!(exprs, :(@inline $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
