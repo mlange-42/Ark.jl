@@ -88,17 +88,17 @@ function table_to_html(data::Vector{CompareRow})::String
       <tbody>
     """
 
-    improved = false
-    regressed = false
+    improved = 0
+    regressed = 0
 
     name = ""
     for r in data
         emoji = ""
         if r.factor <= 0.9
-            improved = true
+            improved += 1
             emoji = "🚀"
         elseif r.factor >= 1.1
-            regressed = true
+            regressed += 1
             emoji = "⚠️"
         end
 
@@ -125,14 +125,16 @@ function table_to_html(data::Vector{CompareRow})::String
     </details>
     """
 
-    text = if regressed
-        "<p>⚠️ Benchmark regression detected!</p>"
-    elseif improved
-        "<p>🚀 Benchmark improvement detected!</p>"
+    if regressed == 0 && improved == 0
+        html = "<p>✅ Benchmarks are stable!</p>" * "\n" * html
     else
-        "<p>✅ Benchmarks are stable!</p>"
+        if regressed > 0
+            html = "<p>⚠️ $regressed benchmark regressions detected!</p>" * "\n" * html
+        end
+        if improved > 0
+            html = "<p>🚀 $improved benchmark improvements detected!</p>" * "\n" * html
+        end
     end
-    html = text * "\n" * html
 
     return html
 end
