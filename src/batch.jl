@@ -5,10 +5,9 @@
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-mutable struct Batch{W<:World,CS<:Tuple,N}
+mutable struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N}
     const _world::W
     const _archetypes::Vector{_BatchArchetype}
-    const _storages::CS
     _index::Int
     _lock::UInt8
 end
@@ -21,22 +20,18 @@ end
     comp_types = CT.parameters
     world_storage_modes = W.parameters[3].parameters
 
-    storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
-    storages_tuple = Expr(:tuple, storage_exprs...)
-
-    storage_types = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))] <: StructArrayStorage ?
-        _ComponentStorage{T,_StructArray_type(T)} :
-        _ComponentStorage{T,Vector{T}}
+    # TODO: keeping this for now to make iteration consistent with queries
+    storage_modes = [
+        world_storage_modes[Int(_component_id(W.parameters[1], T))]
         for T in comp_types
     ]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
+    storage_tuple_mode = Expr(:curly, :Tuple, storage_modes...)
 
     return quote
-        Batch{$W,$storage_tuple_type,$(length(comp_types))}(
+        Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             world,
             archetypes,
-            $storages_tuple,
             0,
             _lock(world._lock),
         )
@@ -81,7 +76,9 @@ function close!(b::Batch)
     b._lock = 0
 end
 
-@generated function _get_columns_at_index(b::Batch{W,CS,N}) where {W<:World,CS<:Tuple,N}
+@generated function _get_columns_at_index(b::Batch{W,TS,SM,N}) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+    storage_model = SM.parameters
+    comp_types = TS.parameters
     exprs = Expr[]
     push!(exprs, :(arch = b._archetypes[b._index]))
     push!(exprs, :(entities = view(arch.archetype.entities, arch.start_idx:arch.end_idx)))
@@ -89,8 +86,8 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = b._storages.$i))
-        push!(exprs, :($col_sym = $stor_sym.data[Int(arch.archetype.id)]))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
         # TODO: return nothing if the component is not present.
         # Required for optional components. Should we remove optional?
         push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : view($col_sym, arch.start_idx:arch.end_idx)))

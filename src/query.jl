@@ -9,10 +9,9 @@ end
 
 A query for components.
 """
-struct Query{W<:World,CS<:Tuple,N,NR}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,NR}
     _mask::_Mask
     _exclude_mask::_Mask
-    _storage::CS
     _ids::NTuple{NR,UInt8}
     _world::W
     _cursor::_Cursor
@@ -150,7 +149,6 @@ end
         _component_id(W.parameters[1], C)
     end
 
-    all_ids = map(get_id, comp_types)
     required_ids = map(get_id, required_types)
     with_ids = map(get_id, with_types)
     without_ids = map(get_id, without_types)
@@ -160,24 +158,19 @@ end
     exclude_mask = EX === Val{true} ? _MaskNot(non_exclude_ids...) : _Mask(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
-    storage_types = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))] == StructArrayStorage ?
-        _ComponentStorage{T,_StructArray_type(T)} :
-        _ComponentStorage{T,Vector{T}}
+    storage_modes = [
+        world_storage_modes[Int(_component_id(W.parameters[1], T))]
         for T in comp_types
     ]
-    storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
-
-    storage_exprs = Expr[:(world._storages[$(Int(i))]) for i in all_ids]
-    storages_tuple = Expr(:tuple, storage_exprs...)
+    comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
+    storage_tuple_mode = Expr(:curly, :Tuple, storage_modes...)
 
     ids_tuple = tuple(required_ids...)
 
     return quote
-        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$(length(required_types))}(
             $(mask),
             $(exclude_mask),
-            $storages_tuple,
             $ids_tuple,
             world,
             _Cursor(world._archetypes, UInt8(0)),
@@ -221,20 +214,26 @@ Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
     _unlock(q._world._lock, q._cursor._lock)
+    q._cursor._archetypes = q._world._archetypes
+    q._cursor._lock = 0
 end
 
-@generated function _get_columns(q::Query{W,CS,N,NR}, archetype::_Archetype) where {W<:World,CS<:Tuple,N,NR}
-    storage_types = CS.parameters
+@generated function _get_columns(
+    q::Query{W,TS,SM,N,NR},
+    archetype::_Archetype,
+) where {W<:World,TS<:Tuple,SM<:Tuple,N,NR}
+    comp_types = TS.parameters
+    storage_modes = SM.parameters
     exprs = Expr[]
     push!(exprs, :(entities = archetype.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = q._storage.$i))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
-        if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)
+        if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : _new_fields_view(view($col_sym, :))))
         else
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
