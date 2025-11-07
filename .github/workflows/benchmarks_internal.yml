@@ -11,7 +11,7 @@ permissions:
   pull-requests: write
 
 env:
-  BASE_REF: main
+  BASE_REF: fe9408a
 
 jobs:
   benchmark:
