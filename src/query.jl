@@ -1,7 +1,6 @@
 
-mutable struct _Cursor
-    _archetypes::Vector{_Archetype}
-    _lock::UInt8
+mutable struct _QueryLock
+    closed::Bool
 end
 
 """
@@ -9,12 +8,13 @@ end
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,NR}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
     _mask::_Mask
     _exclude_mask::_Mask
-    _ids::NTuple{NR,UInt8}
     _world::W
-    _cursor::_Cursor
+    _archetypes::Vector{_Archetype}
+    _q_lock::_QueryLock
+    _lock::UInt8
     _has_excluded::Bool
 end
 
@@ -31,8 +31,6 @@ end
 Creates a query.
 
 Macro version of [`Query`](@ref) that allows ergonomic construction of queries using simulated keyword arguments.
-
-Queries can be stored and re-used. However, query creation is fast (<20ns), so this is not mandatory.
 
 # Arguments
 
@@ -83,8 +81,6 @@ end
     )
 
 Creates a query.
-
-Queries can be stored and re-used. However, query creation is fast (<20ns), so this is not mandatory.
 
 For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 
@@ -168,24 +164,35 @@ end
     ids_tuple = tuple(required_ids...)
 
     return quote
-        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$(length(required_types))}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             $(mask),
             $(exclude_mask),
-            $ids_tuple,
             world,
-            _Cursor(world._archetypes, UInt8(0)),
+            _get_archetypes(world, $ids_tuple),
+            _QueryLock(false),
+            _lock(world._lock),
             $(has_excluded ? true : false),
         )
     end
 end
 
+function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
+    if length(ids) == 0
+        return world._archetypes
+    else
+        comps = world._index.components
+        rare_component = argmin(length(comps[i]) for i in ids)
+        return comps[rare_component]
+    end
+end
+
 @inline function Base.iterate(q::Query, state::Int)
-    while state <= length(q._cursor._archetypes)
-        archetype = q._cursor._archetypes[state]
+    while state <= length(q._archetypes)
+        archetype = q._archetypes[state]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = _get_columns(q, archetype)
+            result = _get_columns(q, state)
             return result, state + 1
         end
         state += 1
@@ -196,12 +203,11 @@ end
 end
 
 @inline function Base.iterate(q::Query)
-    if length(q._ids) != 0
-        comps = q._world._index.components
-        rare_component = argmin(length(comps[i]) for i in q._ids)
-        q._cursor._archetypes = comps[rare_component]
+    if q._q_lock.closed
+        throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
     end
-    q._cursor._lock = _lock(q._world._lock)
+    q._q_lock.closed = true
+
     return Base.iterate(q, 1)
 end
 
@@ -213,18 +219,18 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
-    _unlock(q._world._lock, q._cursor._lock)
-    q._cursor._archetypes = q._world._archetypes
-    q._cursor._lock = 0
+    _unlock(q._world._lock, q._lock)
+    q._q_lock.closed = true
 end
 
 @generated function _get_columns(
-    q::Query{W,TS,SM,N,NR},
-    archetype::_Archetype,
-) where {W<:World,TS<:Tuple,SM<:Tuple,N,NR}
+    q::Query{W,TS,SM,N},
+    idx::Int,
+) where {W<:World,TS<:Tuple,SM<:Tuple,N}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     exprs = Expr[]
+    push!(exprs, :(archetype = q._archetypes[idx]))
     push!(exprs, :(entities = archetype.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)

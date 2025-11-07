@@ -8,7 +8,7 @@ This is returned from batch operations and serves for initializing newly added c
 struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N}
     _world::W
     _archetypes::Vector{_BatchArchetype}
-    _handle::Entity
+    _b_lock::_QueryLock
     _lock::UInt8
 end
 
@@ -32,7 +32,7 @@ end
         Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             world,
             archetypes,
-            _get_entity(world._handles),
+            _QueryLock(false),
             _lock(world._lock),
         )
     end
@@ -48,10 +48,10 @@ end
 end
 
 @inline function Base.iterate(b::Batch)
-    if !_is_alive(b._world._handles, b._handle)
+    if b._b_lock.closed
         throw(InvalidStateException("batch closed, batches can't be used multiple times", :batch_closed))
     end
-    _recycle(b._world._handles, b._handle)
+    b._b_lock.closed = true
     return Base.iterate(b, 1)
 end
 
@@ -68,6 +68,7 @@ function close!(b::Batch)
     if _has_observers(b._world._event_manager, OnCreateEntity)
         _fire_create_entities(b._world._event_manager, b._archetypes[1])
     end
+    b._b_lock.closed = true
     _unlock(b._world._lock, b._lock)
 end
 

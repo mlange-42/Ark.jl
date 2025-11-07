@@ -13,7 +13,7 @@
         [
             _BatchArchetype(world._archetypes[2], 1, 1),
             _BatchArchetype(world._archetypes[3], 1, 1),
-        ], _get_entity(world._handles), _lock(world._lock))
+        ], _QueryLock(false), _lock(world._lock))
 
     arches = 0
     for (ent, pos_col) in batch
@@ -23,6 +23,23 @@
     end
     @test arches == 2
 
+    # test closed batch
+    @test_throws(
+        "InvalidStateException: batch closed, batches can't be used multiple times",
+        begin
+            for x in batch
+                nothing
+            end
+        end
+    )
+
+    batch = Batch{typeof(world),Tuple{Position},typeof(world).parameters[3],1}(world,
+        [
+            _BatchArchetype(world._archetypes[2], 1, 1),
+            _BatchArchetype(world._archetypes[3], 1, 1),
+        ], _QueryLock(false), _lock(world._lock))
+
+    close!(batch)
     # test closed batch
     @test_throws(
         "InvalidStateException: batch closed, batches can't be used multiple times",
