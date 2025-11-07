@@ -61,47 +61,45 @@ function _MaskNot(bits::Integer...)
     return _Mask(chunks)
 end
 
-function _contains_all(mask1::_Mask, mask2::_Mask)::Bool
-    return ((mask1.bits[1] & mask2.bits[1]) == mask2.bits[1]) *
-           ((mask1.bits[2] & mask2.bits[2]) == mask2.bits[2]) *
-           ((mask1.bits[3] & mask2.bits[3]) == mask2.bits[3]) *
-           ((mask1.bits[4] & mask2.bits[4]) == mask2.bits[4])
+@generated function _contains_all(mask1::_Mask{N}, mask2::_Mask{N})::Bool where N
+    expr = Expr[]
+    for i in 1:N
+        push!(expr, :(((mask1.bits[$i] & mask2.bits[$i]) == mask2.bits[$i])))
+    end
+    return Expr(:call, :*, expr...)
 end
 
-function _contains_any(mask1::_Mask, mask2::_Mask)::Bool
-    return !(
-        ((mask1.bits[1] & mask2.bits[1]) == 0) *
-        ((mask1.bits[2] & mask2.bits[2]) == 0) *
-        ((mask1.bits[3] & mask2.bits[3]) == 0) *
-        ((mask1.bits[4] & mask2.bits[4]) == 0)
-    )
+@generated function _contains_any(mask1::_Mask{N}, mask2::_Mask{N})::Bool where N
+    expr = Expr[]
+    for i in 1:N
+        push!(expr, :(((mask1.bits[$i] & mask2.bits[$i]) == 0)))
+    end
+    expr_call = Expr(:call, :*, expr...)
+    return :(!(($expr_call)))
 end
 
-function _and(a::_Mask, b::_Mask)::_Mask
-    return _Mask((
-        a.bits[1] & b.bits[1],
-        a.bits[2] & b.bits[2],
-        a.bits[3] & b.bits[3],
-        a.bits[4] & b.bits[4],
-    ))
+@generated function _and(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
+    expr = Expr[]
+    for i in 1:N
+        push!(expr, :(a.bits[$i] & b.bits[$i]))
+    end
+    return :(_Mask(($(expr...),)))
 end
 
-function _or(a::_Mask, b::_Mask)::_Mask
-    return _Mask((
-        a.bits[1] | b.bits[1],
-        a.bits[2] | b.bits[2],
-        a.bits[3] | b.bits[3],
-        a.bits[4] | b.bits[4],
-    ))
+@generated function _or(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
+    expr = Expr[]
+    for i in 1:N
+        push!(expr, :(a.bits[$i] | b.bits[$i]))
+    end
+    return :(_Mask(($(expr...),)))
 end
 
-@inline function _clear_bits(a::_Mask, b::_Mask)::_Mask
-    return _Mask((
-        a.bits[1] & ~b.bits[1],
-        a.bits[2] & ~b.bits[2],
-        a.bits[3] & ~b.bits[3],
-        a.bits[4] & ~b.bits[4],
-    ))
+@inline @generated function _clear_bits(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
+    expr = Expr[]
+    for i in 1:N
+        push!(expr, :(a.bits[$i] & ~b.bits[$i]))
+    end
+    return :(_Mask(($(expr...),)))
 end
 
 @inline @generated function _is_zero(m::_Mask{N})::Bool where N
