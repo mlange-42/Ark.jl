@@ -86,7 +86,7 @@ Base.view(sa::_StructArray, ::Colon) = view(sa, 1:length(sa))
 @generated function Base.view(
     sa::S,
     idx::I,
-) where {S<:_StructArray{C,CS,N},I<:AbstractUnitRange{Int}} where {C,CS<:NamedTuple,N}
+) where {S<:_StructArray{C,CS,N},I<:AbstractUnitRange{T}} where {C,CS<:NamedTuple,N,T<:Integer}
     names = fieldnames(C)
     types = fieldtypes(C)
     view_exprs = [
