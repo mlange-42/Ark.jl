@@ -227,6 +227,9 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
+    if _is_alive(q._world._handles, q._handle)
+        _recycle(q._world._handles, q._handle)
+    end
     _unlock(q._world._lock, q._lock)
 end
 

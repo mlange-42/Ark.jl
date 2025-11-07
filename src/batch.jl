@@ -68,6 +68,9 @@ function close!(b::Batch)
     if _has_observers(b._world._event_manager, OnCreateEntity)
         _fire_create_entities(b._world._event_manager, b._archetypes[1])
     end
+    if _is_alive(b._world._handles, b._handle)
+        _recycle(b._world._handles, b._handle)
+    end
     _unlock(b._world._lock, b._lock)
 end
 
