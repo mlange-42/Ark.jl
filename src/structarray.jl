@@ -1,6 +1,6 @@
 
 mutable struct _StructArray{C,CS<:NamedTuple,N} <: AbstractArray{C,1}
-    _components::CS
+    const _components::CS
     _length::Int
 end
 
