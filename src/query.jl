@@ -1,7 +1,6 @@
 
 mutable struct _Cursor
     _archetypes::Vector{_Archetype}
-    _lock::UInt8
 end
 
 """
@@ -13,8 +12,10 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,NR}
     _mask::_Mask
     _exclude_mask::_Mask
     _ids::NTuple{NR,UInt8}
+    _handle::Entity
     _world::W
     _cursor::_Cursor
+    _lock::UInt8
     _has_excluded::Bool
 end
 
@@ -172,8 +173,10 @@ end
             $(mask),
             $(exclude_mask),
             $ids_tuple,
+            _get_entity(world._handles),
             world,
-            _Cursor(world._archetypes, UInt8(0)),
+            _Cursor(world._archetypes),
+            _lock(world._lock),
             $(has_excluded ? true : false),
         )
     end
@@ -196,12 +199,16 @@ end
 end
 
 @inline function Base.iterate(q::Query)
+    if !_is_alive(q._world._handles, q._handle)
+        throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
+    end
+    _recycle(q._world._handles, q._handle)
+
     if length(q._ids) != 0
         comps = q._world._index.components
         rare_component = argmin(length(comps[i]) for i in q._ids)
         q._cursor._archetypes = comps[rare_component]
     end
-    q._cursor._lock = _lock(q._world._lock)
     return Base.iterate(q, 1)
 end
 
@@ -213,9 +220,7 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
-    _unlock(q._world._lock, q._cursor._lock)
-    q._cursor._archetypes = q._world._archetypes
-    q._cursor._lock = 0
+    _unlock(q._world._lock, q._lock)
 end
 
 @generated function _get_columns(
