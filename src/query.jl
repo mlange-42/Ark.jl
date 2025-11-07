@@ -4,10 +4,9 @@
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,NR}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
     _mask::_Mask
     _exclude_mask::_Mask
-    _ids::NTuple{NR,UInt8}
     _handle::Entity
     _world::W
     _archetypes::Vector{_Archetype}
@@ -183,10 +182,9 @@ end
             comps[rare_component]
         end
 
-        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$(length(required_types))}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             $(mask),
             $(exclude_mask),
-            $ids_tuple,
             _get_entity(world._handles),
             world,
             archetypes,
@@ -233,9 +231,9 @@ function close!(q::Query)
 end
 
 @generated function _get_columns(
-    q::Query{W,TS,SM,N,NR},
+    q::Query{W,TS,SM,N},
     archetype::_Archetype,
-) where {W<:World,TS<:Tuple,SM<:Tuple,N,NR}
+) where {W<:World,TS<:Tuple,SM<:Tuple,N}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     exprs = Expr[]
