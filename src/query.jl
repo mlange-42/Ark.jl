@@ -219,6 +219,8 @@ Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
     _unlock(q._world._lock, q._cursor._lock)
+    q._cursor._archetypes = q._world._archetypes
+    q._cursor._lock = 0
 end
 
 @generated function _get_columns(q::Query{W,CS,N,NR}, archetype::_Archetype) where {W<:World,CS<:Tuple,N,NR}
