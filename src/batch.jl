@@ -5,10 +5,10 @@
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-mutable struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N}
-    const _world::W
-    const _archetypes::Vector{_BatchArchetype}
-    _index::Int
+struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N}
+    _world::W
+    _archetypes::Vector{_BatchArchetype}
+    _handle::Entity
     _lock::UInt8
 end
 
@@ -32,29 +32,26 @@ end
         Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             world,
             archetypes,
-            0,
+            _get_entity(world._handles),
             _lock(world._lock),
         )
     end
 end
 
 @inline function Base.iterate(b::Batch, state::Int)
-    b._index = state
-
-    if b._index <= length(b._archetypes)
-        result = _get_columns_at_index(b)
-        next_state = b._index + 1
-        return result, next_state
+    if state <= length(b._archetypes)
+        result = _get_columns_at_index(b, state)
+        return result, state + 1
     end
-
     close!(b)
     return nothing
 end
 
 @inline function Base.iterate(b::Batch)
-    if b._lock == 0
+    if !_is_alive(b._world._handles, b._handle)
         throw(InvalidStateException("batch closed, batches can't be used multiple times", :batch_closed))
     end
+    _recycle(b._world._handles, b._handle)
     return Base.iterate(b, 1)
 end
 
@@ -72,15 +69,13 @@ function close!(b::Batch)
         _fire_create_entities(b._world._event_manager, b._archetypes[1])
     end
     _unlock(b._world._lock, b._lock)
-    b._index = 0
-    b._lock = 0
 end
 
-@generated function _get_columns_at_index(b::Batch{W,TS,SM,N}) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+@generated function _get_columns_at_index(b::Batch{W,TS,SM,N}, idx::Int) where {W<:World,TS<:Tuple,SM<:Tuple,N}
     storage_modes = SM.parameters
     comp_types = TS.parameters
     exprs = Expr[]
-    push!(exprs, :(arch = b._archetypes[b._index]))
+    push!(exprs, :(arch = b._archetypes[idx]))
     push!(exprs, :(entities = view(arch.archetype.entities, arch.start_idx:arch.end_idx)))
     for i in 1:N
         stor_sym = Symbol("stor", i)
