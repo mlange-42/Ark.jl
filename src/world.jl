@@ -46,7 +46,7 @@ world = World(Position, Velocity)
 """
 function World(comp_types::Union{Type,Tuple{Type,Type}}...; allow_mutable=false)
     types = map(arg -> arg isa Type ? arg : arg[1], comp_types)
-    storages = map(arg -> arg isa Type ? _InferredComponent : arg[2], comp_types)
+    storages = map(arg -> arg isa Type ? VectorComponent : arg[2], comp_types)
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
 end
 
@@ -834,16 +834,8 @@ end
     storage_val_types = ST.parameters
     allow_mutable = MUT::Bool
 
-    # Resolve storage modes (Val{...} types)
-    resolved_val_types = [
-        S <: _InferredComponent ?
-        (T <: StructArrayComponent ? StructArrayComponent : VectorComponent) :
-        S
-        for (T, S) in zip(types, storage_val_types)
-    ]
-
     # Immutability checks
-    for (T, mode) in zip(types, resolved_val_types)
+    for (T, mode) in zip(types, storage_val_types)
         if ismutabletype(T)
             if mode <: StructArrayComponent
                 throw(
@@ -865,7 +857,7 @@ end
 
     for i in 1:length(types)
         T = types[i]
-        mode = resolved_val_types[i]
+        mode = storage_val_types[i]
         if mode <: StructArrayComponent
             storage_types[i] = :(_ComponentStorage{$T,_StructArray_type($T)})
             storage_exprs[i] = :(_new_struct_array_storage($T))
@@ -879,7 +871,7 @@ end
     storage_tuple_type = :(Tuple{$(storage_types...)})
     storage_tuple = Expr(:tuple, storage_exprs...)
 
-    storage_mode_type = :(Tuple{$(resolved_val_types...)})
+    storage_mode_type = :(Tuple{$(storage_val_types...)})
 
     # Component registration
     id_exprs = [:(_register_component!(registry, $T)) for T in types]

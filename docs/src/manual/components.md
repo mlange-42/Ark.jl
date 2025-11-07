@@ -114,52 +114,13 @@ The storage mode can be selected per component type.
 Either by declaring the component a sub-type of [StructArrayComponent](@ref),
 or by using [StructArrayComponent](@ref) or [VectorComponent](@ref) during world construction.
 
-```@meta
-DocTestSetup = quote
-    using Ark
-end
-```
-
 ```jldoctest; output = false
-struct Position <: StructArrayComponent
-    x::Float64
-    y::Float64
-end
-
-struct Velocity
-    x::Float64
-    y::Float64
-end
-
-world = World(
-    Position,
-    Velocity,
-)
-; # suppress print output
-
-# output
-
-```
-
-```jldoctest; output = false
-struct Position
-    x::Float64
-    y::Float64
-end
-
-struct Velocity
-    x::Float64
-    y::Float64
-end
-
 world = World(
     (Position, StructArrayComponent),
-    Velocity,
+    (Velocity, StructArrayComponent),
 )
 ; # suppress print output
 
 # output
 
 ```
-
-Both examples have the same effect.

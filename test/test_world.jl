@@ -8,7 +8,10 @@
 end
 
 @testset "World creation 2" begin
-    world = World(Position, Velocity, SaoComp)
+    world = World(
+        Position,
+        (Velocity, StructArrayComponent),
+    )
     @test isa(world, World)
     params = typeof(world).parameters[1]
 
@@ -20,25 +23,18 @@ end
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
     @test isa(_get_storage(world, Position).data[1], Vector{Position})
-    @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,_StructArray_type(SaoComp)})
-    @test isa(_get_storage(world, SaoComp).data[1], _StructArray{SaoComp})
+    @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
+    @test isa(_get_storage(world, Velocity).data[1], _StructArray{Velocity})
 end
 
 @testset "World storage type" begin
     world = World(
         Position,
-        SaoComp,
         (Velocity, StructArrayComponent),
     )
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
-    @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,_StructArray_type(SaoComp)})
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
-
-    world = World(
-        (SaoComp, VectorComponent),
-    )
-    @test isa(_get_storage(world, SaoComp), _ComponentStorage{SaoComp,Vector{SaoComp}})
 end
 
 @testset "World creation error" begin
@@ -111,8 +107,8 @@ end
 
     _ = World(Position, MutableComponent; allow_mutable=true)
 
-    @test_throws("ArgumentError: Component type MutableSaoComp must be immutable because it uses StructArray storage",
-        World(Position, MutableSaoComp))
+    @test_throws("ArgumentError: Component type MutableComponent must be immutable because it uses StructArray storage",
+        World(Position, (MutableComponent, StructArrayComponent)))
 end
 
 @testset "_get_storage Tests" begin
@@ -194,64 +190,68 @@ end
 end
 
 @testset "World get/set components" begin
-    world = World(Position, SaoComp)
+    world = World(Position, (Velocity, StructArrayComponent))
 
-    e1 = new_entity!(world, (Position(1, 2), SaoComp(3, 4)))
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     e2 = new_entity!(world, ())
 
-    pos, vel = @get_components(world, e1, (Position, SaoComp))
+    pos, vel = @get_components(world, e1, (Position, Velocity))
     @test pos == Position(1, 2)
-    @test vel == SaoComp(3, 4)
+    @test vel == Velocity(3, 4)
 
     # TODO: do we want that, or do we want it to return `nothing`?
     @test_throws("ArgumentError: entity has no Position component",
-        get_components(world, e2, Val.((Position, SaoComp))))
+        get_components(world, e2, Val.((Position, Velocity))))
     @test_throws("ArgumentError: entity has no Position component",
         set_components!(world, e2, (Position(0, 0),)))
     @test_throws("ArgumentError: can't get components of a dead entity",
-        get_components(world, zero_entity, Val.((Position, SaoComp))))
+        get_components(world, zero_entity, Val.((Position, Velocity))))
 
     t = get_components(world, e1, Val.(()))
     @test t == ()
 
-    set_components!(world, e1, (Position(5, 6), SaoComp(7, 8)))
-    pos, vel = get_components(world, e1, Val.((Position, SaoComp)))
+    set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
+    pos, vel = get_components(world, e1, Val.((Position, Velocity)))
     @test pos == Position(5, 6)
-    @test vel == SaoComp(7, 8)
+    @test vel == Velocity(7, 8)
 end
 
 @testset "new_entity! Tests" begin
-    world = World(Position, SaoComp)
+    world = World(Position, (Velocity, StructArrayComponent))
 
     entity = new_entity!(world, ())
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
 
-    entity = new_entity!(world, (Position(1, 2), SaoComp(3, 4)))
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(3, 0)
     @test is_alive(world, entity) == true
 
-    pos, vel = get_components(world, entity, Val.((Position, SaoComp)))
+    pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     @test pos == Position(1, 2)
-    @test vel == SaoComp(3, 4)
+    @test vel == Velocity(3, 4)
 end
 
 @testset "World new_entities! with types" begin
-    world = World(Position, SaoComp, Altitude)
+    world = World(
+        Position,
+        (Velocity, StructArrayComponent),
+        Altitude,
+    )
 
-    new_entity!(world, (Position(1, 1), SaoComp(3, 4)))
-    e = new_entity!(world, (Position(1, 1), SaoComp(3, 4)))
+    new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in @new_entities!(world, 100, (Position, SaoComp))
+    for (ent, pos_col, vel_col) in @new_entities!(world, 100, (Position, Velocity))
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             pos_col[i] = Position(i + 1, i + 1)
-            vel_col[i] = SaoComp(i + 1, i + 1)
+            vel_col[i] = Velocity(i + 1, i + 1)
             count += 1
         end
         @test is_locked(world) == true
@@ -263,7 +263,7 @@ end
     @test length(world._storages[2].data[2]) == 101
 
     count = 0
-    for (ent, pos_col, vel_col) in @Query(world, (Position, SaoComp))
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(i, i)
@@ -274,23 +274,27 @@ end
 end
 
 @testset "World new_entities! with values" begin
-    world = World(Position, SaoComp, Altitude)
+    world = World(
+        Position,
+        (Velocity, StructArrayComponent),
+        Altitude,
+    )
 
-    new_entity!(world, (Position(1, 1), SaoComp(3, 4)))
-    e = new_entity!(world, (Position(1, 1), SaoComp(3, 4)))
+    new_entity!(world, (Position(1, 1), Velocity(3, 4)))
+    e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), SaoComp(99, 99)); iterate=true)
+    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate=true)
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(99, 99)
-            @test vel_col[i] == SaoComp(99, 99)
+            @test vel_col[i] == Velocity(99, 99)
             pos_col[i] = Position(i + 1, i + 1)
-            vel_col[i] = SaoComp(i + 1, i + 1)
+            vel_col[i] = Velocity(i + 1, i + 1)
             count += 1
         end
         @test is_locked(world) == true
@@ -302,7 +306,7 @@ end
     @test length(world._storages[2].data[2]) == 101
 
     count = 0
-    for (ent, pos_col, vel_col) in @Query(world, (Position, SaoComp))
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(i, i)
@@ -311,12 +315,12 @@ end
     end
     @test count == 101
 
-    batch = new_entities!(world, 100, (Position(13, 13), SaoComp(13, 13)))
+    batch = new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
     @test batch === nothing
     @test is_locked(world) == false
 
     count = 0
-    for (ent, pos_col, vel_col) in @Query(world, (Position, SaoComp))
+    for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             if i <= 101
@@ -335,41 +339,46 @@ end
 end
 
 @testset "World add/remove components" begin
-    world = World(Position, SaoComp, Altitude, Health)
+    world = World(
+        Position,
+        (Velocity, StructArrayComponent),
+        Altitude,
+        Health,
+    )
 
     e1 = new_entity!(world, ())
-    add_components!(world, e1, (Position(1, 2), SaoComp(3, 4)))
+    add_components!(world, e1, (Position(1, 2), Velocity(3, 4)))
 
-    e2 = new_entity!(world, (Position(5, 6), SaoComp(7, 8)))
+    e2 = new_entity!(world, (Position(5, 6), Velocity(7, 8)))
 
     add_components!(world, e1, (Altitude(1), Health(2)))
     add_components!(world, e2, (Altitude(3), Health(4)))
 
-    pos, vel, a, h = get_components(world, e1, Val.((Position, SaoComp, Altitude, Health)))
+    pos, vel, a, h = get_components(world, e1, Val.((Position, Velocity, Altitude, Health)))
     @test pos == Position(1, 2)
-    @test vel == SaoComp(3, 4)
+    @test vel == Velocity(3, 4)
     @test a == Altitude(1)
     @test h == Health(2)
 
-    @test @has_components(world, e1, (Position, SaoComp)) == true
+    @test @has_components(world, e1, (Position, Velocity)) == true
 
-    pos, vel, a, h = get_components(world, e2, Val.((Position, SaoComp, Altitude, Health)))
+    pos, vel, a, h = get_components(world, e2, Val.((Position, Velocity, Altitude, Health)))
     @test pos == Position(5, 6)
-    @test vel == SaoComp(7, 8)
+    @test vel == Velocity(7, 8)
     @test a == Altitude(3)
     @test h == Health(4)
 
-    @remove_components!(world, e1, (Position, SaoComp))
-    @test has_components(world, e1, Val.((Position, SaoComp))) == false
+    @remove_components!(world, e1, (Position, Velocity))
+    @test has_components(world, e1, Val.((Position, Velocity))) == false
 
     @test_throws("ArgumentError: can't set components of a dead entity",
-        set_components!(world, zero_entity, (Position(1, 2), SaoComp(3, 4))))
+        set_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4))))
     @test_throws("ArgumentError: can't add components to a dead entity",
-        add_components!(world, zero_entity, (Position(1, 2), SaoComp(3, 4))))
+        add_components!(world, zero_entity, (Position(1, 2), Velocity(3, 4))))
     @test_throws("ArgumentError: can't remove components from a dead entity",
-        remove_components!(world, zero_entity, Val.((Position, SaoComp))))
+        remove_components!(world, zero_entity, Val.((Position, Velocity))))
     @test_throws("ArgumentError: can't check components of a dead entity",
-        has_components(world, zero_entity, Val.((Position, SaoComp))))
+        has_components(world, zero_entity, Val.((Position, Velocity))))
 end
 
 @testset "World exchange components" begin
