@@ -5,7 +5,7 @@
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-mutable struct Batch{W<:World,CS<:Tuple,TS<:Tuple,N}
+mutable struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N}
     const _world::W
     const _archetypes::Vector{_BatchArchetype}
     _index::Int
@@ -21,17 +21,15 @@ end
     world_storage_modes = W.parameters[3].parameters
 
     # TODO: keeping this for now to make iteration consistent with queries
-    storage_types = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))] <: StructArrayStorage ?
-        _ComponentStorage{T,_StructArray_type(T)} :
-        _ComponentStorage{T,Vector{T}}
+    storage_modes = [
+        world_storage_modes[Int(_component_id(W.parameters[1], T))]
         for T in comp_types
     ]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
-    comp_tuple_type = :(Tuple{$(comp_types...)})
+    comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
+    storage_tuple_mode = Expr(:curly, :Tuple, storage_modes...)
 
     return quote
-        Batch{$W,$storage_tuple_type,$comp_tuple_type,$(length(comp_types))}(
+        Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             world,
             archetypes,
             0,
@@ -78,8 +76,8 @@ function close!(b::Batch)
     b._lock = 0
 end
 
-@generated function _get_columns_at_index(b::Batch{W,CS,TS,N}) where {W<:World,CS<:Tuple,TS<:Tuple,N}
-    storage_types = CS.parameters
+@generated function _get_columns_at_index(b::Batch{W,TS,SM,N}) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+    storage_model = SM.parameters
     comp_types = TS.parameters
     exprs = Expr[]
     push!(exprs, :(arch = b._archetypes[b._index]))
