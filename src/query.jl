@@ -231,7 +231,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :(@inbounds $stor_sym = q._world._storages[q._all_ids[$i]]))
+        push!(exprs, :(@inbounds $stor_sym = q._world._storages[q._all_ids[$i]]::$(storage_types[i])))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
         if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)
