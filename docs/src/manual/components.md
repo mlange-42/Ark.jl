@@ -110,13 +110,24 @@ For these columns, Ark offers two storage modes:
   However, this storage mode comes with an overhead of ≈10-20% for component operations and entity creation.  
   Further, component access with [@get_components](@ref) and [set_components!](@ref) is also slower.
 
-The storage mode can be selected per component type.
-Either by declaring the component a sub-type of [StructArrayStorage](@ref),
-or by using [StructArrayStorage](@ref) or [VectorStorage](@ref) during world construction.
+The storage mode can be selected per component type by using [StructArrayStorage](@ref) or [VectorStorage](@ref) during world construction.
 
 ```jldoctest; output = false
 world = World(
-    Position => StructArrayStorage,
+    Position => VectorStorage,
+    Velocity => StructArrayStorage,
+)
+; # suppress print output
+
+# output
+
+```
+
+The default is `VectorStorage` if no storage mode is specified:
+
+```jldoctest; output = false
+world = World(
+    Position,
     Velocity => StructArrayStorage,
 )
 ; # suppress print output
