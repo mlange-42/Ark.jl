@@ -11,6 +11,7 @@ end
     world = World(
         Position,
         (Velocity, StructArrayComponent),
+        (Altitude,),
     )
     @test isa(world, World)
     params = typeof(world).parameters[1]
@@ -18,13 +19,15 @@ end
     @test _component_id(params, Velocity) == 2
     @test _component_id(params, Position) == 1
     @test_throws(
-        "ArgumentError: Component type Altitude not found in the World",
-        _component_id(params, Altitude))
+        "ArgumentError: Component type Health not found in the World",
+        _component_id(params, Health))
 
     @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
     @test isa(_get_storage(world, Position).data[1], Vector{Position})
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
     @test isa(_get_storage(world, Velocity).data[1], _StructArray{Velocity})
+    @test isa(_get_storage(world, Altitude), _ComponentStorage{Altitude,Vector{Altitude}})
+    @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
 end
 
 @testset "World storage type" begin

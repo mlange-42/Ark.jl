@@ -44,9 +44,14 @@ world = World(Position, Velocity)
 
 ```
 """
-function World(comp_types::Union{Type,Tuple{Type,Type}}...; allow_mutable=false)
+function World(comp_types::Union{Type,Tuple{Type},Tuple{Type,Type}}...; allow_mutable=false)
     types = map(arg -> arg isa Type ? arg : arg[1], comp_types)
-    storages = map(arg -> arg isa Type ? VectorComponent : arg[2], comp_types)
+    storages = map(arg ->
+            arg isa Type ?
+            VectorComponent :
+            (length(arg) < 2 ? VectorComponent : arg[2]),
+        comp_types)
+
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
 end
 
