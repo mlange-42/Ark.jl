@@ -104,7 +104,7 @@ end
     ))
 end
 
-@inline function _is_zero(m::_Mask{N})::Bool where N
+@inline @generated function _is_zero(m::_Mask{N})::Bool where N
     expr = Expr[]
     for i in 1:N
         push!(expr, :((m.bits[$i] == 0)))
