@@ -261,4 +261,12 @@ end
         for _ in query
         end
     )
+
+    query = @Query(world, (Position, Velocity))
+    close!(query)
+    @test_throws(
+        "InvalidStateException: query closed, queries can't be used multiple times",
+        for _ in query
+        end
+    )
 end

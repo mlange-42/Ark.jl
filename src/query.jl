@@ -165,7 +165,6 @@ end
 
     return quote
         ids = $ids_tuple
-        ids = $ids_tuple
         rare_component = 0
         archetypes = if length(ids) == 0
             world._archetypes
