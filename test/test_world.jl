@@ -306,6 +306,8 @@ end
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
+        @test pos_col isa FieldsView
+        @test vel_col isa StructArrayView
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(99, 99)
