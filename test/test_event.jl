@@ -28,7 +28,7 @@ end
     end
 
     M = (@isdefined fake_types) ? 2 : 1
-    @test obs._comps == _Mask{M}(1, 2)
+    @test obs._comps == _Mask{M}(offset_ID + 1, offset_ID + 2)
     @test obs._with == _Mask{M}()
     @test obs._without == _Mask{M}()
     @test obs._has_comps == true
@@ -42,9 +42,9 @@ end
         println(entity)
     end
 
-    @test obs._comps == _Mask{M}(1, 2)
-    @test obs._with == _Mask{M}(3)
-    @test obs._without == _Mask{M}(4)
+    @test obs._comps == _Mask{M}(offset_ID + 1, offset_ID + 2)
+    @test obs._with == _Mask{M}(offset_ID + 3)
+    @test obs._without == _Mask{M}(offset_ID + 4)
     @test obs._has_comps == true
     @test obs._has_with == true
     @test obs._has_without == true
@@ -57,8 +57,8 @@ end
     end
 
     @test obs._comps == _Mask{M}()
-    @test obs._with == _Mask{M}(1, 2)
-    @test obs._without == _Mask{M}(_Not(), 1, 2)
+    @test obs._with == _Mask{M}(offset_ID + 1, offset_ID + 2)
+    @test obs._without == _Mask{M}(_Not(), offset_ID + 1, offset_ID + 2)
     @test obs._has_comps == false
     @test obs._has_with == true
     @test obs._has_without == true
