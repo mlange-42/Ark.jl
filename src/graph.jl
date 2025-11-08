@@ -1,11 +1,11 @@
 mutable struct _GraphNode{K}
     const mask::_Mask{K}
-    const neighbors::_VecMap{_GraphNode{K}}
+    const neighbors::_VecMap{_GraphNode{K},K}
     archetype::UInt32
 end
 
 function _GraphNode(mask::_Mask{K}, archetype::UInt32) where K
-    _GraphNode{K}(mask, _VecMap{_GraphNode{K}}(), archetype)
+    _GraphNode{K}(mask, _VecMap{_GraphNode{K},K}(), archetype)
 end
 
 struct _Graph{K}
