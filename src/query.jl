@@ -8,9 +8,9 @@ end
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
-    _mask::_Mask
-    _exclude_mask::_Mask
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,K}
+    _mask::_Mask{K}
+    _exclude_mask::_Mask{K}
     _world::W
     _archetypes::Vector{_Archetype}
     _q_lock::_QueryLock
@@ -162,7 +162,7 @@ end
     ids_tuple = tuple(required_ids...)
 
     return quote
-        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$K}(
             $(mask),
             $(exclude_mask),
             world,

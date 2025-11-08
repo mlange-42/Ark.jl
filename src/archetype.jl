@@ -2,7 +2,7 @@
 struct _Archetype{K}
     entities::Entities
     components::Vector{UInt8}  # Indices into the global ComponentStorage list
-    mask::_Mask
+    mask::_Mask{K}
     node::_GraphNode{K}
     id::UInt32
 end

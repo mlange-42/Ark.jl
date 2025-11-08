@@ -1,16 +1,16 @@
 
 struct _Not end
 
-struct _Mask{N}
-    bits::NTuple{N,UInt64}
+struct _Mask{K}
+    bits::NTuple{K,UInt64}
 end
 
-function _Mask{N}() where N
-    return _Mask(ntuple(_ -> UInt64(0), N))
+function _Mask{K}() where K
+    return _Mask(ntuple(_ -> UInt64(0), K))
 end
 
-function _Mask{N}(bits::UInt8...) where N
-    chunks = ntuple(_ -> UInt64(0), N)
+function _Mask{K}(bits::UInt8...) where K
+    chunks = ntuple(_ -> UInt64(0), K)
 
     for b in bits
         @check b > 0
@@ -22,8 +22,8 @@ function _Mask{N}(bits::UInt8...) where N
     return _Mask(chunks)
 end
 
-function _Mask{N}(::_Not, bits::UInt8...) where N
-    chunks = ntuple(_ -> typemax(UInt64), N)  # 0xFFFFFFFFFFFFFFFF
+function _Mask{K}(::_Not, bits::UInt8...) where K
+    chunks = ntuple(_ -> typemax(UInt64), K)  # 0xFFFFFFFFFFFFFFFF
 
     for b in bits
         @check b > 0
@@ -36,8 +36,8 @@ function _Mask{N}(::_Not, bits::UInt8...) where N
     return _Mask(chunks)
 end
 
-function _Mask{N}(bits::Integer...) where N
-    chunks = ntuple(_ -> UInt64(0), N)
+function _Mask{K}(bits::Integer...) where K
+    chunks = ntuple(_ -> UInt64(0), K)
 
     for b in bits
         @check 1 ≤ b ≤ 256
@@ -49,8 +49,8 @@ function _Mask{N}(bits::Integer...) where N
     return _Mask(chunks)
 end
 
-function _Mask{N}(::_Not, bits::Integer...) where N
-    chunks = ntuple(_ -> typemax(UInt64), N)  # 0xFFFFFFFFFFFFFFFF
+function _Mask{K}(::_Not, bits::Integer...) where K
+    chunks = ntuple(_ -> typemax(UInt64), K)  # 0xFFFFFFFFFFFFFFFF
 
     for b in bits
         @check 1 ≤ b ≤ 256
@@ -63,50 +63,50 @@ function _Mask{N}(::_Not, bits::Integer...) where N
     return _Mask(chunks)
 end
 
-@generated function _contains_all(mask1::_Mask{N}, mask2::_Mask{N})::Bool where N
+@generated function _contains_all(mask1::_Mask{K}, mask2::_Mask{K})::Bool where K
     expr = Expr[]
-    for i in 1:N
+    for i in 1:K
         push!(expr, :(((mask1.bits[$i] & mask2.bits[$i]) == mask2.bits[$i])))
     end
     return Expr(:call, :*, expr...)
 end
 
-@generated function _contains_any(mask1::_Mask{N}, mask2::_Mask{N})::Bool where N
+@generated function _contains_any(mask1::_Mask{K}, mask2::_Mask{K})::Bool where K
     expr = Expr[]
-    for i in 1:N
+    for i in 1:K
         push!(expr, :(((mask1.bits[$i] & mask2.bits[$i]) == 0)))
     end
     expr_call = Expr(:call, :*, expr...)
     return :(!(($expr_call)))
 end
 
-@generated function _and(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
+@generated function _and(a::_Mask{K}, b::_Mask{K})::_Mask{K} where K
     expr = Expr[]
-    for i in 1:N
+    for i in 1:K
         push!(expr, :(a.bits[$i] & b.bits[$i]))
     end
-    return :(_Mask{$N}(($(expr...),)))
+    return :(_Mask{$K}(($(expr...),)))
 end
 
-@generated function _or(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
+@generated function _or(a::_Mask{K}, b::_Mask{K})::_Mask{K} where K
     expr = Expr[]
-    for i in 1:N
+    for i in 1:K
         push!(expr, :(a.bits[$i] | b.bits[$i]))
     end
-    return :(_Mask{$N}(($(expr...),)))
+    return :(_Mask{$K}(($(expr...),)))
 end
 
-@inline @generated function _clear_bits(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
+@inline @generated function _clear_bits(a::_Mask{K}, b::_Mask{K})::_Mask{K} where K
     expr = Expr[]
-    for i in 1:N
+    for i in 1:K
         push!(expr, :(a.bits[$i] & ~b.bits[$i]))
     end
-    return :(_Mask{$N}(($(expr...),)))
+    return :(_Mask{$K}(($(expr...),)))
 end
 
-@inline @generated function _is_zero(m::_Mask{N})::Bool where N
+@inline @generated function _is_zero(m::_Mask{K})::Bool where K
     expr = Expr[]
-    for i in 1:N
+    for i in 1:K
         push!(expr, :((m.bits[$i] == 0)))
     end
     return Expr(:call, :*, expr...)
@@ -114,9 +114,9 @@ end
 
 _is_not_zero(m::_Mask)::Bool = !_is_zero(m)
 
-function _active_bit_indices(mask::_Mask{N})::Vector{UInt8} where N
+function _active_bit_indices(mask::_Mask{K})::Vector{UInt8} where K
     indices = UInt8[]
-    for chunk_index in 1:N
+    for chunk_index in 1:K
         chunk = mask.bits[chunk_index]
         base = UInt8((chunk_index - 1) * 64)
         while chunk != 0
@@ -128,16 +128,16 @@ function _active_bit_indices(mask::_Mask{N})::Vector{UInt8} where N
     return indices
 end
 
-struct _MutableMask{N}
-    bits::MVector{N,UInt64}
+struct _MutableMask{K}
+    bits::MVector{K,UInt64}
 end
 
-function _MutableMask{N}() where N
-    return _MutableMask(zeros(MVector{N, UInt64}))
+function _MutableMask{K}() where K
+    return _MutableMask(zeros(MVector{K, UInt64}))
 end
 
-function _MutableMask(mask::_Mask{N}) where N
-    return _MutableMask(MVector{N,UInt64}(mask.bits))
+function _MutableMask(mask::_Mask{K}) where K
+    return _MutableMask(MVector{K,UInt64}(mask.bits))
 end
 
 function _set_mask!(mask::_MutableMask, other::_Mask)
@@ -145,9 +145,9 @@ function _set_mask!(mask::_MutableMask, other::_Mask)
     return mask
 end
 
-@generated function _equals(mask1::_MutableMask{N}, mask2::_Mask{N})::Bool where N
+@generated function _equals(mask1::_MutableMask{K}, mask2::_Mask{K})::Bool where K
     expr = Expr[]
-    for i in 1:N
+    for i in 1:K
         push!(expr, :((mask1.bits[$i] == mask2.bits[$i])))
     end
     return Expr(:call, :*, expr...)
