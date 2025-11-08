@@ -9,6 +9,16 @@ function _Mask{M}() where M
     return _Mask(ntuple(_ -> UInt64(0), M))
 end
 
+function _Mask{1}(bits::Integer...)
+    chunk = UInt64(0)
+    for b in bits
+        @check 1 ≤ b ≤ 64
+        offset = b - 1
+        chunk |= (UInt64(1) << offset)
+    end
+    return _Mask((chunk,))
+end
+
 function _Mask{M}(bits::T...) where {M,T<:Integer}
     chunks = ntuple(_ -> UInt64(0), M)
     for b in bits
@@ -22,6 +32,16 @@ end
 
 function _Mask{M}(::_Not) where M
     return _Mask(ntuple(_ -> typemax(UInt64), M))
+end
+
+function _Mask{1}(::_Not, bits::Integer...)
+    chunk = typemax(UInt64)
+    for b in bits
+        @check 1 ≤ b ≤ 64
+        offset = b - 1
+        chunk &= ~(UInt64(1) << offset)
+    end
+    return _Mask((chunk,))
 end
 
 function _Mask{M}(::_Not, bits::T...) where {M,T<:Integer}
