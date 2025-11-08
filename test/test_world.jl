@@ -42,7 +42,7 @@ end
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
 end
 
-if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World creation JET" begin
         # TODO: type instability here. Add benchmarks for world creation.
         #@test_opt World(
@@ -243,7 +243,7 @@ end
     @test vel == Velocity(7, 8)
 end
 
-if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World get/set components JET" begin
         world = World(
             Position,
@@ -276,7 +276,7 @@ end
     @test vel == Velocity(3, 4)
 end
 
-if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World new_entity! JET" begin
         world = World(
             Position,
@@ -405,7 +405,7 @@ end
     end
 end
 
-if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World new_entities! JET" begin
         world = World(
             Position,
@@ -468,7 +468,7 @@ end
         has_components(world, zero_entity, Val.((Position, Velocity))))
 end
 
-if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World add/remove component JET" begin
         world = World(
             Dummy,
