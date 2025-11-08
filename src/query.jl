@@ -191,7 +191,11 @@ end
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             result = _get_columns(q, state)
-            return result, state + 1
+            if isnothing(result)
+                return result, state + 1
+            else
+                return result, state + 1
+            end
         end
         state += 1
     end
