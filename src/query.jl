@@ -156,8 +156,8 @@ end
     without_ids = map(get_id, without_types)
     non_exclude_ids = map(get_id, non_exclude_types)
 
-    mask = _Mask(required_ids..., with_ids...)
-    exclude_mask = EX === Val{true} ? _MaskNot(non_exclude_ids...) : _Mask(without_ids...)
+    mask = _Mask{4}(required_ids..., with_ids...)
+    exclude_mask = EX === Val{true} ? _Mask{4}(_Not(), non_exclude_ids...) : _Mask{4}(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
     storage_types = [

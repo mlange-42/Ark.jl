@@ -91,8 +91,8 @@ function _EventManager()
     len = typemax(UInt8)
     _EventManager(
         [Vector{Observer}() for _ in 1:len],
-        [(_Mask(), false) for _ in 1:len],
-        [(_Mask(), false) for _ in 1:len],
+        [(_Mask{4}(), false) for _ in 1:len],
+        [(_Mask{4}(), false) for _ in 1:len],
         0,
     )
 end
@@ -148,7 +148,7 @@ function _remove_observer!(m::_EventManager, o::Observer)
 
     # rebuild mask unions
 
-    with_mask = _Mask()
+    with_mask = _Mask{4}()
     any_no_with = false
     for o in m.observers[e]
         if !o._has_with
@@ -163,7 +163,7 @@ function _remove_observer!(m::_EventManager, o::Observer)
         return
     end
 
-    comps_mask = _Mask()
+    comps_mask = _Mask{4}()
     any_no_comps = false
     for o in m.observers[e]
         if !o._has_comps

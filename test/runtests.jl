@@ -7,7 +7,7 @@ using Ark: _new_entity, _EntityIndex, _ComponentStorage
 using Ark: _new_entities_column
 using Ark: _Archetype, _add_entity!
 using Ark: _ComponentRegistry, _get_id!, _register_component!
-using Ark: _Mask, _MaskNot
+using Ark: _Mask, _Not
 using Ark: _get_bit, _contains_all, _contains_any, _and, _or, _clear_bits, _active_bit_indices
 using Ark: _is_zero, _is_not_zero
 using Ark: _MutableMask, _get_bit, _set_bit!, _clear_bit!

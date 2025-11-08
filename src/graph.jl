@@ -14,7 +14,7 @@ struct _Graph
 end
 
 function _Graph()
-    _Graph(_MutableMask(), [_GraphNode(_Mask(), UInt32(1))])
+    _Graph(_MutableMask{4}(), [_GraphNode(_Mask{4}(), UInt32(1))])
 end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)::_GraphNode

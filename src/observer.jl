@@ -159,9 +159,9 @@ end
     with_ids = map(get_id, with_types)
     without_ids = map(get_id, without_types)
 
-    mask = _Mask(ids...)
-    with_mask = _Mask(with_ids...)
-    exclude_mask = EX === Val{true} ? _MaskNot(with_ids...) : _Mask(without_ids...)
+    mask = _Mask{4}(ids...)
+    with_mask = _Mask{4}(with_ids...)
+    exclude_mask = EX === Val{true} ? _Mask{4}(_Not(), with_ids...) : _Mask{4}(without_ids...)
 
     has_comps_expr = (length(comp_types) > 0) ? :(true) : :(false)
     has_with_expr = (length(with_types) > 0) ? :(true) : :(false)

@@ -1,14 +1,16 @@
 
+struct _Not end
+
 struct _Mask{N}
     bits::NTuple{N,UInt64}
 end
 
-function _Mask()
-    return _Mask(ntuple(_ -> UInt64(0), 4))
+function _Mask{N}() where N
+    return _Mask(ntuple(_ -> UInt64(0), N))
 end
 
-function _Mask(bits::UInt8...)
-    chunks = ntuple(_ -> UInt64(0), 4)
+function _Mask{N}(bits::UInt8...) where N
+    chunks = ntuple(_ -> UInt64(0), N)
 
     for b in bits
         @check b > 0
@@ -20,8 +22,8 @@ function _Mask(bits::UInt8...)
     return _Mask(chunks)
 end
 
-function _MaskNot(bits::UInt8...)
-    chunks = ntuple(_ -> typemax(UInt64), 4)  # 0xFFFFFFFFFFFFFFFF
+function _Mask{N}(::_Not, bits::UInt8...) where N
+    chunks = ntuple(_ -> typemax(UInt64), N)  # 0xFFFFFFFFFFFFFFFF
 
     for b in bits
         @check b > 0
@@ -34,8 +36,8 @@ function _MaskNot(bits::UInt8...)
     return _Mask(chunks)
 end
 
-function _Mask(bits::Integer...)
-    chunks = ntuple(_ -> UInt64(0), 4)
+function _Mask{N}(bits::Integer...) where N
+    chunks = ntuple(_ -> UInt64(0), N)
 
     for b in bits
         @check 1 ≤ b ≤ 256
@@ -47,8 +49,8 @@ function _Mask(bits::Integer...)
     return _Mask(chunks)
 end
 
-function _MaskNot(bits::Integer...)
-    chunks = ntuple(_ -> typemax(UInt64), 4)  # 0xFFFFFFFFFFFFFFFF
+function _Mask{N}(::_Not, bits::Integer...) where N
+    chunks = ntuple(_ -> typemax(UInt64), N)  # 0xFFFFFFFFFFFFFFFF
 
     for b in bits
         @check 1 ≤ b ≤ 256
@@ -83,7 +85,7 @@ end
     for i in 1:N
         push!(expr, :(a.bits[$i] & b.bits[$i]))
     end
-    return :(_Mask(($(expr...),)))
+    return :(_Mask{$N}(($(expr...),)))
 end
 
 @generated function _or(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
@@ -91,7 +93,7 @@ end
     for i in 1:N
         push!(expr, :(a.bits[$i] | b.bits[$i]))
     end
-    return :(_Mask(($(expr...),)))
+    return :(_Mask{$N}(($(expr...),)))
 end
 
 @inline @generated function _clear_bits(a::_Mask{N}, b::_Mask{N})::_Mask{N} where N
@@ -99,7 +101,7 @@ end
     for i in 1:N
         push!(expr, :(a.bits[$i] & ~b.bits[$i]))
     end
-    return :(_Mask(($(expr...),)))
+    return :(_Mask{$N}(($(expr...),)))
 end
 
 @inline @generated function _is_zero(m::_Mask{N})::Bool where N
@@ -130,8 +132,8 @@ struct _MutableMask{N}
     bits::MVector{N,UInt64}
 end
 
-function _MutableMask()
-    return _MutableMask(MVector{4,UInt64}(0, 0, 0, 0))
+function _MutableMask{N}() where N
+    return _MutableMask(MVector{N,UInt64}(0, 0, 0, 0))
 end
 
 function _MutableMask(mask::_Mask{N}) where N

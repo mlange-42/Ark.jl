@@ -1100,7 +1100,7 @@ end
 
     has_comps = (length(comp_types) > 0) ? :(true) : (false)
     ids = map(get_id, comp_types)
-    mask = _Mask(ids...)
+    mask = _Mask{4}(ids...)
 
     return quote
         _do_emit_event!(world, event, $mask, $has_comps, entity)

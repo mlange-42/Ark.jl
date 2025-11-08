@@ -7,7 +7,7 @@ struct _VecMap{T}
 end
 
 function _VecMap{T}() where T
-    _VecMap{T}(Vector{T}(undef, 5), _MutableMask())
+    _VecMap{T}(Vector{T}(undef, 5), _MutableMask{4}())
 end
 
 function _get_map(m::_VecMap, index::UInt8)

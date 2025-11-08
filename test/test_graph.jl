@@ -5,7 +5,7 @@
     @test length(graph.nodes) == 1
 
     # Create a mutable mask and set a bit
-    mask = _MutableMask()
+    mask = _MutableMask{4}()
     _set_bit!(mask, UInt8(3))
 
     # Test _find_or_create: should create a new node
