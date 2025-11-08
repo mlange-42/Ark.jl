@@ -1,6 +1,7 @@
 
 @testset "Batch iterator test" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
         Altitude,

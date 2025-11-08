@@ -163,7 +163,7 @@ end
 end
 
 @testset "Fire OnCreateEntity" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(Dummy, Position, Velocity, Altitude)
 
     counter = 0
     obs = @observe!(world, OnCreateEntity) do entity
@@ -210,7 +210,7 @@ end
 end
 
 @testset "Fire OnCreateEntity batch" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(Dummy, Position, Velocity, Altitude)
 
     counter = 0
     obs = @observe!(world, OnCreateEntity) do entity
@@ -259,7 +259,7 @@ end
 end
 
 @testset "Fire OnRemoveEntity" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(Dummy, Position, Velocity, Altitude)
 
     counter = 0
     obs = @observe!(world, OnRemoveEntity) do entity
@@ -298,7 +298,7 @@ end
 end
 
 @testset "Fire OnAddComponents/OnRemoveComponents" begin
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     counter_add = 0
     counter_rem = 0
@@ -353,7 +353,7 @@ end
 end
 
 @testset "Fire OnAddComponents/OnRemoveComponents with" begin
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     counter_add = 0
     counter_rem = 0
@@ -388,7 +388,7 @@ end
 end
 
 @testset "Fire OnAddComponents/OnRemoveComponents without" begin
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     counter_add = 0
     counter_rem = 0
@@ -423,7 +423,7 @@ end
 end
 
 @testset "Observers combine" begin
-    world = World(Position, Velocity)
+    world = World(Dummy, Position, Velocity)
 
     counter = 0
     fn = (event::EventType, entity::Entity) -> begin
@@ -445,7 +445,7 @@ end
 @testset "Fire custom event" begin
     reg = EventRegistry()
     OnUpdateComponents = new_event_type!(reg)
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     e = new_entity!(world, ())
     @emit_event!(world, OnUpdateComponents, e)
@@ -490,7 +490,7 @@ end
 @testset "Fire custom event with" begin
     reg = EventRegistry()
     OnUpdateComponents = new_event_type!(reg)
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     counter = 0
     obs = @observe!(world, OnUpdateComponents, (); with=(Position, Velocity)) do entity
@@ -515,7 +515,7 @@ end
 @testset "Fire custom event without" begin
     reg = EventRegistry()
     OnUpdateComponents = new_event_type!(reg)
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     counter = 0
     obs = @observe!(world, OnUpdateComponents, (); without=(Position, Velocity)) do entity
@@ -540,7 +540,7 @@ end
 @testset "Fire custom event errors" begin
     reg = EventRegistry()
     OnUpdateComponents = new_event_type!(reg)
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
     @observe!(world, OnUpdateComponents, ()) do entity
     end
 

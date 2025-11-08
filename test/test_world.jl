@@ -33,6 +33,7 @@ end
 
 @testset "World storage type" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
     )
@@ -203,6 +204,7 @@ end
 
 @testset "World get/set components" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
     )
@@ -233,6 +235,7 @@ end
 
 @testset "new_entity! Tests" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
     )
@@ -252,6 +255,7 @@ end
 
 @testset "World new_entities! with types" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
         Altitude,
@@ -277,8 +281,8 @@ end
     @test count == 100
     @test is_locked(world) == false
     @test length(world._archetypes[2].entities) == 101
-    @test length(world._storages[offset_ID+1].data[2]) == 101
     @test length(world._storages[offset_ID+2].data[2]) == 101
+    @test length(world._storages[offset_ID+3].data[2]) == 101
 
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
@@ -293,6 +297,7 @@ end
 
 @testset "World new_entities! with values" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
         Altitude,
@@ -322,8 +327,8 @@ end
     @test count == 100
     @test is_locked(world) == false
     @test length(world._archetypes[2].entities) == 101
-    @test length(world._storages[offset_ID+1].data[2]) == 101
     @test length(world._storages[offset_ID+2].data[2]) == 101
+    @test length(world._storages[offset_ID+3].data[2]) == 101
 
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
@@ -360,6 +365,7 @@ end
 
 @testset "World add/remove components" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
         Altitude,
@@ -402,7 +408,7 @@ end
 end
 
 @testset "World exchange components" begin
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
@@ -438,7 +444,7 @@ end
 end
 
 @testset "remove_entity! Tests" begin
-    world = World(Position, Velocity)
+    world = World(Dummy, Position, Velocity)
 
     e1 = new_entity!(world, (Position(1, 1), Velocity(1, 1)))
     e2 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
@@ -460,7 +466,7 @@ end
 end
 
 @testset "World add/remove resources Tests" begin
-    world = World(Position, Velocity)
+    world = World(Dummy, Position, Velocity)
 
     @test has_resource(world, Tick) == false
 
@@ -483,7 +489,7 @@ end
 end
 
 @testset "World error messages" begin
-    world = World(Position, Velocity)
+    world = World(Dummy, Position, Velocity)
 
     e = new_entity!(world, (Position(0, 0),))
     @test_throws(

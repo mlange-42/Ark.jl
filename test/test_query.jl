@@ -1,6 +1,6 @@
 
 @testset "Query basic functionality" begin
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     for i in 1:10
         new_entity!(world, (Altitude(1), Health(2)))
@@ -36,7 +36,7 @@
 end
 
 @testset "Query with" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(Dummy, Position, Velocity, Altitude)
 
     for i in 1:10
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
@@ -57,7 +57,7 @@ end
 end
 
 @testset "Query without" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(Dummy, Position, Velocity, Altitude)
 
     for i in 1:10
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
@@ -78,7 +78,7 @@ end
 end
 
 @testset "Query optional" begin
-    world = World(Position, Velocity, Altitude)
+    world = World(Dummy, Position, Velocity, Altitude)
 
     for i in 1:10
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
@@ -106,7 +106,7 @@ end
 end
 
 @testset "Query exclusive" begin
-    world = World(Position, Velocity, Altitude, Health)
+    world = World(Dummy, Position, Velocity, Altitude, Health)
 
     for i in 1:10
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
@@ -135,7 +135,7 @@ end
 end
 
 @testset "Query empty" begin
-    world = World(Position, Velocity)
+    world = World(Dummy, Position, Velocity)
 
     for i in 1:10
         new_entity!(world, (Position(i, i * 2),))
@@ -156,7 +156,7 @@ end
 end
 
 @testset "Query no comps" begin
-    world = World(Position, Velocity)
+    world = World(Dummy, Position, Velocity)
 
     for i in 1:10
         new_entity!(world, (Position(i, i * 2),))
@@ -179,6 +179,7 @@ end
 
 @testset "Query StructArray" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
     )
@@ -205,6 +206,7 @@ end
 
 @testset "Query FieldsView" begin
     world = World(
+        Dummy,
         Position,
         Velocity => StructArrayStorage,
         NoIsBits,
@@ -245,7 +247,7 @@ end
 end
 
 @testset "Query error messages" begin
-    world = World(Position, Velocity)
+    world = World(Dummy, Position, Velocity)
 
     @test_throws(
         "ArgumentError: expected a tuple of Val types like Val.((Position, Velocity)), got Tuple{DataType, DataType}. " *
