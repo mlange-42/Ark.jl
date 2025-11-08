@@ -9,23 +9,23 @@ function _Mask{M}() where M
     return _Mask(ntuple(_ -> UInt64(0), M))
 end
 
-function _Mask{M}(bits::Integer...) where M
+function _Mask{M}(bits::T...) where {M,T<:Integer}
     chunks = ntuple(_ -> UInt64(0), M)
     for b in bits
         @check 1 ≤ b ≤ M * 64
         chunk = (b - 1) >>> 6
-        offset = (b - 1) & 0x3F
+        offset = (b - 1) & T(0x3F)
         chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
     end
     return _Mask(chunks)
 end
 
-function _Mask{M}(::_Not, bits::Integer...) where M
+function _Mask{M}(::_Not, bits::T...) where {M,T<:Integer}
     chunks = ntuple(_ -> typemax(UInt64), M)  # 0xFFFFFFFFFFFFFFFF
     for b in bits
         @check 1 ≤ b ≤ M * 64
         chunk = (b - 1) >>> 6
-        offset = (b - 1) & 0x3F
+        offset = (b - 1) & T(0x3F)
         mask = ~(UInt64(1) << offset)
         chunks = Base.setindex(chunks, chunks[chunk+1] & mask, chunk + 1)
     end
