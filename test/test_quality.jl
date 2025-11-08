@@ -7,7 +7,6 @@ if "CI" in keys(ENV) && VERSION >= v"1.12.0"
         Aqua.test_deps_compat(Ark, check_extras=false)
     end
 
-    using JET
     @testset "JET tests" begin
         rep = JET.report_package(Ark, target_modules=[Ark])
         println(rep)

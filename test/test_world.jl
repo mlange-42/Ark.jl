@@ -42,6 +42,13 @@ end
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
 end
 
+@testset "World creation JET" begin
+    @test_opt World(
+        Position,
+        Velocity => StructArrayStorage,
+    )
+end
+
 @testset "World creation error" begin
     @test_throws(
         "ArgumentError: duplicate component type Velocity during world creation",
