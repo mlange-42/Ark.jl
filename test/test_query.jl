@@ -231,6 +231,25 @@ end
     end
 end
 
+@testset "Query eltype" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+        NoIsBits,
+    )
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([])))
+    end
+
+    query = @Query(world, (Position, Velocity))
+    expected_type = Base.eltype(typeof(query))
+    for columns in query
+        @test typeof(columns) === expected_type
+    end
+end
+
 #@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
 @testset "Query JET" begin
     world = World(

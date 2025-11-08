@@ -259,7 +259,7 @@ end
 
 Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
 
-@generated function Base.eltype(::Type{Query{W,TS,SM,N}}) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+@generated function Base.eltype(::Type{Query{W,TS,SM,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
 
@@ -268,14 +268,16 @@ Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
         T = comp_types[i]
         if isbitstype(T) && storage_modes[i] == VectorStorage
             view_type =
-                Union{Nothing,_FieldsView_type(SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int64}}},true})}
+                _FieldsView_type(SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int64}}},true})
         elseif isbitstype(T)
-            view_type = Union{Nothing,_StructArrayView_type(T, UnitRange{Int64})}
+            view_type = _StructArrayView_type(T, UnitRange{Int64})
         else
-            view_type = Union{Nothing,SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int64}}}}}
+            view_type = SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int64}}}}
         end
         push!(result_types, view_type)
     end
 
-    return Tuple{result_types...}
+    return quote
+        Tuple{($result_types...)}
+    end
 end

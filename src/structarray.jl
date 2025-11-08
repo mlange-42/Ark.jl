@@ -33,6 +33,19 @@ end
     end
 end
 
+@generated function _StructArrayView_type(::Type{C}, ::Type{I}) where {C,I<:AbstractUnitRange{T}} where {T<:Integer}
+    names = fieldnames(C)
+    types = fieldtypes(C)
+
+    nt_type = :(NamedTuple{
+        ($(map(QuoteNode, names)...),),
+        Tuple{$(map(t -> :(SubArray{$t,1,Vector{$t},Tuple{I},true}), types)...)},
+    })
+    return quote
+        StructArrayView{C,$nt_type,I}
+    end
+end
+
 @generated function Base.getproperty(sa::_StructArray{C}, name::Symbol) where {C}
     # TODO: do we need this? Seems not called when doing `sa.components`.
     #if name == :components || name == :length
