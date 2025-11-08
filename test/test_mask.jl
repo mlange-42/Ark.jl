@@ -46,6 +46,10 @@ end
     m2 = _Mask{4}()
     @test _is_zero(m2) == true
     @test _is_not_zero(m2) == false
+
+    m3 = _Mask{4}(_Not())
+    @test _is_zero(m3) == false
+    @test _is_not_zero(m3) == true
 end
 
 @testset "_Mask clear_bits" begin
