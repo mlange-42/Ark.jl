@@ -1,7 +1,7 @@
 using Ark: _Mask, _MutableMask, _is_zero
 
 function setup_is_zero_mask()
-    return _Mask(1, 65, 129, 193, 194, 195)
+    return _Mask{4}(1, 65, 129, 193, 194, 195)
 end
 
 function benchmark_is_zero_mask(args)
