@@ -231,6 +231,29 @@ end
     end
 end
 
+#@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@testset "Query JET" begin
+    world = World(
+        Position,
+        Velocity => StructArrayStorage,
+        Altitude,
+        Health,
+    )
+
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+
+    f = () -> begin
+        for (e, p, v) in @Query(world, (Position, Vector); with=(Altitude,), without=(Health,))
+            if length(e) != 1
+                error("")
+            end
+        end
+    end
+
+    @test_opt f()
+end
+#end
+
 @testset "Query macro missing argument" begin
     ex = Meta.parse("@Query(world)")
     @test_throws LoadError eval(ex)
