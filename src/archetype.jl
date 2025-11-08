@@ -1,9 +1,9 @@
 
-struct _Archetype
+struct _Archetype{K}
     entities::Entities
     components::Vector{UInt8}  # Indices into the global ComponentStorage list
     mask::_Mask
-    node::_GraphNode
+    node::_GraphNode{K}
     id::UInt32
 end
 
@@ -22,8 +22,8 @@ end
 
 Base.resize!(arch::_Archetype, length::Int) = Base.resize!(arch.entities._data, length)
 
-struct _BatchArchetype
-    archetype::_Archetype
+struct _BatchArchetype{K}
+    archetype::_Archetype{K}
     start_idx::UInt32
     end_idx::UInt32
 end

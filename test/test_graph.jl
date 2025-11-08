@@ -1,11 +1,11 @@
 
 @testset "_Graph functionality" begin
     # Create a graph
-    graph = _Graph()
+    graph = _Graph{1}()
     @test length(graph.nodes) == 1
 
     # Create a mutable mask and set a bit
-    mask = _MutableMask{4}()
+    mask = _MutableMask{1}()
     _set_bit!(mask, UInt8(3))
 
     # Test _find_or_create: should create a new node

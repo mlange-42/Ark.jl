@@ -68,31 +68,31 @@ Observer for reacting on built-in and custom events.
 See [@observe!](@ref) for details.
 See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
 """
-struct Observer
+struct Observer{K}
     _id::_ObserverID
     _event::EventType
-    _comps::_Mask
-    _with::_Mask
-    _without::_Mask
+    _comps::_Mask{K}
+    _with::_Mask{K}
+    _without::_Mask{K}
     _has_comps::Bool
     _has_with::Bool
     _has_without::Bool
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
-mutable struct _EventManager
+mutable struct _EventManager{K}
     const observers::Vector{Vector{Observer}}
-    const comps::Vector{Tuple{_Mask,Bool}}
-    const with::Vector{Tuple{_Mask,Bool}}
+    const comps::Vector{Tuple{_Mask{K},Bool}}
+    const with::Vector{Tuple{_Mask{K},Bool}}
     num_observers::Int
 end
 
-function _EventManager()
+function _EventManager{K}() where K
     len = typemax(UInt8)
-    _EventManager(
+    _EventManager{K}(
         [Vector{Observer}() for _ in 1:len],
-        [(_Mask{4}(), false) for _ in 1:len],
-        [(_Mask{4}(), false) for _ in 1:len],
+        [(_Mask{K}(), false) for _ in 1:len],
+        [(_Mask{K}(), false) for _ in 1:len],
         0,
     )
 end
@@ -132,7 +132,7 @@ function _add_observer!(m::_EventManager, o::Observer)
     m.comps[e] = (comps, any_no_comps)
 end
 
-function _remove_observer!(m::_EventManager, o::Observer)
+function _remove_observer!(m::_EventManager{K}, o::Observer{K}) where K
     if o._id.id == 0
         throw(InvalidStateException("observer is not registered", :observer_not_registered))
     end
@@ -148,7 +148,7 @@ function _remove_observer!(m::_EventManager, o::Observer)
 
     # rebuild mask unions
 
-    with_mask = _Mask{4}()
+    with_mask = _Mask{K}()
     any_no_with = false
     for o in m.observers[e]
         if !o._has_with
@@ -163,7 +163,7 @@ function _remove_observer!(m::_EventManager, o::Observer)
         return
     end
 
-    comps_mask = _Mask{4}()
+    comps_mask = _Mask{K}()
     any_no_comps = false
     for o in m.observers[e]
         if !o._has_comps

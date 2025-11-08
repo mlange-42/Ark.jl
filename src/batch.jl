@@ -5,9 +5,9 @@
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-mutable struct Batch{W<:World,CS<:Tuple,N}
+mutable struct Batch{W<:World,CS<:Tuple,N,K}
     const _world::W
-    const _archetypes::Vector{_BatchArchetype}
+    const _archetypes::Vector{_BatchArchetype{K}}
     const _storages::CS
     _index::Int
     _lock::UInt8
@@ -15,17 +15,19 @@ end
 
 @generated function _Batch_from_types(
     world::W,
-    archetypes::Vector{_BatchArchetype},
+    archetypes::Vector{<:_BatchArchetype},
     ::Val{CT},
 ) where {W<:World,CT<:Tuple}
     comp_types = CT.parameters
+    CS = W.parameters[1]
+    K = cld(length(CS.parameters), 64)
     world_storage_modes = W.parameters[3].parameters
 
     storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
     storages_tuple = Expr(:tuple, storage_exprs...)
 
     storage_types = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))] <: StructArrayStorage ?
+        world_storage_modes[Int(_component_id(CS, T))] <: StructArrayStorage ?
         _ComponentStorage{T,_StructArray_type(T)} :
         _ComponentStorage{T,Vector{T}}
         for T in comp_types
@@ -33,7 +35,7 @@ end
     storage_tuple_type = :(Tuple{$(storage_types...)})
 
     return quote
-        Batch{$W,$storage_tuple_type,$(length(comp_types))}(
+        Batch{$W,$storage_tuple_type,$(length(comp_types)),$K}(
             world,
             archetypes,
             $storages_tuple,

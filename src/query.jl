@@ -146,18 +146,16 @@ end
         throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
     end
 
-    function get_id(C)
-        _component_id(W.parameters[1], C)
-    end
+    CS = W.parameters[1]
+    all_ids = map(C -> _component_id(CS, C), comp_types)
+    required_ids = map(C -> _component_id(CS, C), required_types)
+    with_ids = map(C -> _component_id(CS, C), with_types)
+    without_ids = map(C -> _component_id(CS, C), without_types)
+    non_exclude_ids = map(C -> _component_id(CS, C), non_exclude_types)
 
-    all_ids = map(get_id, comp_types)
-    required_ids = map(get_id, required_types)
-    with_ids = map(get_id, with_types)
-    without_ids = map(get_id, without_types)
-    non_exclude_ids = map(get_id, non_exclude_types)
-
-    mask = _Mask{4}(required_ids..., with_ids...)
-    exclude_mask = EX === Val{true} ? _Mask{4}(_Not(), non_exclude_ids...) : _Mask{4}(without_ids...)
+    K = cld(length(CS.parameters), 64)
+    mask = _Mask{K}(required_ids..., with_ids...)
+    exclude_mask = EX === Val{true} ? _Mask{K}(_Not(), non_exclude_ids...) : _Mask{K}(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
     storage_types = [

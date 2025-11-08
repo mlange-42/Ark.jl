@@ -114,9 +114,9 @@ end
 
 _is_not_zero(m::_Mask)::Bool = !_is_zero(m)
 
-function _active_bit_indices(mask::_Mask)::Vector{UInt8}
+function _active_bit_indices(mask::_Mask{N})::Vector{UInt8} where N
     indices = UInt8[]
-    for chunk_index in 1:4
+    for chunk_index in 1:N
         chunk = mask.bits[chunk_index]
         base = UInt8((chunk_index - 1) * 64)
         while chunk != 0
@@ -133,7 +133,7 @@ struct _MutableMask{N}
 end
 
 function _MutableMask{N}() where N
-    return _MutableMask(MVector{N,UInt64}(0, 0, 0, 0))
+    return _MutableMask(zeros(MVector{N, UInt64}))
 end
 
 function _MutableMask(mask::_Mask{N}) where N

@@ -11,7 +11,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 The World is the central ECS storage.
 """
-mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N} <: _AbstractWorld
+mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,K} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
     const _storages::CS
     const _archetypes::Vector{_Archetype}
@@ -19,7 +19,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N} <: _AbstractWorld
     const _registry::_ComponentRegistry
     const _entity_pool::_EntityPool
     const _lock::_Lock
-    const _graph::_Graph
+    const _graph::_Graph{K}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager
 end
@@ -895,11 +895,12 @@ end
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
+    K = cld(length(types),64)
     return quote
         registry = _ComponentRegistry()
         ids = $id_tuple
-        graph = _Graph()
-        World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types))}(
+        graph = _Graph{$(K)}()
+        World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$K}(
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
@@ -909,7 +910,7 @@ end
             _Lock(),
             graph,
             Dict{DataType,Any}(),
-            _EventManager(),
+            _EventManager{$(K)}(),
         )
     end
 end
@@ -1094,13 +1095,10 @@ end
 @generated function _emit_event!(world::W, event::EventType, entity::Entity, ::CT) where {W<:World,CT<:Tuple}
     comp_types = [x.parameters[1] for x in CT.parameters]
 
-    function get_id(C)
-        _component_id(W.parameters[1], C)
-    end
-
+    CS = W.parameters[1]
     has_comps = (length(comp_types) > 0) ? :(true) : (false)
-    ids = map(get_id, comp_types)
-    mask = _Mask{4}(ids...)
+    ids = map(C -> _component_id(CS, C), comp_types)
+    mask = _Mask{cld(length(CS.parameters),64)}(ids...)
 
     return quote
         _do_emit_event!(world, event, $mask, $has_comps, entity)

@@ -27,9 +27,9 @@ end
         println(entity)
     end
 
-    @test obs._comps == _Mask{4}(1, 2)
-    @test obs._with == _Mask{4}()
-    @test obs._without == _Mask{4}()
+    @test obs._comps == _Mask{1}(1, 2)
+    @test obs._with == _Mask{1}()
+    @test obs._without == _Mask{1}()
     @test obs._has_comps == true
     @test obs._has_with == false
     @test obs._has_without == false
@@ -41,9 +41,9 @@ end
         println(entity)
     end
 
-    @test obs._comps == _Mask{4}(1, 2)
-    @test obs._with == _Mask{4}(3)
-    @test obs._without == _Mask{4}(4)
+    @test obs._comps == _Mask{1}(1, 2)
+    @test obs._with == _Mask{1}(3)
+    @test obs._without == _Mask{1}(4)
     @test obs._has_comps == true
     @test obs._has_with == true
     @test obs._has_without == true
@@ -55,9 +55,9 @@ end
         println(entity)
     end
 
-    @test obs._comps == _Mask{4}()
-    @test obs._with == _Mask{4}(1, 2)
-    @test obs._without == _Mask{4}(_Not(), 1, 2)
+    @test obs._comps == _Mask{1}()
+    @test obs._with == _Mask{1}(1, 2)
+    @test obs._without == _Mask{1}(_Not(), 1, 2)
     @test obs._has_comps == false
     @test obs._has_with == true
     @test obs._has_without == true

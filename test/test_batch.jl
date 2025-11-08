@@ -5,10 +5,10 @@
     new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
     storages = (world._storages[1],)
-    batch = Batch{typeof(world),typeof(storages),1}(world,
+    batch = Batch{typeof(world),typeof(storages),1,1}(world,
         [
-            _BatchArchetype(world._archetypes[2], 1, 1),
-            _BatchArchetype(world._archetypes[3], 1, 1),
+            _BatchArchetype(world._archetypes[2], UInt32(1), UInt32(1)),
+            _BatchArchetype(world._archetypes[3], UInt32(1), UInt32(1)),
         ], storages, 0, _lock(world._lock))
 
     arches = 0
