@@ -14,7 +14,7 @@ The World is the central ECS storage.
 mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,K} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
     const _storages::CS
-    const _archetypes::Vector{_Archetype}
+    const _archetypes::Vector{_Archetype{K}}
     const _index::_ComponentIndex
     const _registry::_ComponentRegistry
     const _entity_pool::_EntityPool

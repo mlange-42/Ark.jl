@@ -12,7 +12,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,K}
     _mask::_Mask{K}
     _exclude_mask::_Mask{K}
     _world::W
-    _archetypes::Vector{_Archetype}
+    _archetypes::Vector{_Archetype{K}}
     _q_lock::_QueryLock
     _lock::UInt8
     _has_excluded::Bool
