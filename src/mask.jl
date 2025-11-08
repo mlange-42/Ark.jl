@@ -41,7 +41,7 @@ function _Mask{1}(::_Not, bits::Integer...)
         offset = b - 1
         chunk &= ~(UInt64(1) << offset)
     end
-    return _Mask((chunks,))
+    return _Mask((chunk,))
 end
 
 function _Mask{M}(::_Not, bits::T...) where {M,T<:Integer}
