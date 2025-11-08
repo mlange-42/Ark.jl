@@ -8,7 +8,7 @@ end
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,M}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,OPT,N,M}
     _mask::_Mask{M}
     _exclude_mask::_Mask{M}
     _world::W
@@ -161,8 +161,14 @@ end
 
     ids_tuple = tuple(required_ids...)
 
+    optional_flag_type_elts = [
+        (T in optional_types) ? :(Val{true}) : :(Val{false})
+        for T in comp_types
+    ]
+    optional_flags_type = Expr(:curly, :Tuple, optional_flag_type_elts...)
+
     return quote
-        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$M}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$optional_flags_type,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,
@@ -222,11 +228,13 @@ function close!(q::Query)
 end
 
 @generated function _get_columns(
-    q::Query{W,TS,SM,N},
+    q::Query{W,TS,SM,OPT,N,M},
     idx::Int,
-) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+) where {W<:World,TS<:Tuple,SM<:Tuple,OPT,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
+    is_optional = OPT.parameters
+
     exprs = Expr[]
     push!(exprs, :(archetype = q._archetypes[idx]))
     push!(exprs, :(entities = archetype.entities))
@@ -237,18 +245,30 @@ end
         push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
-        if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
-            push!(exprs, :($vec_sym = _new_fields_view(view($col_sym, :))))
+        if is_optional[i] === Val{true}
+            if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
+                push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : _new_fields_view(view($col_sym, :))))
+            else
+                push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
+            end
         else
-            push!(exprs, :($vec_sym = view($col_sym, :)))
+            if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
+                push!(exprs, :($vec_sym = _new_fields_view(view($col_sym, :))))
+            else
+                push!(exprs, :($vec_sym = view($col_sym, :)))
+            end
         end
     end
     result_exprs = [:entities]
     for i in 1:N
         push!(result_exprs, Symbol("vec", i))
     end
+
+    element_type = Base.eltype(Query{W,TS,SM,OPT,N,M})
+
     result_exprs = map(x -> :($x), result_exprs)
-    push!(exprs, Expr(:return, Expr(:tuple, result_exprs...)))
+    tuple_expr = Expr(:tuple, result_exprs...)
+    push!(exprs, Expr(:return, Expr(:(::), tuple_expr, element_type)))
 
     return quote
         @inbounds begin
@@ -259,25 +279,26 @@ end
 
 Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
 
-@generated function Base.eltype(::Type{Query{W,TS,SM,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,N,M}
+@generated function Base.eltype(::Type{Query{W,TS,SM,OPT,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,OPT,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
+    is_optional = OPT.parameters
 
-    result_types = [Entities]
+    result_types = Any[Entities]
     for i in 1:N
         T = comp_types[i]
-        if isbitstype(T) && storage_modes[i] == VectorStorage
-            view_type =
-                _FieldsView_type(SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int64}}},true})
+
+        base_view = if isbitstype(T) && storage_modes[i] == VectorStorage
+            _FieldsView_type(SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int}}},true})
         elseif isbitstype(T)
-            view_type = _StructArrayView_type(T, UnitRange{Int64})
+            _StructArrayView_type(T, UnitRange{Int})
         else
-            view_type = SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int64}}}}
+            SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int}}},true}
         end
-        push!(result_types, view_type)
+
+        opt_flag = is_optional[i] === Val{true}
+        push!(result_types, opt_flag ? Union{Nothing,base_view} : base_view)
     end
 
-    return quote
-        Tuple{($result_types...)}
-    end
+    return Tuple{result_types...}
 end

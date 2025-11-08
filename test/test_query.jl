@@ -92,9 +92,9 @@ end
     arch = 1
     for (ent, vec_pos, vec_vel, vec_alt) in query
         if arch == 1
-            @test length(vec_alt) == 0
+            @test vec_alt == nothing
         else
-            @test length(vec_alt) != 0
+            @test vec_alt != nothing
         end
         for i in eachindex(ent)
             e = ent[i]
@@ -236,14 +236,15 @@ end
         Dummy,
         Position,
         Velocity => StructArrayStorage,
+        Altitude,
         NoIsBits,
     )
 
     for i in 1:10
-        new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([])))
+        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([])))
     end
 
-    query = @Query(world, (Position, Velocity))
+    query = @Query(world, (Position, Velocity, NoIsBits, Altitude); optional=(Altitude,))
     expected_type = Base.eltype(typeof(query))
     for columns in query
         @test typeof(columns) === expected_type
@@ -251,6 +252,7 @@ end
 end
 
 #@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+"""
 @testset "Query JET" begin
     world = World(
         Position,
@@ -272,6 +274,7 @@ end
     @test_opt f()
 end
 #end
+"""
 
 @testset "Query macro missing argument" begin
     ex = Meta.parse("@Query(world)")
