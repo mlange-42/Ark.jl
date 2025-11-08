@@ -468,6 +468,28 @@ end
         has_components(world, zero_entity, Val.((Position, Velocity))))
 end
 
+if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World add/remove component JET" begin
+        world = World(
+            Dummy,
+            Position,
+            Velocity => StructArrayStorage,
+        )
+        using FunctionWrappers
+        excluded = Set([
+            FunctionWrappers.gen_fptr,
+            Base.unsafe_convert,
+            Base.setproperty!,
+        ])
+        function_filter(@nospecialize f) = !(f in excluded)
+
+        e1 = new_entity!(world, ())
+        @test_opt function_filter = function_filter add_components!(world, e1, (Position(1, 2), Velocity(3, 4)))
+        @test_opt function_filter = function_filter @has_components(world, e1, (Position, Velocity))
+        @test_opt function_filter = function_filter @remove_components!(world, e1, (Position, Velocity))
+    end
+end
+
 @testset "World exchange components" begin
     world = World(Dummy, Position, Velocity, Altitude, Health)
 
