@@ -10,7 +10,9 @@ function benchmark_query_create(args, n)
     world, queries = args
 
     for i in 1:n
-        queries[i] = @Query(world, (Position, Velocity))
+        query = @Query(world, (Position, Velocity))
+        close!(query)
+        queries[i] = query
     end
     return queries
 end

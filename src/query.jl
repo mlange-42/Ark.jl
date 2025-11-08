@@ -1,7 +1,6 @@
 
-mutable struct _Cursor
-    _archetypes::Vector{_Archetype}
-    _lock::UInt8
+mutable struct _QueryLock
+    closed::Bool
 end
 
 """
@@ -9,13 +8,13 @@ end
 
 A query for components.
 """
-struct Query{W<:World,CS<:Tuple,N,NR}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
     _mask::_Mask
     _exclude_mask::_Mask
-    _storage::CS
-    _ids::NTuple{NR,UInt8}
     _world::W
-    _cursor::_Cursor
+    _archetypes::Vector{_Archetype}
+    _q_lock::_QueryLock
+    _lock::UInt8
     _has_excluded::Bool
 end
 
@@ -32,8 +31,6 @@ end
 Creates a query.
 
 Macro version of [`Query`](@ref) that allows ergonomic construction of queries using simulated keyword arguments.
-
-Queries can be stored and re-used. However, query creation is fast (<20ns), so this is not mandatory.
 
 # Arguments
 
@@ -84,8 +81,6 @@ end
     )
 
 Creates a query.
-
-Queries can be stored and re-used. However, query creation is fast (<20ns), so this is not mandatory.
 
 For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 
@@ -147,7 +142,6 @@ end
     end
 
     CS = W.parameters[1]
-    all_ids = map(C -> _component_id(CS, C), comp_types)
     required_ids = map(C -> _component_id(CS, C), required_types)
     with_ids = map(C -> _component_id(CS, C), with_types)
     without_ids = map(C -> _component_id(CS, C), without_types)
@@ -158,39 +152,45 @@ end
     exclude_mask = EX === Val{true} ? _Mask{K}(_Not(), non_exclude_ids...) : _Mask{K}(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
-    storage_types = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))] == StructArrayStorage ?
-        _ComponentStorage{T,_StructArray_type(T)} :
-        _ComponentStorage{T,Vector{T}}
+    storage_modes = [
+        world_storage_modes[Int(_component_id(W.parameters[1], T))]
         for T in comp_types
     ]
-    storage_tuple_type = Expr(:curly, :Tuple, storage_types...)
-
-    storage_exprs = Expr[:(world._storages[$(Int(i))]) for i in all_ids]
-    storages_tuple = Expr(:tuple, storage_exprs...)
+    comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
+    storage_tuple_mode = Expr(:curly, :Tuple, storage_modes...)
 
     ids_tuple = tuple(required_ids...)
 
     return quote
-        Query{$W,$storage_tuple_type,$(length(comp_types)),$(length(required_types))}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
             $(mask),
             $(exclude_mask),
-            $storages_tuple,
-            $ids_tuple,
             world,
-            _Cursor(world._archetypes, UInt8(0)),
+            _get_archetypes(world, $ids_tuple),
+            _QueryLock(false),
+            _lock(world._lock),
             $(has_excluded ? true : false),
         )
     end
 end
 
+function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
+    if length(ids) == 0
+        return world._archetypes
+    else
+        comps = world._index.components
+        rare_component = argmin(length(comps[i]) for i in ids)
+        return comps[rare_component]
+    end
+end
+
 @inline function Base.iterate(q::Query, state::Int)
-    while state <= length(q._cursor._archetypes)
-        archetype = q._cursor._archetypes[state]
+    while state <= length(q._archetypes)
+        archetype = q._archetypes[state]
         if length(archetype.entities) > 0 &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = _get_columns(q, archetype)
+            result = _get_columns(q, state)
             return result, state + 1
         end
         state += 1
@@ -201,12 +201,11 @@ end
 end
 
 @inline function Base.iterate(q::Query)
-    if length(q._ids) != 0
-        comps = q._world._index.components
-        rare_component = argmin(length(comps[i]) for i in q._ids)
-        q._cursor._archetypes = comps[rare_component]
+    if q._q_lock.closed
+        throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
     end
-    q._cursor._lock = _lock(q._world._lock)
+    q._q_lock.closed = true
+
     return Base.iterate(q, 1)
 end
 
@@ -218,21 +217,27 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
-    _unlock(q._world._lock, q._cursor._lock)
+    _unlock(q._world._lock, q._lock)
+    q._q_lock.closed = true
 end
 
-@generated function _get_columns(q::Query{W,CS,N,NR}, archetype::_Archetype) where {W<:World,CS<:Tuple,N,NR}
-    storage_types = CS.parameters
+@generated function _get_columns(
+    q::Query{W,TS,SM,N},
+    idx::Int,
+) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+    comp_types = TS.parameters
+    storage_modes = SM.parameters
     exprs = Expr[]
+    push!(exprs, :(archetype = q._archetypes[idx]))
     push!(exprs, :(entities = archetype.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = q._storage.$i))
-        push!(exprs, :($col_sym = $stor_sym.data[archetype.id]))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
-        if isbitstype(storage_types[i].parameters[1]) && !(storage_types[i].parameters[2] <: _StructArray)
+        if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : _new_fields_view(view($col_sym, :))))
         else
             push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))

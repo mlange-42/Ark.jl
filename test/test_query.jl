@@ -8,10 +8,9 @@
         new_entity!(world, (Position(i, i * 2), Health(3)))
     end
 
-    query = @Query(world, (Position, Velocity))
-    @test query._has_excluded == false
-
     for i in 1:10
+        query = @Query(world, (Position, Velocity))
+        @test query._has_excluded == false
         count = 0
         for (entities, vec_pos, vec_vel) in query
             @test isa(vec_pos, FieldsView{Position}) == true
@@ -252,5 +251,22 @@ end
         "ArgumentError: expected a tuple of Val types like Val.((Position, Velocity)), got Tuple{DataType, DataType}. " *
         "Consider using the related macro instead.",
         Query(world, (Position, Velocity))
+    )
+
+    query = @Query(world, (Position, Velocity))
+    for _ in query
+    end
+    @test_throws(
+        "InvalidStateException: query closed, queries can't be used multiple times",
+        for _ in query
+        end
+    )
+
+    query = @Query(world, (Position, Velocity))
+    close!(query)
+    @test_throws(
+        "InvalidStateException: query closed, queries can't be used multiple times",
+        for _ in query
+        end
     )
 end

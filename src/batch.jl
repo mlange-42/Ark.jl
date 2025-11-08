@@ -5,11 +5,10 @@
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-mutable struct Batch{W<:World,CS<:Tuple,N,K}
-    const _world::W
-    const _archetypes::Vector{_BatchArchetype{K}}
-    const _storages::CS
-    _index::Int
+struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N,K}
+    _world::W
+    _archetypes::Vector{_BatchArchetype{K}}
+    _b_lock::_QueryLock
     _lock::UInt8
 end
 
@@ -23,45 +22,38 @@ end
     K = cld(length(CS.parameters), 64)
     world_storage_modes = W.parameters[3].parameters
 
-    storage_exprs = Expr[:(_get_storage(world, $T)) for T in comp_types]
-    storages_tuple = Expr(:tuple, storage_exprs...)
-
-    storage_types = [
-        world_storage_modes[Int(_component_id(CS, T))] <: StructArrayStorage ?
-        _ComponentStorage{T,_StructArray_type(T)} :
-        _ComponentStorage{T,Vector{T}}
+    # TODO: keeping this for now to make iteration consistent with queries
+    storage_modes = [
+        world_storage_modes[Int(_component_id(CS, T))]
         for T in comp_types
     ]
-    storage_tuple_type = :(Tuple{$(storage_types...)})
+    comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
+    storage_tuple_mode = Expr(:curly, :Tuple, storage_modes...)
 
     return quote
-        Batch{$W,$storage_tuple_type,$(length(comp_types)),$K}(
+        Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$K}(
             world,
             archetypes,
-            $storages_tuple,
-            0,
+            _QueryLock(false),
             _lock(world._lock),
         )
     end
 end
 
 @inline function Base.iterate(b::Batch, state::Int)
-    b._index = state
-
-    if b._index <= length(b._archetypes)
-        result = _get_columns_at_index(b)
-        next_state = b._index + 1
-        return result, next_state
+    if state <= length(b._archetypes)
+        result = _get_columns_at_index(b, state)
+        return result, state + 1
     end
-
     close!(b)
     return nothing
 end
 
 @inline function Base.iterate(b::Batch)
-    if b._lock == 0
+    if b._b_lock.closed
         throw(InvalidStateException("batch closed, batches can't be used multiple times", :batch_closed))
     end
+    b._b_lock.closed = true
     return Base.iterate(b, 1)
 end
 
@@ -78,24 +70,28 @@ function close!(b::Batch)
     if _has_observers(b._world._event_manager, OnCreateEntity)
         _fire_create_entities(b._world._event_manager, b._archetypes[1])
     end
+    b._b_lock.closed = true
     _unlock(b._world._lock, b._lock)
-    b._index = 0
-    b._lock = 0
 end
 
-@generated function _get_columns_at_index(b::Batch{W,CS,N}) where {W<:World,CS<:Tuple,N}
+@generated function _get_columns_at_index(b::Batch{W,TS,SM,N}, idx::Int) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+    storage_modes = SM.parameters
+    comp_types = TS.parameters
     exprs = Expr[]
-    push!(exprs, :(arch = b._archetypes[b._index]))
+    push!(exprs, :(arch = b._archetypes[idx]))
     push!(exprs, :(entities = view(arch.archetype.entities, arch.start_idx:arch.end_idx)))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :($stor_sym = b._storages.$i))
-        push!(exprs, :($col_sym = $stor_sym.data[Int(arch.archetype.id)]))
-        # TODO: return nothing if the component is not present.
-        # Required for optional components. Should we remove optional?
-        push!(exprs, :($vec_sym = $col_sym === nothing ? nothing : view($col_sym, arch.start_idx:arch.end_idx)))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
+
+        if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
+            push!(exprs, :($vec_sym = _new_fields_view(view($col_sym, arch.start_idx:arch.end_idx))))
+        else
+            push!(exprs, :($vec_sym = view($col_sym, arch.start_idx:arch.end_idx)))
+        end
     end
     result_exprs = [:entities]
     for i in 1:N
