@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Julia lts - ubuntu-latest - x64 - large
+    runs-on: ubuntu-latest
+    permissions: # required for caching
+      actions: write
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Julia
+      uses: ./.github/actions/setup-julia
+      with:
+        julia-version: 'lts'
+        project-file: './Project.toml'
+    - name: Install dependencies
+      run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+    - name: Run tests
+      run: julia --project=. test/runtests_large_world.jl

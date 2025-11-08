@@ -151,17 +151,15 @@ end
         throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
     end
 
-    function get_id(C)
-        _component_id(W.parameters[1], C)
-    end
+    CS = W.parameters[1]
+    ids = map(C -> _component_id(CS, C), comp_types)
+    with_ids = map(C -> _component_id(CS, C), with_types)
+    without_ids = map(C -> _component_id(CS, C), without_types)
 
-    ids = map(get_id, comp_types)
-    with_ids = map(get_id, with_types)
-    without_ids = map(get_id, without_types)
-
-    mask = _Mask(ids...)
-    with_mask = _Mask(with_ids...)
-    exclude_mask = EX === Val{true} ? _MaskNot(with_ids...) : _Mask(without_ids...)
+    M = max(1, cld(length(CS.parameters), 64))
+    mask = _Mask{M}(ids...)
+    with_mask = _Mask{M}(with_ids...)
+    exclude_mask = EX === Val{true} ? _Mask{M}(_Not(), with_ids...) : _Mask{M}(without_ids...)
 
     has_comps_expr = (length(comp_types) > 0) ? :(true) : :(false)
     has_with_expr = (length(with_types) > 0) ? :(true) : :(false)

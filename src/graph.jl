@@ -1,23 +1,23 @@
-mutable struct _GraphNode
-    const mask::_Mask
-    const neighbors::_VecMap{_GraphNode}
+mutable struct _GraphNode{M}
+    const mask::_Mask{M}
+    const neighbors::_VecMap{_GraphNode{M},M}
     archetype::UInt32
 end
 
-function _GraphNode(mask::_Mask, archetype::UInt32)
-    _GraphNode(mask, _VecMap{_GraphNode}(), archetype)
+function _GraphNode(mask::_Mask{M}, archetype::UInt32) where M
+    _GraphNode{M}(mask, _VecMap{_GraphNode{M},M}(), archetype)
 end
 
-struct _Graph
-    mask::_MutableMask
-    nodes::Vector{_GraphNode}
+struct _Graph{M}
+    mask::_MutableMask{M}
+    nodes::Vector{_GraphNode{M}}
 end
 
-function _Graph()
-    _Graph(_MutableMask(), [_GraphNode(_Mask(), UInt32(1))])
+function _Graph{M}() where M
+    _Graph{M}(_MutableMask{M}(), [_GraphNode(_Mask{M}(), UInt32(1))])
 end
 
-function _find_or_create(g::_Graph, mask::_MutableMask)::_GraphNode
+function _find_or_create(g::_Graph, mask::_MutableMask)
     for node in g.nodes
         if _equals(mask, node.mask)
             return node
@@ -27,8 +27,8 @@ function _find_or_create(g::_Graph, mask::_MutableMask)::_GraphNode
     return g.nodes[end]
 end
 
-function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})::_GraphNode
-    curr::_GraphNode = start
+function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})
+    curr = start
 
     _set_mask!(g.mask, start.mask)
     for b in remove

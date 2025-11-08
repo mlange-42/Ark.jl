@@ -8,11 +8,11 @@ end
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,N}
-    _mask::_Mask
-    _exclude_mask::_Mask
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,M}
+    _mask::_Mask{M}
+    _exclude_mask::_Mask{M}
     _world::W
-    _archetypes::Vector{_Archetype}
+    _archetypes::Vector{_Archetype{M}}
     _q_lock::_QueryLock
     _lock::UInt8
     _has_excluded::Bool
@@ -141,17 +141,15 @@ end
         throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
     end
 
-    function get_id(C)
-        _component_id(W.parameters[1], C)
-    end
+    CS = W.parameters[1]
+    required_ids = map(C -> _component_id(CS, C), required_types)
+    with_ids = map(C -> _component_id(CS, C), with_types)
+    without_ids = map(C -> _component_id(CS, C), without_types)
+    non_exclude_ids = map(C -> _component_id(CS, C), non_exclude_types)
 
-    required_ids = map(get_id, required_types)
-    with_ids = map(get_id, with_types)
-    without_ids = map(get_id, without_types)
-    non_exclude_ids = map(get_id, non_exclude_types)
-
-    mask = _Mask(required_ids..., with_ids...)
-    exclude_mask = EX === Val{true} ? _MaskNot(non_exclude_ids...) : _Mask(without_ids...)
+    M = max(1, cld(length(CS.parameters), 64))
+    mask = _Mask{M}(required_ids..., with_ids...)
+    exclude_mask = EX === Val{true} ? _Mask{M}(_Not(), non_exclude_ids...) : _Mask{M}(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
     storage_modes = [
@@ -164,7 +162,7 @@ end
     ids_tuple = tuple(required_ids...)
 
     return quote
-        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types))}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,

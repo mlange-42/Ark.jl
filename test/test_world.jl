@@ -3,7 +3,8 @@
     world = World()
     @test isa(world, World)
     @test isa(world._registry, _ComponentRegistry)
-    @test world._storages == ()
+
+    !(@isdefined fake_types) && @test world._storages == ()
     @test length(world._archetypes) == 1
 end
 
@@ -16,8 +17,8 @@ end
     @test isa(world, World)
     params = typeof(world).parameters[1]
 
-    @test _component_id(params, Velocity) == 2
-    @test _component_id(params, Position) == 1
+    @test _component_id(params, Velocity) == offset_ID + 2
+    @test _component_id(params, Position) == offset_ID + 1
     @test_throws(
         "ArgumentError: Component type Health not found in the World",
         _component_id(params, Health))
@@ -66,7 +67,7 @@ end
         Position, Velocity,
     )
 
-    @test length(world._storages) == 32
+    @test length(world._storages) == N_fake + 32
 end
 
 @testset "World create archetype" begin
@@ -94,7 +95,7 @@ end
     id_int = _component_id(params, Int)
     @test isa(id_int, UInt8)
     @test world._registry.types[id_int] == Int
-    @test length(world._storages) == 2
+    @test length(world._storages) == N_fake + 2
     @test world._storages[id_int] isa _ComponentStorage{Int,Vector{Int}}
     @test length(world._storages[id_int].data) == 1
 
@@ -102,14 +103,14 @@ end
     id_pos = _component_id(params, Position)
     @test isa(id_pos, UInt8)
     @test world._registry.types[id_pos] == Position
-    @test length(world._storages) == 2
+    @test length(world._storages) == N_fake + 2
     @test world._storages[id_pos] isa _ComponentStorage{Position,Vector{Position}}
     @test length(world._storages[id_pos].data) == 1
 
     # Re-register Int component (should not add new storage)
     id_int2 = _component_id(params, Int)
     @test id_int2 == id_int
-    @test length(world._storages) == 2
+    @test length(world._storages) == N_fake + 2
 
     @test_throws("ArgumentError: Component type Velocity not found in the World",
         _component_id(params, Velocity))
@@ -145,14 +146,14 @@ end
     params = typeof(world).parameters[1]
 
     pos_id = _component_id(params, Position)
-    @test pos_id == UInt8(1)
+    @test pos_id == offset_ID + UInt8(1)
 
     index = _find_or_create_archetype!(world, world._graph.nodes[1], (pos_id,), ())
     @test index == 2
     @test length(world._archetypes) == 2
 
     vel_id = _component_id(params, Velocity)
-    @test vel_id == UInt8(2)
+    @test vel_id == offset_ID + UInt8(2)
 
     index = _find_or_create_archetype!(world, world._graph.nodes[1], (pos_id, vel_id), ())
     @test index == 3
@@ -164,8 +165,8 @@ end
     @test world._archetypes[2].components == [pos_id]
     @test world._archetypes[3].components == [pos_id, vel_id]
 
-    @test length(world._storages) == 2
-    @test length(world._registry.types) == 2
+    @test length(world._storages) == N_fake + 2
+    @test length(world._registry.types) == N_fake + 2
 
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
@@ -280,8 +281,8 @@ end
     @test count == 100
     @test is_locked(world) == false
     @test length(world._archetypes[2].entities) == 101
-    @test length(world._storages[2].data[2]) == 101
-    @test length(world._storages[3].data[2]) == 101
+    @test length(world._storages[offset_ID+2].data[2]) == 101
+    @test length(world._storages[offset_ID+3].data[2]) == 101
 
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
@@ -326,8 +327,8 @@ end
     @test count == 100
     @test is_locked(world) == false
     @test length(world._archetypes[2].entities) == 101
-    @test length(world._storages[2].data[2]) == 101
-    @test length(world._storages[3].data[2]) == 101
+    @test length(world._storages[offset_ID+2].data[2]) == 101
+    @test length(world._storages[offset_ID+3].data[2]) == 101
 
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))

@@ -1,11 +1,11 @@
 using Ark: _Mask, _contains_all
 
 function setup_mask_contains_all(n::Int)
-    mask_a = _Mask(1, 65, 129, 193, 194, 195)
+    mask_a = _Mask{4}(1, 65, 129, 193, 194, 195)
     masks = [
-        _Mask(1, 65, 129, 193),
-        _Mask(1, 65, 129, 194),
-        _Mask(1, 65, 129, 196),
+        _Mask{4}(1, 65, 129, 193),
+        _Mask{4}(1, 65, 129, 194),
+        _Mask{4}(1, 65, 129, 196),
     ]
 
     return mask_a, masks
@@ -25,12 +25,12 @@ SUITE["benchmark_mask_contains_all n=1000"] =
     @be setup_mask_contains_all(1000) benchmark_mask_contains_all(_, 1000) seconds = SECONDS
 
 function setup_mask_contains_all_small(n::Int)
-    mask_a = _Mask(1)
+    mask_a = _Mask{4}(1)
     masks = [
-        _Mask(1),
-        _Mask(2),
-        _Mask(1),
-        _Mask(2),
+        _Mask{4}(1),
+        _Mask{4}(2),
+        _Mask{4}(1),
+        _Mask{4}(2),
     ]
 
     return mask_a, masks
