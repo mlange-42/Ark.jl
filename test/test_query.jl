@@ -246,9 +246,54 @@ end
 
     query = @Query(world, (Position, Velocity, NoIsBits, Altitude); optional=(Altitude,))
     expected_type = Base.eltype(typeof(query))
-    for columns in query
-        @test typeof(columns) === expected_type
-    end
+
+    @inferred Tuple{
+        Entities,
+        Ark.FieldsView{
+            Position,
+            SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+            @NamedTuple{
+                x::Ark.FieldView{
+                    Float64,
+                    Position,
+                    Val{:x},
+                    SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                },
+                y::Ark.FieldView{
+                    Float64,
+                    Position,
+                    Val{:y},
+                    SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                },
+            },
+            2,
+        },
+        Ark.StructArrayView{
+            Velocity,
+            @NamedTuple{
+                dx::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true},
+                dy::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true},
+            },
+            UnitRange{Int64},
+        },
+        SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+        Union{
+            Nothing,
+            Ark.FieldsView{
+                Altitude,
+                SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                @NamedTuple{
+                    alt::Ark.FieldView{
+                        Float64,
+                        Altitude,
+                        Val{:alt},
+                        SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                    },
+                },
+                1,
+            },
+        },
+    } Base.eltype(typeof(query))
 end
 
 #@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
