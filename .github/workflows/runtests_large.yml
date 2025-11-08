@@ -21,5 +21,7 @@ jobs:
       with:
         julia-version: 'lts'
         project-file: './Project.toml'
+    - name: Install dependencies
+      run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
     - name: Run tests
       run: julia --project=. test/runtests_large_world.jl
