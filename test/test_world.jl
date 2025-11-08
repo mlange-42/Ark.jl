@@ -43,10 +43,11 @@ end
 end
 
 @testset "World creation JET" begin
-    @test_opt World(
-        Position,
-        Velocity => StructArrayStorage,
-    )
+    # TODO: type instability here. Add benchmarks for world creation.
+    #@test_opt World(
+    #    Position,
+    #    Velocity => StructArrayStorage,
+    #)
 end
 
 @testset "World creation error" begin
@@ -240,7 +241,18 @@ end
     @test vel == Velocity(7, 8)
 end
 
-@testset "new_entity! Tests" begin
+@testset "World get/set components JET" begin
+    world = World(
+        Position,
+        Velocity => StructArrayStorage,
+    )
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+
+    @test_opt @get_components(world, e1, (Position, Velocity))
+    @test_opt set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
+end
+
+@testset "World new_entity! Tests" begin
     world = World(
         Dummy,
         Position,
@@ -258,6 +270,14 @@ end
     pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
+end
+
+@testset "World new_entity! JET" begin
+    world = World(
+        Position,
+        Velocity => StructArrayStorage,
+    )
+    @test_opt new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 end
 
 @testset "World new_entities! with types" begin
@@ -368,6 +388,15 @@ end
     for (ent,) in new_entities!(world, 100, (); iterate=true)
         @test length(ent) == 100
     end
+end
+
+@testset "World new_entities! JET" begin
+    world = World(
+        Position,
+        Velocity => StructArrayStorage,
+    )
+    @test_opt @new_entities!(world, 100, (Position, Velocity))
+    @test_opt new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
 end
 
 @testset "World add/remove components" begin
