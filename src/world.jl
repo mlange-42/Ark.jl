@@ -21,7 +21,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,K} <: _AbstractWorld
     const _lock::_Lock
     const _graph::_Graph{K}
     const _resources::Dict{DataType,Any}
-    const _event_manager::_EventManager
+    const _event_manager::_EventManager{K}
 end
 
 """

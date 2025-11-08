@@ -81,7 +81,7 @@ struct Observer{K}
 end
 
 mutable struct _EventManager{K}
-    const observers::Vector{Vector{Observer}}
+    const observers::Vector{Vector{Observer{K}}}
     const comps::Vector{Tuple{_Mask{K},Bool}}
     const with::Vector{Tuple{_Mask{K},Bool}}
     num_observers::Int
@@ -90,7 +90,7 @@ end
 function _EventManager{K}() where K
     len = typemax(UInt8)
     _EventManager{K}(
-        [Vector{Observer}() for _ in 1:len],
+        [Vector{Observer{K}}() for _ in 1:len],
         [(_Mask{K}(), false) for _ in 1:len],
         [(_Mask{K}(), false) for _ in 1:len],
         0,
