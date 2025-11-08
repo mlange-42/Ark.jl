@@ -1,20 +1,20 @@
-mutable struct _GraphNode{K}
-    const mask::_Mask{K}
-    const neighbors::_VecMap{_GraphNode{K},K}
+mutable struct _GraphNode{M}
+    const mask::_Mask{M}
+    const neighbors::_VecMap{_GraphNode{M},M}
     archetype::UInt32
 end
 
-function _GraphNode(mask::_Mask{K}, archetype::UInt32) where K
-    _GraphNode{K}(mask, _VecMap{_GraphNode{K},K}(), archetype)
+function _GraphNode(mask::_Mask{M}, archetype::UInt32) where M
+    _GraphNode{M}(mask, _VecMap{_GraphNode{M},M}(), archetype)
 end
 
-struct _Graph{K}
-    mask::_MutableMask{K}
-    nodes::Vector{_GraphNode{K}}
+struct _Graph{M}
+    mask::_MutableMask{M}
+    nodes::Vector{_GraphNode{M}}
 end
 
-function _Graph{K}() where K
-    _Graph{K}(_MutableMask{K}(), [_GraphNode(_Mask{K}(), UInt32(1))])
+function _Graph{M}() where M
+    _Graph{M}(_MutableMask{M}(), [_GraphNode(_Mask{M}(), UInt32(1))])
 end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)

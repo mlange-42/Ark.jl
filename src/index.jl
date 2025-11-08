@@ -1,7 +1,7 @@
-struct _ComponentIndex{K}
-    components::Vector{Vector{_Archetype{K}}}
+struct _ComponentIndex{M}
+    components::Vector{Vector{_Archetype{M}}}
 end
 
-function _ComponentIndex{K}(components::Int) where K
-    return _ComponentIndex([Vector{_Archetype{K}}() for _ in 1:components])
+function _ComponentIndex{M}(components::Int) where M
+    return _ComponentIndex([Vector{_Archetype{M}}() for _ in 1:components])
 end

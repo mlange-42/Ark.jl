@@ -5,9 +5,9 @@
 A batch iterator.
 This is returned from batch operations and serves for initializing newly added components.
 """
-struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N,K}
+struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N,M}
     _world::W
-    _archetypes::Vector{_BatchArchetype{K}}
+    _archetypes::Vector{_BatchArchetype{M}}
     _b_lock::_QueryLock
     _lock::UInt8
 end
@@ -19,7 +19,7 @@ end
 ) where {W<:World,CT<:Tuple}
     comp_types = CT.parameters
     CS = W.parameters[1]
-    K = cld(length(CS.parameters), 64)
+    M = cld(length(CS.parameters), 64)
     world_storage_modes = W.parameters[3].parameters
 
     # TODO: keeping this for now to make iteration consistent with queries
@@ -31,7 +31,7 @@ end
     storage_tuple_mode = Expr(:curly, :Tuple, storage_modes...)
 
     return quote
-        Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$K}(
+        Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$M}(
             world,
             archetypes,
             _QueryLock(false),

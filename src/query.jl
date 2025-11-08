@@ -8,11 +8,11 @@ end
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,K}
-    _mask::_Mask{K}
-    _exclude_mask::_Mask{K}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,N,M}
+    _mask::_Mask{M}
+    _exclude_mask::_Mask{M}
     _world::W
-    _archetypes::Vector{_Archetype{K}}
+    _archetypes::Vector{_Archetype{M}}
     _q_lock::_QueryLock
     _lock::UInt8
     _has_excluded::Bool
@@ -147,9 +147,9 @@ end
     without_ids = map(C -> _component_id(CS, C), without_types)
     non_exclude_ids = map(C -> _component_id(CS, C), non_exclude_types)
 
-    K = cld(length(CS.parameters), 64)
-    mask = _Mask{K}(required_ids..., with_ids...)
-    exclude_mask = EX === Val{true} ? _Mask{K}(_Not(), non_exclude_ids...) : _Mask{K}(without_ids...)
+    M = cld(length(CS.parameters), 64)
+    mask = _Mask{M}(required_ids..., with_ids...)
+    exclude_mask = EX === Val{true} ? _Mask{M}(_Not(), non_exclude_ids...) : _Mask{M}(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
     storage_modes = [
@@ -162,7 +162,7 @@ end
     ids_tuple = tuple(required_ids...)
 
     return quote
-        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$K}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,
