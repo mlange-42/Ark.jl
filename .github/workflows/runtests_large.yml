@@ -1,4 +1,4 @@
-name: Test Large World
+name: CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Benchmarks
+    name: Julia lts - ubuntu-latest - x64 - large
     runs-on: ubuntu-latest
     permissions: # required for caching
       actions: write
@@ -19,9 +19,7 @@ jobs:
     - name: Set up Julia
       uses: ./.github/actions/setup-julia
       with:
-        julia-version: '1'
+        julia-version: 'lts'
         project-file: './Project.toml'
-    - name: Install dependencies
-      run: julia --project=. -e 'using Pkg; Pkg.develop(path="."); Pkg.instantiate()'
     - name: Run tests
       run: julia --project=. test/runtests_large_world.jl
