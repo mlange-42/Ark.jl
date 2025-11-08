@@ -17,6 +17,8 @@ struct Health
     health::Float64
 end
 
+struct Dummy end
+
 struct LabelComponent end
 
 struct CompN{N} end
