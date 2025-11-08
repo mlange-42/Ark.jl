@@ -156,7 +156,7 @@ end
     with_ids = map(C -> _component_id(CS, C), with_types)
     without_ids = map(C -> _component_id(CS, C), without_types)
 
-    M = cld(length(CS.parameters), 64)
+    M = max(1, cld(length(CS.parameters), 64))
     mask = _Mask{M}(ids...)
     with_mask = _Mask{M}(with_ids...)
     exclude_mask = EX === Val{true} ? _Mask{M}(_Not(), with_ids...) : _Mask{M}(without_ids...)

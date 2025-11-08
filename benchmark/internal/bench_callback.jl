@@ -1,6 +1,6 @@
 
 function setup_callback(n::Int)
-    world = World(Position)
+    world = World()
 
     observe!(entity -> nothing, world, OnCreateEntity, ())
     observe!(entity -> nothing, world, OnCreateEntity, ())

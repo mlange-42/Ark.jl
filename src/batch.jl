@@ -19,7 +19,7 @@ end
 ) where {W<:World,CT<:Tuple}
     comp_types = CT.parameters
     CS = W.parameters[1]
-    M = cld(length(CS.parameters), 64)
+    M = max(1, cld(length(CS.parameters), 64))
     world_storage_modes = W.parameters[3].parameters
 
     # TODO: keeping this for now to make iteration consistent with queries
