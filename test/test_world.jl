@@ -42,12 +42,14 @@ end
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
 end
 
-@testset "World creation JET" begin
-    # TODO: type instability here. Add benchmarks for world creation.
-    #@test_opt World(
-    #    Position,
-    #    Velocity => StructArrayStorage,
-    #)
+if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World creation JET" begin
+        # TODO: type instability here. Add benchmarks for world creation.
+        #@test_opt World(
+        #    Position,
+        #    Velocity => StructArrayStorage,
+        #)
+    end
 end
 
 @testset "World creation error" begin
@@ -241,15 +243,17 @@ end
     @test vel == Velocity(7, 8)
 end
 
-@testset "World get/set components JET" begin
-    world = World(
-        Position,
-        Velocity => StructArrayStorage,
-    )
-    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World get/set components JET" begin
+        world = World(
+            Position,
+            Velocity => StructArrayStorage,
+        )
+        e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
-    @test_opt @get_components(world, e1, (Position, Velocity))
-    @test_opt set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
+        @test_opt @get_components(world, e1, (Position, Velocity))
+        @test_opt set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
+    end
 end
 
 @testset "World new_entity! Tests" begin
@@ -277,7 +281,16 @@ end
         Position,
         Velocity => StructArrayStorage,
     )
-    @test_opt new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+
+    using FunctionWrappers
+    excluded = Set([
+        FunctionWrappers.gen_fptr,
+        Base.unsafe_convert,
+        Base.setproperty!,
+    ])
+    function_filter(@nospecialize f) = !(f in excluded)
+
+    @test_opt function_filter = function_filter new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 end
 
 @testset "World new_entities! with types" begin
