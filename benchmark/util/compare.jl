@@ -195,13 +195,13 @@ function compare_tables(a::Vector{Row}, b::Vector{Row})::Vector{CompareRow}
 
     for bench in keys_vec
         row = CompareRow()
-        if haskey(dict_a, bench)
+        if bench in keys(dict_a)
             r = dict_a[bench]
             row.name = r.name
             row.n = r.n
             row.time_ns_a = r.time_ns
         end
-        if haskey(dict_b, bench)
+        if bench in keys(dict_b)
             r = dict_b[bench]
             row.name = r.name
             row.n = r.n
