@@ -257,6 +257,8 @@ end
     end
 end
 
+Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
+
 @generated function Base.eltype(::Type{Query{W,TS,SM,N}}) where {W<:World,TS<:Tuple,SM<:Tuple,N}
     comp_types = TS.parameters
     storage_modes = SM.parameters
