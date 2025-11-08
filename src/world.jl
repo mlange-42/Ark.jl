@@ -894,7 +894,7 @@ end
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
-    M = max(1, cld(length(types),64))
+    M = max(1, cld(length(types), 64))
     return quote
         registry = _ComponentRegistry()
         ids = $id_tuple
@@ -1097,7 +1097,7 @@ end
     CS = W.parameters[1]
     has_comps = (length(comp_types) > 0) ? :(true) : (false)
     ids = map(C -> _component_id(CS, C), comp_types)
-    M = max(1, cld(length(CS.parameters),64))
+    M = max(1, cld(length(CS.parameters), 64))
     mask = _Mask{M}(ids...)
 
     return quote

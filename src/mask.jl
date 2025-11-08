@@ -133,7 +133,7 @@ struct _MutableMask{M}
 end
 
 function _MutableMask{M}() where M
-    return _MutableMask(zeros(MVector{M, UInt64}))
+    return _MutableMask(zeros(MVector{M,UInt64}))
 end
 
 function _MutableMask(mask::_Mask{M}) where M
