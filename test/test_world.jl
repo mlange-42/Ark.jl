@@ -511,6 +511,25 @@ end
         @exchange_components!(world, zero_entity; add=(Altitude(1),), remove=(Position,)))
 end
 
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World exchange component JET" begin
+        world = World(Dummy, Position, Velocity, Altitude, Health)
+
+        using FunctionWrappers
+        excluded = Set([
+            FunctionWrappers.gen_fptr,
+            Base.unsafe_convert,
+            Base.setproperty!,
+        ])
+        function_filter(@nospecialize f) = !(f in excluded)
+
+        ex = (e::Entity) -> @exchange_components!(world, e; add=(Altitude(1),), remove=(Position,))
+
+        e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+        @test_opt function_filter = function_filter ex(e1)
+    end
+end
+
 @testset "World exchange macro missing argument" begin
     ex = Meta.parse("@exchange_components!(world)")
     @test_throws LoadError eval(ex)
