@@ -20,6 +20,10 @@ function _Mask{M}(bits::T...) where {M,T<:Integer}
     return _Mask(chunks)
 end
 
+function _Mask{M}(::_Not) where M
+    return _Mask(ntuple(_ -> typemax(UInt64), M))
+end
+
 function _Mask{M}(::_Not, bits::T...) where {M,T<:Integer}
     chunks = ntuple(_ -> typemax(UInt64), M)  # 0xFFFFFFFFFFFFFFFF
     for b in bits
