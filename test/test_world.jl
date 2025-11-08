@@ -590,6 +590,23 @@ end
     @test_throws "ArgumentError: World does not contain a resource of type Tick" set_resource!(world, Tick(2))
 end
 
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "Resources JET" begin
+        world = World()
+
+        f = () -> begin
+            _ = has_resource(world, Tick)
+            add_resource!(world, Tick(0))
+            _ = has_resource(world, Tick)
+            _ = get_resource(world, Tick)
+            set_resource!(world, Tick(2))
+            remove_resource!(world, Tick)
+        end
+
+        @test_opt f()
+    end
+end
+
 @testset "World error messages" begin
     world = World(Dummy, Position, Velocity)
 
