@@ -15,7 +15,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,K} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
     const _storages::CS
     const _archetypes::Vector{_Archetype{K}}
-    const _index::_ComponentIndex
+    const _index::_ComponentIndex{K}
     const _registry::_ComponentRegistry
     const _entity_pool::_EntityPool
     const _lock::_Lock
@@ -903,7 +903,7 @@ end
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
-            _ComponentIndex($(length(types))),
+            _ComponentIndex{$(K)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),
             _Lock(),
