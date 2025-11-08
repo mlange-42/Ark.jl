@@ -3,6 +3,9 @@ ENV["ARK_RUNNING_TESTS"] = true
 
 using Test
 
+const N_fake = 0
+const offset_ID = 0
+
 include("include_internals.jl")
 include("TestTypes.jl")
 include("test_subarray.jl")
