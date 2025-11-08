@@ -12,7 +12,7 @@ function _Archetype(id::UInt32, node::_GraphNode)
 end
 
 function _Archetype(id::UInt32, node::_GraphNode, components::UInt8...)
-    _Archetype(Entities(), collect(components), node.mask, node, id)
+    _Archetype(Entities(), collect(UInt8, components), node.mask, node, id)
 end
 
 function _add_entity!(arch::_Archetype, entity::Entity)::UInt32
