@@ -92,9 +92,9 @@ end
     arch = 1
     for (ent, vec_pos, vec_vel, vec_alt) in query
         if arch == 1
-            @test vec_alt == nothing
+            @test length(vec_alt) == 0
         else
-            @test vec_alt != nothing
+            @test length(vec_alt) != 0
         end
         for i in eachindex(ent)
             e = ent[i]

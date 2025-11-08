@@ -238,9 +238,9 @@ end
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
         if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
-            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : _new_fields_view(view($col_sym, :))))
+            push!(exprs, :($vec_sym = _new_fields_view(view($col_sym, :))))
         else
-            push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
+            push!(exprs, :($vec_sym = view($col_sym, :)))
         end
     end
     result_exprs = [:entities]
