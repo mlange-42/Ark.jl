@@ -277,8 +277,8 @@ end
     @test count == 100
     @test is_locked(world) == false
     @test length(world._archetypes[2].entities) == 101
-    @test length(world._storages[1].data[2]) == 101
-    @test length(world._storages[2].data[2]) == 101
+    @test length(world._storages[offset_ID + 1].data[2]) == 101
+    @test length(world._storages[offset_ID + 2].data[2]) == 101
 
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))
@@ -322,8 +322,8 @@ end
     @test count == 100
     @test is_locked(world) == false
     @test length(world._archetypes[2].entities) == 101
-    @test length(world._storages[1].data[2]) == 101
-    @test length(world._storages[2].data[2]) == 101
+    @test length(world._storages[offset_ID + 1].data[2]) == 101
+    @test length(world._storages[offset_ID + 2].data[2]) == 101
 
     count = 0
     for (ent, pos_col, vel_col) in @Query(world, (Position, Velocity))

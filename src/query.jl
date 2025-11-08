@@ -180,7 +180,7 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
     else
         comps = world._index.components
         rare_component = argmin(length(comps[i]) for i in ids)
-        return comps[rare_component]
+        return comps[ids[rare_component]]
     end
 end
 
