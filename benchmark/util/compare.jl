@@ -129,10 +129,10 @@ function table_to_html(data::Vector{CompareRow})::String
         html = "<p>✅ Benchmarks are stable!</p>" * "\n" * html
     else
         if regressed > 0
-            html = "<p>⚠️ $regressed benchmark regressions detected!</p>" * "\n" * html
+            html = "<p>⚠️ $(regressed) benchmark regressions detected!</p>" * "\n" * html
         end
         if improved > 0
-            html = "<p>🚀 $improved benchmark improvements detected!</p>" * "\n" * html
+            html = "<p>🚀 $(improved) benchmark improvements detected!</p>" * "\n" * html
         end
     end
 
