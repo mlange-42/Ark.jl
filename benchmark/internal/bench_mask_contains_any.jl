@@ -1,11 +1,11 @@
 using Ark: _Mask, _contains_any
 
 function setup_mask_contains_any(n::Int)
-    mask_a = _Mask(1, 65, 129, 193, 194, 195)
+    mask_a = _Mask{4}(1, 65, 129, 193, 194, 195)
     masks = [
-        _Mask(2, 66, 130, 193),
-        _Mask(2, 66, 130, 194),
-        _Mask(2, 66, 130, 196),
+        _Mask{4}(2, 66, 130, 193),
+        _Mask{4}(2, 66, 130, 194),
+        _Mask{4}(2, 66, 130, 196),
     ]
 
     return mask_a, masks

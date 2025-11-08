@@ -8,7 +8,7 @@ function benchmark_create_mask(args)
     inds = args
     b = UInt64(0)
     for (i1, i2, i3, i4) in inds
-        b &= _Mask(i1, i2, i3, i4).bits[1]
+        b &= _Mask{4}(i1, i2, i3, i4).bits[1]
     end
     return b
 end
