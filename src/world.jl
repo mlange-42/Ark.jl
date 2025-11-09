@@ -103,7 +103,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return UInt32(index)
 end
 
-function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,Int}
+@inline function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,Int}
     _check_locked(world)
 
     entity = _get_entity(world._entity_pool)
@@ -449,7 +449,7 @@ end
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
     push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
-    push!(exprs, :(tmp = @inline _create_entity!(world, archetype)))
+    push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
 
