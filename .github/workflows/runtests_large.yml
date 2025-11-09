@@ -1,4 +1,4 @@
-name: CI
+name: Tests (large world)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Julia lts - ubuntu-latest - x64 - large
+    name: Tests (large world)
     runs-on: ubuntu-latest
     permissions: # required for caching
       actions: write
