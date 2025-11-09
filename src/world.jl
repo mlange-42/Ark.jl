@@ -181,6 +181,25 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::I
     return new_row
 end
 
+function _copy_entity!(world::World, entity::Entity)::Entity
+    _check_locked(world)
+
+    index = world._entities[entity._id]
+    new_entity, new_row = _create_entity!(world, index.archetype)
+    archetype = world._archetypes[index.archetype]
+
+    for comp in archetype.components
+        _copy_component_data!(world, comp, index.archetype, index.archetype, index.row, UInt32(new_row))
+    end
+
+    world._entities[new_entity._id] = _EntityIndex(index.archetype, UInt32(new_row))
+
+    if _has_observers(world._event_manager, OnCreateEntity)
+        _fire_create_entity(world._event_manager, new_entity, archetype.mask)
+    end
+    return new_entity
+end
+
 """
     remove_entity!(world::World, entity::Entity)
 
@@ -472,6 +491,13 @@ end
             $(Expr(:block, exprs...))
         end
     end
+end
+
+function copy_entity!(world::World, entity::Entity)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't copy a dead entity"))
+    end
+    return _copy_entity!(world, entity)
 end
 
 """
@@ -978,6 +1004,26 @@ end
         push!(exprs, :(
             if comp == $i
                 _move_component_data!(world._storages.$i, old_arch, new_arch, row)
+            end
+        ))
+    end
+    return Expr(:block, exprs...)
+end
+
+@generated function _copy_component_data!(
+    world::World{CS},
+    comp::UInt8,
+    old_arch::UInt32,
+    new_arch::UInt32,
+    old_row::UInt32,
+    new_row::UInt32,
+) where {CS<:Tuple}
+    n = length(CS.parameters)
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(
+            if comp == $i
+                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)
             end
         ))
     end

@@ -295,6 +295,26 @@ end
     end
 end
 
+@testset "World copy_entity! Tests" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+    )
+
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    entity2 = copy_entity!(world, entity)
+
+    @test entity2._id == entity._id + 1
+    @test world._archetypes[2].entities == [entity, entity2]
+    @test length(world._storages[2].data[2]) == 2
+    @test length(world._storages[3].data[2]) == 2
+
+    pos, vel = @get_components(world, entity2, (Position, Velocity))
+    @test pos == Position(1, 2)
+    @test vel == Velocity(3, 4)
+end
+
 @testset "World new_entities! with types" begin
     world = World(
         Dummy,
