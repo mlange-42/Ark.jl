@@ -177,7 +177,7 @@ end
     ]
     optional_flags_type = Expr(:curly, :Tuple, optional_flag_type_elts...)
 
-    _get_archetypes_expr = length(ids) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
+    _get_archetypes_expr = length(ids_tuple) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
 
     return quote
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$optional_flags_type,$(length(comp_types)),$M}(
