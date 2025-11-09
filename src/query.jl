@@ -178,11 +178,11 @@ end
     optional_flags_type = Expr(:curly, :Tuple, optional_flag_type_elts...)
 
     if length(ids_tuple) == 0
-        _get_archetypes = :(world._archetypes)
+        archetypes = :(world._archetypes)
     else
         comps_length = [:(@inbounds length(world._index.components[$i])) for i in ids_tuple]
         comps_length_tuple = :(($(comps_length...),))
-        _get_archetypes = :(@inbounds world._index.components[$ids_tuple[argmin($comps_length_tuple)]])
+        archetypes = :(@inbounds world._index.components[$ids_tuple[argmin($comps_length_tuple)]])
     end
 
     return quote
@@ -190,7 +190,7 @@ end
             $(mask),
             $(exclude_mask),
             world,
-            $(_get_archetypes),
+            $(archetypes),
             _QueryLock(false),
             _lock(world._lock),
             $(has_excluded ? true : false),
