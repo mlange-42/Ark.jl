@@ -35,6 +35,21 @@ end
     end
 end
 
+@generated function _FieldsView_type(::Type{A}) where {A<:SubArray{C}} where {C}
+    names = fieldnames(C)
+    types = fieldtypes(C)
+
+    field_types = [
+        :(FieldView{$t,C,Val{$(QuoteNode(n))},A})
+        for (n, t) in zip(names, types)
+    ]
+    nt_type = :(NamedTuple{($(map(QuoteNode, names)...),),Tuple{$(field_types...)}})
+
+    return quote
+        FieldsView{C,A,$nt_type,$(length(names))}
+    end
+end
+
 @generated function Base.getproperty(a::FieldsView{C}, name::Symbol) where {C}
     component_names = fieldnames(C)
     cases = [

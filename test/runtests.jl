@@ -2,6 +2,7 @@
 ENV["ARK_RUNNING_TESTS"] = true
 
 using Test
+using JET
 
 const N_fake = 0
 const offset_ID = 0

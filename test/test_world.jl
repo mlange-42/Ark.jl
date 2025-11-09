@@ -42,6 +42,16 @@ end
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
 end
 
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World creation JET" begin
+        # TODO: type instability here. Add benchmarks for world creation.
+        #@test_opt World(
+        #    Position,
+        #    Velocity => StructArrayStorage,
+        #)
+    end
+end
+
 @testset "World creation error" begin
     @test_throws(
         "ArgumentError: duplicate component type Velocity during world creation",
@@ -233,7 +243,20 @@ end
     @test vel == Velocity(7, 8)
 end
 
-@testset "new_entity! Tests" begin
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World get/set components JET" begin
+        world = World(
+            Position,
+            Velocity => StructArrayStorage,
+        )
+        e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+
+        @test_opt @get_components(world, e1, (Position, Velocity))
+        @test_opt set_components!(world, e1, (Position(5, 6), Velocity(7, 8)))
+    end
+end
+
+@testset "World new_entity! Tests" begin
     world = World(
         Dummy,
         Position,
@@ -251,6 +274,25 @@ end
     pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
+end
+
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World new_entity! JET" begin
+        world = World(
+            Position,
+            Velocity => StructArrayStorage,
+        )
+
+        using FunctionWrappers
+        excluded = Set([
+            FunctionWrappers.gen_fptr,
+            Base.unsafe_convert,
+            Base.setproperty!,
+        ])
+        function_filter(@nospecialize f) = !(f in excluded)
+
+        @test_opt function_filter = function_filter new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    end
 end
 
 @testset "World new_entities! with types" begin
@@ -363,6 +405,25 @@ end
     end
 end
 
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World new_entities! JET" begin
+        world = World(
+            Position,
+            Velocity => StructArrayStorage,
+        )
+        using FunctionWrappers
+        excluded = Set([
+            FunctionWrappers.gen_fptr,
+            Base.unsafe_convert,
+            Base.setproperty!,
+        ])
+        function_filter(@nospecialize f) = !(f in excluded)
+
+        @test_opt function_filter = function_filter @new_entities!(world, 100, (Position, Velocity))
+        @test_opt function_filter = function_filter new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
+    end
+end
+
 @testset "World add/remove components" begin
     world = World(
         Dummy,
@@ -407,6 +468,28 @@ end
         has_components(world, zero_entity, Val.((Position, Velocity))))
 end
 
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World add/remove component JET" begin
+        world = World(
+            Dummy,
+            Position,
+            Velocity => StructArrayStorage,
+        )
+        using FunctionWrappers
+        excluded = Set([
+            FunctionWrappers.gen_fptr,
+            Base.unsafe_convert,
+            Base.setproperty!,
+        ])
+        function_filter(@nospecialize f) = !(f in excluded)
+
+        e1 = new_entity!(world, ())
+        @test_opt function_filter = function_filter add_components!(world, e1, (Position(1, 2), Velocity(3, 4)))
+        @test_opt function_filter = function_filter @has_components(world, e1, (Position, Velocity))
+        @test_opt function_filter = function_filter @remove_components!(world, e1, (Position, Velocity))
+    end
+end
+
 @testset "World exchange components" begin
     world = World(Dummy, Position, Velocity, Altitude, Health)
 
@@ -426,6 +509,25 @@ end
 
     @test_throws("ArgumentError: can't exchange components on a dead entity",
         @exchange_components!(world, zero_entity; add=(Altitude(1),), remove=(Position,)))
+end
+
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "World exchange component JET" begin
+        world = World(Dummy, Position, Velocity, Altitude, Health)
+
+        using FunctionWrappers
+        excluded = Set([
+            FunctionWrappers.gen_fptr,
+            Base.unsafe_convert,
+            Base.setproperty!,
+        ])
+        function_filter(@nospecialize f) = !(f in excluded)
+
+        ex = (e::Entity) -> @exchange_components!(world, e; add=(Altitude(1),), remove=(Position,))
+
+        e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+        @test_opt function_filter = function_filter ex(e1)
+    end
 end
 
 @testset "World exchange macro missing argument" begin
@@ -486,6 +588,23 @@ end
     @test_throws "KeyError: key Tick not found" get_resource(world, Tick)
 
     @test_throws "ArgumentError: World does not contain a resource of type Tick" set_resource!(world, Tick(2))
+end
+
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+    @testset "Resources JET" begin
+        world = World()
+
+        f = () -> begin
+            _ = has_resource(world, Tick)
+            add_resource!(world, Tick(0))
+            _ = has_resource(world, Tick)
+            _ = get_resource(world, Tick)
+            set_resource!(world, Tick(2))
+            remove_resource!(world, Tick)
+        end
+
+        @test_opt f()
+    end
 end
 
 @testset "World error messages" begin

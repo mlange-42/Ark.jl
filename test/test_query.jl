@@ -10,6 +10,7 @@
 
     for i in 1:10
         query = @Query(world, (Position, Velocity))
+        @test Base.IteratorSize(typeof(query)) == Base.SizeUnknown()
         @test query._has_excluded == false
         count = 0
         for (entities, vec_pos, vec_vel) in query
@@ -230,6 +231,106 @@ end
         @test no_isbits isa SubArray
     end
 end
+
+@testset "Query eltype" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+        Altitude,
+        NoIsBits,
+    )
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([])))
+    end
+
+    query = @Query(world, (Position, Velocity, NoIsBits, Altitude); optional=(NoIsBits, Altitude))
+    expected_type = Base.eltype(typeof(query))
+
+    @inferred Tuple{
+        Entities,
+        Ark.FieldsView{
+            Position,
+            SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+            @NamedTuple{
+                x::Ark.FieldView{
+                    Float64,
+                    Position,
+                    Val{:x},
+                    SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                },
+                y::Ark.FieldView{
+                    Float64,
+                    Position,
+                    Val{:y},
+                    SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                },
+            },
+            2,
+        },
+        Ark.StructArrayView{
+            Velocity,
+            @NamedTuple{
+                dx::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true},
+                dy::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true},
+            },
+            UnitRange{Int64},
+        },
+        Union{Nothing,SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
+        Union{
+            Nothing,
+            Ark.FieldsView{
+                Altitude,
+                SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                @NamedTuple{
+                    alt::Ark.FieldView{
+                        Float64,
+                        Altitude,
+                        Val{:alt},
+                        SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+                    },
+                },
+                1,
+            },
+        },
+    } Base.eltype(typeof(query))
+
+    cnt = 0
+    for (e, p, v, a, i) in query
+        @test p !== nothing
+        @test v !== nothing
+        @test a !== nothing
+        @test i !== nothing
+        cnt += 1
+    end
+    @test cnt == 1
+end
+
+#@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+"""
+@testset "Query JET" begin
+    world = World(
+        Position,
+        Velocity => StructArrayStorage,
+        Altitude,
+        Health,
+    )
+
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
+
+    f = () -> begin
+        for (e, p, v) in @Query(world, (Position, Vector); with=(Altitude,), without=(Health,))
+            if length(e) != 1
+                error("")
+            end
+        end
+    end
+
+    @test_opt f()
+end
+#end
+"""
 
 @testset "Query macro missing argument" begin
     ex = Meta.parse("@Query(world)")

@@ -12,6 +12,11 @@
 - Adds storage modes Vector and StructArray, which can be selected per component type (#207, #225)
 - Adds field view, so field access for query columns works equally for Vector and StructArray storages (#213)
 
+### Performance
+
+- Adaptive bit-mask size, depending on the number of components in the world (#237, #250)
+- Avoids unions in queries without optional components, speeding up query iteration (#246)
+
 ### Other
 
 - Improves error messages when passing components types as `(A, B)` instead of the required `Val.((A, B))` (#191)
