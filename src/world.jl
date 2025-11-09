@@ -500,6 +500,13 @@ function copy_entity!(world::World, entity::Entity)
     return _copy_entity!(world, entity)
 end
 
+function copy_entity!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't copy a dead entity"))
+    end
+    return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, remove)
+end
+
 """
     new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Union{Batch,Nothing}
 
