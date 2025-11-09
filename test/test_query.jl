@@ -10,6 +10,7 @@
 
     for i in 1:10
         query = @Query(world, (Position, Velocity))
+        @test Base.IteratorSize(typeof(query)) == Base.SizeUnknown()
         @test query._has_excluded == false
         count = 0
         for (entities, vec_pos, vec_vel) in query
@@ -244,7 +245,7 @@ end
         new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([])))
     end
 
-    query = @Query(world, (Position, Velocity, NoIsBits, Altitude); optional=(Altitude,))
+    query = @Query(world, (Position, Velocity, NoIsBits, Altitude); optional=(NoIsBits, Altitude))
     expected_type = Base.eltype(typeof(query))
 
     @inferred Tuple{
@@ -276,7 +277,7 @@ end
             },
             UnitRange{Int64},
         },
-        SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+        Union{Nothing,SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
         Union{
             Nothing,
             Ark.FieldsView{
