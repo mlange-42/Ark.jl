@@ -232,6 +232,19 @@ end
     end
 end
 
+@testset "Query duplicates" begin
+    world = World(
+        Position,
+        Velocity,
+        Altitude,
+        Health,
+    )
+    @test_throws(
+        "ArgumentError: duplicate component types in query: Altitude, Health",
+        @Query(world, (Position, Velocity, Altitude); optional=(Altitude, Health), without=(Health,))
+    )
+end
+
 @testset "Query eltype" begin
     world = World(
         Dummy,
