@@ -49,8 +49,7 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{UInt8}}, rem
     for b in add
         if _get_bit(g.mask, b)
             throw(ArgumentError("entity already has component to add, or it was added twice"))
-        end
-        if _get_bit(start.mask, b)
+        elseif _get_bit(start.mask, b)
             throw(ArgumentError("component added and removed in the same exchange operation"))
         end
         _set_bit!(g.mask, b)
