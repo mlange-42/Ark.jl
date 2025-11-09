@@ -1159,7 +1159,8 @@ end
     copy::CP,
 ) where {CS<:Tuple,CP<:Val}
     if !(CP in [Val{:ref}, Val{:copy}, Val{:deepcopy}])
-        throw(ArgumentError("'$(nameof(CP))' is not a valid copy mode, must be :ref, :copy or :deepcopy"))
+        mode = CP.parameters[1]
+        throw(ArgumentError(":$mode is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
 
     n = length(CS.parameters)
