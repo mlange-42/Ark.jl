@@ -184,7 +184,7 @@ end
         comps_length_tuple = :(($(comps_length...),))
         archetypes = :(@inbounds world._index.components[$ids_tuple[argmin($comps_length_tuple)]])
     end
-    
+
     return quote
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$optional_flags_type,$(length(comp_types)),$M}(
             $(mask),
