@@ -112,3 +112,26 @@ function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::U
     col = s.data[arch]
     _swap_remove!(col, row)
 end
+
+@generated function Base.copy(x::T) where T
+    # TODO: it it problematic to provide this?
+    # Tested it, and manual copy implementations take precedence over this.
+    if !ismutabletype(T) || isbitstype(T)
+        return :(x)
+    end
+
+    nfields = length(fieldnames(T))
+    args = [:(getfield(x, $(i))) for i in 1:nfields]
+
+    return quote
+        try
+            return $(Expr(:call, T, args...))
+        catch err
+            throw(
+                ArgumentError(
+                    "copy failed: constructor for $(T) does not accept raw field values in declaration order. Provide a custom Base.copy(::$(T)) or ensure a constructor T(...).",
+                ),
+            )
+        end
+    end
+end
