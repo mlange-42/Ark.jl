@@ -184,8 +184,6 @@ end
         comps_length_tuple = :(($(comps_length...),))
         archetypes = :(@inbounds world._index.components[$ids_tuple[argmin($comps_length_tuple)]])
     end
-
-    query_lock = _QueryLock(false)
     
     return quote
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$optional_flags_type,$(length(comp_types)),$M}(
@@ -193,7 +191,7 @@ end
             $(exclude_mask),
             world,
             $(archetypes),
-            $(query_lock),
+            _QueryLock(false),
             _lock(world._lock),
             $(has_excluded),
         )
