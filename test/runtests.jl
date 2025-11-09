@@ -4,10 +4,14 @@ ENV["ARK_RUNNING_TESTS"] = true
 using Test
 using JET
 
-const N_fake = 0
-const offset_ID = 0
-
 include("include_internals.jl")
+
+if "--large-world" in ARGS
+    include("setup_large.jl")
+else
+    include("setup_default.jl")
+end
+
 include("TestTypes.jl")
 
 include("test_world.jl")
