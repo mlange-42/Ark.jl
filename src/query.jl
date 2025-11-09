@@ -193,7 +193,7 @@ end
             $(archetypes),
             _QueryLock(false),
             _lock(world._lock),
-            $(has_excluded ? true : false),
+            $(has_excluded),
         )
     end
 end
