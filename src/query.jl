@@ -195,9 +195,21 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
         return world._archetypes
     else
         comps = world._index.components
-        rare_component = argmin(length(comps[i]) for i in ids)
-        return comps[ids[rare_component]]
+        return _get_rare_component(comps, ids)
     end
+end
+
+function _get_rare_component(comps, ids)
+    rare_comp = first(comps)
+    min_len = length(rare_comp)
+    @inbounds for i in 2:length(ids)
+        comp = comps[ids[i]]
+        comp_len = length(comp)
+        if comp_len < min_len
+            rare_comp, min_len = comp, comp_len
+        end
+    end
+    return rare_comp
 end
 
 @inline function Base.iterate(q::Query, state::Int)
