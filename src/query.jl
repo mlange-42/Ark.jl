@@ -177,13 +177,7 @@ end
     ]
     optional_flags_type = Expr(:curly, :Tuple, optional_flag_type_elts...)
 
-    if length(ids_tuple) == 0
-        archetypes = :(world._archetypes)
-    else
-        comps_length = [:(length(world._index.components[$i])) for i in ids_tuple]
-        comps_length_tuple = :(($(comps_length...),))
-        archetypes = :(@inbounds world._index.components[$ids_tuple[argmin($comps_length_tuple)]])
-    end
+    archetypes = length(ids_tuple) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
 
     return quote
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$optional_flags_type,$(length(comp_types)),$M}(
@@ -196,6 +190,20 @@ end
             $(has_excluded),
         )
     end
+end
+
+function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
+    comps = world._index.components
+    rare_comp = @inbounds comps[ids[1]]
+    min_len = length(rare_comp)
+    @inbounds for i in 2:length(ids)
+        comp = comps[ids[i]]
+        comp_len = length(comp)
+        if comp_len < min_len
+            rare_comp, min_len = comp, comp_len
+        end
+    end
+    return rare_comp
 end
 
 @inline function Base.iterate(q::Query, state::Int)
