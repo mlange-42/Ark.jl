@@ -90,17 +90,17 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
     push!(world._archetypes, arch)
 
-    index::UInt32 = length(world._archetypes)
-    node.archetype = index
+    index = length(world._archetypes)
+    node.archetype = UInt32(index)
 
     _push_nothing_to_all!(world)
 
-    for comp::UInt8 in components
+    for comp in components
         _assign_new_column_for_comp!(world, comp, index)
         push!(world._index.components[comp], arch)
     end
 
-    return index
+    return UInt32(index)
 end
 
 function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
@@ -111,14 +111,14 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
 
     index = _add_entity!(archetype, entity)
 
-    for comp::UInt8 in archetype.components
+    for comp in archetype.components
         _ensure_column_size_for_comp!(world, comp, archetype_index, index)
     end
 
     if entity._id > length(world._entities)
-        push!(world._entities, _EntityIndex(archetype_index, index))
+        push!(world._entities, _EntityIndex(archetype_index, UInt32(index)))
     else
-        @inbounds world._entities[entity._id] = _EntityIndex(archetype_index, index)
+        @inbounds world._entities[entity._id] = _EntityIndex(archetype_index, UInt32(index))
     end
     return entity, index
 end
