@@ -38,7 +38,7 @@ Macro version of [`Query`](@ref) that allows ergonomic construction of queries u
   - `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
   - `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
   - `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
-  - `optional::Tuple`: Components that are optional in the query. Passed as `optional=(Velocity,)`.
+  - `optional::Tuple`: Additional components that are optional in the query. Passed as `optional=(Velocity,)`.
   - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
@@ -86,12 +86,12 @@ For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
 
 # Arguments
 
-  - `world::World`: The world to use for this query.
-  - `comp_types::Tuple`: Components the query filters for and that it provides access to.
-  - `with::Tuple`: Additional components the entities must have.
-  - `without::Tuple`: Components the entities must not have.
-  - `optional::Tuple`: Makes components of the parameters optional.
-  - `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+  - `world`: The `World` instance to query.
+  - `comp_types::Tuple`: Components the query filters for and provides access to. Must be a `Val` tuple like `Val.((Position, Velocity))`.
+  - `with::Tuple`: Additional components the entities must have. Passed as `with=Val.((Health,))`.
+  - `without::Tuple`: Components the entities must not have. Passed as `without=Val.((Altitude,))`.
+  - `optional::Tuple`: Additional components that are optional in the query. Passed as `optional=Val.((Velocity,))`.
+  - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
@@ -129,12 +129,12 @@ end
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     world_storage_modes = W.parameters[3].parameters
 
-    comp_types = _try_to_types(CT)
+    required_types = _try_to_types(CT)
     with_types = _try_to_types(WT)
     without_types = _try_to_types(WO)
     optional_types = _try_to_types(OT)
 
-    required_types = setdiff(comp_types, optional_types)
+    comp_types = union(required_types, optional_types)
     non_exclude_types = union(comp_types, with_types)
 
     if EX === Val{true} && !isempty(without_types)
