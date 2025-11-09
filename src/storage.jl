@@ -51,7 +51,7 @@ end
     end
 end
 
-function _ensure_column_size!(storage::_ComponentStorage{C,A}, arch::UInt32, needed::UInt32) where {C,A<:AbstractArray}
+function _ensure_column_size!(storage::_ComponentStorage{C,A}, arch::UInt32, needed::Int) where {C,A<:AbstractArray}
     col = storage.data[arch]
     if length(col) < needed
         resize!(col, needed)
