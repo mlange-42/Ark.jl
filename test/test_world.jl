@@ -400,10 +400,9 @@ end
     @test mut_ni1 !== mut_ni2
     @test mut_ni1.v[1] !== mut_ni2.v[1]
 
-    @test_throws "ArgumentError: :foobar is not a valid copy mode, must be :ref, :copy or :deepcopy" @copy_entity!(
-        world,
-        e1;
-        copy=:foobar
+    @test_throws(
+        "ArgumentError: :foobar is not a valid copy mode, must be :ref, :copy or :deepcopy",
+        @copy_entity!(world, e1; copy=:foobar)
     )
 end
 
