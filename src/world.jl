@@ -703,11 +703,14 @@ Macro version of [`exchange_components!`](@ref) for more ergonomic component typ
 
 # Example
 
-```julia
-@exchange_components!(world, entity,
-    add = (Health(100),),
-    remove = (Position, Velocity),
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+@exchange_components!(world, entity;
+    add=(Health(100),),
+    remove=(Position, Velocity),
 )
+
+# output
+
 ```
 """
 macro exchange_components!(world_expr, entity_expr)
@@ -733,11 +736,14 @@ For a more convenient tuple syntax, the macro [`@exchange_components!`](@ref) is
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 exchange_components!(world, entity;
     add=(Health(100),),
     remove=Val.((Position, Velocity)),
 )
+
+# output
+
 ```
 """
 @inline function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
