@@ -5,6 +5,7 @@
 ### Breaking changes
 
 - Throws more explicit exception types instead of generic `ErrorException` (#202)
+- Query argument `optional` adds further components instead of making existing ones optional (#253)
 
 ### Features
 

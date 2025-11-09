@@ -123,21 +123,18 @@ end
 
 ### `optional`
 
-The optional `optional` argument makes components optional. 😉
+The optional `optional` argument adds optional component. 😉
 
 Entities are included irrespective of presence of these components on them.
-Note that, in contrast to the other arguments, this one is not related to additional components,
-but refers to components of the query's "normal" components set.
-
-Optional components are still included in the iterator's columns tuple,
-but they are `nothing` if the current [archetype](@ref Architecture) does not have them.
+Columns for these components are added at the end of the query iterator tuple.
+They are `nothing` if the current [archetype](@ref Architecture) does not have them.
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in @Query(world,
+for (entities, positions, velocities, healths) in @Query(world,
             (Position, Velocity);
-            optional=(Velocity,)
+            optional=(Health,)
         )
-    has_velocity = velocities !== nothing
+    has_healths = healths !== nothing
     @inbounds for i in eachindex(entities)
         # ...
     end

@@ -86,7 +86,7 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = @Query(world, (Position, Velocity, Altitude); optional=(Altitude,))
+    query = @Query(world, (Position, Velocity); optional=(Altitude,))
 
     count = 0
     indices = Vector{Int}()
@@ -245,7 +245,7 @@ end
         new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([])))
     end
 
-    query = @Query(world, (Position, Velocity, NoIsBits, Altitude); optional=(NoIsBits, Altitude))
+    query = @Query(world, (Position, Velocity); optional=(NoIsBits, Altitude))
     expected_type = Base.eltype(typeof(query))
 
     @inferred Tuple{
