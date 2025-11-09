@@ -509,6 +509,9 @@ end
 
     @test_throws("ArgumentError: can't exchange components on a dead entity",
         @exchange_components!(world, zero_entity; add=(Altitude(1),), remove=(Position,)))
+
+    @test_throws("either components to add or to remove must be given for exchange_components!",
+        @exchange_components!(world, e1))
 end
 
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"

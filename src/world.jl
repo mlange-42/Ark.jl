@@ -706,12 +706,12 @@ Macro version of [`exchange_components!`](@ref) for more ergonomic component typ
 ```julia
 @exchange_components!(world, entity,
     add = (Health(100),),
-    remove = Val.((Position, Velocity)),
+    remove = (Position, Velocity),
 )
 ```
 """
 macro exchange_components!(world_expr, entity_expr)
-    :(Query($(esc(world_expr)), $(esc(entity_expr))))
+    :(exchange_components!($(esc(world_expr)), $(esc(entity_expr))))
 end
 macro exchange_components!(kwargs_expr, world_expr, entity_expr)
     map(x -> (x.args[1] == :remove && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
@@ -756,6 +756,11 @@ end
 ) where {W<:World,ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
     rem_types = _try_to_types(RTS)
+
+    if isempty(add_types) && isempty(rem_types)
+        throw(ArgumentError("either components to add or to remove must be given for exchange_components!"))
+    end
+
     exprs = []
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
