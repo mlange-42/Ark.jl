@@ -923,7 +923,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::UInt32) where {CS}
+@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::Int) where {CS}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
