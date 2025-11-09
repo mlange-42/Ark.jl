@@ -86,19 +86,17 @@ end
     push!(exprs, :(old_vec = s.data[old_arch]))
     push!(exprs, :(new_vec = s.data[new_arch]))
 
-    # TODO: can we optimize this? E.g. no deepcopy for isbits?
-    if isbitstype(C) && !ismutabletype(C)
+    if CP === Val{:ref} || (isbitstype(C) && !ismutabletype(C))
+        # no copy required for immutable isbits
         push!(exprs, :(new_vec[new_row] = old_vec[old_row]))
+    elseif CP === Val{:copy} || isbitstype(C)
+        # no deep copy required for (mutable) isbits
+        push!(exprs, :(new_vec[new_row] = copy(old_vec[old_row])))
+    elseif CP === Val{:deepcopy}
+        push!(exprs, :(new_vec[new_row] = deepcopy(old_vec[old_row])))
     else
-        if CP === Val{:ref}
-            push!(exprs, :(new_vec[new_row] = old_vec[old_row]))
-        elseif CP === Val{:copy}
-            push!(exprs, :(new_vec[new_row] = copy(old_vec[old_row])))
-        elseif CP === Val{:deepcopy}
-            push!(exprs, :(new_vec[new_row] = deepcopy(old_vec[old_row])))
-        else
-            throw(ArgumentError("'$CP' is not a valid copy mode, must be :ref, :copy or :deepcopy"))
-        end
+        mode = CP.parameters[1]
+        throw(ArgumentError("'$mode' is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
 
     push!(exprs, Expr(:return, :nothing))
