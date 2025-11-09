@@ -177,12 +177,14 @@ end
     ]
     optional_flags_type = Expr(:curly, :Tuple, optional_flag_type_elts...)
 
+    _get_archetypes_expr = length(ids) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
+
     return quote
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$optional_flags_type,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,
-            _get_archetypes(world, $ids_tuple),
+            $(_get_archetypes_expr),
             _QueryLock(false),
             _lock(world._lock),
             $(has_excluded ? true : false),
@@ -191,15 +193,7 @@ end
 end
 
 function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
-    if length(ids) == 0
-        return world._archetypes
-    else
-        comps = world._index.components
-        return _get_rare_component(comps, ids)
-    end
-end
-
-function _get_rare_component(comps, ids)
+    comps = world._index.components
     rare_comp = @inbounds comps[ids[1]]
     min_len = length(rare_comp)
     @inbounds for i in 2:length(ids)
