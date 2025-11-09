@@ -567,6 +567,8 @@ end
 
 Copies an [`Entity`](@ref), optionally adding and/or removing components.
 
+Mutable components are copied by reference, so both entities will share the component instance.
+
 Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples.
 
 # Example
@@ -602,6 +604,8 @@ end
     copy_entity!(world::World, entity::Entity; add::Tuple, remove::Tuple)
 
 Copies an [`Entity`](@ref), optionally adding and/or removing components.
+
+Mutable components are copied by reference, so both entities will share the component instance.
 
 For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provided.
 
