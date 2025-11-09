@@ -263,6 +263,8 @@ end
         Velocity => StructArrayStorage,
     )
 
+    @test length(world._storages) == 3
+
     entity = new_entity!(world, ())
     @test entity == _new_entity(2, 0)
     @test is_alive(world, entity) == true
@@ -270,6 +272,8 @@ end
     entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(3, 0)
     @test is_alive(world, entity) == true
+    @test length(world._storages[2].data[2]) == 1
+    @test length(world._storages[3].data[2]) == 1
 
     pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     @test pos == Position(1, 2)
