@@ -180,7 +180,7 @@ end
     if length(ids_tuple) == 0
         archetypes = :(world._archetypes)
     else
-        comps_length = [:(@inbounds length(world._index.components[$i])) for i in ids_tuple]
+        comps_length = [:(length(world._index.components[$i])) for i in ids_tuple]
         comps_length_tuple = :(($(comps_length...),))
         archetypes = :(@inbounds world._index.components[$ids_tuple[argmin($comps_length_tuple)]])
     end
