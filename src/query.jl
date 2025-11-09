@@ -30,7 +30,8 @@ end
 
 Creates a query.
 
-Macro version of [`Query`](@ref) that allows ergonomic construction of queries using simulated keyword arguments.
+Macro version of [`Query`](@ref Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Val))
+that allows ergonomic construction of queries using simulated keyword arguments.
 
 # Arguments
 

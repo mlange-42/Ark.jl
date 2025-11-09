@@ -62,6 +62,7 @@ certain set of [Components](@ref components-api).
 ```@docs
 Query
 @Query
+Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Val)
 close!(q::Query)
 Entities
 @unpack
