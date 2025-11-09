@@ -90,20 +90,20 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
     push!(world._archetypes, arch)
 
-    index::UInt32 = length(world._archetypes)
-    node.archetype = index
+    index = length(world._archetypes)
+    node.archetype = UInt32(index)
 
     _push_nothing_to_all!(world)
 
-    for comp::UInt8 in components
+    for comp in components
         _assign_new_column_for_comp!(world, comp, index)
         push!(world._index.components[comp], arch)
     end
 
-    return index
+    return UInt32(index)
 end
 
-function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UInt32}
+@inline function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,Int}
     _check_locked(world)
 
     entity = _get_entity(world._entity_pool)
@@ -111,14 +111,14 @@ function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,UI
 
     index = _add_entity!(archetype, entity)
 
-    for comp::UInt8 in archetype.components
+    for comp in archetype.components
         _ensure_column_size_for_comp!(world, comp, archetype_index, index)
     end
 
     if entity._id > length(world._entities)
-        push!(world._entities, _EntityIndex(archetype_index, index))
+        push!(world._entities, _EntityIndex(archetype_index, UInt32(index)))
     else
-        @inbounds world._entities[entity._id] = _EntityIndex(archetype_index, index)
+        @inbounds world._entities[entity._id] = _EntityIndex(archetype_index, UInt32(index))
     end
     return entity, index
 end
@@ -142,8 +142,8 @@ function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tu
         end
     end
 
-    for comp::UInt8 in archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, UInt32(new_length))
+    for comp in archetype.components
+        _ensure_column_size_for_comp!(world, comp, archetype_index, new_length)
     end
 
     return old_length + 1, new_length
@@ -923,7 +923,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::UInt32) where {CS}
+@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::Int) where {CS}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -940,7 +940,7 @@ end
     world::World{CS},
     comp::UInt8,
     arch::UInt32,
-    needed::UInt32,
+    needed::Int,
 ) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
