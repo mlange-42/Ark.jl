@@ -200,7 +200,7 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
 end
 
 function _get_rare_component(comps, ids)
-    rare_comp = first(comps)
+    rare_comp = @inbounds comps[ids[1]]
     min_len = length(rare_comp)
     @inbounds for i in 2:length(ids)
         comp = comps[ids[i]]
