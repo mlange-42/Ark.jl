@@ -13,13 +13,20 @@ jobs:
     permissions: # required for caching
       actions: write
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - 'lts'
+          - '1'
+          - 'pre'
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Set up Julia
       uses: ./.github/actions/setup-julia
       with:
-        julia-version: 'lts'
+        julia-version: ${{ matrix.version }}
         project-file: './Project.toml'
     - name: Install dependencies
       run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
