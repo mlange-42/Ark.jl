@@ -1,7 +1,7 @@
 
 mutable struct _EntityPool
     const entities::Vector{Entity}
-    next::UInt32
+    next::Int
     available::UInt32
 end
 
@@ -50,8 +50,8 @@ end
 
 mutable struct _BitPool
     const bits::Vector{UInt8}
-    length::UInt8
-    next::UInt8
+    length::Int
+    next::Int
     available::UInt8
 end
 
