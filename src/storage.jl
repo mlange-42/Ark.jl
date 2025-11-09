@@ -72,6 +72,20 @@ function _move_component_data!(
     _swap_remove!(old_vec, row)
 end
 
+function _copy_component_data!(
+    s::_ComponentStorage{C,A},
+    old_arch::UInt32,
+    new_arch::UInt32,
+    old_row::UInt32,
+    new_row::UInt32,
+) where {C,A<:AbstractArray}
+    # TODO: this can probably be optimized for StructArray storage
+    # by moving per component instead of unpacking/packing.
+    old_vec = s.data[old_arch]
+    new_vec = s.data[new_arch]
+    new_vec[new_row] = old_vec[old_row]
+end
+
 function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     col = s.data[arch]
     _swap_remove!(col, row)

@@ -270,6 +270,8 @@ end
     entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     @test entity == _new_entity(3, 0)
     @test is_alive(world, entity) == true
+    @test length(world._storages[offset_ID+2].data[2]) == 1
+    @test length(world._storages[offset_ID+3].data[2]) == 1
 
     pos, vel = get_components(world, entity, Val.((Position, Velocity)))
     @test pos == Position(1, 2)
@@ -293,6 +295,62 @@ end
 
         @test_opt function_filter = function_filter new_entity!(world, (Position(1, 2), Velocity(3, 4)))
     end
+end
+
+@testset "World copy_entity!" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+    )
+
+    counter = 0
+    @observe!(world, OnCreateEntity; with=(Position,)) do entity
+        @test entity._id == counter + 2
+        counter += 1
+    end
+
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    entity2 = @copy_entity!(world, entity)
+    @test counter == 2
+
+    @test entity2._id == entity._id + 1
+    @test entity2._id == 3
+    @test world._archetypes[2].entities == [entity, entity2]
+    @test length(world._storages[offset_ID+2].data[2]) == 2
+    @test length(world._storages[offset_ID+3].data[2]) == 2
+
+    pos, vel = @get_components(world, entity2, (Position, Velocity))
+    @test pos == Position(1, 2)
+    @test vel == Velocity(3, 4)
+
+    @test_throws "can't copy a dead entity" copy_entity!(world, zero_entity)
+end
+
+@testset "World copy_entity! with exchange" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+        Altitude,
+    )
+
+    counter = 0
+    @observe!(world, OnCreateEntity; with=(Altitude,)) do entity
+        @test entity._id == 3
+        counter += 1
+    end
+
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    entity2 = @copy_entity!(world, entity; add=(Altitude(5),), remove=(Position,))
+    @test counter == 1
+
+    @test entity2._id == entity._id + 1
+    @test @has_components(world, entity2, (Position,)) == false
+
+    vel, alt = @get_components(world, entity2, (Velocity, Altitude))
+    @test vel == Velocity(3, 4)
+    @test alt == Altitude(5)
 end
 
 @testset "World new_entities! with types" begin
