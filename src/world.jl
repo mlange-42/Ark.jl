@@ -181,7 +181,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::I
     return new_row
 end
 
-function _copy_entity!(world::World, entity::Entity)::Entity
+function _copy_entity!(world::World, entity::Entity, copy::Val)::Entity
     _check_locked(world)
 
     index = world._entities[entity._id]
@@ -189,7 +189,7 @@ function _copy_entity!(world::World, entity::Entity)::Entity
     archetype = world._archetypes[index.archetype]
 
     for comp in archetype.components
-        _copy_component_data!(world, comp, index.archetype, index.archetype, index.row, UInt32(new_row))
+        _copy_component_data!(world, comp, index.archetype, index.archetype, index.row, UInt32(new_row), copy)
     end
 
     world._entities[new_entity._id] = _EntityIndex(index.archetype, UInt32(new_row))
@@ -206,7 +206,8 @@ end
     ::Val{ATS},
     add::Tuple,
     ::RTS,
-)::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple}
+    copy::CP,
+)::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple,CP<:Val}
     add_types = ATS.parameters
     rem_types = _try_to_types(RTS)
     exprs = []
@@ -238,7 +239,7 @@ end
                 if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
-                _copy_component_data!(world, comp, index.archetype, new_arch_index, index.row, UInt32(new_row))
+                _copy_component_data!(world, comp, index.archetype, new_arch_index, index.row, UInt32(new_row), copy)
             end
         ),
     )
@@ -624,14 +625,18 @@ entity2 = copy_entity!(world, entity;
 Entity(0x00000004, 0x00000000)
 ```
 """
-@inline function copy_entity!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
+@inline function copy_entity!(
+    world::World, entity::Entity;
+    add::Tuple=(), remove::Tuple=(),
+    copy::Val=Val(:copy),
+)
     if !is_alive(world, entity)
         throw(ArgumentError("can't copy a dead entity"))
     end
     if isempty(add) && isempty(remove)
-        return @inline _copy_entity!(world, entity)
+        return @inline _copy_entity!(world, entity, copy)
     end
-    return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, remove)
+    return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, remove, copy)
 end
 
 """
@@ -1151,13 +1156,18 @@ end
     new_arch::UInt32,
     old_row::UInt32,
     new_row::UInt32,
-) where {CS<:Tuple}
+    copy::CP,
+) where {CS<:Tuple,CP<:Val}
+    if !(CP in [Val{:ref}, Val{:copy}, Val{:deepcopy}])
+        throw(ArgumentError("'$(nameof(CP))' is not a valid copy mode, must be :ref, :copy or :deepcopy"))
+    end
+
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)
+                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, copy)
             end
         ))
     end
