@@ -143,7 +143,7 @@ function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tu
     end
 
     for comp::UInt8 in archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, UInt32(new_length))
+        _ensure_column_size_for_comp!(world, comp, archetype_index, new_length)
     end
 
     return old_length + 1, new_length
@@ -940,7 +940,7 @@ end
     world::World{CS},
     comp::UInt8,
     arch::UInt32,
-    needed::UInt32,
+    needed::Int,
 ) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
