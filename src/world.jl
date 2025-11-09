@@ -703,15 +703,18 @@ Macro version of [`exchange_components!`](@ref) for more ergonomic component typ
 
 # Example
 
-```julia
-@exchange_components!(world, entity,
-    add = (Health(100),),
-    remove = Val.((Position, Velocity)),
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+@exchange_components!(world, entity;
+    add=(Health(100),),
+    remove=(Position, Velocity),
 )
+
+# output
+
 ```
 """
 macro exchange_components!(world_expr, entity_expr)
-    :(Query($(esc(world_expr)), $(esc(entity_expr))))
+    :(exchange_components!($(esc(world_expr)), $(esc(entity_expr))))
 end
 macro exchange_components!(kwargs_expr, world_expr, entity_expr)
     map(x -> (x.args[1] == :remove && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
@@ -733,11 +736,14 @@ For a more convenient tuple syntax, the macro [`@exchange_components!`](@ref) is
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 exchange_components!(world, entity;
     add=(Health(100),),
     remove=Val.((Position, Velocity)),
 )
+
+# output
+
 ```
 """
 @inline function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
@@ -756,6 +762,11 @@ end
 ) where {W<:World,ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
     rem_types = _try_to_types(RTS)
+
+    if isempty(add_types) && isempty(rem_types)
+        throw(ArgumentError("either components to add or to remove must be given for exchange_components!"))
+    end
+
     exprs = []
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)

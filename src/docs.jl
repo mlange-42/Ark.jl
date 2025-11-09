@@ -16,6 +16,10 @@ struct Altitude
     z::Float64
 end
 
-world = World(Position, Velocity, Altitude)
+struct Health
+    h::Float64
+end
+
+world = World(Position, Velocity, Altitude, Health)
 
 entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
