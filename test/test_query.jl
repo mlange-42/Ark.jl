@@ -295,6 +295,16 @@ end
             },
         },
     } Base.eltype(typeof(query))
+
+    cnt = 0
+    for (e, p, v, a, i) in query
+        @test p !== nothing
+        @test v !== nothing
+        @test a !== nothing
+        @test i !== nothing
+        cnt += 1
+    end
+    @test cnt == 1
 end
 
 #@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
