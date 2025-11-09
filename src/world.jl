@@ -149,7 +149,7 @@ function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tu
     return old_length + 1, new_length
 end
 
-function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::UInt32
+function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::Int
     _check_locked(world)
 
     index = world._entities[entity._id]
@@ -160,7 +160,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
     swapped = _swap_remove!(old_archetype.entities._data, index.row)
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
-    for comp::UInt8 in old_archetype.components
+    for comp in old_archetype.components
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
@@ -168,7 +168,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
-    for comp::UInt8 in new_archetype.components
+    for comp in new_archetype.components
         _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
     end
 
@@ -177,7 +177,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::U
         world._entities[swap_entity._id] = index
     end
 
-    world._entities[entity._id] = _EntityIndex(archetype_index, new_row)
+    world._entities[entity._id] = _EntityIndex(archetype_index, UInt32(new_row))
     return new_row
 end
 
