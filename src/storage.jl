@@ -39,7 +39,7 @@ end
     end
 end
 
-@generated function _assign_column!(storage::_ComponentStorage{C,A}, index::UInt32) where {C,A<:AbstractArray}
+@generated function _assign_column!(storage::_ComponentStorage{C,A}, index::Int) where {C,A<:AbstractArray}
     if A <: _StructArray
         return quote
             storage.data[index] = _StructArray(C)
