@@ -564,13 +564,27 @@ end
 end
 
 """
-    @copy_entity!(world::World, entity::Entity; add::Tuple, remove::Tuple)
+    @copy_entity!(
+        world::World,
+        entity::Entity;
+        add::Tuple=(),
+        remove::Tuple=(),
+        copy=:copy,
+    )
 
 Copies an [`Entity`](@ref), optionally adding and/or removing components.
 
-Mutable components are copied by reference, so both entities will share the component instance.
+Mutable and non-isbits components are shallow copied by default. This can be changed with the `copy` argument.
 
 Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples.
+
+# Arguments
+
+  - `world`: The `World` instance to query.
+  - `entity::Entity`: The entity to copy.
+  - `add::Tuple`: Components to add, like `with=(Health(0),)`.
+  - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
+  - `copy::Tuple`: Copy mode for mutable and non-isbits components, like `:copy`. Modes are :ref, :copy, :deepcopy.
 
 # Example
 
@@ -591,7 +605,13 @@ macro copy_entity!(world_expr, entity_expr)
     :(copy_entity!($(esc(world_expr)), $(esc(entity_expr))))
 end
 macro copy_entity!(kwargs_expr, world_expr, entity_expr)
-    map(x -> (x.args[1] == :remove && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
+    for x in kwargs_expr.args
+        if x.args[1] == :remove
+            x.args[2] = :(Val.($(x.args[2])))
+        elseif x.args[1] == :copy
+            x.args[2] = :(Val($(x.args[2])))
+        end
+    end
     quote
         copy_entity!(
             $(esc(world_expr)),
@@ -602,13 +622,27 @@ macro copy_entity!(kwargs_expr, world_expr, entity_expr)
 end
 
 """
-    copy_entity!(world::World, entity::Entity; add::Tuple, remove::Tuple)
+    copy_entity!(
+        world::World,
+        entity::Entity;
+        add::Tuple=(),
+        remove::Tuple=(),
+        copy=Val(:copy),
+    )
 
 Copies an [`Entity`](@ref), optionally adding and/or removing components.
 
-Mutable components are copied by reference, so both entities will share the component instance.
+Mutable and non-isbits components are shallow copied by default. This can be changed with the `copy` argument.
 
 For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provided.
+
+# Arguments
+
+  - `world`: The `World` instance to query.
+  - `entity::Entity`: The entity to copy.
+  - `add::Tuple`: Components to add, like `with=(Health(0),)`.
+  - `remove::Tuple`: Component types to remove, like `Val.((Position,Velocity))`.
+  - `copy::Tuple`: Copy mode for mutable and non-isbits components, like `Val(:copy)`. Modes are :ref, :copy, :deepcopy.
 
 # Example
 
