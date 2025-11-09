@@ -311,7 +311,7 @@ end
     end
 
     entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
-    entity2 = copy_entity!(world, entity)
+    entity2 = @copy_entity!(world, entity)
     @test counter == 2
 
     @test entity2._id == entity._id + 1
@@ -342,7 +342,7 @@ end
     end
 
     entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
-    entity2 = copy_entity!(world, entity; add=(Altitude(5),), remove=Val.((Position,)))
+    entity2 = @copy_entity!(world, entity; add=(Altitude(5),), remove=(Position,))
     @test counter == 1
 
     @test entity2._id == entity._id + 1

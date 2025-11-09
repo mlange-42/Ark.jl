@@ -33,6 +33,8 @@ new_entity!
 new_entities!
 @new_entities!
 remove_entity!
+copy_entity!
+@copy_entity!
 is_alive
 is_zero
 ```
@@ -61,8 +63,8 @@ certain set of [Components](@ref components-api).
 
 ```@docs
 Query
-@Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Val)
+@Query
 close!(q::Query)
 Entities
 @unpack

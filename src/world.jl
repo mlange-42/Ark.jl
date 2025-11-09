@@ -562,6 +562,64 @@ end
     end
 end
 
+"""
+    @copy_entity!(world::World, entity::Entity; add::Tuple, remove::Tuple)
+
+Copies an [`Entity`](@ref), optionally adding and/or removing components.
+
+Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity1 = @copy_entity!(world, entity)
+
+entity2 = @copy_entity!(world, entity;
+    add=(Health(100),),
+    remove=(Position, Velocity),
+)
+
+# output
+
+Entity(0x00000004, 0x00000000)
+```
+"""
+macro copy_entity!(world_expr, entity_expr)
+    :(copy_entity!($(esc(world_expr)), $(esc(entity_expr))))
+end
+macro copy_entity!(kwargs_expr, world_expr, entity_expr)
+    map(x -> (x.args[1] == :remove && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
+    quote
+        copy_entity!(
+            $(esc(world_expr)),
+            $(esc(entity_expr));
+            $(esc.(kwargs_expr.args)...),
+        )
+    end
+end
+
+"""
+    copy_entity!(world::World, entity::Entity; add::Tuple, remove::Tuple)
+
+Copies an [`Entity`](@ref), optionally adding and/or removing components.
+
+For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provided.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity1 = copy_entity!(world, entity)
+
+entity2 = copy_entity!(world, entity;
+    add=(Health(100),),
+    remove=Val.((Position, Velocity)),
+)
+
+# output
+
+Entity(0x00000004, 0x00000000)
+```
+"""
 @inline function copy_entity!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
         throw(ArgumentError("can't copy a dead entity"))
