@@ -297,7 +297,7 @@ end
     end
 end
 
-@testset "World copy_entity! Tests" begin
+@testset "World copy_entity!" begin
     world = World(
         Dummy,
         Position,
@@ -315,6 +315,25 @@ end
     pos, vel = @get_components(world, entity2, (Position, Velocity))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
+end
+
+@testset "World copy_entity! with exchange" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+        Altitude,
+    )
+
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    entity2 = copy_entity!(world, entity; add=(Altitude(5),), remove=Val.((Position,)))
+
+    @test entity2._id == entity._id + 1
+    @test @has_components(world, entity2, (Position,)) == false
+
+    vel, alt = @get_components(world, entity2, (Velocity, Altitude))
+    @test vel == Velocity(3, 4)
+    @test alt == Altitude(5)
 end
 
 @testset "World new_entities! with types" begin

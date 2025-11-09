@@ -200,6 +200,75 @@ function _copy_entity!(world::World, entity::Entity)::Entity
     return new_entity
 end
 
+@generated function _copy_entity!(
+    world::W,
+    entity::Entity,
+    ::Val{ATS},
+    add::Tuple,
+    ::RTS,
+)::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple}
+    add_types = ATS.parameters
+    rem_types = _try_to_types(RTS)
+    exprs = []
+
+    add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
+    rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+
+    push!(exprs, :(index = world._entities[entity._id]))
+    push!(exprs, :(old_archetype = world._archetypes[index.archetype]))
+    push!(
+        exprs,
+        :(
+            new_arch_index =
+                _find_or_create_archetype!(
+                    world, old_archetype.node, $add_ids, $rem_ids,
+                )
+        ),
+    )
+    push!(exprs, :(new_archetype = world._archetypes[new_arch_index]))
+
+    push!(exprs, :(entity_and_row = _create_entity!(world, new_arch_index)))
+    push!(exprs, :(new_entity = entity_and_row[1]))
+    push!(exprs, :(new_row = entity_and_row[2]))
+
+    push!(
+        exprs,
+        :(
+            for comp in old_archetype.components
+                if !_get_bit(new_archetype.mask, comp)
+                    continue
+                end
+                _copy_component_data!(world, comp, index.archetype, new_arch_index, index.row, UInt32(new_row))
+            end
+        ),
+    )
+
+    for i in 1:length(add_types)
+        T = add_types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(add.$i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, $T)))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_arch_index]))
+        push!(exprs, :(@inbounds $col_sym[new_row] = $val_expr))
+    end
+
+    push!(exprs, :(
+        if _has_observers(world._event_manager, OnCreateEntity)
+            _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
+        end
+    ))
+
+    push!(exprs, Expr(:return, :new_entity))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
 """
     remove_entity!(world::World, entity::Entity)
 
@@ -493,16 +562,12 @@ end
     end
 end
 
-function copy_entity!(world::World, entity::Entity)
+@inline function copy_entity!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
         throw(ArgumentError("can't copy a dead entity"))
     end
-    return _copy_entity!(world, entity)
-end
-
-function copy_entity!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't copy a dead entity"))
+    if isempty(add) && isempty(remove)
+        return @inline _copy_entity!(world, entity)
     end
     return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, remove)
 end
