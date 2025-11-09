@@ -108,7 +108,8 @@ For these columns, Ark offers two storage modes:
   This allows access to field vectors in [queries](@ref Queries), enabling SIMD-accelerated,  
   vectorized operations and increased cache-friendliness if not all of the component's fields are used.  
   However, this storage mode comes with an overhead of ≈10-20% for component operations and entity creation.  
-  Further, component access with [@get_components](@ref) and [set_components!](@ref) is also slower.
+  Further, component access with [@get_components](@ref) and [set_components!](@ref) is also slower.  
+  Also note the **mutable components are not allowed** in StructArray storages.
 
 The storage mode can be selected per component type by using [StructArrayStorage](@ref) or [VectorStorage](@ref) during world construction.
 

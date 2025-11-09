@@ -6,6 +6,8 @@ abstract type _AbstractWorld end
 
 Marks component types for using StructArray-like storage in world constructor.
 
+In StructArray storages, mutable components are not allowed.
+
 See also [VectorStorage](@ref).
 
 # Example
