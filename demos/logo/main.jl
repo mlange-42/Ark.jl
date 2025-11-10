@@ -15,12 +15,10 @@ function main()
     GLMakie.activate!(renderloop=GLMakie.renderloop)
 
     size = WorldSize(800, 600)
-    screen = GLMakie.Screen(framerate=60.0, vsync=true, render_on_demand=false, title="Ark.jl demo")
 
     world = World(Position, Velocity, Target)
 
     add_resource!(world, size)
-    add_resource!(world, WorldScreen(screen))
 
     scheduler = Scheduler(
         world,
@@ -41,11 +39,12 @@ function main()
 
     initialize!(scheduler)
 
-    on(screen.render_tick) do _
+    screen = get_resource(world, WorldScreen)
+    on(screen.screen.render_tick) do _
         update!(scheduler)
     end
 
-    GLMakie.renderloop(screen)
+    GLMakie.renderloop(screen.screen)
 end
 
 main()
