@@ -1,3 +1,5 @@
+module Logo
+
 using Ark
 using GLMakie
 using Colors
@@ -15,7 +17,7 @@ include("sys/movement.jl")
 
 const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/preview.png"
 
-function main()
+function __init__()
     GLMakie.activate!(renderloop=GLMakie.renderloop, focus_on_show=true)
 
     size = WorldSize(1000, 600)
@@ -43,6 +45,8 @@ function main()
     )
 
     initialize!(scheduler)
+    GC.gc()
+    sleep(0.1)
 
     screen = get_resource(world, WorldScreen)
     on(screen.screen.render_tick) do _
@@ -50,6 +54,8 @@ function main()
     end
 
     GLMakie.renderloop(screen.screen)
+
+    nothing
 end
 
-main()
+end
