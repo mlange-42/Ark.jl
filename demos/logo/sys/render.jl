@@ -32,7 +32,7 @@ function update!(s::RenderSystem, world::World)
     data = s.img_data
     fill!(data, 0)
     for (_, positions) in @Query(world, (Position,))
-        for i in eachindex(positions)
+        @inbounds for i in eachindex(positions)
             pos = positions[i]
             if !contains(size, pos.x, pos.y)
                 continue

@@ -24,7 +24,7 @@ function update!(s::MovementSystem, world::World)
 
     counter = rand(1:23)
     for (_, positions, velocities, targets) in @Query(world, (Position, Velocity, Target))
-        for i in eachindex(positions, velocities, targets)
+        @inbounds for i in eachindex(positions, velocities, targets)
             pos = positions[i]
             vel = velocities[i]
             trg = targets[i]

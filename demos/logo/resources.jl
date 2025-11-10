@@ -20,3 +20,7 @@ mutable struct Mouse
     y::Float64
     inside::Bool
 end
+
+struct Logo
+    image::Array{RGBA{N0f8},2}
+end

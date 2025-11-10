@@ -1,5 +1,7 @@
+using Ark
 using GLMakie
 using Colors
+using Images
 using FixedPointNumbers
 
 include("util.jl")
@@ -11,14 +13,17 @@ include("sys/render.jl")
 include("sys/mouse.jl")
 include("sys/movement.jl")
 
+const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/preview.png"
+
 function main()
     GLMakie.activate!(renderloop=GLMakie.renderloop)
 
-    size = WorldSize(800, 600)
+    size = WorldSize(1000, 600)
 
     world = World(Position, Velocity, Target)
 
     add_resource!(world, size)
+    add_resource!(world, Logo(load(IMAGE_PATH)[1:2:end, 1:2:end]))
 
     scheduler = Scheduler(
         world,
