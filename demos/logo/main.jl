@@ -1,6 +1,8 @@
 using GLMakie
 
-screen = GLMakie.Screen(resolution=(800, 600), title="Ark.jl demo")
+GLMakie.activate!(renderloop=GLMakie.renderloop)
 
-scene = Scene(screen)
-display(scene)
+scene = GLMakie.Scene(size=(800, 600))
+screen = display(scene)
+
+GLMakie.renderloop(screen)
