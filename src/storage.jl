@@ -11,7 +11,7 @@ function _new_struct_array_storage(::Type{C}) where {C}
     _ComponentStorage{C,_StructArray_type(C)}([_StructArray(C)])
 end
 
-function _get_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
+@inline function _get_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     if length(col) == 0
         throw(ArgumentError(lazy"entity has no $C component"))
@@ -19,7 +19,12 @@ function _get_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) wh
     return @inbounds col[row]
 end
 
-function _set_component!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32, value::C) where {C,A<:AbstractArray}
+@inline function _set_component!(
+    s::_ComponentStorage{C,A},
+    arch::UInt32,
+    row::UInt32,
+    value::C,
+) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     if length(col) == 0
         throw(ArgumentError(lazy"entity has no $C component"))
