@@ -20,9 +20,7 @@ const IS_CI = "CI" in keys(ENV)
 const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/preview.png"
 
 function __init__()
-    println("starting", IS_CI)
     GLMakie.activate!(renderloop=GLMakie.renderloop, focus_on_show=!IS_CI)
-    println("activated")
 
     world = World(Position, Velocity, Target)
     add_resource!(world, WorldSize(1000, 600))
@@ -40,7 +38,6 @@ function __init__()
     )
 
     initialize!(scheduler)
-    println("initialized")
 
     screen = get_resource(world, WorldScreen)
     on(screen.screen.render_tick) do _
@@ -53,7 +50,6 @@ function __init__()
     end
 
     GLMakie.renderloop(screen.screen)
-    println("finished")
 end
 
 end
