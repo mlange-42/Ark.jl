@@ -16,6 +16,7 @@ include("sys/mouse.jl")
 include("sys/movement.jl")
 include("sys/terminate.jl")
 
+const IS_CI = "CI" in keys(ENV)
 const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/preview.png"
 
 function __init__()
@@ -32,7 +33,7 @@ function __init__()
             MovementSystem(),
             RenderSystem(),
             MouseSystem(),
-            TerminationSystem(-1),
+            TerminationSystem(IS_CI ? 100 : -1) # Short run in CI tests
         ),
     )
 
