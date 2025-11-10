@@ -17,7 +17,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev xsettingsd x11-xserver-utils
+      run: |
+        sudo apt-get update && sudo apt-get install -y \
+            xvfb \
+            libgl1-mesa-dri \
+            libosmesa6 \
+            libxrandr2 \
+            libxinerama1 \
+            libxcursor1 \
+            libxi6 \
+            libxext6
     - name: Set up Julia
       uses: ./.github/actions/setup-julia
       with:
