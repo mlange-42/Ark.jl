@@ -1,12 +1,4 @@
 
-mutable struct Tick
-    tick::Int
-end
-
-mutable struct Terminate
-    stop::Bool
-end
-
 struct WorldSize
     width::Int
     height::Int

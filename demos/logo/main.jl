@@ -6,8 +6,8 @@ using Colors
 using Images
 using FixedPointNumbers
 
-include("util.jl")
-include("scheduler.jl")
+include("../_common/scheduler.jl")
+include("../_common/resources.jl")
 include("components.jl")
 include("resources.jl")
 include("sys/setup.jl")
