@@ -46,7 +46,8 @@ Pkg.add("Ark")
 
 Here is the classical Position/Velocity example that every ECS shows in the docs.
 
-See the [Manual](https://mlange-42.github.io/Ark.jl/stable/) and [API docs](https://mlange-42.github.io/Ark.jl/stable/api) for more information.
+See the [Manual](https://mlange-42.github.io/Ark.jl/stable/), [API docs](https://mlange-42.github.io/Ark.jl/stable/api)
+and [demos](https://github.com/mlange-42/Ark.jl/tree/main/demos) for more details.
 
 ```julia
 using Ark

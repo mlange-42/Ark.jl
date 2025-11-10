@@ -20,6 +20,10 @@
 - Adaptive bit-mask size, depending on the number of components in the world (#237, #250)
 - Avoids unions in queries without optional components, speeding up query iteration (#246)
 
+### Documentation
+
+- Adds an animated logo demo (#268)
+
 ### Other
 
 - Improves error messages when passing components types as `(A, B)` instead of the required `Val.((A, B))` (#191)
