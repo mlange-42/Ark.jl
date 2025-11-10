@@ -2,6 +2,7 @@ using GLMakie
 using Colors
 using FixedPointNumbers
 
+include("util.jl")
 include("scheduler.jl")
 include("components.jl")
 include("resources.jl")

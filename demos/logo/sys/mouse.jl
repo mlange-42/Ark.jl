@@ -5,10 +5,11 @@ function initialize!(s::MouseSystem, world::World)
     scene = get_resource(world, WorldScene)
     size = get_resource(world, WorldSize)
 
-    mouse = add_resource!(world, Mouse((0, 0), false))
+    mouse = add_resource!(world, Mouse(0, 0, false))
 
     on(scene.scene.events.mouseposition) do mp
-        mouse.position = mp
+        mouse.x = mp[1]
+        mouse.y = mp[2]
         x, y = mp
         mouse.inside = contains(size, x, y)
     end
