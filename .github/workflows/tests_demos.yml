@@ -30,4 +30,4 @@ jobs:
     - name: Run demos
       run: |
         cd demos
-        DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=. logo/main.jl
+        xvfb-run --auto-servernum -s '-screen 0 1024x768x24' julia --color=yes --project=. logo/main.jl
