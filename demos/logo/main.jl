@@ -50,6 +50,7 @@ function __init__()
     end
 
     GLMakie.renderloop(screen.screen)
+    println("Finished after $(get_resource(world, Tick).tick) ticks")
 end
 
 end
