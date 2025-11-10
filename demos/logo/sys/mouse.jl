@@ -10,6 +10,6 @@ function initialize!(s::MouseSystem, world::World)
     on(scene.scene.events.mouseposition) do mp
         mouse.position = mp
         x, y = mp
-        mouse.inside = x >= 0 && y >= 0 && x <= size.width && y <= size.height
+        mouse.inside = contains(size, x, y)
     end
 end

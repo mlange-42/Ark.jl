@@ -24,10 +24,15 @@ function update!(s::RenderSystem, world::World)
     size = get_resource(world, WorldSize)
     data = s.img_data
     fill!(data, 0)
-    for i in 1:1000
-        x = rand(1:size.width)
-        y = rand(1:size.height)
-        data[x, y] = 1
+
+    for (_, positions) in @Query(world, (Position,))
+        for i in eachindex(positions)
+            pos = positions[i]
+            if !contains(size, pos.x, pos.y)
+                continue
+            end
+            data[round(Int, pos.x), round(Int, pos.y)] = 1
+        end
     end
     s.img_node[] = data
 end

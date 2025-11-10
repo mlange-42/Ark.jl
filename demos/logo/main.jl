@@ -3,7 +3,9 @@ using Colors
 using FixedPointNumbers
 
 include("scheduler.jl")
+include("components.jl")
 include("resources.jl")
+include("sys/setup.jl")
 include("sys/render.jl")
 include("sys/mouse.jl")
 include("sys/movement.jl")
@@ -14,13 +16,15 @@ function main()
     size = WorldSize(800, 600)
     screen = GLMakie.Screen(framerate=60.0, vsync=true, render_on_demand=false, title="Ark.jl demo")
 
-    world = World()
+    world = World(Position, Velocity, Target)
+
     add_resource!(world, size)
     add_resource!(world, WorldScreen(screen))
 
     scheduler = Scheduler(
         world,
         (
+            SetupSystem(),
             RenderSystem(),
             MouseSystem(),
             MovementSystem(

@@ -3,6 +3,10 @@ struct WorldSize
     height::Int
 end
 
+function contains(s::WorldSize, x::Float64, y::Float64)
+    return x >= 0 && y >= 0 && x <= s.width && y <= s.height
+end
+
 struct WorldScreen
     screen::GLMakie.Screen
 end
