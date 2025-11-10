@@ -26,4 +26,5 @@ jobs:
     - name: Run tests
       run: |
         cd demos
+        julia --color=yes --project=. -e 'using Pkg; Pkg.develop(path=".."); Pkg.instantiate()'
         DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=. logo/main.jl
