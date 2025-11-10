@@ -116,8 +116,6 @@ end
     field_exprs = [:($(name) = x.$name) for name in names]
 
     return quote
-        # TODO: is it possible that there is no keyword constructor available?
-        # If so, we should provide an informative message.
-        return $(Expr(:call, T, field_exprs...))
+        return $(Expr(:new, T, field_exprs...))
     end
 end
