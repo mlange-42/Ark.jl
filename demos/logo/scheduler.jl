@@ -14,6 +14,7 @@ function initialize!(s::Scheduler)
     for sys in s.systems
         initialize!(sys, s.world)
     end
+    GC.gc()
 end
 
 function update!(s::Scheduler)
