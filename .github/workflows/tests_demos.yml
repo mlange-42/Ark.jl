@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Tests (large world)
+    name: Tests (demos)
     runs-on: ubuntu-latest
     permissions: # required for caching
       actions: write
