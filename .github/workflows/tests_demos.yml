@@ -25,5 +25,5 @@ jobs:
         project-file: './demos/Project.toml'
     - name: Run tests
       run: |
-        cd demo
+        cd demos
         DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=. logo/main.jl
