@@ -382,19 +382,19 @@ end
     @test mut_ni1 !== mut_ni2
     @test mut_ni1.v[1] === mut_ni2.v[1]
 
-    e2 = @copy_entity!(world, e1; copy=:ref)
+    e2 = @copy_entity!(world, e1; mode=:ref)
     mut2, mut_ni2 = @get_components(world, e2, (MutableComponent, MutableNoIsBits))
     @test mut1 === mut2
     @test mut_ni1 === mut_ni2
     @test mut_ni1.v[1] === mut_ni2.v[1]
 
-    e2 = @copy_entity!(world, e1; copy=:copy)
+    e2 = @copy_entity!(world, e1; mode=:copy)
     mut2, mut_ni2 = @get_components(world, e2, (MutableComponent, MutableNoIsBits))
     @test mut1 !== mut2
     @test mut_ni1 !== mut_ni2
     @test mut_ni1.v[1] === mut_ni2.v[1]
 
-    e2 = @copy_entity!(world, e1; copy=:deepcopy)
+    e2 = @copy_entity!(world, e1; mode=:deepcopy)
     mut2, mut_ni2 = @get_components(world, e2, (MutableComponent, MutableNoIsBits))
     @test mut1 !== mut2
     @test mut_ni1 !== mut_ni2
@@ -402,7 +402,7 @@ end
 
     @test_throws(
         "ArgumentError: :foobar is not a valid copy mode, must be :ref, :copy or :deepcopy",
-        @copy_entity!(world, e1; copy=:foobar)
+        @copy_entity!(world, e1; mode=:foobar)
     )
 end
 

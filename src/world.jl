@@ -181,7 +181,7 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::I
     return new_row
 end
 
-function _copy_entity!(world::World, entity::Entity, copy::Val)::Entity
+function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     _check_locked(world)
 
     index = world._entities[entity._id]
@@ -189,7 +189,7 @@ function _copy_entity!(world::World, entity::Entity, copy::Val)::Entity
     archetype = world._archetypes[index.archetype]
 
     for comp in archetype.components
-        _copy_component_data!(world, comp, index.archetype, index.archetype, index.row, UInt32(new_row), copy)
+        _copy_component_data!(world, comp, index.archetype, index.archetype, index.row, UInt32(new_row), mode)
     end
 
     world._entities[new_entity._id] = _EntityIndex(index.archetype, UInt32(new_row))
@@ -206,7 +206,7 @@ end
     ::Val{ATS},
     add::Tuple,
     ::RTS,
-    copy::CP,
+    mode::CP,
 )::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple,CP<:Val}
     add_types = ATS.parameters
     rem_types = _try_to_types(RTS)
@@ -239,7 +239,7 @@ end
                 if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
-                _copy_component_data!(world, comp, index.archetype, new_arch_index, index.row, UInt32(new_row), copy)
+                _copy_component_data!(world, comp, index.archetype, new_arch_index, index.row, UInt32(new_row), mode)
             end
         ),
     )
@@ -569,12 +569,12 @@ end
         entity::Entity;
         add::Tuple=(),
         remove::Tuple=(),
-        copy=:copy,
+        mode=:copy,
     )
 
 Copies an [`Entity`](@ref), optionally adding and/or removing components.
 
-Mutable and non-isbits components are shallow copied by default. This can be changed with the `copy` argument.
+Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
 
 Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples.
 
@@ -584,7 +584,7 @@ Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples
   - `entity::Entity`: The entity to copy.
   - `add::Tuple`: Components to add, like `with=(Health(0),)`.
   - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
-  - `copy::Tuple`: Copy mode for mutable and non-isbits components, like `:copy`. Modes are :ref, :copy, :deepcopy.
+  - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `:copy`. Modes are :ref, :copy, :deepcopy.
 
 # Example
 
@@ -608,7 +608,7 @@ macro copy_entity!(kwargs_expr, world_expr, entity_expr)
     for x in kwargs_expr.args
         if x.args[1] == :remove
             x.args[2] = :(Val.($(x.args[2])))
-        elseif x.args[1] == :copy
+        elseif x.args[1] == :mode
             x.args[2] = :(Val($(x.args[2])))
         end
     end
@@ -627,12 +627,12 @@ end
         entity::Entity;
         add::Tuple=(),
         remove::Tuple=(),
-        copy=Val(:copy),
+        mode=Val(:copy),
     )
 
 Copies an [`Entity`](@ref), optionally adding and/or removing components.
 
-Mutable and non-isbits components are shallow copied by default. This can be changed with the `copy` argument.
+Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
 
 For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provided.
 
@@ -642,7 +642,7 @@ For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provide
   - `entity::Entity`: The entity to copy.
   - `add::Tuple`: Components to add, like `with=(Health(0),)`.
   - `remove::Tuple`: Component types to remove, like `Val.((Position,Velocity))`.
-  - `copy::Tuple`: Copy mode for mutable and non-isbits components, like `Val(:copy)`. Modes are :ref, :copy, :deepcopy.
+  - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `Val(:copy)`. Modes are :ref, :copy, :deepcopy.
 
 # Example
 
@@ -662,15 +662,15 @@ Entity(0x00000004, 0x00000000)
 @inline function copy_entity!(
     world::World, entity::Entity;
     add::Tuple=(), remove::Tuple=(),
-    copy::Val=Val(:copy),
+    mode::Val=Val(:copy),
 )
     if !is_alive(world, entity)
         throw(ArgumentError("can't copy a dead entity"))
     end
     if isempty(add) && isempty(remove)
-        return @inline _copy_entity!(world, entity, copy)
+        return @inline _copy_entity!(world, entity, mode)
     end
-    return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, remove, copy)
+    return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, remove, mode)
 end
 
 """
@@ -1190,7 +1190,7 @@ end
     new_arch::UInt32,
     old_row::UInt32,
     new_row::UInt32,
-    copy::CP,
+    mode::CP,
 ) where {CS<:Tuple,CP<:Val}
     if !(CP in [Val{:ref}, Val{:copy}, Val{:deepcopy}])
         mode = CP.parameters[1]
@@ -1202,7 +1202,7 @@ end
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, copy)
+                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, mode)
             end
         ))
     end
