@@ -16,7 +16,7 @@ include("sys/movement.jl")
 const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/preview.png"
 
 function main()
-    GLMakie.activate!(renderloop=GLMakie.renderloop)
+    GLMakie.activate!(renderloop=GLMakie.renderloop, focus_on_show=true)
 
     size = WorldSize(1000, 600)
 
