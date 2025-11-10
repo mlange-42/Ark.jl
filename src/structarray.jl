@@ -119,7 +119,7 @@ Base.@propagate_inbounds @generated function Base.getindex(sa::_StructArray{C}, 
     field_exprs = [
         :($(name) = sa._components.$name[i]) for name in names
     ]
-    return Expr(:block, Expr(:call, C, field_exprs...))
+    return Expr(:block, Expr(:new, C, field_exprs...))
 end
 
 Base.@propagate_inbounds @generated function Base.setindex!(sa::_StructArray{C}, c, i::Int) where {C}
@@ -164,7 +164,7 @@ Base.@propagate_inbounds @generated function Base.getindex(sa::StructArrayView{C
     field_exprs = [
         :($(name) = sa._components.$name[i]) for name in names
     ]
-    return Expr(:block, Expr(:call, C, field_exprs...))
+    return Expr(:block, Expr(:new, C, field_exprs...))
 end
 
 Base.@propagate_inbounds @generated function Base.setindex!(sa::StructArrayView{C}, c::C, i::Int) where {C}

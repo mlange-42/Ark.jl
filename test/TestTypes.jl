@@ -31,6 +31,10 @@ struct NoIsBits
     v::Vector{Int}
 end
 
+mutable struct MutableNoIsBits
+    v::Vector{MutableComponent}
+end
+
 mutable struct Tick
     time::Int
 end

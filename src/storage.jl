@@ -72,21 +72,50 @@ function _move_component_data!(
     _swap_remove!(old_vec, row)
 end
 
-function _copy_component_data!(
+@generated function _copy_component_data!(
     s::_ComponentStorage{C,A},
     old_arch::UInt32,
     new_arch::UInt32,
     old_row::UInt32,
     new_row::UInt32,
-) where {C,A<:AbstractArray}
+    ::CP,
+) where {C,A<:AbstractArray,CP<:Val}
     # TODO: this can probably be optimized for StructArray storage
     # by moving per component instead of unpacking/packing.
-    old_vec = s.data[old_arch]
-    new_vec = s.data[new_arch]
-    new_vec[new_row] = old_vec[old_row]
+    exprs = []
+    push!(exprs, :(old_vec = s.data[old_arch]))
+    push!(exprs, :(new_vec = s.data[new_arch]))
+
+    if CP === Val{:ref} || (isbitstype(C) && !ismutabletype(C))
+        # no copy required for immutable isbits
+        push!(exprs, :(new_vec[new_row] = old_vec[old_row]))
+    elseif CP === Val{:copy} || isbitstype(C)
+        # no deep copy required for (mutable) isbits
+        push!(exprs, :(new_vec[new_row] = _shallow_copy(old_vec[old_row])))
+    else # CP === Val{:deepcopy}
+        # validity if checked before the call.
+        push!(exprs, :(new_vec[new_row] = deepcopy(old_vec[old_row])))
+    end
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
 end
 
 function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     col = s.data[arch]
     _swap_remove!(col, row)
+end
+
+@generated function _shallow_copy(x::T) where T
+    names = fieldnames(T)
+    field_exprs = [:($(name) = x.$name) for name in names]
+
+    return quote
+        return $(Expr(:new, T, field_exprs...))
+    end
 end

@@ -353,6 +353,59 @@ end
     @test alt == Altitude(5)
 end
 
+@testset "World copy_entity! copy modes" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+        NoIsBits,
+        MutableComponent,
+        MutableNoIsBits;
+        allow_mutable=true,
+    )
+
+    e1 = new_entity!(
+        world,
+        (
+            Position(0, 0),
+            Velocity(0, 0),
+            NoIsBits([]),
+            MutableComponent(1),
+            MutableNoIsBits([MutableComponent(1)]),
+        ),
+    )
+    mut1, mut_ni1 = @get_components(world, e1, (MutableComponent, MutableNoIsBits))
+
+    e2 = @copy_entity!(world, e1)
+    mut2, mut_ni2 = @get_components(world, e2, (MutableComponent, MutableNoIsBits))
+    @test mut1 !== mut2
+    @test mut_ni1 !== mut_ni2
+    @test mut_ni1.v[1] === mut_ni2.v[1]
+
+    e2 = @copy_entity!(world, e1; mode=:ref)
+    mut2, mut_ni2 = @get_components(world, e2, (MutableComponent, MutableNoIsBits))
+    @test mut1 === mut2
+    @test mut_ni1 === mut_ni2
+    @test mut_ni1.v[1] === mut_ni2.v[1]
+
+    e2 = @copy_entity!(world, e1; mode=:copy)
+    mut2, mut_ni2 = @get_components(world, e2, (MutableComponent, MutableNoIsBits))
+    @test mut1 !== mut2
+    @test mut_ni1 !== mut_ni2
+    @test mut_ni1.v[1] === mut_ni2.v[1]
+
+    e2 = @copy_entity!(world, e1; mode=:deepcopy)
+    mut2, mut_ni2 = @get_components(world, e2, (MutableComponent, MutableNoIsBits))
+    @test mut1 !== mut2
+    @test mut_ni1 !== mut_ni2
+    @test mut_ni1.v[1] !== mut_ni2.v[1]
+
+    @test_throws(
+        "ArgumentError: :foobar is not a valid copy mode, must be :ref, :copy or :deepcopy",
+        @copy_entity!(world, e1; mode=:foobar)
+    )
+end
+
 @testset "World new_entities! with types" begin
     world = World(
         Dummy,

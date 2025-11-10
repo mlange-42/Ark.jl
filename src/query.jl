@@ -92,7 +92,7 @@ For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
   - `with::Tuple`: Additional components the entities must have. Passed as `with=Val.((Health,))`.
   - `without::Tuple`: Components the entities must not have. Passed as `without=Val.((Altitude,))`.
   - `optional::Tuple`: Additional components that are optional in the query. Passed as `optional=Val.((Velocity,))`.
-  - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+  - `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
