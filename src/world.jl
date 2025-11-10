@@ -51,7 +51,7 @@ function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; allow_mutable=fal
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
 end
 
-@generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
+@inline @generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
     for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
             return :(UInt8($i))
@@ -60,7 +60,7 @@ end
     return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
-@generated function _get_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
+@inline @generated function _get_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
         if S <: _ComponentStorage && S.parameters[1] === C
