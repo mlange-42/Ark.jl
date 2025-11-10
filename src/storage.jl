@@ -91,7 +91,7 @@ end
         push!(exprs, :(new_vec[new_row] = old_vec[old_row]))
     elseif CP === Val{:copy} || isbitstype(C)
         # no deep copy required for (mutable) isbits
-        push!(exprs, :(new_vec[new_row] = shallow_copy(old_vec[old_row])))
+        push!(exprs, :(new_vec[new_row] = _shallow_copy(old_vec[old_row])))
     else # CP === Val{:deepcopy}
         # validity if checked before the call.
         push!(exprs, :(new_vec[new_row] = deepcopy(old_vec[old_row])))
@@ -111,7 +111,7 @@ function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::U
     _swap_remove!(col, row)
 end
 
-@generated function shallow_copy(x::T) where T
+@generated function _shallow_copy(x::T) where T
     names = fieldnames(T)
     field_exprs = [:($(name) = x.$name) for name in names]
 
