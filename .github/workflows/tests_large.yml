@@ -21,6 +21,10 @@ jobs:
           - '1'
           - 'pre'
     steps:
+    - name: Cancel ongoing test runs for previous commits
+      uses: styfle/cancel-workflow-action@0.12.1
+      with:
+        access_token: ${{ github.token }}
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Set up Julia
