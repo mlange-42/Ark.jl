@@ -3,7 +3,7 @@ end
 
 function initialize!(s::SetupSystem, world::World)
     world_size = get_resource(world, WorldSize)
-    logo = get_resource(world, Logo)
+    logo = get_resource(world, ArkLogo)
 
     image = reverse(logo.image, dims=1)
     sy, sx = size(image)

@@ -1,3 +1,12 @@
+
+mutable struct Tick
+    tick::Int
+end
+
+mutable struct Terminate
+    stop::Bool
+end
+
 struct WorldSize
     width::Int
     height::Int
@@ -21,6 +30,6 @@ mutable struct Mouse
     inside::Bool
 end
 
-struct Logo
+struct ArkLogo
     image::Array{RGBA{N0f8},2}
 end
