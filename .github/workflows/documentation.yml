@@ -16,6 +16,12 @@ jobs:
       statuses: write
     runs-on: ubuntu-latest
     steps:
+      # Cancel ongoing CI test runs if pushing to branch again before the previous tests
+      # have finished
+      - name: Cancel ongoing test runs for previous commits
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ github.token }}
       - uses: actions/checkout@v4
       - name: Set up Julia
         uses: ./.github/actions/setup-julia
