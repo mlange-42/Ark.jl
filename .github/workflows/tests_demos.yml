@@ -1,0 +1,42 @@
+name: Tests (demos)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests (demos)
+    runs-on: ubuntu-latest
+    permissions: # required for caching
+      actions: write
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y \
+            xvfb \
+            libgl1-mesa-dri \
+            libosmesa6 \
+            libxrandr2 \
+            libxinerama1 \
+            libxcursor1 \
+            libxi6 \
+            libxext6
+    - name: Set up Julia
+      uses: ./.github/actions/setup-julia
+      with:
+        julia-version: 1
+        project-file: './demos/Project.toml'
+    - name: Instantiate project
+      run: |
+        cd demos
+        julia --color=yes --project=. -e 'using Pkg; Pkg.develop(path=".."); Pkg.instantiate()'
+    - name: Run demos
+      run: |
+        cd demos
+        xvfb-run --auto-servernum -s '-screen 0 1024x768x24' julia --color=yes --project=. logo/main.jl

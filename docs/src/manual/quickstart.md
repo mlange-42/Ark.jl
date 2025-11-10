@@ -17,6 +17,9 @@ Pkg.add("Ark")
 
 Here is the classical Position/Velocity example that every ECS shows in the docs.
 
+Read the next chapters and view the [API docs](https://mlange-42.github.io/Ark.jl/stable/api)
+and [demos](https://github.com/mlange-42/Ark.jl/tree/main/demos) for more details.
+
 ```jldoctest; output = false
 using Ark
 
