@@ -19,15 +19,15 @@ function initialize!(s::Scheduler)
 end
 
 function update!(s::Scheduler)
+    if has_resource(s.world, Terminate) && get_resource(s.world, Terminate).stop
+        return false
+    end
+
     for sys in s.systems
         update!(sys, s.world)
     end
     get_resource(s.world, Tick).tick += 1
 
-    if has_resource(s.world, Terminate) && get_resource(s.world, Terminate).stop
-        finalize!(s)
-        return false
-    end
     return true
 end
 
