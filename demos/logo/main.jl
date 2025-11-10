@@ -29,8 +29,6 @@ function main()
         world,
         (
             SetupSystem(),
-            RenderSystem(),
-            MouseSystem(),
             MovementSystem(
                 max_speed=10.0,
                 max_acc=0.08,
@@ -39,6 +37,8 @@ function main()
                 max_flee_distance=200.0,
                 damp=0.975,
             ),
+            RenderSystem(),
+            MouseSystem(),
         ),
     )
 

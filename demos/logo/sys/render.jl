@@ -14,20 +14,16 @@ function initialize!(s::RenderSystem, world::World)
 
     screen = GLMakie.Screen(framerate=60.0, vsync=true, render_on_demand=false, title="Ark.jl demo")
     add_resource!(world, WorldScreen(screen))
+
+    s.img_data = zeros(Gray{N0f8}, size.width, size.height)
+    s.img_node = Observable(s.img_data)
+    image!(scene, s.img_node)
+
+    display(screen, scene)
 end
 
 function update!(s::RenderSystem, world::World)
     size = get_resource(world, WorldSize)
-    if s.img_node === nothing
-        s.img_data = zeros(Gray{N0f8}, size.width, size.height)
-        s.img_node = Observable(s.img_data)
-
-        scene = get_resource(world, WorldScene)
-        screen = get_resource(world, WorldScreen)
-        display(screen.screen, scene.scene)
-
-        image!(scene.scene, s.img_node)
-    end
 
     data = s.img_data
     fill!(data, 0)
