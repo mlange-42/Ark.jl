@@ -1,5 +1,5 @@
 
-mutable struct RenderSystem
+mutable struct RenderSystem <: System
     img_data::Union{Array{Gray{N0f8},2},Nothing}
     img_node::Union{GLMakie.Observable{Array{Gray{N0f8},2}},Nothing}
 end
@@ -16,6 +16,8 @@ function initialize!(s::RenderSystem, world::World)
     s.img_data = zeros(Gray{N0f8}, size.width, size.height)
     s.img_node = Observable(s.img_data)
     image!(scene, s.img_node)
+
+    add_resource!(world, WorldScene(scene))
 end
 
 function update!(s::RenderSystem, world::World)

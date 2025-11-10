@@ -5,6 +5,8 @@ using FixedPointNumbers
 include("scheduler.jl")
 include("resources.jl")
 include("sys/render.jl")
+include("sys/mouse.jl")
+include("sys/movement.jl")
 
 function main()
     GLMakie.activate!(renderloop=GLMakie.renderloop)
@@ -20,6 +22,15 @@ function main()
         world,
         (
             RenderSystem(),
+            MouseSystem(),
+            MovementSystem(
+                max_speed=10.0,
+                max_acc=0.08,
+                max_acc_flee=0.1,
+                min_flee_distance=50.0,
+                max_flee_distance=200.0,
+                damp=0.975,
+            ),
         ),
     )
 
