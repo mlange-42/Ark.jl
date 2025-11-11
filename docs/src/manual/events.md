@@ -89,7 +89,7 @@ end
 @observe!(world, OnAddComponents, (Position,)) do entity
     fn(OnAddComponents, entity)
 end
- @observe!(world, OnRemoveComponents, (Position,)) do entity
+@observe!(world, OnRemoveComponents, (Position,)) do entity
     fn(OnRemoveComponents, entity)
 end
 ; # suppress print output

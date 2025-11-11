@@ -118,10 +118,10 @@ world = World(
     Position => VectorStorage,
     Velocity => StructArrayStorage,
 )
-; # suppress print output
 
 # output
 
+World(entities=0, comp_types=(Position, Velocity))
 ```
 
 The default is `VectorStorage` if no storage mode is specified:
@@ -131,8 +131,8 @@ world = World(
     Position,
     Velocity => StructArrayStorage,
 )
-; # suppress print output
 
 # output
 
+World(entities=0, comp_types=(Position, Velocity))
 ```
