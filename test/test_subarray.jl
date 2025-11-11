@@ -100,7 +100,8 @@ end
     a = _new_fields_view(view(vec, :))
 
     @test string(a.x) == "11-element FieldView() with eltype Float64
- [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]"
+ [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
+"
 
     vec = Vector{Position}()
     for i in 1:12
@@ -109,7 +110,8 @@ end
     a = _new_fields_view(view(vec, :))
 
     @test string(a.x) == "12-element FieldView() with eltype Float64
- [1.0, 2.0, 3.0, 4.0, 5.0, …, 8.0, 9.0, 10.0, 11.0, 12.0]"
+ [1.0, 2.0, 3.0, 4.0, 5.0, …, 8.0, 9.0, 10.0, 11.0, 12.0]
+"
 end
 
 @testset "FieldsView show" begin

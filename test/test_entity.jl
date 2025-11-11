@@ -40,3 +40,18 @@ end
     @test size(col) == (length(col),)
     @test IndexStyle(col) == IndexLinear()
 end
+
+@testset "Entities show" begin
+    col = _new_entities_column()
+    for i in 1:11
+        push!(col._data, _new_entity(i, 0))
+    end
+    @test string(col) ==
+          "Entities[Entity(1, 0), Entity(2, 0), Entity(3, 0), Entity(4, 0), Entity(5, 0), " *
+          "Entity(6, 0), Entity(7, 0), Entity(8, 0), Entity(9, 0), Entity(10, 0), Entity(11, 0)]"
+
+    push!(col._data, _new_entity(12, 0))
+    @test string(col) ==
+          "Entities[Entity(1, 0), Entity(2, 0), Entity(3, 0), Entity(4, 0), Entity(5, 0), " *
+          "…, Entity(8, 0), Entity(9, 0), Entity(10, 0), Entity(11, 0), Entity(12, 0)]"
+end

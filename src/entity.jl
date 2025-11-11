@@ -27,6 +27,10 @@ function _new_entity(id::Int, gen::Int)
     Entity(UInt32(id), UInt32(gen))
 end
 
+function Base.show(io::IO, entity::Entity)
+    print(io, "Entity($(Int(entity._id)), $(Int(entity._gen)))")
+end
+
 struct _EntityIndex
     archetype::UInt32
     row::UInt32
@@ -62,3 +66,14 @@ Base.IndexStyle(::Type{Entities}) = IndexLinear()
 Base.size(c::Entities) = (length(c),)
 Base.firstindex(c::Entities) = firstindex(c._data)
 Base.lastindex(c::Entities) = lastindex(c._data)
+
+function Base.show(io::IO, e::Entities)
+    if length(e) < 12
+        elems = join(e, ", ")
+        print(io, "Entities[$elems]")
+    else
+        first = join(e[1:5], ", ")
+        last = join(e[end-4:end], ", ")
+        print(io, "Entities[$first, …, $last]")
+    end
+end
