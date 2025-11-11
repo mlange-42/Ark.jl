@@ -163,3 +163,18 @@ Base.pointer(a::FieldView) = pointer(a._data)
 Base.pointer(a::FieldView, i::Integer) = pointer(a._data, i)
 
 unpack(a::SubArray) = a
+
+function Base.show(io::IO, a::FieldView{C,T}) where {C,T}
+    print(io, "$(length(a))-element FieldView() with eltype $(_format_type(C))")
+    if length(a) == 0
+        return
+    end
+    if length(a) < 12
+        elems = join(a, ", ")
+        print(io, "\n [$elems]\n")
+    else
+        first = join(a[1:5], ", ")
+        last = join(a[end-4:end], ", ")
+        print(io, "\n [$first, …, $last]\n")
+    end
+end
