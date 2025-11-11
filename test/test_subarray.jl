@@ -94,6 +94,10 @@ end
 
 @testset "FieldView show" begin
     vec = Vector{Position}()
+    a = _new_fields_view(view(vec, :))
+    @test string(a.x) == "0-element FieldView() with eltype Float64"
+
+    vec = Vector{Position}()
     for i in 1:11
         push!(vec, Position(i, i))
     end
