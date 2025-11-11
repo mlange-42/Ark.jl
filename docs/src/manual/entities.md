@@ -36,7 +36,7 @@ entity = new_entity!(world, (
 
 # output
 
-Entity(0x00000002, 0x00000000)
+Entity(2, 0)
 ```
 
 Components can be added to and removed from the entity later. This is described in the [next chapter](@ref Components).

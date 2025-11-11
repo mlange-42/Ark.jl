@@ -8,7 +8,7 @@ end
 
 A query for components.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,OPT,N,M}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _mask::_Mask{M}
     _exclude_mask::_Mask{M}
     _world::W
@@ -180,7 +180,7 @@ end
     archetypes = length(ids_tuple) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
 
     return quote
-        Query{$W,$comp_tuple_type,$storage_tuple_mode,$optional_flags_type,$(length(comp_types)),$M}(
+        Query{$W,$comp_tuple_type,$storage_tuple_mode,$EX,$optional_flags_type,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,
@@ -244,9 +244,9 @@ function close!(q::Query)
 end
 
 @generated function _get_columns(
-    q::Query{W,TS,SM,OPT,N,M},
+    q::Query{W,TS,SM,EX,OPT,N,M},
     idx::Int,
-) where {W<:World,TS<:Tuple,SM<:Tuple,OPT,N,M}
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters
@@ -280,7 +280,7 @@ end
         push!(result_exprs, Symbol("vec", i))
     end
 
-    element_type = Base.eltype(Query{W,TS,SM,OPT,N,M})
+    element_type = Base.eltype(Query{W,TS,SM,EX,OPT,N,M})
 
     result_exprs = map(x -> :($x), result_exprs)
     tuple_expr = Expr(:tuple, result_exprs...)
@@ -295,7 +295,7 @@ end
 
 Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
 
-@generated function Base.eltype(::Type{Query{W,TS,SM,OPT,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,OPT,N,M}
+@generated function Base.eltype(::Type{Query{W,TS,SM,EX,OPT,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters
@@ -317,4 +317,49 @@ Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
     end
 
     return Tuple{result_types...}
+end
+
+function Base.show(io::IO, query::Query{W,CT,SM,EX}) where {W<:World,CT<:Tuple,SM<:Tuple,EX<:Val}
+    world_types = W.parameters[2].parameters
+    comp_types = CT.parameters
+
+    mask_ids = _active_bit_indices(query._mask)
+    mask_types = tuple(map(i -> world_types[Int(i)].parameters[1], mask_ids)...)
+
+    required_types = intersect(mask_types, comp_types)
+    optional_types = setdiff(comp_types, mask_types)
+    with_types = setdiff(mask_types, comp_types)
+
+    required_names = join(map(_format_type, required_types), ", ")
+    optional_names = join(map(_format_type, optional_types), ", ")
+    with_names = join(map(_format_type, with_types), ", ")
+    is_exclusive = EX === Val{true}
+
+    excl_types = ()
+    without_names = ""
+    if !is_exclusive
+        excl_ids = _active_bit_indices(query._exclude_mask)
+        excl_types = tuple(map(i -> world_types[Int(i)].parameters[1], excl_ids)...)
+        without_names = join(map(_format_type, excl_types), ", ")
+    end
+
+    kw_parts = String[]
+    if !isempty(optional_types)
+        push!(kw_parts, "optional=($optional_names)")
+    end
+    if !isempty(with_types)
+        push!(kw_parts, "with=($with_names)")
+    end
+    if !isempty(excl_types)
+        push!(kw_parts, "without=($without_names)")
+    end
+    if is_exclusive
+        push!(kw_parts, "exclusive=true")
+    end
+
+    if isempty(kw_parts)
+        print(io, "Query(($required_names))")
+    else
+        print(io, "Query(($required_names); ", join(kw_parts, ", "), ")")
+    end
 end

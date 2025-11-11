@@ -31,6 +31,23 @@ end
     @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
 end
 
+@testset "World show" begin
+    world = World(
+        Position,
+        Velocity,
+        CompN{1},
+        CompN{Int64},
+        Float64,
+    )
+    batch = new_entities!(world, 100, (); iterate=false)
+
+    if offset_ID == 0
+        @test string(world) == "World(entities=100, comp_types=(Position, Velocity, CompN{1}, CompN{Int64}, Float64))"
+    else
+        @test startswith(string(world), "World(entities=100, comp_types=(FakeComp{1}, FakeComp{2}, ")
+    end
+end
+
 @testset "World storage type" begin
     world = World(
         Dummy,

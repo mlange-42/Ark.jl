@@ -106,3 +106,11 @@ end
         end
     end
 end
+
+function Base.show(io::IO, batch::Batch{W,TS}) where {W<:World,TS<:Tuple}
+    comp_types = TS.parameters
+    type_names = join(map(_format_type, comp_types), ", ")
+
+    entities = sum(arch.end_idx - arch.start_idx + 1 for arch in batch._archetypes)
+    print(io, "Batch(entities=$entities, comp_types=($type_names))")
+end

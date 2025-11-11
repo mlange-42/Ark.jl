@@ -598,7 +598,7 @@ entity2 = @copy_entity!(world, entity;
 
 # output
 
-Entity(0x00000004, 0x00000000)
+Entity(4, 0)
 ```
 """
 macro copy_entity!(world_expr, entity_expr)
@@ -656,7 +656,7 @@ entity2 = copy_entity!(world, entity;
 
 # output
 
-Entity(0x00000004, 0x00000000)
+Entity(4, 0)
 ```
 """
 @inline function copy_entity!(
@@ -1359,4 +1359,11 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
         throw(ArgumentError("entity does not have all components of the event emitted for it"))
     end
     _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
+end
+
+function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
+    comp_types = CT.parameters
+    type_names = join(map(_format_type, comp_types), ", ")
+    entities = sum(length(arch.entities) for arch in world._archetypes)
+    print(io, "World(entities=$entities, comp_types=($type_names))")
 end
