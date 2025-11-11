@@ -1360,3 +1360,13 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
     end
     _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
 end
+
+function Base.show(io::IO, world::World{CS,CT,ST}) where {CS<:Tuple,CT<:Tuple,ST<:Tuple}
+    comp_types = CT.parameters
+    type_names = join(map(t -> nameof(t.parameters[1]), comp_types), ", ")
+    entities = 0
+    for arch in world._archetypes
+        entities += length(arch.entities)
+    end
+    print(io, "World(entities=$entities, comp_types=($type_names))")
+end
