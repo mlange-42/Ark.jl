@@ -207,6 +207,32 @@ end
 
 Base.lastindex(sa::StructArrayView) = length(sa)
 
+function Base.show(io::IO, a::StructArrayView{C,CS}) where {C,CS<:NamedTuple}
+    names = CS.parameters[1]
+    types = CS.parameters[2].parameters
+
+    fields = map(((n, t),) -> "$(n)::SubArray{$(_format_type(t.parameters[1]))}", zip(names, types))
+    fields_string = join(fields, ", ")
+
+    eltype_name = _format_type(C)
+    print(io, "$(length(a))-element StructArrayView($fields_string) with eltype $eltype_name")
+    if length(a) < 12
+        for el in a
+            print(io, "\n $el")
+        end
+        print(io, "\n")
+    else
+        for el in a[1:5]
+            print(io, "\n $el")
+        end
+        print(io, "\n ⋮")
+        for el in a[end-4:end]
+            print(io, "\n $el")
+        end
+        print(io, "\n")
+    end
+end
+
 """
     unpack(a::StructArrayView)
 
