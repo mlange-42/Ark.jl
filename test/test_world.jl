@@ -35,10 +35,17 @@ end
     world = World(
         Position,
         Velocity,
-        Altitude,
+        CompN{1},
+        CompN{Int64},
+        Float64,
     )
     batch = new_entities!(world, 100, (); iterate=false)
-    @test string(world) == "World(entities=100, comp_types=(Position, Velocity, Altitude))"
+
+    if offset_ID == 0
+        @test string(world) == "World(entities=100, comp_types=(Position, Velocity, CompN{1}, CompN{Int64}, Float64))"
+    else
+        @test startswith(string(world), "World(entities=100, comp_types=(FakeComp{1}, FakeComp{2}, ")
+    end
 end
 
 @testset "World storage type" begin
