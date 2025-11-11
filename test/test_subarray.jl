@@ -91,3 +91,67 @@ end
 
     @test unpack(v) == v
 end
+
+@testset "FieldView show" begin
+    vec = Vector{Position}()
+    for i in 1:11
+        push!(vec, Position(i, i))
+    end
+    a = _new_fields_view(view(vec, :))
+
+    @test string(a.x) == "11-element FieldView() with eltype Float64
+ [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]"
+
+    vec = Vector{Position}()
+    for i in 1:12
+        push!(vec, Position(i, i))
+    end
+    a = _new_fields_view(view(vec, :))
+
+    @test string(a.x) == "12-element FieldView() with eltype Float64
+ [1.0, 2.0, 3.0, 4.0, 5.0, …, 8.0, 9.0, 10.0, 11.0, 12.0]"
+end
+
+@testset "FieldsView show" begin
+    vec = Vector{Position}()
+    for i in 1:11
+        push!(vec, Position(i, i))
+    end
+    a = _new_fields_view(view(vec, :))
+
+    @test string(a) ==
+          "11-element FieldsView(x::FieldView{Float64}, y::FieldView{Float64}) with eltype Position
+ Position(1.0, 1.0)
+ Position(2.0, 2.0)
+ Position(3.0, 3.0)
+ Position(4.0, 4.0)
+ Position(5.0, 5.0)
+ Position(6.0, 6.0)
+ Position(7.0, 7.0)
+ Position(8.0, 8.0)
+ Position(9.0, 9.0)
+ Position(10.0, 10.0)
+ Position(11.0, 11.0)
+"
+
+    vec = Vector{Position}()
+    for i in 1:12
+        push!(vec, Position(i, i))
+    end
+    a = _new_fields_view(view(vec, :))
+
+    @test string(a) ==
+          "12-element FieldsView(x::FieldView{Float64}, y::FieldView{Float64}) with eltype Position
+ Position(1.0, 1.0)
+ Position(2.0, 2.0)
+ Position(3.0, 3.0)
+ Position(4.0, 4.0)
+ Position(5.0, 5.0)
+ ⋮
+ Position(8.0, 8.0)
+ Position(9.0, 9.0)
+ Position(10.0, 10.0)
+ Position(11.0, 11.0)
+ Position(12.0, 12.0)
+"
+end

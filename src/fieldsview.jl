@@ -76,6 +76,32 @@ Base.lastindex(a::FieldsView) = Base.lastindex(a._subarray)
 Base.eltype(::Type{<:FieldsView{C}}) where {C} = C
 Base.IndexStyle(::Type{<:FieldsView}) = IndexLinear()
 
+function Base.show(io::IO, a::FieldsView{C,S,CS}) where {C,S<:SubArray,CS<:NamedTuple}
+    names = CS.parameters[1]
+    types = CS.parameters[2].parameters
+
+    fields = map(((n, t),) -> "$(n)::FieldView{$(_format_type(t.parameters[1]))}", zip(names, types))
+    fields_string = join(fields, ", ")
+
+    eltype_name = _format_type(C)
+    print(io, "$(length(a))-element FieldsView($fields_string) with eltype $eltype_name")
+    if length(a) < 12
+        for el in a
+            print(io, "\n $el")
+        end
+        print(io, "\n")
+    else
+        for el in a[1:5]
+            print(io, "\n $el")
+        end
+        print(io, "\n ⋮")
+        for el in a[end-4:end]
+            print(io, "\n $el")
+        end
+        print(io, "\n")
+    end
+end
+
 """
     unpack(a::FieldsView)
 
