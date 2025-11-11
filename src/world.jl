@@ -598,7 +598,7 @@ entity2 = @copy_entity!(world, entity;
 
 # output
 
-Entity(0x00000004, 0x00000000)
+Entity(4, 0)
 ```
 """
 macro copy_entity!(world_expr, entity_expr)
@@ -656,7 +656,7 @@ entity2 = copy_entity!(world, entity;
 
 # output
 
-Entity(0x00000004, 0x00000000)
+Entity(4, 0)
 ```
 """
 @inline function copy_entity!(
