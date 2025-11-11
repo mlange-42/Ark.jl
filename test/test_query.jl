@@ -386,3 +386,21 @@ end
         end
     )
 end
+
+@testset "Query show" begin
+    world = World(
+        Position,
+        Velocity,
+        Altitude,
+        Health,
+        CompN{1},
+    )
+    query = @Query(world, (Position, Velocity))
+    @test string(query) == "Query((Position, Velocity))"
+
+    query = @Query(world, (Position, Velocity); optional=(Altitude,), with=(Health,), exclusive=true)
+    @test string(query) == "Query((Position, Velocity); optional=(Altitude), with=(Health), exclusive=true)"
+
+    query = @Query(world, (Position, Velocity); optional=(Altitude,), without=(Health,))
+    @test string(query) == "Query((Position, Velocity); optional=(Altitude), without=(Health))"
+end

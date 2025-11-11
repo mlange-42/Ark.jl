@@ -1361,7 +1361,7 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
     _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
 end
 
-function Base.show(io::IO, world::World{CS,CT,ST}) where {CS<:Tuple,CT<:Tuple,ST<:Tuple}
+function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
     comp_types = CT.parameters
     type_names = join(map(_format_type, comp_types), ", ")
     entities = sum(length(arch.entities) for arch in world._archetypes)
