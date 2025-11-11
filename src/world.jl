@@ -1363,19 +1363,7 @@ end
 
 function Base.show(io::IO, world::World{CS,CT,ST}) where {CS<:Tuple,CT<:Tuple,ST<:Tuple}
     comp_types = CT.parameters
-    function format_type(T)
-        println(T)
-        if !isa(T, DataType)
-            return string(T)
-        elseif isempty(T.parameters)
-            return string(nameof(T))
-        elseif isempty(T.parameters[1].parameters)
-            return string(nameof(T.parameters[1]))
-        else
-            return string(nameof(T.parameters[1]), "{", join(map(format_type, T.parameters[1].parameters), ","), "}")
-        end
-    end
-    type_names = join(map(format_type, comp_types), ", ")
+    type_names = join(map(_format_type, comp_types), ", ")
     entities = sum(length(arch.entities) for arch in world._archetypes)
     print(io, "World(entities=$entities, comp_types=($type_names))")
 end

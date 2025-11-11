@@ -26,3 +26,15 @@ const DEBUG = ("ARK_RUNNING_TESTS" in keys(ENV) && lowercase(ENV["ARK_RUNNING_TE
 macro check(arg)
     DEBUG ? esc(:(@assert $arg)) : nothing
 end
+
+function _format_type(T)
+    if T isa Type && T <: Type
+        return _format_type(T.parameters[1])
+    elseif T isa DataType && isempty(T.parameters)
+        return string(nameof(T))
+    elseif T isa DataType
+        return string(nameof(T), "{", join(map(_format_type, T.parameters), ", "), "}")
+    else
+        return string(T)
+    end
+end

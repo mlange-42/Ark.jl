@@ -19,3 +19,4 @@ using Ark: _BatchArchetype, _QueryLock
 using Ark: _has_observers
 using Ark: _StructArray, _StructArray_type, StructArrayView
 using Ark: FieldsView, FieldView, _new_fields_view, _new_field_subarray
+using Ark: _format_type

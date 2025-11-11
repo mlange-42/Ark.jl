@@ -14,6 +14,7 @@ end
 
 include("TestTypes.jl")
 
+include("test_util.jl")
 include("test_world.jl")
 include("test_query.jl")
 include("test_subarray.jl")
