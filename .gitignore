@@ -8,6 +8,7 @@
 *.csv
 *.html
 /*.svg
+/test.jl
 
 /Manifest*.toml
 /docs/Manifest*.toml
