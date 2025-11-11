@@ -484,6 +484,24 @@ end
 end
 
 """
+    @set_components!(world::World, entity::Entity, values::Tuple)
+
+Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
+The entity must already have all these components.
+
+Macro version of [`set_components!`](@ref set_components(::World, ::Entity, ::Tuple)).
+"""
+macro set_components!(world, entity, values)
+    types = :(Tuple{$([value.args[1] for value in values.args]...)})
+    return quote
+        if !is_alive($world, $entity)
+            throw(ArgumentError("can't set components of a dead entity"))
+            @inline _set_components!($world, $entity, Val{$types}(), $values)
+        end
+    end
+end
+
+"""
     set_components!(world::World, entity::Entity, values::Tuple)
 
 Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
