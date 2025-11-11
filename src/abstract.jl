@@ -17,10 +17,10 @@ world = World(
     Position => StructArrayStorage,
     Velocity => StructArrayStorage,
 )
-; # suppress print output
 
 # output
 
+World(entities=0, comp_types=(Position, Velocity))
 ```
 """
 abstract type StructArrayStorage end
@@ -40,10 +40,10 @@ world = World(
     Position => VectorStorage,
     Velocity => VectorStorage,
 )
-; # suppress print output
 
 # output
 
+World(entities=0, comp_types=(Position, Velocity))
 ```
 """
 abstract type VectorStorage end
