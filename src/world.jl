@@ -494,9 +494,9 @@ Macro version of [`set_components!`](@ref set_components(::World, ::Entity, ::Tu
 macro set_components!(world, entity, values)
     types = :(Tuple{$([value.args[1] for value in values.args]...)})
     return quote
-        if !is_alive($world, $entity)
+        if !is_alive($(esc(world)), $(esc(entity)))
             throw(ArgumentError("can't set components of a dead entity"))
-            @inline _set_components!($world, $entity, Val{$types}(), $values)
+            @inline _set_components!($(esc(world)), $(esc(entity)), Val{$types}(), $(esc(values)))
         end
     end
 end
