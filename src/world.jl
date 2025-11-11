@@ -496,7 +496,7 @@ macro set_components!(world, entity, values)
     return quote
         if !is_alive($(esc(world)), $(esc(entity)))
             throw(ArgumentError("can't set components of a dead entity"))
-            @inline _set_components!($(esc(world)), $(esc(entity)), Val{$types}(), $(esc(values)))
+            @inline _set_components!($(esc(world)), $(esc(entity)), Val{$(esc(types))}(), $(esc(values)))
         end
     end
 end
