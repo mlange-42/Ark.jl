@@ -42,6 +42,10 @@ function EventRegistry()
     EventRegistry(_custom_events._id - 1)
 end
 
+function Base.show(io::IO, reg::EventRegistry)
+    print(io, "$(reg._next_index)-events EventRegistry()")
+end
+
 """
     new_event_type!(reg::EventRegistry)
 

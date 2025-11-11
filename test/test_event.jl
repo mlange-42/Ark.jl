@@ -18,6 +18,8 @@
     @test OnRemoveEntity._id == 2
     @test OnAddComponents._id == 3
     @test OnRemoveComponents._id == 4
+
+    @test string(reg) == "255-events EventRegistry()"
 end
 
 @testset "Observer creation" begin
