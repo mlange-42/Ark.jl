@@ -4,7 +4,6 @@ using Ark
 using GLMakie
 using Colors
 using Images
-using FixedPointNumbers
 
 include("../_common/scheduler.jl")
 include("../_common/resources.jl")
