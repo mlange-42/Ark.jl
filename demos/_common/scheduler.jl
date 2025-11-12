@@ -10,7 +10,7 @@ mutable struct Scheduler{ST<:Tuple}
     systems::ST
 end
 
-function initialize!(s::Scheduler)
+function initialize!(s::S) where {S<:Scheduler}
     add_resource!(s.world, Tick(0))
     for sys in s.systems
         initialize!(sys, s.world)
@@ -18,7 +18,7 @@ function initialize!(s::Scheduler)
     GC.gc()
 end
 
-function update!(s::Scheduler)
+function update!(s::S) where {S<:Scheduler}
     if has_resource(s.world, Terminate) && get_resource(s.world, Terminate).stop
         return false
     end
@@ -31,7 +31,7 @@ function update!(s::Scheduler)
     return true
 end
 
-function finalize!(s::Scheduler)
+function finalize!(s::S) where {S<:Scheduler}
     for sys in s.systems
         finalize!(sys, s.world)
     end

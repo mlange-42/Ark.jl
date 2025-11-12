@@ -1,29 +1,30 @@
 
 mutable struct RenderSystem <: System
-    img_data::Union{Array{RGBAf,2},Nothing}
-    img_node::Union{GLMakie.Observable{Array{RGBAf,2}},Nothing}
 end
-
-RenderSystem() = RenderSystem(nothing, nothing)
 
 function initialize!(s::RenderSystem, world::World)
     size = get_resource(world, WorldSize)
 
-    scene = Scene(camera=campixel!, size=(size.width, size.height))
-    add_resource!(world, WorldScene(scene))
+    image = zeros(UInt32, size.width, size.height)
+    add_resource!(world, WorldImage(image))
 
-    s.img_data = zeros(RGBAf, size.width, size.height)
-    s.img_node = Observable(s.img_data)
-    image!(scene, s.img_node)
+    if IS_CI
+        return
+    end
 
-    screen = display(scene)
-    add_resource!(world, WorldScreen(screen))
+    window = mfb_open("Logo demo", size.width, size.height)
+    mfb_set_target_fps(60)
+
+    add_resource!(world, WorldScreen(window))
+    add_resource!(world, Scale(
+        size.width / mfb_get_window_width(window),
+    ))
 end
 
 function update!(s::RenderSystem, world::World)
     size = get_resource(world, WorldSize)
 
-    data = s.img_data
+    data = get_resource(world, WorldImage).image
     fill!(data, 0)
     for (_, positions) in @Query(world, (Position,))
         @inbounds for i in eachindex(positions)
@@ -31,8 +32,7 @@ function update!(s::RenderSystem, world::World)
             if !contains(size, pos.x, pos.y)
                 continue
             end
-            data[round(Int, pos.x), round(Int, pos.y)] = 1
+            data[round(Int, pos.x), round(Int, pos.y)] = 0xFFFFFFFF
         end
     end
-    notify(s.img_node)
 end
