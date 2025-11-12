@@ -4,6 +4,10 @@ struct WorldSize
     height::Int
 end
 
+struct Scale
+    scale::Float32
+end
+
 function contains(s::WorldSize, x::Float64, y::Float64)
     return x >= 0.5 && y >= 0.5 && x <= s.width && y <= s.height
 end

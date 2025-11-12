@@ -7,15 +7,17 @@ function initialize!(s::MouseSystem, world::World)
 
     function mouse_move(window::Ptr{Cvoid}, x::Cint, y::Cint)::Cvoid
         ptr = mfb_get_user_data(window)
-        world_ref = unsafe_pointer_to_objref(ptr)::Ref{World}
-        w = world_ref[]
+        w = unsafe_pointer_to_objref(ptr)::World
 
-        #mouse = get_resource(w, Mouse)
-        #size = get_resource(w, WorldSize)
-        # mouse.x = x
-        # mouse.y = y
-        # mouse.inside = contains(size, x, y)
-        println(x, " ", y)
+        mouse = get_resource(w, Mouse)
+        size = get_resource(w, WorldSize)
+        scale = get_resource(w, Scale)
+
+        sx, sy = x * scale.scale, y * scale.scale
+        mouse.x = sx
+        mouse.y = sy
+        mouse.inside = contains(size, Float64(sx), Float64(sy))
+
         return nothing
     end
 

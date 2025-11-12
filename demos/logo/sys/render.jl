@@ -10,6 +10,9 @@ function initialize!(s::RenderSystem, world::World)
     mfb_set_user_data(window, Ref(world))
 
     add_resource!(world, WorldScreen(window))
+    add_resource!(world, Scale(
+        size.width / mfb_get_window_width(window),
+    ))
 
     image = zeros(UInt32, size.width, size.height)
     add_resource!(world, WorldImage(image))
