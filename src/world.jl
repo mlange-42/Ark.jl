@@ -94,10 +94,10 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     index = length(world._archetypes)
     node.archetype = UInt32(index)
 
-    _push_nothing_to_all!(world)
+    _push_empty_to_all!(world)
 
     for comp in components
-        _assign_new_column_for_comp!(world, comp, index)
+        _activate_new_column_for_comp!(world, comp, index)
         push!(world._index.components[comp], arch)
     end
 
@@ -1096,7 +1096,7 @@ end
             storage_exprs[i] = :(_new_struct_array_storage($T))
         else
             storage_types[i] = :(_ComponentStorage{$T,Vector{$T}})
-            storage_exprs[i] = :(_new_vector_storage($T))
+            storage_exprs[i] = :(_new_vector_storage($T, initial_capacity))
         end
     end
 
@@ -1134,7 +1134,7 @@ end
     end
 end
 
-@generated function _push_nothing_to_all!(world::World{CS}) where {CS<:Tuple}
+@generated function _push_empty_to_all!(world::World{CS}) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -1143,13 +1143,13 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::Int) where {CS}
+@generated function _activate_new_column_for_comp!(world::World{CS}, comp::UInt8, index::Int) where {CS}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _assign_column!(world._storages.$i, index)
+                _activate_column!(world._storages.$i, index, world._initial_capacity)
             end
         ))
     end

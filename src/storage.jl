@@ -3,8 +3,10 @@ struct _ComponentStorage{C,A<:AbstractArray{C,1}}
     data::Vector{A}
 end
 
-function _new_vector_storage(::Type{C}) where {C}
-    _ComponentStorage{C,Vector{C}}([Vector{C}()])
+function _new_vector_storage(::Type{C}, cap::Int) where {C}
+    vec = Vector{C}()
+    sizehint!(vec, cap)
+    _ComponentStorage{C,Vector{C}}([vec])
 end
 
 function _new_struct_array_storage(::Type{C}) where {C}
@@ -39,14 +41,14 @@ end
     end
 end
 
-@generated function _assign_column!(storage::_ComponentStorage{C,A}, index::Int) where {C,A<:AbstractArray}
+@generated function _activate_column!(storage::_ComponentStorage{C,A}, index::Int, cap::Int) where {C,A<:AbstractArray}
     if A <: _StructArray
         return quote
-            storage.data[index] = _StructArray(C)
+            #storage.data[index] = _StructArray(C)
         end
     else
         return quote
-            storage.data[index] = Vector{C}()
+            sizehint!(storage.data[index], cap)
         end
     end
 end
