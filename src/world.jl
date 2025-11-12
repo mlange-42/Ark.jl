@@ -88,7 +88,7 @@ end
 
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
     components = _active_bit_indices(node.mask)
-    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
+    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, world._initial_capacity, components...)
     push!(world._archetypes, arch)
 
     index = length(world._archetypes)
@@ -1118,7 +1118,7 @@ end
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             [_EntityIndex(typemax(UInt32), 0)],
             $storage_tuple,
-            [_Archetype(UInt32(1), graph.nodes[1])],
+            [_Archetype(UInt32(1), graph.nodes[1], initial_capacity)],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),

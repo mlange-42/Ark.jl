@@ -46,11 +46,15 @@ Used in query iteration.
 """
 struct Entities <: AbstractVector{Entity}
     _data::Vector{Entity}
-    Entities() = new(Vector{Entity}())
+    function Entities(cap::Int)
+        vec = Vector{Entity}()
+        sizehint!(vec, cap)
+        new(vec)
+    end
 end
 
 function _new_entities_column()
-    Entities()
+    Entities(1024)
 end
 
 Base.@propagate_inbounds function Base.getindex(c::Entities, i::Integer)
