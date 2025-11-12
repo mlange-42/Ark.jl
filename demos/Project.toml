@@ -1,5 +1,6 @@
 [deps]
 Ark = "56664e29-41e4-4ea5-ab0e-825499acc647"
+Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 MiniFB = "cc649173-1898-4bb8-8a16-ca5f88bd87d9"
+PNGFiles = "f57f5aa1-a3ce-4bc8-8ab9-96f992907883"

@@ -2,7 +2,8 @@ module Logo
 
 using Ark
 using MiniFB
-using Images
+using PNGFiles
+using Colors
 using FixedPointNumbers
 
 include("../_common/scheduler.jl")
@@ -23,7 +24,7 @@ function __init__()
     world = World(Position, Velocity, Target)
 
     add_resource!(world, WorldSize(1000, 600))
-    add_resource!(world, ArkLogo(load(IMAGE_PATH)[1:2:end, 1:2:end]))
+    add_resource!(world, ArkLogo(PNGFiles.load(IMAGE_PATH)[1:2:end, 1:2:end]))
 
     scheduler = Scheduler(
         world,
