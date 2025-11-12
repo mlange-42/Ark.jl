@@ -9,7 +9,7 @@ function contains(s::WorldSize, x::Float64, y::Float64)
 end
 
 struct WorldScreen
-    screen::GLMakie.Screen
+    screen::GLMakie.Screen{GLMakie.GLFW.Window}
 end
 
 struct WorldScene
