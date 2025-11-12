@@ -2,7 +2,6 @@ module Logo
 
 using Ark
 using MiniFB
-using Colors
 using Images
 using FixedPointNumbers
 
