@@ -20,18 +20,6 @@ jobs:
         access_token: ${{ github.token }}
     - name: Checkout code
       uses: actions/checkout@v3
-    - name: Install dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install -y \
-            xvfb \
-            libgl1 \
-            libgl1-mesa-dri \
-            libosmesa6 \
-            libxrandr2 \
-            libxinerama1 \
-            libxcursor1 \
-            libxi6 \
-            libxext6
     - name: Set up Julia
       uses: ./.github/actions/setup-julia
       with:
@@ -44,4 +32,4 @@ jobs:
     - name: Run demos
       run: |
         cd demos
-        xvfb-run --auto-servernum -s '-screen 0 1024x768x24' julia --color=yes --project=. logo/main.jl
+        julia --color=yes --project=. logo/main.jl
