@@ -1,7 +1,7 @@
 
 mutable struct RenderSystem <: System
-    img_data::Union{Array{Gray{N0f8},2},Nothing}
-    img_node::Union{GLMakie.Observable{Array{Gray{N0f8},2}},Nothing}
+    img_data::Union{Array{RGBAf,2},Nothing}
+    img_node::Union{GLMakie.Observable{Array{RGBAf,2}},Nothing}
 end
 
 RenderSystem() = RenderSystem(nothing, nothing)
@@ -12,7 +12,7 @@ function initialize!(s::RenderSystem, world::World)
     scene = Scene(camera=campixel!, size=(size.width, size.height))
     add_resource!(world, WorldScene(scene))
 
-    s.img_data = zeros(Gray{N0f8}, size.width, size.height)
+    s.img_data = zeros(RGBAf, size.width, size.height)
     s.img_node = Observable(s.img_data)
     image!(scene, s.img_node)
 

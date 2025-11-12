@@ -57,13 +57,6 @@ function __init__()
         end
     end
 
-    # @async while true
-    #     if !update!(scheduler)
-    #         break
-    #     end
-    #     sleep(1 / 60)
-    # end
-
     GLMakie.renderloop(screen.screen)
 
     finalize!(scheduler)
