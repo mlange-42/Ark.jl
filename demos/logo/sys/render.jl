@@ -12,14 +12,12 @@ function initialize!(s::RenderSystem, world::World)
     scene = Scene(camera=campixel!, size=(size.width, size.height))
     add_resource!(world, WorldScene(scene))
 
-    screen = GLMakie.Screen(framerate=60.0, vsync=true, render_on_demand=false, title="Ark.jl demo")
-    add_resource!(world, WorldScreen(screen))
-
     s.img_data = zeros(Gray{N0f8}, size.width, size.height)
     s.img_node = Observable(s.img_data)
     image!(scene, s.img_node)
 
-    display(screen, scene)
+    screen = display(scene)
+    add_resource!(world, WorldScreen(screen))
 end
 
 function update!(s::RenderSystem, world::World)
