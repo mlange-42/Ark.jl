@@ -34,5 +34,5 @@ function update!(s::RenderSystem, world::World)
             data[round(Int, pos.x), round(Int, pos.y)] = 1
         end
     end
-    s.img_node[] = data
+    notify(s.img_node)
 end
