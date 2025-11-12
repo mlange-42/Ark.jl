@@ -24,7 +24,38 @@ function benchmark_world_update_1(args, n)
     end
 end
 
+function setup_world_update_1_access(n_entities::Int)
+    world = World(Position, Velocity)
+
+    entities = Vector{Entity}()
+    for i in 1:n_entities
+        e = new_entity!(world, (Position(i, i * 2),))
+        push!(entities, e)
+    end
+
+    for e in entities
+        pos, = access_components(world, e, Val.((Position,)))
+        p = pos[]
+        pos[] = Position(p.x + 1, p.y)
+    end
+
+    return (entities, world)
+end
+
+function benchmark_world_update_1_access(args, n)
+    entities, world = args
+    for e in entities
+        pos, = access_components(world, e, Val.((Position,)))
+        p = pos[]
+        pos[] = Position(p.x + 1, p.y)
+    end
+end
+
 for n in (100, 10_000)
     SUITE["benchmark_world_update_1 n=$(n)"] =
         @be setup_world_update_1($n) benchmark_world_update_1(_, $n) evals = 100 seconds = SECONDS
+end
+for n in (100, 10_000)
+    SUITE["benchmark_world_update_1_access n=$(n)"] =
+        @be setup_world_update_1_access($n) benchmark_world_update_1_access(_, $n) evals = 100 seconds = SECONDS
 end
