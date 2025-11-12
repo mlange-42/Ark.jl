@@ -1115,8 +1115,11 @@ end
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph{$(M)}()
+        index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
+        sizehint!(index, initial_capacity)
+
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
-            [_EntityIndex(typemax(UInt32), 0)],
+            index,
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1], initial_capacity)],
             _ComponentIndex{$(M)}($(length(types))),
