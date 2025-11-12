@@ -2,7 +2,8 @@
 function setup_query_posvel_32_arch(n_entities::Int)
     world = World(
         Position, Velocity,
-        CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
+        CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5};
+        initial_capacity=clamp(nextpow2(n_entities / 32 + 1), 32, 1024),
     )
 
     pos = Position(0, 0)
@@ -49,7 +50,8 @@ function setup_query_posvel_1k_arch(n_entities::Int)
     world = World(
         Position, Velocity,
         CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
-        CompN{6}, CompN{7}, CompN{8}, CompN{9}, CompN{10},
+        CompN{6}, CompN{7}, CompN{8}, CompN{9}, CompN{10};
+        initial_capacity=clamp(nextpow2(n_entities / 1024 + 1), 32, 1024),
     )
 
     pos = Position(0, 0)
