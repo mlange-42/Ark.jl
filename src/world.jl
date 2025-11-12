@@ -22,6 +22,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager{M}
+    const _initial_capacity::Int
 end
 
 """
@@ -44,11 +45,11 @@ world = World(Position, Velocity)
 
 ```
 """
-function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; allow_mutable=false)
+function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity=1024, allow_mutable=false)
     types = map(arg -> arg isa Type ? arg : arg.first, comp_types)
     storages = map(arg -> arg isa Type ? VectorStorage : arg.second, comp_types)
 
-    _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
+    _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable), initial_capacity)
 end
 
 @generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
@@ -1039,7 +1040,12 @@ end
     end
 end
 
-@generated function _World_from_types(::Val{CS}, ::Val{ST}, ::Val{MUT}) where {CS<:Tuple,ST<:Tuple,MUT}
+@generated function _World_from_types(
+    ::Val{CS},
+    ::Val{ST},
+    ::Val{MUT},
+    initial_capacity::Int,
+) where {CS<:Tuple,ST<:Tuple,MUT}
     types = CS.parameters
     storage_val_types = ST.parameters
     allow_mutable = MUT::Bool
@@ -1120,6 +1126,7 @@ end
             graph,
             Dict{DataType,Any}(),
             _EventManager{$(M)}(),
+            initial_capacity,
         )
     end
 end
