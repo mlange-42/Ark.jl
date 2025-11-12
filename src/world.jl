@@ -45,7 +45,7 @@ world = World(Position, Velocity)
 
 ```
 """
-function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity=1024, allow_mutable=false)
+function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity=128, allow_mutable=false)
     types = map(arg -> arg isa Type ? arg : arg.first, comp_types)
     storages = map(arg -> arg isa Type ? VectorStorage : arg.second, comp_types)
 
