@@ -24,6 +24,7 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install -y \
             xvfb \
+            libgl1 \
             libgl1-mesa-dri \
             libosmesa6 \
             libxrandr2 \
