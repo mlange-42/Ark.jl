@@ -1,7 +1,7 @@
 
 mutable struct RenderSystem <: System
-    img_data::Union{Array{Gray{N0f8},2},Nothing}
-    img_node::Union{GLMakie.Observable{Array{Gray{N0f8},2}},Nothing}
+    img_data::Union{Array{RGBAf,2},Nothing}
+    img_node::Union{GLMakie.Observable{Array{RGBAf,2}},Nothing}
 end
 
 RenderSystem() = RenderSystem(nothing, nothing)
@@ -12,14 +12,12 @@ function initialize!(s::RenderSystem, world::World)
     scene = Scene(camera=campixel!, size=(size.width, size.height))
     add_resource!(world, WorldScene(scene))
 
-    screen = GLMakie.Screen(framerate=60.0, vsync=true, render_on_demand=false, title="Ark.jl demo")
-    add_resource!(world, WorldScreen(screen))
-
-    s.img_data = zeros(Gray{N0f8}, size.width, size.height)
+    s.img_data = zeros(RGBAf, size.width, size.height)
     s.img_node = Observable(s.img_data)
     image!(scene, s.img_node)
 
-    display(screen, scene)
+    screen = display(scene)
+    add_resource!(world, WorldScreen(screen))
 end
 
 function update!(s::RenderSystem, world::World)
@@ -36,5 +34,5 @@ function update!(s::RenderSystem, world::World)
             data[round(Int, pos.x), round(Int, pos.y)] = 1
         end
     end
-    s.img_node[] = data
+    notify(s.img_node)
 end
