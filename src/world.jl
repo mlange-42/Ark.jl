@@ -411,6 +411,51 @@ end
     end
 end
 
+macro access_components(world_expr, entity_expr, comp_types_expr)
+    quote
+        access_components(
+            $(esc(world_expr)),
+            $(esc(entity_expr)),
+            Val.($(esc(comp_types_expr))),
+        )
+    end
+end
+
+@inline function access_components(world::World, entity::Entity, comp_types::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't get components of a dead entity"))
+    end
+    return @inline _access_components(world, entity, comp_types)
+end
+
+@generated function _access_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
+    types = _try_to_types(TS)
+    if length(types) == 0
+        return :(())
+    end
+
+    exprs = Expr[]
+    push!(exprs, :(@inbounds idx = world._entities[entity._id]))
+
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        val_sym = Symbol("v", i)
+
+        push!(exprs, :($(stor_sym) = _get_storage(world, $T)))
+        push!(exprs, :($(val_sym) = _access_component($(stor_sym), idx.archetype, idx.row)))
+    end
+
+    vals = [:($(Symbol("v", i))) for i in 1:length(types)]
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
 """
     @has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
 

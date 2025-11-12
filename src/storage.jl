@@ -19,6 +19,14 @@ function _get_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) wh
     return @inbounds col[row]
 end
 
+function _access_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
+    @inbounds col = s.data[arch]
+    if length(col) == 0
+        throw(ArgumentError(lazy"entity has no $C component"))
+    end
+    return @inbounds ComponentAccess(col, Int(row))
+end
+
 function _set_component!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32, value::C) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     if length(col) == 0
@@ -118,4 +126,17 @@ end
     return quote
         return $(Expr(:new, T, field_exprs...))
     end
+end
+
+struct ComponentAccess{C,A<:AbstractArray{C}}
+    _data::A
+    _index::Int
+end
+
+@inbounds function Base.getindex(a::ComponentAccess{C}) where {C}
+    return a._data[a._index]
+end
+
+@inbounds function Base.setindex!(a::ComponentAccess{C}, value::C) where {C}
+    a._data[a._index] = value
 end

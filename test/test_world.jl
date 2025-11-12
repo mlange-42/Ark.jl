@@ -273,6 +273,27 @@ end
     end
 end
 
+@testset "World access components" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+    )
+
+    e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    e2 = new_entity!(world, (Position(5, 6), Velocity(7, 8)))
+    e3 = new_entity!(world, ())
+
+    pos, vel = @access_components(world, e2, (Position, Velocity))
+    @test pos[] == Position(5, 6)
+    @test vel[] == Velocity(7, 8)
+
+    pos[] = Position(10, 11)
+    vel[] = Velocity(12, 13)
+    @test pos[] == Position(10, 11)
+    @test vel[] == Velocity(12, 13)
+end
+
 @testset "World new_entity! Tests" begin
     world = World(
         Dummy,
