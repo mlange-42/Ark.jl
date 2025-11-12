@@ -7,7 +7,6 @@ function initialize!(s::RenderSystem, world::World)
 
     window = mfb_open("Logo demo", size.width, size.height)
     mfb_set_target_fps(60)
-    mfb_set_user_data(window, Ref(world))
 
     add_resource!(world, WorldScreen(window))
     add_resource!(world, Scale(
