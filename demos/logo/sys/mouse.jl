@@ -6,6 +6,9 @@ function initialize!(s::MouseSystem, world::World)
 end
 
 function update!(s::MouseSystem, world::World)
+    if IS_CI
+        return
+    end
     screen = get_resource(world, WorldScreen)
     mouse = get_resource(world, Mouse)
     size = get_resource(world, WorldSize)

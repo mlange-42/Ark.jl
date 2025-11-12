@@ -5,6 +5,13 @@ end
 function initialize!(s::RenderSystem, world::World)
     size = get_resource(world, WorldSize)
 
+    image = zeros(UInt32, size.width, size.height)
+    add_resource!(world, WorldImage(image))
+
+    if IS_CI
+        return
+    end
+
     window = mfb_open("Logo demo", size.width, size.height)
     mfb_set_target_fps(60)
 
@@ -12,9 +19,6 @@ function initialize!(s::RenderSystem, world::World)
     add_resource!(world, Scale(
         size.width / mfb_get_window_width(window),
     ))
-
-    image = zeros(UInt32, size.width, size.height)
-    add_resource!(world, WorldImage(image))
 end
 
 function update!(s::RenderSystem, world::World)
