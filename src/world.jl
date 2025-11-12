@@ -1121,7 +1121,7 @@ end
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             $storage_tuple,
-            [_Archetype(UInt32(1), graph.nodes[1], initial_capacity)],
+            [_Archetype(UInt32(1), graph.nodes[1], 0)],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),

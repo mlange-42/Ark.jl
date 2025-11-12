@@ -48,7 +48,9 @@ struct Entities <: AbstractVector{Entity}
     _data::Vector{Entity}
     function Entities(cap::Int)
         vec = Vector{Entity}()
-        sizehint!(vec, cap)
+        if cap > 0
+            sizehint!(vec, cap)
+        end
         new(vec)
     end
 end
