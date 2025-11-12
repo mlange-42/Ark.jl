@@ -22,6 +22,7 @@ const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/pre
 
 function __init__()
     world = World(Position, Velocity, Target)
+
     add_resource!(world, WorldSize(1000, 600))
     add_resource!(world, ArkLogo(load(IMAGE_PATH)[1:2:end, 1:2:end]))
 

@@ -3,14 +3,21 @@ end
 
 function initialize!(s::MouseSystem, world::World)
     screen = get_resource(world, WorldScreen)
-    size = get_resource(world, WorldSize)
+    add_resource!(world, Mouse(0, 0, false))
 
-    mouse = add_resource!(world, Mouse(0, 0, false))
+    function mouse_move(window::Ptr{Cvoid}, x::Cint, y::Cint)::Cvoid
+        ptr = mfb_get_user_data(window)
+        world_ref = unsafe_pointer_to_objref(ptr)::Ref{World}
+        w = world_ref[]
 
-    # on(scene.scene.events.mouseposition) do mp
-    #     mouse.x = mp[1]
-    #     mouse.y = mp[2]
-    #     x, y = mp
-    #     mouse.inside = contains(size, x, y)
-    # end
+        #mouse = get_resource(w, Mouse)
+        #size = get_resource(w, WorldSize)
+        # mouse.x = x
+        # mouse.y = y
+        # mouse.inside = contains(size, x, y)
+        println(x, " ", y)
+        return nothing
+    end
+
+    mfb_set_mouse_move_callback(screen.screen, mouse_move)
 end
