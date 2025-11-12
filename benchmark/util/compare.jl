@@ -4,6 +4,8 @@ struct Row
     name::String
     n::Int
     time_ns::Float64
+    allocs::Int
+    bytes::Int
 end
 
 struct RowAoS
@@ -20,10 +22,12 @@ mutable struct CompareRow
     time_ns_a::Float64
     time_ns_b::Float64
     factor::Float64
+    allocs::Int
+    bytes::Int
 end
 
 function CompareRow()
-    CompareRow("", 0, NaN, NaN, NaN)
+    CompareRow("", 0, NaN, NaN, NaN, -1, -1)
 end
 
 function trim_prefix(s::String, prefix::String)
@@ -32,9 +36,9 @@ end
 
 function write_bench_table(data::Vector{Row}, file::String)
     open(file, "w") do io
-        write(io, "Name,N,Time\n")
+        write(io, "Name,N,Time,Allocs,Bytes\n")
         for row in data
-            write(io, "$(row.name),$(row.n),$(row.time_ns)\n")
+            write(io, "$(row.name),$(row.n),$(row.time_ns),$(row.allocs),$(row.bytes)\n")
         end
     end
 end
@@ -59,13 +63,13 @@ end
 
 function table_to_markdown(data::Vector{CompareRow})::String
     header =
-        "| Name                                     |       N | Time main [ns] | Time curr [ns] | Factor |\n" *
-        "|:-----------------------------------------|--------:|---------------:|---------------:|-------:|\n"
+        "| Name                                     |       N | Time main [ns] | Time curr [ns] | Factor |  Allocs |    Bytes |\n" *
+        "|:-----------------------------------------|--------:|---------------:|---------------:|-------:|--------:|---------:|\n"
 
     body = join(
         [
-            @sprintf("| %-40s | %7d | %14.2f | %14.2f | %6.2f |",
-                r.name, r.n, r.time_ns_a, r.time_ns_b, r.factor)
+            @sprintf("| %-40s | %7d | %14.2f | %14.2f | %6.2f | %7d | %8d |",
+                r.name, r.n, r.time_ns_a, r.time_ns_b, r.factor, r.allocs, r.bytes)
             for r in data
         ], "\n")
 
@@ -83,6 +87,8 @@ function table_to_html(data::Vector{CompareRow})::String
           <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Time main&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
           <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Time curr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
           <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;Factor&nbsp;&nbsp;&nbsp;&nbsp;</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;Allocs&nbsp;&nbsp;&nbsp;&nbsp;</th>
+          <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;Bytes&nbsp;&nbsp;&nbsp;&nbsp;</th>
         </tr>
       </thead>
       <tbody>
@@ -104,7 +110,7 @@ function table_to_html(data::Vector{CompareRow})::String
 
         if name != r.name
             name_short = trim_prefix(r.name, "benchmark_")
-            html *= @sprintf("""<tr><th colspan="4" align="center">%s</th></tr>\n""", name_short)
+            html *= @sprintf("""<tr><th colspan="6" align="center">%s</th></tr>\n""", name_short)
         end
 
         html *= @sprintf("""
@@ -113,8 +119,10 @@ function table_to_html(data::Vector{CompareRow})::String
             <td align="right">%.2fns</td>
             <td align="right">%.2fns</td>
             <td align="right">%s %.2f</td>
+            <td align="right">%d</td>
+            <td align="right">%d</td>
             </tr>
-            """, r.n, r.time_ns_a, r.time_ns_b, emoji, r.factor)
+            """, r.n, r.time_ns_a, r.time_ns_b, emoji, r.factor, r.allocs, r.bytes)
 
         name = r.name
     end
@@ -144,11 +152,16 @@ function read_bench_table(file::String)::Vector{Row}
     open(file, "r") do io
         for line in Iterators.drop(eachline(io), 1)
             parts = split(line, ",")
-            push!(data, Row(
-                parts[1],
-                parse(Int, parts[2]),
-                parse(Float64, parts[3]),
-            ))
+            push!(
+                data,
+                Row(
+                    parts[1],
+                    parse(Int, parts[2]),
+                    parse(Float64, parts[3]),
+                    parse(Int, parts[4]),
+                    parse(Int, parts[5]),
+                ),
+            )
         end
     end
     return data
@@ -160,7 +173,7 @@ function compare_multi_tables(a::Vector{Vector{Row}}, b::Vector{Vector{Row}})::V
     count = length(compare_multi)
     data = Vector{CompareRow}()
     for r in eachindex(compare_multi[1])
-        out::CompareRow = CompareRow("", 0, 0, 0, 0)
+        out::CompareRow = CompareRow("", 0, 0, 0, 0, 0, 0)
         for t in compare_multi
             row = t[r]
             out.name = row.name
@@ -168,10 +181,14 @@ function compare_multi_tables(a::Vector{Vector{Row}}, b::Vector{Vector{Row}})::V
             out.time_ns_a += row.time_ns_a
             out.time_ns_b += row.time_ns_b
             out.factor += row.factor
+            out.allocs += row.allocs
+            out.bytes += row.bytes
         end
         out.time_ns_a /= count
         out.time_ns_b /= count
         out.factor /= count
+        out.allocs /= count
+        out.bytes /= count
         push!(data, out)
     end
 
@@ -206,6 +223,8 @@ function compare_tables(a::Vector{Row}, b::Vector{Row})::Vector{CompareRow}
             row.name = r.name
             row.n = r.n
             row.time_ns_b = r.time_ns
+            row.allocs = r.allocs
+            row.bytes = r.bytes
         end
         row.factor = row.time_ns_b / row.time_ns_a
         push!(data, row)

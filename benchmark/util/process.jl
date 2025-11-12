@@ -11,7 +11,10 @@ function process_benches(suite::BenchmarkGroup)::Vector{Row}
         n = parse(Int, parts[end])
         mean_secs = median(map(s -> s.time, bench.samples))
         ns_per_n = 1e9 * mean_secs / n
-        push!(data, Row(parts[1], n, ns_per_n))
+
+        total_allocs = median(map(s -> s.allocs, bench.samples))
+        total_bytes = median(map(s -> s.bytes, bench.samples))
+        push!(data, Row(parts[1], n, ns_per_n, total_allocs, total_bytes))
     end
 
     return data
