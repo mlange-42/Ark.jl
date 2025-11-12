@@ -35,12 +35,18 @@ function __init__()
             RenderSystem(),
             MouseSystem(),
             ProfilingSystem(60),
-            TerminationSystem(IS_CI ? 100 : -1), # Short run in CI tests
+            TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
 
     initialize!(scheduler)
+    run(world, scheduler)
 
+    finalize!(scheduler)
+    println("Finished after $(get_resource(world, Tick).tick) ticks")
+end
+
+function run(world::W, scheduler::S) where {W<:World,S<:Scheduler}
     if IS_CI
         while update!(scheduler)
         end
@@ -58,9 +64,6 @@ function __init__()
         end
         mfb_close(screen.screen)
     end
-
-    finalize!(scheduler)
-    println("Finished after $(get_resource(world, Tick).tick) ticks")
 end
 
 end
