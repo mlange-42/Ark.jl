@@ -9,11 +9,11 @@ function contains(s::WorldSize, x::Float64, y::Float64)
 end
 
 struct WorldScreen
-    screen::GLMakie.Screen{GLMakie.GLFW.Window}
+    screen::Ptr{Cvoid}
 end
 
-struct WorldScene
-    scene::GLMakie.Scene
+struct WorldImage
+    image::Array{UInt32,2}
 end
 
 mutable struct Mouse

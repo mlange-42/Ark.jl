@@ -1,9 +1,10 @@
 module Logo
 
 using Ark
-using GLMakie
+using MiniFB
 using Colors
 using Images
+using FixedPointNumbers
 
 include("../_common/scheduler.jl")
 include("../_common/resources.jl")
@@ -20,14 +21,6 @@ const IS_CI = "CI" in keys(ENV)
 const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/preview.png"
 
 function __init__()
-    GLMakie.activate!(
-        framerate=60.0,
-        vsync=true,
-        renderloop=GLMakie.renderloop,
-        render_on_demand=true,
-        focus_on_show=!IS_CI,
-    )
-
     world = World(Position, Velocity, Target)
     add_resource!(world, WorldSize(1000, 600))
     add_resource!(world, ArkLogo(load(IMAGE_PATH)[1:2:end, 1:2:end]))
@@ -47,16 +40,17 @@ function __init__()
     initialize!(scheduler)
 
     screen = get_resource(world, WorldScreen)
-    on(screen.screen.render_tick) do _
+    while mfb_wait_sync(screen.screen)
         if !update!(scheduler)
-            @async begin
-                sleep(0.0)
-                GLMakie.closeall()
-            end
+            break
+        end
+        image = get_resource(world, WorldImage)
+        state = mfb_update(screen.screen, image.image)
+        if state != MiniFB.STATE_OK
+            break
         end
     end
-
-    GLMakie.renderloop(screen.screen)
+    mfb_close(screen.screen)
 
     finalize!(scheduler)
     println("Finished after $(get_resource(world, Tick).tick) ticks")
