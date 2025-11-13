@@ -193,8 +193,8 @@ function _reset!(m::_EventManager{M}) where M
             obs._id = 0
         end
         resize!(m.observers[e], 0)
-        m.comps[e] = (_Mask(), false)
-        m.with[e] = (_Mask(), false)
+        m.comps[e] = (_Mask{M}(), false)
+        m.with[e] = (_Mask{M}(), false)
     end
 
     m.max_event_type = 0
