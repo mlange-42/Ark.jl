@@ -26,13 +26,18 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
 end
 
 """
-    World(comp_types::Type...; allow_mutable::Bool=false)
+    World(
+        comp_types::Type...;
+        initial_capacity::Int=128,
+        allow_mutable::Bool=false,
+    )
 
 Creates a new, empty [`World`](@ref) for the given component types.
 
 # Arguments
 
   - `comp_types`: The component types used by the world.
+  - `initial_capacity`: Initial capacity for entities in each archetype and in the entity index.
   - `allow_mutable`: Allows mutable components. Use with care, as all mutable objects are heap-allocated in Julia.
 
 # Example
