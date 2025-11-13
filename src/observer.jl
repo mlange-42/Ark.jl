@@ -205,8 +205,8 @@ function observe!(world::World, observer::Observer; unregister::Bool=false)
     end
 end
 
-function Base.show(io::IO, obs::Observer)
-    world_types = typeof(obs._world).parameters[2].parameters
+function Base.show(io::IO, obs::Observer{W}) where {W<:_AbstractWorld}
+    world_types = W.parameters[2].parameters
 
     mask_ids = _active_bit_indices(obs._comps)
     mask_types = tuple(map(i -> world_types[Int(i)].parameters[1], mask_ids)...)

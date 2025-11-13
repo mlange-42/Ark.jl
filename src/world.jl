@@ -21,7 +21,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _lock::_Lock
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
-    const _event_manager::_EventManager{M}
+    const _event_manager::_EventManager{World{CS,CT,ST,N,M},M}
     const _initial_capacity::Int
 end
 
@@ -1133,7 +1133,10 @@ end
             _Lock(),
             graph,
             Dict{DataType,Any}(),
-            _EventManager{$(M)}(),
+            _EventManager{
+                World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
+                $(M),
+            }(),
             initial_capacity,
         )
     end

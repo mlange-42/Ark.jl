@@ -96,8 +96,8 @@ Observer for reacting on built-in and custom events.
 See [@observe!](@ref) for details.
 See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
 """
-struct Observer{M}
-    _world::_AbstractWorld
+struct Observer{W<:_AbstractWorld,M}
+    _world::W
     _id::_ObserverID
     _event::EventType
     _comps::_Mask{M}
@@ -110,17 +110,17 @@ struct Observer{M}
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
-mutable struct _EventManager{M}
-    const observers::Vector{Vector{Observer{M}}}
+mutable struct _EventManager{W<:_AbstractWorld,M}
+    const observers::Vector{Vector{Observer{W,M}}}
     const comps::Vector{Tuple{_Mask{M},Bool}}
     const with::Vector{Tuple{_Mask{M},Bool}}
     num_observers::Int
 end
 
-function _EventManager{M}() where M
+function _EventManager{W,M}() where {W<:_AbstractWorld,M}
     len = typemax(UInt8)
-    _EventManager{M}(
-        [Vector{Observer{M}}() for _ in 1:len],
+    _EventManager{W,M}(
+        [Vector{Observer{W,M}}() for _ in 1:len],
         [(_Mask{M}(), false) for _ in 1:len],
         [(_Mask{M}(), false) for _ in 1:len],
         0,
@@ -162,7 +162,7 @@ function _add_observer!(m::_EventManager, o::Observer)
     m.comps[e] = (comps, any_no_comps)
 end
 
-function _remove_observer!(m::_EventManager{M}, o::Observer{M}) where M
+function _remove_observer!(m::_EventManager{W,M}, o::Observer{W,M}) where {W<:_AbstractWorld,M}
     if o._id.id == 0
         throw(InvalidStateException("observer is not registered", :observer_not_registered))
     end
