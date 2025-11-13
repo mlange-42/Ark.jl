@@ -15,6 +15,7 @@
 - Adds field view, so field access for query columns works equally for Vector and StructArray storages (#213)
 - Adds `@copy_entity!` for copying an entity and optionally adding and removing components (#262, #266)
 - Adds keyword argument `initial_capacity` to World constructor (#288)
+- Adds function `reset!` for resetting and reusing a world to avoid reallocations (#292)
 
 ### Performance
 

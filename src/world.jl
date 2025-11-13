@@ -1224,6 +1224,23 @@ end
     return Expr(:block, exprs...)
 end
 
+@generated function _clear_component_data!(
+    world::World{CS},
+    comp::UInt8,
+    arch::UInt32,
+) where {CS<:Tuple}
+    n = length(CS.parameters)
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(
+            if comp == $i
+                _clear_column!(world._storages.$i, arch)
+            end
+        ))
+    end
+    return Expr(:block, exprs...)
+end
+
 @generated function _swap_remove_in_column_for_comp!(
     world::World{CS},
     comp::UInt8,
@@ -1374,6 +1391,33 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
         throw(ArgumentError("entity does not have all components of the event emitted for it"))
     end
     _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
+end
+
+"""
+    reset!(world::World)
+
+Removes all entities and resources from the world, and un-registers all observers.
+Does NOT free reserved memory or remove archetypes.
+
+Can be used to run systematic simulations without the need to re-allocate memory for each run.
+Accelerates re-populating the world by a factor of 2-3.
+"""
+function reset!(world::W) where {W<:World}
+    _check_locked(world)
+
+    resize!(world._entities, 1)
+    _reset!(world._entity_pool)
+    _reset!(world._lock)
+    _reset!(world._event_manager)
+
+    for archetype in world._archetypes
+        resize!(archetype, 0)
+        for comp in archetype.components
+            _clear_component_data!(world, comp, archetype.id)
+        end
+    end
+
+    empty!(world._resources)
 end
 
 function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}

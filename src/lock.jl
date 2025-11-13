@@ -29,3 +29,7 @@ end
 function _is_locked(lock::_Lock)::Bool
     return lock.lock_bits != 0
 end
+
+function _reset!(lock::_Lock)
+    _reset!(lock.pool)
+end

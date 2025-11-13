@@ -43,6 +43,10 @@ function _activate_column!(storage::_ComponentStorage{C,A}, index::Int, cap::Int
     sizehint!(storage.data[index], cap)
 end
 
+function _clear_column!(storage::_ComponentStorage{C,A}, arch::UInt32) where {C,A<:AbstractArray}
+    resize!(storage.data[arch], 0)
+end
+
 function _ensure_column_size!(storage::_ComponentStorage{C,A}, arch::UInt32, needed::Int) where {C,A<:AbstractArray}
     col = storage.data[arch]
     if length(col) < needed

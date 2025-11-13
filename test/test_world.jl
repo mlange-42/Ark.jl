@@ -698,6 +698,47 @@ end
         remove_entity!(world, zero_entity))
 end
 
+@testset "World reset!" begin
+    world = World(Dummy, Position, Velocity)
+
+    obs = @observe!(world, OnAddComponents, (Position,)) do _
+    end
+
+    new_entity!(world, (Position(1, 1),))
+    new_entity!(world, (Velocity(1, 1),))
+    new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+
+    reset!(world)
+
+    @test length(world._entities) == 1
+    @test length(world._entity_pool.entities) == 1
+    @test length(world._archetypes[2].entities) == 0
+    @test length(world._archetypes[3].entities) == 0
+    @test length(world._archetypes[4].entities) == 0
+    @test length(world._storages[offset_ID+2].data[2]) == 0
+    @test length(world._storages[offset_ID+2].data[3]) == 0
+    @test length(world._storages[offset_ID+2].data[4]) == 0
+    @test length(world._storages[offset_ID+3].data[2]) == 0
+    @test length(world._storages[offset_ID+3].data[3]) == 0
+    @test length(world._storages[offset_ID+3].data[4]) == 0
+
+    @test obs._id.id == 0
+    @test !_has_observers(world._event_manager, OnAddComponents)
+
+    e = new_entity!(world, (Position(1, 1),))
+    @test e._id == 2
+    @test e._gen == 0
+
+    q = @Query(world, ())
+    @test_throws(
+        "InvalidStateException: cannot modify a locked world: " *
+        "collect entities into a vector and apply changes after query iteration has completed",
+        reset!(world))
+
+    close!(q)
+    reset!(world)
+end
+
 @testset "World add/remove resources Tests" begin
     world = World(Dummy, Position, Velocity)
 

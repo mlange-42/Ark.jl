@@ -48,6 +48,12 @@ function _is_alive(p::_EntityPool, e::Entity)::Bool
     @inbounds return e._gen == p.entities[e._id]._gen
 end
 
+function _reset!(p::_EntityPool)
+    resize!(p.entities, 1)
+    p.next = 0
+    p.available = 0
+end
+
 mutable struct _BitPool
     const bits::Vector{UInt8}
     length::UInt8
@@ -94,4 +100,10 @@ function _recycle(p::_BitPool, b::UInt8)
     p.bits[b] = temp
     p.available += 1
     return nothing
+end
+
+function _reset!(p::_BitPool)
+    p.next = 0
+    p.length = 0
+    p.available = 0
 end

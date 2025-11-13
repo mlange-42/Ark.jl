@@ -89,6 +89,7 @@ mutable struct _EventManager{M}
     const comps::Vector{Tuple{_Mask{M},Bool}}
     const with::Vector{Tuple{_Mask{M},Bool}}
     num_observers::Int
+    max_event_type::Int
 end
 
 function _EventManager{M}() where M
@@ -97,7 +98,7 @@ function _EventManager{M}() where M
         [Vector{Observer{M}}() for _ in 1:len],
         [(_Mask{M}(), false) for _ in 1:len],
         [(_Mask{M}(), false) for _ in 1:len],
-        0,
+        0, 0,
     )
 end
 
@@ -114,6 +115,10 @@ function _add_observer!(m::_EventManager, o::Observer)
     e = o._event._id
     push!(m.observers[e], o)
     o._id.id = UInt32(length(m.observers[e]))
+
+    if e > m.max_event_type
+        m.max_event_type = e
+    end
 
     with, any_no_with = m.with[e]
     if o._has_with
@@ -177,6 +182,23 @@ function _remove_observer!(m::_EventManager{M}, o::Observer{M}) where M
         comps_mask = _or(comps_mask, o._comps)
     end
     m.comps[e] = (comps_mask, any_no_comps)
+end
+
+function _reset!(m::_EventManager{M}) where M
+    for e in 1:m.max_event_type
+        if length(m.observers[e]) == 0
+            continue
+        end
+        for obs in m.observers[e]
+            obs._id.id = 0
+        end
+        resize!(m.observers[e], 0)
+        m.comps[e] = (_Mask{M}(), false)
+        m.with[e] = (_Mask{M}(), false)
+    end
+
+    m.max_event_type = 0
+    m.num_observers = 0
 end
 
 function _fire_create_entity(m::_EventManager, entity::Entity, mask::_Mask)
