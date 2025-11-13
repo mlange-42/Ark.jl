@@ -4,9 +4,7 @@ struct _ComponentStorage{C,A<:AbstractArray{C,1}}
 end
 
 function _new_vector_storage(::Type{C}, cap::Int) where {C}
-    vec = Vector{C}()
-    sizehint!(vec, cap)
-    _ComponentStorage{C,Vector{C}}([vec])
+    _ComponentStorage{C,Vector{C}}([Vector{C}()])
 end
 
 function _new_struct_array_storage(::Type{C}) where {C}
