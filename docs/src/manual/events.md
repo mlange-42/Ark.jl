@@ -92,10 +92,10 @@ end
 @observe!(world, OnRemoveComponents, (Position,)) do entity
     fn(OnRemoveComponents, entity)
 end
-; # suppress print output
 
 # output
 
+Observer(:OnRemoveComponents, (Position))
 ```
 
 ## Filters
@@ -118,10 +118,10 @@ An observer that is triggered when a `Position` component is added to an existin
 @observe!(world, OnAddComponents, (Position,)) do entity
     # ...
 end
-; # suppress print output
 
 # output
 
+Observer(:OnAddComponents, (Position))
 ```
 
 An observer that is triggered when a `Position` component is added to an entity
@@ -134,38 +134,38 @@ that has `Velocity`, but not `Altitude` (or rather, had before the operation):
     ) do entity
     # ...
 end
-; # suppress print output
 
 # output
 
+Observer(:OnAddComponents, (Position); with=(Velocity), without=(Altitude))
 ```
 
 This observer is triggered when an entity with `Position` is created:
 
 ```jldoctest; output=false
 @observe!(world, OnCreateEntity;
-        with    = (Velocity,)
+        with = (Velocity,)
     ) do entity
     # ...
 end
-; # suppress print output
 
 # output
 
+Observer(:OnCreateEntity, (); with=(Velocity))
 ```
 
 This observer is triggered when an entity with `Position` as well as `Velocity` is created:
 
 ```jldoctest; output=false
 @observe!(world, OnCreateEntity;
-        with    = (Position, Velocity)
+        with = (Position, Velocity)
     ) do entity
     # ...
 end
-; # suppress print output
 
 # output
 
+Observer(:OnCreateEntity, (); with=(Position, Velocity))
 ```
 
 An observer that is triggered when any entity is created, irrespective of its components:
@@ -174,10 +174,10 @@ An observer that is triggered when any entity is created, irrespective of its co
 @observe!(world, OnCreateEntity) do entity
     # ...
 end
-; # suppress print output
 
 # output
 
+Observer(:OnCreateEntity, ())
 ```
 
 ## Event timing

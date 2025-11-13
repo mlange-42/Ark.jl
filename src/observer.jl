@@ -34,10 +34,10 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
 @observe!(world, OnAddComponents, (Position, Velocity); with=(Altitude,)) do entity
     println(entity)
 end
-; # suppress print output
 
 # output
 
+Observer(:OnAddComponents, (Position, Velocity); with=(Altitude))
 ```
 """
 macro observe!(fn_expr, world_expr, event_expr)
@@ -111,10 +111,10 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
 observe!(world, OnAddComponents, Val.((Position, Velocity)); with=Val.((Altitude,))) do entity
     println(entity)
 end
-; # suppress print output
 
 # output
 
+Observer(:OnAddComponents, (Position, Velocity); with=(Altitude))
 ```
 """
 function observe!(
