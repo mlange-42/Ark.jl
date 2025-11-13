@@ -210,7 +210,7 @@ function _remove_observer!(m::_EventManager{W,M}, o::Observer{W,M}) where {W<:_A
     m.comps[e] = (comps_mask, any_no_comps)
 end
 
-function _reset!(m::_EventManager{M}) where M
+function _reset!(m::_EventManager{W,M}) where {W<:_AbstractWorld,M}
     for e in 1:m.max_event_type
         if length(m.observers[e]) == 0
             continue
