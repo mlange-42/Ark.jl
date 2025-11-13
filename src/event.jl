@@ -94,6 +94,7 @@ See [@observe!](@ref) for details.
 See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
 """
 struct Observer{M}
+    _world::_AbstractWorld
     _id::_ObserverID
     _event::EventType
     _comps::_Mask{M}
@@ -102,6 +103,7 @@ struct Observer{M}
     _has_comps::Bool
     _has_with::Bool
     _has_without::Bool
+    _is_exclusive::Bool
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 

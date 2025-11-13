@@ -571,3 +571,24 @@ end
     ex = Meta.parse("@emit_event!(world, OnUpdateComponents)")
     @test_throws LoadError eval(ex)
 end
+
+@testset "Observer show" begin
+    world = World(
+        Position,
+        Velocity,
+        Altitude,
+        Health,
+        CompN{1},
+    )
+    obs = @observe!(world, OnAddComponents, (Position, Velocity)) do _
+    end
+    @test string(obs) == "Observer(:OnAddComponents, (Position, Velocity))"
+
+    obs = @observe!(world, OnAddComponents, (Position, Velocity); with=(Health,), exclusive=true) do _
+    end
+    @test string(obs) == "Observer(:OnAddComponents, (Position, Velocity); with=(Health), exclusive=true)"
+
+    obs = @observe!(world, OnAddComponents, (Position, Velocity); without=(Health,)) do _
+    end
+    @test string(obs) == "Observer(:OnAddComponents, (Position, Velocity); without=(Health))"
+end
