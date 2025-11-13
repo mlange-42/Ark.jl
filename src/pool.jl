@@ -49,7 +49,7 @@ function _is_alive(p::_EntityPool, e::Entity)::Bool
 end
 
 function _reset!(p::_EntityPool)
-    resize!(p, 1)
+    resize!(p.entities, 1)
     p.next = 0
     p.available = 0
 end
