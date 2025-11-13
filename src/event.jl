@@ -190,7 +190,7 @@ function _reset!(m::_EventManager{M}) where M
             continue
         end
         for obs in m.observers[e]
-            obs._id = 0
+            obs._id.id = 0
         end
         resize!(m.observers[e], 0)
         m.comps[e] = (_Mask{M}(), false)
