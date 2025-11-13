@@ -54,7 +54,7 @@ In the outer loop, the query iterates the [archetypes](@ref Architecture),
 and for each one returns a vector of entities and the columns for the queried components.
 In the inner loop, we iterate over the entities within the archetype and perform the actual logic.
 
-Also not the last line in the inner loop. Here, we assign a new `Position` value to the current entity.
+Also note the last line in the inner loop. Here, we assign a new `Position` value to the current entity.
 This is necessary as `Position` is immutable, which is the default and highly recommended.
 See section [Component types](@ref) for details.
 
@@ -181,9 +181,9 @@ entity creation and removal and component addition and removal.
 This is necessary to prevent changes to the inner storage structure of the World
 that would result in undefined behavior of the query.
 
-If the necessity for these forbidden iteration arises,
-the respective entities must be collected into a `Vector` to apply the
-operations after query iteration has finished.
+Whenever the game or model logic demands one of these forbidden operations,
+the entities to be affected must first be collected into a `Vector`, and the
+operations must be applied only after the query iteration has finished.
 
 ```jldoctest; output = false
 # vector for entities to be removed from te world

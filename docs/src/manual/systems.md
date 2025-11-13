@@ -1,7 +1,7 @@
 # Systems
 
 Ark provides **no systems** as they are widely known in ECS implementations.
-This is a deliberate decisions, based on these reasons:
+This is a deliberate decision, based on these reasons:
 
 - Systems can be hard to integrate into frameworks, like a game engine's update loop.  
   Ark wants to stay flexible and is completely engine-agnostic.
@@ -34,7 +34,7 @@ end
 
 ### Abstract system type
 
-We write and abstract system type.
+We write an abstract system type.
 This is optional, but useful for clarity and to avoid boilerplate.
 
 ```jldoctest systems; output = false
@@ -114,8 +114,7 @@ As we have the abstract type, we only need to implement the functions that are r
 And here the classical movement system:
 
 ```jldoctest systems; output = false
-struct MovementSystem <: System
-end
+struct MovementSystem <: System end
 
 function update!(s::InitializerSystem, w::World)
     for (entities, positions, velocities) in @Query(world, (Position, Velocity))

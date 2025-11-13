@@ -10,7 +10,7 @@ one component of a certain type.
 
 In Ark, any type can be used as a component.
 However, it is highly recommended to use immutable types,
-because all mutable objects are allocated on the heap in Julia,
+because mutable objects are usually allocated on the heap in Julia,
 which defeats Ark's claim of high performance.
 Immutable types are disallowed by default, but can be enabled when constructing a [World](@ref)
 by the optional argument `allow_mutable` of the [world constructor](@ref World(::Type...; ::Bool)).
@@ -76,7 +76,7 @@ add_components!(world, entity, (Position(0, 0), Velocity(1,1)))
 
 ```
 
-Note that adding an already existing component of removing a missing one results in an error.
+Note that adding an already existing component or removing a missing one results in an error.
 
 Also note that it is more efficient to add/remove multiple components at once instead of one by one.
 To allow for efficient exchange of components (i.e. add some and remove others in the same operation),
