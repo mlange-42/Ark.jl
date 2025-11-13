@@ -34,10 +34,10 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
 @observe!(world, OnAddComponents, (Position, Velocity); with=(Altitude,)) do entity
     println(entity)
 end
-; # suppress print output
 
 # output
 
+Observer(:OnAddComponents, (Position, Velocity); with=(Altitude))
 ```
 """
 macro observe!(fn_expr, world_expr, event_expr)
@@ -111,10 +111,10 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
 observe!(world, OnAddComponents, Val.((Position, Velocity)); with=Val.((Altitude,))) do entity
     println(entity)
 end
-; # suppress print output
 
 # output
 
+Observer(:OnAddComponents, (Position, Velocity); with=(Altitude))
 ```
 """
 function observe!(
@@ -165,12 +165,14 @@ end
     has_with_expr = (length(with_types) > 0) ? :(true) : :(false)
     has_without = (length(without_types) > 0) || (EX === Val{true})
     has_without_expr = has_without ? :(true) : :(false)
+    is_exclusive = EX === Val{true} ? :(true) : :(false)
 
     return quote
         if (event == OnCreateEntity || event == OnRemoveEntity) && _is_not_zero($mask)
             throw(ArgumentError("components tuple must be empty for event types OnCreateEntity and OnRemoveEntity"))
         end
         obs = Observer(
+            world,
             _ObserverID(UInt32(0)),
             event,
             $mask,
@@ -179,6 +181,7 @@ end
             $has_comps_expr,
             $has_with_expr,
             $has_without_expr,
+            $is_exclusive,
             fn,
         )
         if register
@@ -199,5 +202,42 @@ function observe!(world::World, observer::Observer; unregister::Bool=false)
         _remove_observer!(world._event_manager, observer)
     else
         _add_observer!(world._event_manager, observer)
+    end
+end
+
+function Base.show(io::IO, obs::Observer{W}) where {W<:_AbstractWorld}
+    world_types = W.parameters[2].parameters
+
+    mask_ids = _active_bit_indices(obs._comps)
+    mask_types = tuple(map(i -> world_types[Int(i)].parameters[1], mask_ids)...)
+    with_ids = _active_bit_indices(obs._with)
+    with_types = tuple(map(i -> world_types[Int(i)].parameters[1], with_ids)...)
+
+    mask_names = join(map(_format_type, mask_types), ", ")
+    with_names = join(map(_format_type, with_types), ", ")
+
+    excl_types = ()
+    without_names = ""
+    if !obs._is_exclusive
+        excl_ids = _active_bit_indices(obs._without)
+        excl_types = tuple(map(i -> world_types[Int(i)].parameters[1], excl_ids)...)
+        without_names = join(map(_format_type, excl_types), ", ")
+    end
+
+    kw_parts = String[]
+    if !isempty(with_types)
+        push!(kw_parts, "with=($with_names)")
+    end
+    if !isempty(excl_types)
+        push!(kw_parts, "without=($without_names)")
+    end
+    if obs._is_exclusive
+        push!(kw_parts, "exclusive=true")
+    end
+
+    if isempty(kw_parts)
+        print(io, "Observer(:$(obs._event._symbol), ($mask_names))")
+    else
+        print(io, "Observer(:$(obs._event._symbol), ($mask_names); ", join(kw_parts, ", "), ")")
     end
 end

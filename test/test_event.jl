@@ -1,25 +1,33 @@
 @testset "Event type creation" begin
     reg = EventRegistry()
 
-    e1 = new_event_type!(reg)
-    e2 = new_event_type!(reg)
+    e1 = new_event_type!(reg, :Event1)
+    e2 = new_event_type!(reg, :Event2)
     @test e1._id == 5
     @test e2._id == 6
 
+    @test string(reg) == "6-events EventRegistry()
+ [:OnCreateEntity, :OnRemoveEntity, :OnAddComponents, :OnRemoveComponents, :Event1, :Event2]
+"
+
+    @test_throws "there is already an event with symbol :Event1" new_event_type!(reg, :Event1)
+
+    cnt = 0
     while true
-        e = new_event_type!(reg)
+        e = new_event_type!(reg, Symbol(string(cnt)))
         if e._id == typemax(UInt8)
             break
         end
+        cnt += 1
     end
-    @test_throws "InvalidStateException: reached maximum number of 255 event types" new_event_type!(reg)
+    @test_throws "InvalidStateException: reached maximum number of 255 event types" new_event_type!(reg, :Invalid)
 
     @test OnCreateEntity._id == 1
     @test OnRemoveEntity._id == 2
     @test OnAddComponents._id == 3
     @test OnRemoveComponents._id == 4
 
-    @test string(reg) == "255-events EventRegistry()"
+    @test string(OnCreateEntity) == "EventType(:OnCreateEntity)"
 end
 
 @testset "Observer creation" begin
@@ -446,7 +454,7 @@ end
 
 @testset "Fire custom event" begin
     reg = EventRegistry()
-    OnUpdateComponents = new_event_type!(reg)
+    OnUpdateComponents = new_event_type!(reg, :OnUpdateComponents)
     world = World(Dummy, Position, Velocity, Altitude, Health)
 
     e = new_entity!(world, ())
@@ -491,7 +499,7 @@ end
 
 @testset "Fire custom event with" begin
     reg = EventRegistry()
-    OnUpdateComponents = new_event_type!(reg)
+    OnUpdateComponents = new_event_type!(reg, :OnUpdateComponents)
     world = World(Dummy, Position, Velocity, Altitude, Health)
 
     counter = 0
@@ -516,7 +524,7 @@ end
 
 @testset "Fire custom event without" begin
     reg = EventRegistry()
-    OnUpdateComponents = new_event_type!(reg)
+    OnUpdateComponents = new_event_type!(reg, :OnUpdateComponents)
     world = World(Dummy, Position, Velocity, Altitude, Health)
 
     counter = 0
@@ -541,7 +549,7 @@ end
 
 @testset "Fire custom event errors" begin
     reg = EventRegistry()
-    OnUpdateComponents = new_event_type!(reg)
+    OnUpdateComponents = new_event_type!(reg, :OnUpdateComponents)
     world = World(Dummy, Position, Velocity, Altitude, Health)
     @observe!(world, OnUpdateComponents, ()) do entity
     end
@@ -565,4 +573,25 @@ end
 @testset "@emit_event! macro wrong number of arguments" begin
     ex = Meta.parse("@emit_event!(world, OnUpdateComponents)")
     @test_throws LoadError eval(ex)
+end
+
+@testset "Observer show" begin
+    world = World(
+        Position,
+        Velocity,
+        Altitude,
+        Health,
+        CompN{1},
+    )
+    obs = @observe!(world, OnAddComponents, (Position, Velocity)) do _
+    end
+    @test string(obs) == "Observer(:OnAddComponents, (Position, Velocity))"
+
+    obs = @observe!(world, OnAddComponents, (Position, Velocity); with=(Health,), exclusive=true) do _
+    end
+    @test string(obs) == "Observer(:OnAddComponents, (Position, Velocity); with=(Health), exclusive=true)"
+
+    obs = @observe!(world, OnAddComponents, (Position, Velocity); without=(Health,)) do _
+    end
+    @test string(obs) == "Observer(:OnAddComponents, (Position, Velocity); without=(Health))"
 end

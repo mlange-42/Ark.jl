@@ -14,15 +14,20 @@ See [EventRegistry](@ref) for creating custom event types.
 """
 struct EventType
     _id::UInt8
+    _symbol::Symbol
 
-    EventType(id::UInt8) = new(id)
+    EventType(id::UInt8, symbol::Symbol) = new(id, symbol)
 end
 
-const OnCreateEntity::EventType = EventType(UInt8(1))
-const OnRemoveEntity::EventType = EventType(UInt8(2))
-const OnAddComponents::EventType = EventType(UInt8(3))
-const OnRemoveComponents::EventType = EventType(UInt8(4))
-const _custom_events::EventType = EventType(UInt8(5))
+function Base.show(io::IO, evt::EventType)
+    print(io, "EventType(:$(evt._symbol))")
+end
+
+const OnCreateEntity::EventType = EventType(UInt8(1), :OnCreateEntity)
+const OnRemoveEntity::EventType = EventType(UInt8(2), :OnRemoveEntity)
+const OnAddComponents::EventType = EventType(UInt8(3), :OnAddComponents)
+const OnRemoveComponents::EventType = EventType(UInt8(4), :OnRemoveComponents)
+const _custom_events::EventType = EventType(UInt8(5), :custom_event)
 
 """
     EventRegistry
@@ -30,7 +35,7 @@ const _custom_events::EventType = EventType(UInt8(5))
 Serves for creating custom event types.
 """
 mutable struct EventRegistry
-    _next_index::UInt8
+    _event_types::Dict{Symbol,UInt8}
 end
 
 """
@@ -39,25 +44,44 @@ end
 Creates a new [EventRegistry](@ref).
 """
 function EventRegistry()
-    EventRegistry(_custom_events._id - 1)
+    reg = EventRegistry(Dict{Symbol,UInt8}())
+    new_event_type!(reg, :OnCreateEntity)
+    new_event_type!(reg, :OnRemoveEntity)
+    new_event_type!(reg, :OnAddComponents)
+    new_event_type!(reg, :OnRemoveComponents)
+    reg
 end
 
 function Base.show(io::IO, reg::EventRegistry)
-    print(io, "$(reg._next_index)-events EventRegistry()")
+    symbols = map(x -> ":$(x[1])", (sort(collect(reg._event_types), by=x -> x[2])))
+
+    print(io, "$(length(reg._event_types))-events EventRegistry()")
+    print(io, "\n [$(join(symbols, ", "))]\n")
 end
 
 """
-    new_event_type!(reg::EventRegistry)
+    new_event_type!(reg::EventRegistry, symbol::Symbol)
 
 Creates a new custom [EventType](@ref).
 Custom event types are best stored in global constants.
+
+The symbol is only used for printing.
 """
-function new_event_type!(reg::EventRegistry)
-    if reg._next_index == typemax(UInt8)
-        throw(InvalidStateException("reached maximum number of $(reg._next_index) event types", :events_exhausted))
+function new_event_type!(reg::EventRegistry, symbol::Symbol)
+    if length(reg._event_types) == typemax(UInt8)
+        throw(
+            InvalidStateException(
+                "reached maximum number of $(length(reg._event_types)) event types",
+                :events_exhausted,
+            ),
+        )
     end
-    reg._next_index += 1
-    return EventType(reg._next_index)
+    if haskey(reg._event_types, symbol)
+        throw(ArgumentError("there is already an event with symbol :$symbol"))
+    end
+    id = length(reg._event_types) + 1
+    reg._event_types[symbol] = id
+    return EventType(UInt8(id), symbol)
 end
 
 mutable struct _ObserverID
@@ -72,7 +96,8 @@ Observer for reacting on built-in and custom events.
 See [@observe!](@ref) for details.
 See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
 """
-struct Observer{M}
+struct Observer{W<:_AbstractWorld,M}
+    _world::W
     _id::_ObserverID
     _event::EventType
     _comps::_Mask{M}
@@ -81,21 +106,22 @@ struct Observer{M}
     _has_comps::Bool
     _has_with::Bool
     _has_without::Bool
+    _is_exclusive::Bool
     _fn::FunctionWrapper{Nothing,Tuple{Entity}}
 end
 
-mutable struct _EventManager{M}
-    const observers::Vector{Vector{Observer{M}}}
+mutable struct _EventManager{W<:_AbstractWorld,M}
+    const observers::Vector{Vector{Observer{W,M}}}
     const comps::Vector{Tuple{_Mask{M},Bool}}
     const with::Vector{Tuple{_Mask{M},Bool}}
     num_observers::Int
     max_event_type::Int
 end
 
-function _EventManager{M}() where M
+function _EventManager{W,M}() where {W<:_AbstractWorld,M}
     len = typemax(UInt8)
-    _EventManager{M}(
-        [Vector{Observer{M}}() for _ in 1:len],
+    _EventManager{W,M}(
+        [Vector{Observer{W,M}}() for _ in 1:len],
         [(_Mask{M}(), false) for _ in 1:len],
         [(_Mask{M}(), false) for _ in 1:len],
         0, 0,
@@ -141,7 +167,7 @@ function _add_observer!(m::_EventManager, o::Observer)
     m.comps[e] = (comps, any_no_comps)
 end
 
-function _remove_observer!(m::_EventManager{M}, o::Observer{M}) where M
+function _remove_observer!(m::_EventManager{W,M}, o::Observer{W,M}) where {W<:_AbstractWorld,M}
     if o._id.id == 0
         throw(InvalidStateException("observer is not registered", :observer_not_registered))
     end
