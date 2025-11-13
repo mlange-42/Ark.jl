@@ -3,6 +3,12 @@ function setup_query_create(n)
     world = World(Position, Velocity)
     queries = Vector{Query}(undef, n)
 
+    for i in 1:n
+        query = @Query(world, (Position, Velocity))
+        close!(query)
+        queries[i] = query
+    end
+
     return world, queries
 end
 
@@ -14,6 +20,7 @@ function benchmark_query_create(args, n)
         close!(query)
         queries[i] = query
     end
+
     return queries
 end
 
