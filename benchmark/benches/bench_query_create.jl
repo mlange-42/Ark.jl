@@ -1,20 +1,24 @@
 
 function setup_query_create(n)
     world = World(Position, Velocity)
-    queries = Vector{Query}(undef, n)
-
-    return world, queries
-end
-
-function benchmark_query_create(args, n)
-    world, queries = args
 
     for i in 1:n
         query = @Query(world, (Position, Velocity))
         close!(query)
-        queries[i] = query
     end
-    return queries
+
+    return world
+end
+
+function benchmark_query_create(args, n)
+    world = args
+
+    for i in 1:n
+        query = @Query(world, (Position, Velocity))
+        close!(query)
+    end
+
+    return world
 end
 
 SUITE["benchmark_query_create n=1000"] =

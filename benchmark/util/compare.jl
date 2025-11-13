@@ -80,8 +80,10 @@ function table_to_html(data::Vector{CompareRow})::String
     html = """
     <details>
     <summary>Click to expand benchmark results</summary>
+    <p>
     Time is per entity/N, allocations are totals.
     Allocations are only shown for current.
+    </p>
     <table>
       <thead>
         <tr>
