@@ -1393,6 +1393,15 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
     _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
 end
 
+"""
+    reset!(world::World)
+
+Removes all entities and resources from the world, and un-registers all observers.
+Does NOT free reserved memory or remove archetypes.
+
+Can be used to run systematic simulations without the need to re-allocate memory for each run.
+Accelerates re-populating the world by a factor of 2-3.
+"""
 function reset!(world::W) where {W<:World}
     _check_locked(world)
 
