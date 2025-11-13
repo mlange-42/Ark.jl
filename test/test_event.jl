@@ -6,6 +6,10 @@
     @test e1._id == 5
     @test e2._id == 6
 
+    @test string(reg) == "6-events EventRegistry()
+ [:OnCreateEntity, :OnRemoveEntity, :OnAddComponents, :OnRemoveComponents, :Event1, :Event2]
+"
+
     @test_throws "there is already an event with symbol :Event1" new_event_type!(reg, :Event1)
 
     cnt = 0
@@ -23,7 +27,6 @@
     @test OnAddComponents._id == 3
     @test OnRemoveComponents._id == 4
 
-    @test string(reg) == "255-events EventRegistry()"
     @test string(OnCreateEntity) == "EventType(:OnCreateEntity)"
 end
 

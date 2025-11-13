@@ -53,7 +53,10 @@ function EventRegistry()
 end
 
 function Base.show(io::IO, reg::EventRegistry)
+    symbols = map(x -> ":$(x[1])", (sort(collect(reg._event_types), by=x -> x[2])))
+
     print(io, "$(length(reg._event_types))-events EventRegistry()")
+    print(io, "\n [$(join(symbols, ", "))]\n")
 end
 
 """
