@@ -22,7 +22,7 @@ const IS_CI = "CI" in keys(ENV)
 const IMAGE_PATH = string(dirname(dirname(pathof(Ark)))) * "/docs/src/assets/preview.png"
 
 function __init__()
-    world = World(Position, Velocity, Target)
+    world = World(Position, Velocity, Target; initial_capacity=4096)
 
     add_resource!(world, WorldSize(1000, 600))
     add_resource!(world, ArkLogo(PNGFiles.load(IMAGE_PATH)[1:2:end, 1:2:end]))

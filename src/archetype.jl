@@ -8,11 +8,11 @@ struct _Archetype{M}
 end
 
 function _Archetype(id::UInt32, node::_GraphNode)
-    _Archetype(Entities(), Vector{UInt8}(), node.mask, node, id)
+    _Archetype(Entities(0), Vector{UInt8}(), node.mask, node, id)
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, components::UInt8...)
-    _Archetype(Entities(), collect(UInt8, components), node.mask, node, id)
+function _Archetype(id::UInt32, node::_GraphNode, cap::Int, components::UInt8...)
+    _Archetype(Entities(cap), collect(UInt8, components), node.mask, node, id)
 end
 
 function _add_entity!(arch::_Archetype, entity::Entity)::Int

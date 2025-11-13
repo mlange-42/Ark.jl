@@ -5,9 +5,9 @@ mutable struct _EntityPool
     available::UInt32
 end
 
-function _EntityPool(initialCap::UInt32)
+function _EntityPool(cap::UInt32)
     v = [_new_entity(UInt32(0), typemax(UInt32))]
-    sizehint!(v, initialCap)
+    sizehint!(v, cap)
 
     return _EntityPool(v, 0, 0)
 end

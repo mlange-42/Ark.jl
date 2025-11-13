@@ -22,16 +22,22 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager{M}
+    const _initial_capacity::Int
 end
 
 """
-    World(comp_types::Type...; allow_mutable::Bool=false)
+    World(
+        comp_types::Type...;
+        initial_capacity::Int=128,
+        allow_mutable::Bool=false,
+    )
 
 Creates a new, empty [`World`](@ref) for the given component types.
 
 # Arguments
 
   - `comp_types`: The component types used by the world.
+  - `initial_capacity`: Initial capacity for entities in each archetype and in the entity index.
   - `allow_mutable`: Allows mutable components. Use with care, as all mutable objects are heap-allocated in Julia.
 
 # Example
@@ -44,11 +50,11 @@ world = World(Position, Velocity)
 
 ```
 """
-function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; allow_mutable=false)
+function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity::Int=128, allow_mutable=false)
     types = map(arg -> arg isa Type ? arg : arg.first, comp_types)
     storages = map(arg -> arg isa Type ? VectorStorage : arg.second, comp_types)
 
-    _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable))
+    _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable), initial_capacity)
 end
 
 @generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
@@ -87,16 +93,16 @@ end
 
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
     components = _active_bit_indices(node.mask)
-    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, components...)
+    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, world._initial_capacity, components...)
     push!(world._archetypes, arch)
 
     index = length(world._archetypes)
     node.archetype = UInt32(index)
 
-    _push_nothing_to_all!(world)
+    _push_empty_to_all!(world)
 
     for comp in components
-        _assign_new_column_for_comp!(world, comp, index)
+        _activate_new_column_for_comp!(world, comp, index)
         push!(world._index.components[comp], arch)
     end
 
@@ -1039,7 +1045,12 @@ end
     end
 end
 
-@generated function _World_from_types(::Val{CS}, ::Val{ST}, ::Val{MUT}) where {CS<:Tuple,ST<:Tuple,MUT}
+@generated function _World_from_types(
+    ::Val{CS},
+    ::Val{ST},
+    ::Val{MUT},
+    initial_capacity::Int,
+) where {CS<:Tuple,ST<:Tuple,MUT}
     types = CS.parameters
     storage_val_types = ST.parameters
     allow_mutable = MUT::Bool
@@ -1109,8 +1120,11 @@ end
         registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph{$(M)}()
+        index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
+        sizehint!(index, initial_capacity)
+
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
-            [_EntityIndex(typemax(UInt32), 0)],
+            index,
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex{$(M)}($(length(types))),
@@ -1120,11 +1134,12 @@ end
             graph,
             Dict{DataType,Any}(),
             _EventManager{$(M)}(),
+            initial_capacity,
         )
     end
 end
 
-@generated function _push_nothing_to_all!(world::World{CS}) where {CS<:Tuple}
+@generated function _push_empty_to_all!(world::World{CS}) where {CS<:Tuple}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -1133,13 +1148,13 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _assign_new_column_for_comp!(world::World{CS}, comp::UInt8, index::Int) where {CS}
+@generated function _activate_new_column_for_comp!(world::World{CS}, comp::UInt8, index::Int) where {CS}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(
             if comp == $i
-                _assign_column!(world._storages.$i, index)
+                _activate_column!(world._storages.$i, index, world._initial_capacity)
             end
         ))
     end

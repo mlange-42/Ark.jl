@@ -68,6 +68,14 @@ end
     return Expr(:block, resize_exprs..., inc_length, :(sa))
 end
 
+@generated function Base.sizehint!(sa::_StructArray{C}, n::Integer) where {C}
+    names = fieldnames(C)
+    sizehint_exprs = [
+        :(sizehint!(sa._components.$name, n)) for name in names
+    ]
+    return Expr(:block, sizehint_exprs..., :(sa))
+end
+
 @generated function Base.push!(sa::_StructArray{C}, c::C) where {C}
     names = fieldnames(C)
     push_exprs = [
