@@ -1,7 +1,10 @@
 
 function setup_query_create(n)
     world = World(Position, Velocity)
-    queries = Vector{Query}(undef, n)
+
+    query = @Query(world, (Position, Velocity))
+    queries = Vector{typeof(query)}(undef, n)
+    close!(query)
 
     for i in 1:n
         query = @Query(world, (Position, Velocity))
