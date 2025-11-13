@@ -14,6 +14,7 @@
 - Adds storage modes Vector and StructArray, which can be selected per component type (#207, #225)
 - Adds field view, so field access for query columns works equally for Vector and StructArray storages (#213)
 - Adds `@copy_entity!` for copying an entity and optionally adding and removing components (#262, #266)
+- Adds keyword argument `initial_capacity` to World constructor (#288)
 
 ### Performance
 
@@ -28,6 +29,7 @@
 
 - Improves error messages when passing components types as `(A, B)` instead of the required `Val.((A, B))` (#191)
 - Checks for duplicate components on query construction (#255)
+- Improves string representations of all exposed types (#275)
 
 ## [[v0.1.0]](https://github.com/mlange-42/Ark.jl/tree/v0.1.0)
 
