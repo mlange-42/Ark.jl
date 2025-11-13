@@ -1101,7 +1101,7 @@ end
             storage_exprs[i] = :(_new_struct_array_storage($T))
         else
             storage_types[i] = :(_ComponentStorage{$T,Vector{$T}})
-            storage_exprs[i] = :(_new_vector_storage($T, initial_capacity))
+            storage_exprs[i] = :(_new_vector_storage($T))
         end
     end
 
@@ -1126,7 +1126,7 @@ end
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             $storage_tuple,
-            [_Archetype(UInt32(1), graph.nodes[1], 0)],
+            [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),

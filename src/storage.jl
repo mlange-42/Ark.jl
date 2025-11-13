@@ -3,7 +3,7 @@ struct _ComponentStorage{C,A<:AbstractArray{C,1}}
     data::Vector{A}
 end
 
-function _new_vector_storage(::Type{C}, cap::Int) where {C}
+function _new_vector_storage(::Type{C}) where {C}
     _ComponentStorage{C,Vector{C}}([Vector{C}()])
 end
 
