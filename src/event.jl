@@ -14,15 +14,20 @@ See [EventRegistry](@ref) for creating custom event types.
 """
 struct EventType
     _id::UInt8
+    _symbol::Symbol
 
-    EventType(id::UInt8) = new(id)
+    EventType(id::UInt8, symbol::Symbol) = new(id, symbol)
 end
 
-const OnCreateEntity::EventType = EventType(UInt8(1))
-const OnRemoveEntity::EventType = EventType(UInt8(2))
-const OnAddComponents::EventType = EventType(UInt8(3))
-const OnRemoveComponents::EventType = EventType(UInt8(4))
-const _custom_events::EventType = EventType(UInt8(5))
+function Base.show(io::IO, evt::EventType)
+    print(io, "EventType(:$(evt._symbol))")
+end
+
+const OnCreateEntity::EventType = EventType(UInt8(1), :OnCreateEntity)
+const OnRemoveEntity::EventType = EventType(UInt8(2), :OnRemoveEntity)
+const OnAddComponents::EventType = EventType(UInt8(3), :OnAddComponents)
+const OnRemoveComponents::EventType = EventType(UInt8(4), :OnRemoveComponents)
+const _custom_events::EventType = EventType(UInt8(5), :custom_event)
 
 """
     EventRegistry
@@ -30,7 +35,7 @@ const _custom_events::EventType = EventType(UInt8(5))
 Serves for creating custom event types.
 """
 mutable struct EventRegistry
-    _next_index::UInt8
+    _event_types::Dict{Symbol,UInt8}
 end
 
 """
@@ -39,25 +44,41 @@ end
 Creates a new [EventRegistry](@ref).
 """
 function EventRegistry()
-    EventRegistry(_custom_events._id - 1)
+    reg = EventRegistry(Dict{Symbol,UInt8}())
+    new_event_type!(reg, :OnCreateEntity)
+    new_event_type!(reg, :OnRemoveEntity)
+    new_event_type!(reg, :OnAddComponents)
+    new_event_type!(reg, :OnRemoveComponents)
+    reg
 end
 
 function Base.show(io::IO, reg::EventRegistry)
-    print(io, "$(reg._next_index)-events EventRegistry()")
+    print(io, "$(length(reg._event_types))-events EventRegistry()")
 end
 
 """
-    new_event_type!(reg::EventRegistry)
+    new_event_type!(reg::EventRegistry, symbol::Symbol)
 
 Creates a new custom [EventType](@ref).
 Custom event types are best stored in global constants.
+
+The symbol is only used for printing.
 """
-function new_event_type!(reg::EventRegistry)
-    if reg._next_index == typemax(UInt8)
-        throw(InvalidStateException("reached maximum number of $(reg._next_index) event types", :events_exhausted))
+function new_event_type!(reg::EventRegistry, symbol::Symbol)
+    if length(reg._event_types) == typemax(UInt8)
+        throw(
+            InvalidStateException(
+                "reached maximum number of $(length(reg._event_types)) event types",
+                :events_exhausted,
+            ),
+        )
     end
-    reg._next_index += 1
-    return EventType(reg._next_index)
+    if haskey(reg._event_types, symbol)
+        throw(ArgumentError("there is already an event with symbol :$symbol"))
+    end
+    id = length(reg._event_types) + 1
+    reg._event_types[symbol] = id
+    return EventType(UInt8(id), symbol)
 end
 
 mutable struct _ObserverID

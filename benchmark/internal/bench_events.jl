@@ -1,6 +1,6 @@
 function setup_event_no_obs(n::Int)
     reg = EventRegistry()
-    evt = new_event_type!(reg)
+    evt = new_event_type!(reg, :Event)
 
     world = World(Position)
 
@@ -24,7 +24,7 @@ SUITE["benchmark_event_no_obs n=1000"] = @be setup_event_no_obs(1000) benchmark_
 
 function setup_event_no_match(n::Int)
     reg = EventRegistry()
-    evt = new_event_type!(reg)
+    evt = new_event_type!(reg, :Event)
 
     world = World(Position, Velocity)
 
@@ -52,7 +52,7 @@ SUITE["benchmark_event_no_match n=1000"] =
 
 function setup_event_match_1(n::Int)
     reg = EventRegistry()
-    evt = new_event_type!(reg)
+    evt = new_event_type!(reg, :Event)
 
     world = World(Position, Velocity)
 
@@ -80,7 +80,7 @@ SUITE["benchmark_event_match_1 n=1000"] =
 
 function setup_event_match_1_of_5(n::Int)
     reg = EventRegistry()
-    evt = new_event_type!(reg)
+    evt = new_event_type!(reg, :Event)
 
     world = World(Position, Velocity)
 
@@ -113,7 +113,7 @@ SUITE["benchmark_event_match_1_of_5 n=1000"] =
 
 function setup_event_capture(n::Int)
     reg = EventRegistry()
-    evt = new_event_type!(reg)
+    evt = new_event_type!(reg, :Event)
 
     world = World(Position, Velocity)
 

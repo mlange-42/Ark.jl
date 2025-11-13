@@ -210,14 +210,14 @@ Define custom event types using an [EventRegistry](@ref EventRegistry) and [new_
 registry = EventRegistry()
 
 # Create event types
-const OnCollisionDetected = new_event_type!(registry)
-const OnInputReceived     = new_event_type!(registry)
-const OnLevelLoaded       = new_event_type!(registry)
-const OnTimerElapsed      = new_event_type!(registry)
+const OnCollisionDetected = new_event_type!(registry, :OnCollisionDetected)
+const OnInputReceived     = new_event_type!(registry, :OnInputReceived)
+const OnLevelLoaded       = new_event_type!(registry, :OnLevelLoaded)
+const OnTimerElapsed      = new_event_type!(registry, :OnTimerElapsed)
 
 # output
 
-EventType(0x08)
+EventType(:OnTimerElapsed)
 ```
 
 Ideally, custom event types are stored as global variables of the applications.
@@ -226,7 +226,7 @@ Use [@emit_event!](@ref) to emit custom events:
 
 ```jldoctest; output=false
 registry = EventRegistry()
-const OnTeleport = new_event_type!(registry)
+const OnTeleport = new_event_type!(registry, :OnTeleport)
 
 # Add an observer for the event type
 @observe!(world, OnTeleport, (Position,)) do entity
@@ -245,7 +245,7 @@ This is also supported by custom events:
 
 ```jldoctest; output=false
 registry = EventRegistry()
-const OnClick = new_event_type!(registry)
+const OnClick = new_event_type!(registry, :OnClick)
 
 @emit_event!(world, OnClick, ui_element)
 
@@ -257,7 +257,7 @@ Note that custom events can also be emitted for the [zero entity](@ref zero_enti
 
 ```jldoctest; output=false
 registry = EventRegistry()
-const OnGameOver = new_event_type!(registry)
+const OnGameOver = new_event_type!(registry, :OnGameOver)
 
 @emit_event!(world, OnGameOver, zero_entity)
 
