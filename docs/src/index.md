@@ -26,7 +26,9 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 ## Features
 
 - Designed for [performance](@ref Benchmarks) and highly optimized.
-- Well-documented, type-safe [API](@ref).
+- Well-documented, type-stable [API](@ref).
+- Extensible [event system](@ref "Event system") with filtering and custom event types.
+- [Storage mode](@ref component-storages) per component for ergonomics and SIMD.
 - Blazing fast [batch entity creation](@ref creating-entities).
 - No [systems](@ref Systems). Just [queries](@ref Queries). Use your own structure.
 - Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
