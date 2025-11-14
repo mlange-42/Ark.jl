@@ -263,11 +263,7 @@ end
 
     @inferred Tuple{
         Entities,
-        FieldViews.FieldViewable{
-            Position,
-            1,
-            SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-        },
+        FieldViews.FieldViewable{Position,1,Vector{Position}},
         Ark.StructArrayView{
             Velocity,
             @NamedTuple{
@@ -277,14 +273,7 @@ end
             UnitRange{Int64},
         },
         Union{Nothing,SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
-        Union{
-            Nothing,
-            FieldViews.FieldViewable{
-                Altitude,
-                1,
-                SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-            },
-        },
+        Union{Nothing,FieldViews.FieldViewable{Altitude,1,Vector{Altitude}}},
     } Base.eltype(typeof(query))
 
     cnt = 0

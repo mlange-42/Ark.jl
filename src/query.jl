@@ -263,13 +263,13 @@ end
 
         if is_optional[i] === Val{true}
             if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
-                push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : FieldViewable(view($col_sym, :))))
+                push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : FieldViewable($col_sym)))
             else
                 push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
             end
         else
             if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
-                push!(exprs, :($vec_sym = FieldViewable(view($col_sym, :))))
+                push!(exprs, :($vec_sym = FieldViewable($col_sym)))
             else
                 push!(exprs, :($vec_sym = view($col_sym, :)))
             end
@@ -305,7 +305,7 @@ Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
         T = comp_types[i]
 
         base_view = if isbitstype(T) && storage_modes[i] == VectorStorage
-            _FieldsViewable_type(SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int}}},true})
+            _FieldsViewable_type(Vector{T})
         elseif isbitstype(T)
             _StructArrayView_type(T, UnitRange{Int})
         else
