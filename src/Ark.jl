@@ -1,5 +1,6 @@
 module Ark
 
+using FieldViews
 using StaticArrays
 using FunctionWrappers: FunctionWrapper
 
