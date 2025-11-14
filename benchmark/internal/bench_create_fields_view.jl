@@ -1,15 +1,15 @@
-using Ark: _new_fields_view, _StructArray
+using Ark: _StructArray
 
 function setup_create_view_fields()
     vec = [Position(0, 0), Position(0, 0), Position(0, 0), Position(0, 0), Position(0, 0)]
     v = view(vec, :)
-    fv = _new_fields_view(v)
+    fv = FieldViewable(v)
     return vec, fv
 end
 
 function benchmark_create_view_fields(args)
     vec, _ = args
-    fv = _new_fields_view(view(vec, :))
+    fv = FieldViewable(view(vec, :))
     return fv
 end
 

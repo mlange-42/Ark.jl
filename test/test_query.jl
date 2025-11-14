@@ -14,8 +14,8 @@
         @test query._has_excluded == false
         count = 0
         for (entities, vec_pos, vec_vel) in query
-            @test isa(vec_pos, FieldsView{Position}) == true
-            @test isa(vec_vel, FieldsView{Velocity}) == true
+            @test isa(vec_pos, FieldViewable{Position}) == true
+            @test isa(vec_vel, FieldViewable{Velocity}) == true
             @test length(entities) == length(vec_pos)
             @test length(entities) == length(vec_vel)
             for i in eachindex(vec_pos)
@@ -205,7 +205,7 @@ end
     end
 end
 
-@testset "Query FieldsView" begin
+@testset "Query FieldViewable" begin
     world = World(
         Dummy,
         Position,
@@ -227,7 +227,7 @@ end
     end
 
     for (_, positions, no_isbits) in @Query(world, (Position, NoIsBits))
-        @test positions isa FieldsView
+        @test positions isa FieldViewable
         @test no_isbits isa SubArray
     end
 end
@@ -263,24 +263,10 @@ end
 
     @inferred Tuple{
         Entities,
-        Ark.FieldsView{
+        FieldViews.FieldViewable{
             Position,
+            1,
             SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-            @NamedTuple{
-                x::Ark.FieldView{
-                    Float64,
-                    Position,
-                    Val{:x},
-                    SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-                },
-                y::Ark.FieldView{
-                    Float64,
-                    Position,
-                    Val{:y},
-                    SubArray{Position,1,Vector{Position},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-                },
-            },
-            2,
         },
         Ark.StructArrayView{
             Velocity,
@@ -293,18 +279,10 @@ end
         Union{Nothing,SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
         Union{
             Nothing,
-            Ark.FieldsView{
+            FieldViews.FieldViewable{
                 Altitude,
-                SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-                @NamedTuple{
-                    alt::Ark.FieldView{
-                        Float64,
-                        Altitude,
-                        Val{:alt},
-                        SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-                    },
-                },
                 1,
+                SubArray{Altitude,1,Vector{Altitude},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
             },
         },
     } Base.eltype(typeof(query))
