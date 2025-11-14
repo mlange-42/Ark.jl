@@ -230,6 +230,13 @@ end
         @test positions isa FieldViewable
         @test no_isbits isa SubArray
     end
+
+    for columns in @Query(world, (Position, NoIsBits))
+        @unpack _, (x, y), no_isbits = columns
+        @test x isa FieldView
+        @test y isa FieldView
+        @test no_isbits isa SubArray
+    end
 end
 
 @testset "Query duplicates" begin
