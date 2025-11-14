@@ -436,7 +436,9 @@ end
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in @new_entities!(world, 100, (Position, Velocity))
+    batch = @new_entities!(world, 100, (Position, Velocity))
+    @test length(batch) == 100
+    for (ent, pos_col, vel_col) in batch
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100

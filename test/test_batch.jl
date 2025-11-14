@@ -40,6 +40,7 @@
             _BatchArchetype(world._archetypes[2], UInt32(1), UInt32(1)),
             _BatchArchetype(world._archetypes[3], UInt32(1), UInt32(1)),
         ], _QueryLock(false), _lock(world._lock))
+    @test length(batch) == 2
 
     close!(batch)
     # test closed batch
