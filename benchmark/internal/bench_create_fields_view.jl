@@ -1,15 +1,15 @@
 using Ark: _StructArray
+using FieldViews
 
 function setup_create_view_fields()
     vec = [Position(0, 0), Position(0, 0), Position(0, 0), Position(0, 0), Position(0, 0)]
-    v = view(vec, :)
-    fv = FieldViewable(v)
+    fv = FieldViewable(vec)
     return vec, fv
 end
 
 function benchmark_create_view_fields(args)
     vec, _ = args
-    fv = FieldViewable(view(vec, :))
+    fv = FieldViewable(vec)
     return fv
 end
 
