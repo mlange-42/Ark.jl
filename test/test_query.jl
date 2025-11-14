@@ -12,6 +12,7 @@
         query = @Query(world, (Position, Velocity))
         @test Base.IteratorSize(typeof(query)) == Base.SizeUnknown()
         @test query._has_excluded == false
+        @test length(query) == 10
         count = 0
         for (entities, vec_pos, vec_vel) in query
             @test isa(vec_pos, FieldViewable{Position}) == true
@@ -45,6 +46,7 @@ end
     end
 
     query = @Query(world, (Position, Velocity); with=(Altitude,))
+    @test length(query) == 10
 
     count = 0
     for (ent, vec_pos, vec_vel) in query
@@ -66,6 +68,7 @@ end
     end
 
     query = @Query(world, (Position, Velocity); without=(Altitude,))
+    @test length(query) == 10
 
     count = 0
     for (ent, vec_pos, vec_vel) in query
@@ -87,6 +90,7 @@ end
     end
 
     query = @Query(world, (Position, Velocity); optional=(Altitude,))
+    @test length(query) == 20
 
     count = 0
     indices = Vector{Int}()
@@ -122,6 +126,7 @@ end
 
     query = @Query(world, (Position, Velocity); with=(Altitude,), exclusive=true)
     @test query._has_excluded == true
+    @test length(query) == 10
 
     count = 0
     for (ent, vec_pos, vec_vel) in query
@@ -143,6 +148,7 @@ end
     end
 
     query = @Query(world, (Position, Velocity))
+    @test length(query) == 0
 
     count = 0
     arches = 0
@@ -165,6 +171,7 @@ end
     end
 
     query = @Query(world, ())
+    @test length(query) == 20
 
     count = 0
     arches = 0

@@ -67,6 +67,7 @@ Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Val)
 @Query
 close!(q::Query)
+length(q::Query)
 Entities
 @unpack
 unpack
@@ -93,6 +94,7 @@ Behaves like a [Query](@ref) and can be used for component initialization.
 ```@docs
 Batch
 close!(b::Batch)
+length(b::Batch)
 ```
 
 ## [Event system](@id events-api)

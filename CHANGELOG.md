@@ -16,6 +16,7 @@
 - Adds `@copy_entity!` for copying an entity and optionally adding and removing components (#262, #266)
 - Adds keyword argument `initial_capacity` to World constructor (#288)
 - Adds function `reset!` for resetting and reusing a world to avoid reallocations (#292)
+- Adds function `length` for queries and batches (#298)
 
 ### Performance
 

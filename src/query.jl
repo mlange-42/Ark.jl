@@ -209,7 +209,7 @@ end
 @inline function Base.iterate(q::Query, state::Int)
     while state <= length(q._archetypes)
         archetype = q._archetypes[state]
-        if length(archetype.entities) > 0 &&
+        if !isempty(archetype.entities) &&
            _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             result = _get_columns(q, state)
@@ -229,6 +229,32 @@ end
     q._q_lock.closed = true
 
     return Base.iterate(q, 1)
+end
+
+"""
+    length(q::Query)
+
+Returns the number of matching entities in the query.
+
+Does not iterate or [close!](@ref close!(::Query)) the query.
+
+!!! note
+
+    The time complexity is linear with the number of archetypes in the query's pre-selection.
+    It is equivalent to iterating the query's archetypes and summing up their lengths.
+"""
+function Base.length(q::Query)
+    count = 0
+    for archetype in q._archetypes
+        if isempty(archetype.entities)
+            continue
+        end
+        if _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+            count += length(archetype.entities)
+        end
+    end
+    count
 end
 
 """
