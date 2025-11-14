@@ -12,6 +12,7 @@
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue?logo=julia)](https://mlange-42.github.io/Ark.jl/stable/)
 [![Docs dev](https://img.shields.io/badge/docs-dev-blue?logo=julia)](https://mlange-42.github.io/Ark.jl/dev/)
 [![GitHub](https://img.shields.io/badge/github-repo-blue?logo=github)](https://github.com/mlange-42/ark)
+[![DOI:10.5281/zenodo.17512271](https://img.shields.io/badge/10.5281%2Fzenodo.17512271-blue?label=doi)](https://doi.org/10.5281/zenodo.17512271)
 [![MIT license](https://img.shields.io/badge/MIT-brightgreen?label=license)](https://github.com/mlange-42/ark/blob/main/LICENSE-MIT)
 [![Apache 2.0 license](https://img.shields.io/badge/Apache%202.0-brightgreen?label=license)](https://github.com/mlange-42/ark/blob/main/LICENSE-APACHE)
 
@@ -57,3 +58,7 @@ Depth = 2:2
 ```@index
 Pages = ["api.md"]
 ```
+
+## Cite as
+
+Lange, M. & Meligrana, A. (2025): Ark.jl – An archetype-based Entity Component System for Julia. DOI: [10.5281/zenodo.17512271](https://doi.org/10.5281/zenodo.17512271), GitHub repository: [https://github.com/mlange-42/Ark.jl](https://github.com/mlange-42/Ark.jl)
