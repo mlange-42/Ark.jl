@@ -235,7 +235,7 @@ end
     if length(q._ids) != 0
         comps = q._world._index.components
         rare_component = argmin(length(comps[i]) for i in q._ids)
-        q._cursor._archetypes = comps[rare_component]
+        q._cursor._archetypes = comps[q._ids[rare_component]]
     end
     q._cursor._lock = _lock(q._world._lock)
     return Base.iterate(q, 1)
