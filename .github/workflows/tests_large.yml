@@ -32,5 +32,7 @@ jobs:
       with:
         julia-version: ${{ matrix.version }}
         project-file: './Project.toml'
+    - name: Develop Ark
+      run: julia --project=test 'using Pkg; Pkg.develop(path=".")'
     - name: Run tests
-      run: julia --project=. run_tests.jl --large-world
+      run: julia --project=test run_tests.jl --large-world
