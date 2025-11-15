@@ -9,7 +9,7 @@ FunctionWrappers = "069b7b12-0de2-55c6-9aab-29f3d0a68a2e"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-FieldViews = "0.2.3"
+FieldViews = "0.3"
 FunctionWrappers = "1"
 StaticArrays = "1"
 julia = "1.10"
