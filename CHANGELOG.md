@@ -1,6 +1,6 @@
 # Changelog
 
-## [[unpublished]](https://github.com/mlange-42/Ark.jl/compare/v0.1.0...main)
+## [[unpublished]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...main)
 
 ### Breaking changes
 
@@ -32,6 +32,12 @@
 - Improves error messages when passing components types as `(A, B)` instead of the required `Val.((A, B))` (#191)
 - Checks for duplicate components on query construction (#255)
 - Improves string representations of all exposed types (#275)
+
+## [[v0.1.1]](https://github.com/mlange-42/Ark.jl/compare/v0.1.0...v0.1.1)
+
+### Bugfixes
+
+- Fix broken archetype pre-selection in queries (#301)
 
 ## [[v0.1.0]](https://github.com/mlange-42/Ark.jl/tree/v0.1.0)
 
