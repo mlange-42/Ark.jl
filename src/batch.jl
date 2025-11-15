@@ -107,7 +107,7 @@ end
         push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
 
-        if !(ismutabletype(comp_types[i])) && storage_modes[i] == VectorStorage
+        if !ismutabletype(comp_types[i]) && storage_modes[i] == VectorStorage
             push!(exprs, :($vec_sym = FieldViewable(view($col_sym, arch.start_idx:arch.end_idx))))
         else
             push!(exprs, :($vec_sym = view($col_sym, arch.start_idx:arch.end_idx)))
