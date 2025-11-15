@@ -101,7 +101,7 @@ Components are stored in [archetypes](@ref Architecture),
 with the values for each component type stored in a separate array-like column.
 For these columns, Ark offers two storage modes:
 
-- **Vector storage** stores component object in a simple vector per column. This is the default.
+- **Vector storage** stores component objects in a simple vector per column. This is the default.
 
 - **StructArray storage** stores components in an SoA data structure similar to  
   [StructArrays](https://github.com/JuliaArrays/StructArrays.jl).  
