@@ -668,11 +668,21 @@ Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples
   - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
   - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `:copy`. Modes are :ref, :copy, :deepcopy.
 
-# Example
+# Examples
+
+Simple copy of an entity:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity1 = @copy_entity!(world, entity)
 
+# output
+
+Entity(3, 0)
+```
+
+Copy an entity, adding and removing some components in the same operation:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity2 = @copy_entity!(world, entity;
     add=(Health(100),),
     remove=(Position, Velocity),
@@ -680,7 +690,7 @@ entity2 = @copy_entity!(world, entity;
 
 # output
 
-Entity(4, 0)
+Entity(3, 0)
 ```
 """
 macro copy_entity!(world_expr, entity_expr)
@@ -726,11 +736,21 @@ For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provide
   - `remove::Tuple`: Component types to remove, like `Val.((Position,Velocity))`.
   - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `Val(:copy)`. Modes are :ref, :copy, :deepcopy.
 
-# Example
+# Examples
+
+Simple copy of an entity:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity1 = copy_entity!(world, entity)
 
+# output
+
+Entity(3, 0)
+```
+
+Copy an entity, adding and removing some components in the same operation:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity2 = copy_entity!(world, entity;
     add=(Health(100),),
     remove=Val.((Position, Velocity)),
@@ -738,7 +758,7 @@ entity2 = copy_entity!(world, entity;
 
 # output
 
-Entity(4, 0)
+Entity(3, 0)
 ```
 """
 @inline function copy_entity!(
@@ -1483,6 +1503,15 @@ Macro version of [`emit_event!`](@ref) that allows more ergonomic event construc
   - `event::EventType`: The [EventType](@ref) to emit.
   - `entity::Entity`: The [Entity](@ref) to emit the event for.
   - `components::Tuple=()`: The component types to emit the event for. Optional.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+@emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
+
+# output
+
+```
 """
 macro emit_event!(world_expr, event_expr, entity_expr, comps_expr=())
     quote
@@ -1507,6 +1536,15 @@ For a more convenient tuple syntax, the macro [`@emit_event!`](@ref) is provided
   - `event::EventType`: The [EventType](@ref) to emit.
   - `entity::Entity`: The [Entity](@ref) to emit the event for.
   - `components::Tuple=()`: The component types to emit the event for. Optional.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+emit_event!(world, OnCollisionDetected, entity, Val.((Position, Velocity)))
+
+# output
+
+```
 """
 function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple=()) where {W<:World}
     if event._id < _custom_events._id

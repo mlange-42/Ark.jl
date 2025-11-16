@@ -20,6 +20,9 @@ struct Health
     h::Float64
 end
 
+registry = EventRegistry()
+const OnCollisionDetected = new_event_type!(registry, :OnCollisionDetected)
+
 world = World(Position, Velocity, Altitude, Health)
 
 entity = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
