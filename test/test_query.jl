@@ -270,13 +270,14 @@ end
         Altitude,
         NoIsBits,
         Int64,
+        Float64,
     )
 
     for i in 1:10
-        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([]), Int64(1)))
+        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([]), Int64(1), Float64(1.0)))
     end
 
-    query = @Query(world, (Position, Velocity, Int64); optional=(NoIsBits, Altitude))
+    query = @Query(world, (Position, Velocity, Int64); optional=(NoIsBits, Altitude, Float64))
 
     @inferred Tuple{
         Entities,
@@ -292,6 +293,7 @@ end
         SubArray{Int64,1,Vector{Int64},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
         Union{Nothing,FieldViews.FieldViewable{NoIsBits,1,Vector{NoIsBits}}},
         Union{Nothing,FieldViews.FieldViewable{Altitude,1,Vector{Altitude}}},
+        Union{Nothing,SubArray{Int64,1,Vector{Float64},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
     } Base.eltype(typeof(query))
 
     expected_type = Base.eltype(typeof(query))
