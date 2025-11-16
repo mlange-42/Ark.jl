@@ -293,7 +293,7 @@ end
         SubArray{Int64,1,Vector{Int64},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
         Union{Nothing,FieldViews.FieldViewable{NoIsBits,1,Vector{NoIsBits}}},
         Union{Nothing,FieldViews.FieldViewable{Altitude,1,Vector{Altitude}}},
-        Union{Nothing,SubArray{Int64,1,Vector{Float64},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
+        Union{Nothing,SubArray{Float64,1,Vector{Float64},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
     } Base.eltype(typeof(query))
 
     expected_type = Base.eltype(typeof(query))
