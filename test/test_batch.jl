@@ -63,3 +63,36 @@ end
     batch = @new_entities!(world, 100, (Position, Velocity))
     @test string(batch) == "Batch(entities=100, comp_types=(Position, Velocity))"
 end
+
+@testset "Batch eltype" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity => StructArrayStorage,
+        Altitude,
+        NoIsBits,
+        Int64,
+    )
+
+    batch =
+        new_entities!(world, 100, (Position(1, 1), Velocity(1, 1), Altitude(0), NoIsBits([]), Int64(1)); iterate=true)
+
+    @inferred Tuple{
+        SubArray{Entity,1,Entities,Tuple{UnitRange{UInt32}},true},
+        FieldViews.FieldViewable{Position,1,SubArray{Position,1,Vector{Position},Tuple{UnitRange{UInt32}},true}},
+        Ark.StructArrayView{
+            Velocity,
+            @NamedTuple{
+                dx::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{UInt32}},true},
+                dy::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{UInt32}},true},
+            },
+            UnitRange{UInt32},
+        },
+        FieldViews.FieldViewable{Altitude,1,SubArray{Altitude,1,Vector{Altitude},Tuple{UnitRange{UInt32}},true}},
+        FieldViews.FieldViewable{NoIsBits,1,SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{UnitRange{UInt32}},true}},
+        SubArray{Int64,1,Vector{Int64},Tuple{UnitRange{UInt32}},true},
+    } Base.eltype(typeof(batch))
+
+    expected_type = Base.eltype(typeof(batch))
+    @inferred Union{Nothing,Tuple{expected_type,Any}} Base.iterate(batch)
+end

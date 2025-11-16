@@ -8,6 +8,11 @@ end
 
 Unpacks the components (i.e. field vectors) of a [VectorStorage](@ref) column returned from a [Query](@ref).
 See also [@unpack](@ref).
+
+!!! note
+
+    Setting values on unpacked non-isbits fields of immutable components has a certain overhead,
+    as the underlying struct needs to be reconstructed and written to memory. See
 """
 @generated function unpack(v::FieldViewable{T}) where {T}
     props = fieldnames(T)

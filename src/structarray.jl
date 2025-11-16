@@ -257,6 +257,10 @@ Field vectors are particularly useful for [StructArrayStorage](@ref)s,
 but can also be used with [VectorStorage](@ref)s, although those are currently not
 equally efficient in broadcasted operations.
 
+Columns for components without fields, like primitives or label components, fall through `@unpack` unaltered.
+
+See also [unpack(::StructArrayView)](@ref) and [unpack(::StructArrayView)](@ref unpack(::FieldViewable)).
+
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false

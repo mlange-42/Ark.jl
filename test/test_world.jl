@@ -81,6 +81,14 @@ end
     @test_throws(
         "ArgumentError: Health is not a valid storage mode, must be StructArrayStorage or VectorStorage",
         World(Position, Velocity, Altitude => Health))
+
+    @test_throws(
+        "ArgumentError: can't use StructArrayStorage for Int64 because it has no fields",
+        World(Int64 => StructArrayStorage))
+
+    @test_throws(
+        "ArgumentError: can't use StructArrayStorage for LabelComponent because it has no fields",
+        World(LabelComponent => StructArrayStorage))
 end
 
 @testset "World creation large" begin

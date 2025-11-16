@@ -1055,19 +1055,22 @@ end
     storage_val_types = ST.parameters
     allow_mutable = MUT::Bool
 
-    for T in types
+    for (T, mode) in zip(types, storage_val_types)
         if !isconcretetype(T)
             throw(
                 ArgumentError("can't use $(nameof(T)) as component as it is not a concrete type"),
             )
         end
-    end
-    for mode in storage_val_types
         if !(mode <: StructArrayStorage || mode <: VectorStorage)
             throw(
                 ArgumentError(
                     "$(nameof(mode)) is not a valid storage mode, must be StructArrayStorage or VectorStorage",
                 ),
+            )
+        end
+        if mode <: StructArrayStorage && fieldcount(T) == 0
+            throw(
+                ArgumentError("can't use StructArrayStorage for $(nameof(T)) because it has no fields"),
             )
         end
     end

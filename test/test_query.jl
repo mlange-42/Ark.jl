@@ -218,10 +218,11 @@ end
         Position,
         Velocity => StructArrayStorage,
         NoIsBits,
+        Int64,
     )
 
     for i in 1:10
-        new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([])))
+        new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([]), Int64(1)))
     end
 
     for columns in @Query(world, (Position, Velocity))
@@ -233,16 +234,18 @@ end
         @test x[10] == 10
     end
 
-    for (_, positions, no_isbits) in @Query(world, (Position, NoIsBits))
+    for (_, positions, no_isbits, int) in @Query(world, (Position, NoIsBits, Int64))
         @test positions isa FieldViewable
-        @test no_isbits isa SubArray
+        @test no_isbits isa FieldViewable
+        @test int isa SubArray
     end
 
-    for columns in @Query(world, (Position, NoIsBits))
-        @unpack _, (x, y), no_isbits = columns
+    for columns in @Query(world, (Position, NoIsBits, Int64))
+        @unpack _, (x, y), (vec,), int = columns
         @test x isa FieldView
         @test y isa FieldView
-        @test no_isbits isa SubArray
+        @test vec isa FieldView
+        @test int isa SubArray
     end
 end
 
@@ -266,14 +269,15 @@ end
         Velocity => StructArrayStorage,
         Altitude,
         NoIsBits,
+        Int64,
+        Float64,
     )
 
     for i in 1:10
-        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([])))
+        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([]), Int64(1), Float64(1.0)))
     end
 
-    query = @Query(world, (Position, Velocity); optional=(NoIsBits, Altitude))
-    expected_type = Base.eltype(typeof(query))
+    query = @Query(world, (Position, Velocity, Int64); optional=(NoIsBits, Altitude, Float64))
 
     @inferred Tuple{
         Entities,
@@ -286,19 +290,14 @@ end
             },
             UnitRange{Int64},
         },
-        Union{Nothing,SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
+        SubArray{Int64,1,Vector{Int64},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+        Union{Nothing,FieldViews.FieldViewable{NoIsBits,1,Vector{NoIsBits}}},
         Union{Nothing,FieldViews.FieldViewable{Altitude,1,Vector{Altitude}}},
+        Union{Nothing,SubArray{Float64,1,Vector{Float64},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
     } Base.eltype(typeof(query))
 
-    cnt = 0
-    for (e, p, v, a, i) in query
-        @test p !== nothing
-        @test v !== nothing
-        @test a !== nothing
-        @test i !== nothing
-        cnt += 1
-    end
-    @test cnt == 1
+    expected_type = Base.eltype(typeof(query))
+    @inferred Union{Nothing,Tuple{expected_type,Any}} Base.iterate(query)
 end
 
 #@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
