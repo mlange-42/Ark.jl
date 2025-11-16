@@ -288,13 +288,13 @@ end
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
         if is_optional[i] === Val{true}
-            if !ismutabletype(comp_types[i]) && storage_modes[i] == VectorStorage
+            if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0
                 push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : FieldViewable($col_sym)))
             else
                 push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
             end
         else
-            if !ismutabletype(comp_types[i]) && storage_modes[i] == VectorStorage
+            if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0
                 push!(exprs, :($vec_sym = FieldViewable($col_sym)))
             else
                 push!(exprs, :($vec_sym = view($col_sym, :)))
@@ -330,12 +330,12 @@ Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
     for i in 1:N
         T = comp_types[i]
 
-        base_view = if !ismutabletype(T) && storage_modes[i] == VectorStorage
-            _FieldsViewable_type(Vector{T})
-        elseif isbitstype(T)
-            _StructArrayView_type(T, UnitRange{Int})
-        else
+        base_view = if fieldcount(comp_types[i]) == 0
             SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int}}},true}
+        elseif storage_modes[i] == VectorStorage
+            _FieldsViewable_type(Vector{T})
+        else
+            _StructArrayView_type(T, UnitRange{Int})
         end
 
         opt_flag = is_optional[i] === Val{true}

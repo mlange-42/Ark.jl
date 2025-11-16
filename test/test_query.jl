@@ -218,10 +218,11 @@ end
         Position,
         Velocity => StructArrayStorage,
         NoIsBits,
+        Int64,
     )
 
     for i in 1:10
-        new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([])))
+        new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([]), Int64(1)))
     end
 
     for columns in @Query(world, (Position, Velocity))
@@ -233,16 +234,18 @@ end
         @test x[10] == 10
     end
 
-    for (_, positions, no_isbits) in @Query(world, (Position, NoIsBits))
+    for (_, positions, no_isbits, int) in @Query(world, (Position, NoIsBits, Int64))
         @test positions isa FieldViewable
-        @test no_isbits isa SubArray
+        @test no_isbits isa FieldViewable
+        @test int isa SubArray
     end
 
-    for columns in @Query(world, (Position, NoIsBits))
-        @unpack _, (x, y), no_isbits = columns
+    for columns in @Query(world, (Position, NoIsBits, Int64))
+        @unpack _, (x, y), (vec,), int = columns
         @test x isa FieldView
         @test y isa FieldView
-        @test no_isbits isa SubArray
+        @test vec isa FieldView
+        @test int isa SubArray
     end
 end
 

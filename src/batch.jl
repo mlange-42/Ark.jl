@@ -94,7 +94,10 @@ function close!(b::Batch)
     _unlock(b._world._lock, b._lock)
 end
 
-@generated function _get_columns_at_index(b::Batch{W,TS,SM,N}, idx::Int) where {W<:World,TS<:Tuple,SM<:Tuple,N}
+@generated function _get_columns_at_index(
+    b::Batch{W,TS,SM,N,M},
+    idx::Int,
+) where {W<:World,TS<:Tuple,SM<:Tuple,N,M}
     storage_modes = SM.parameters
     comp_types = TS.parameters
     exprs = Expr[]
@@ -107,7 +110,7 @@ end
         push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
 
-        if !ismutabletype(comp_types[i]) && storage_modes[i] == VectorStorage
+        if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0
             push!(exprs, :($vec_sym = FieldViewable(view($col_sym, arch.start_idx:arch.end_idx))))
         else
             push!(exprs, :($vec_sym = view($col_sym, arch.start_idx:arch.end_idx)))
@@ -125,6 +128,27 @@ end
             $(Expr(:block, exprs...))
         end
     end
+end
+
+@generated function Base.eltype(::Type{Batch{W,TS,SM,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,N,M}
+    comp_types = TS.parameters
+    storage_modes = SM.parameters
+
+    result_types = Any[Entities]
+    for i in 1:N
+        T = comp_types[i]
+
+        base_view = if fieldcount(comp_types[i]) == 0
+            SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int}}},true}
+        elseif storage_modes[i] == VectorStorage
+            _FieldsViewable_type(Vector{T})
+        else
+            _StructArrayView_type(T, UnitRange{Int})
+        end
+        push!(result_types, base_view)
+    end
+
+    return Tuple{result_types...}
 end
 
 function Base.show(io::IO, batch::Batch{W,TS}) where {W<:World,TS<:Tuple}
