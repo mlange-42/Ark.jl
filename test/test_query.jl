@@ -269,14 +269,14 @@ end
         Velocity => StructArrayStorage,
         Altitude,
         NoIsBits,
+        Int64,
     )
 
     for i in 1:10
-        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([])))
+        new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([]), Int64(1)))
     end
 
-    query = @Query(world, (Position, Velocity); optional=(NoIsBits, Altitude))
-    expected_type = Base.eltype(typeof(query))
+    query = @Query(world, (Position, Velocity, Int64); optional=(NoIsBits, Altitude))
 
     @inferred Tuple{
         Entities,
@@ -289,19 +289,13 @@ end
             },
             UnitRange{Int64},
         },
-        Union{Nothing,SubArray{NoIsBits,1,Vector{NoIsBits},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
+        SubArray{Int64,1,Vector{Int64},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+        Union{Nothing,FieldViews.FieldViewable{NoIsBits,1,Vector{NoIsBits}}},
         Union{Nothing,FieldViews.FieldViewable{Altitude,1,Vector{Altitude}}},
     } Base.eltype(typeof(query))
 
-    cnt = 0
-    for (e, p, v, a, i) in query
-        @test p !== nothing
-        @test v !== nothing
-        @test a !== nothing
-        @test i !== nothing
-        cnt += 1
-    end
-    @test cnt == 1
+    expected_type = Base.eltype(typeof(query))
+    @inferred Union{Nothing,Tuple{expected_type,Any}} Base.iterate(query)
 end
 
 #@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
