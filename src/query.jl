@@ -288,13 +288,13 @@ end
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
 
         if is_optional[i] === Val{true}
-            if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
+            if !(ismutabletype(comp_types[i])) && storage_modes[i] == VectorStorage
                 push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : FieldViewable($col_sym)))
             else
                 push!(exprs, :($vec_sym = length($col_sym) == 0 ? nothing : view($col_sym, :)))
             end
         else
-            if isbitstype(comp_types[i]) && storage_modes[i] == VectorStorage
+            if !(ismutabletype(comp_types[i])) && storage_modes[i] == VectorStorage
                 push!(exprs, :($vec_sym = FieldViewable($col_sym)))
             else
                 push!(exprs, :($vec_sym = view($col_sym, :)))
