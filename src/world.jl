@@ -3,6 +3,7 @@
     const zero_entity::Entity
 
 The reserved zero [`Entity`](@ref) value.
+Can be used to represent "no entity"/"nil".
 """
 const zero_entity::Entity = _new_entity(1, 0)
 
@@ -12,7 +13,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 The World is the central storage for [entities](@ref Entities),
 [components](@ref Components) and [resources](@ref Resources).
 
-See the constructor [World](World(::Union{Type,Pair{<:Type,<:Type}}...; ::Int, ::Bool)) for details.
+See the constructor [World](@ref World(::Union{Type,Pair}...; ::Int, ::Bool)) for details.
 """
 mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
@@ -358,7 +359,7 @@ end
 """
     is_locked(world::World)::Bool
 
-Returns whether the world is currently locked for modifications.
+Returns whether the world is currently [locked](@ref world-lock) for modifications.
 """
 function is_locked(world::World)::Bool
     return _is_locked(world._lock)

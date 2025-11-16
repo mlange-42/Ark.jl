@@ -4,7 +4,7 @@ abstract type _AbstractWorld end
 """
     StructArrayStorage
 
-Marks component types for using StructArray-like storage in world constructor.
+Marks component types for using StructArray-like [storage mode](@ref component-storages) in the world constructor.
 
 In StructArray storages, mutable components are not allowed.
 
@@ -28,7 +28,7 @@ abstract type StructArrayStorage end
 """
     VectorStorage
 
-Marks component types for using Vector storage in world constructor.
+Marks component types for using Vector [storage mode](@ref component-storages) in the world constructor.
 As this is the default storage mode if the storage type is not specified.
 
 See also [StructArrayStorage](@ref).
