@@ -139,11 +139,11 @@ end
         T = comp_types[i]
 
         base_view = if fieldcount(comp_types[i]) == 0
-            SubArray{T,1,Vector{T},Tuple{Base.Slice{Base.OneTo{Int}}},true}
+            SubArray{T,1,Vector{T},Tuple{UnitRange{UInt32}},true}
         elseif storage_modes[i] == VectorStorage
             _FieldsViewable_type(Vector{T})
         else
-            _StructArrayView_type(T, UnitRange{Int})
+            _StructArrayView_type(T, UnitRange{UInt32})
         end
         push!(result_types, base_view)
     end
