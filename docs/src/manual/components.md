@@ -107,9 +107,11 @@ For these columns, Ark offers two storage modes:
   [StructArrays](https://github.com/JuliaArrays/StructArrays.jl).  
   This allows access to field vectors in [queries](@ref Queries), enabling SIMD-accelerated,  
   vectorized operations and increased cache-friendliness if not all of the component's fields are used.  
-  However, this storage mode comes with an overhead of ≈10-20% for component operations and entity creation.  
-  Further, component access with [@get_components](@ref) and [set_components!](@ref) is also slower.  
-  Also note the **mutable components are not allowed** in StructArray storages.
+  StructArray storage has some limitations:  
+  - Not allowed for mutable components.
+  - Not allowed for components without fields, like labels and primitives.
+  - ≈10-20% runtime overhead for component operations and entity creation.
+  - Slower component access with [@get_components](@ref) and [set_components!](@ref).
 
 The storage mode can be selected per component type by using [StructArrayStorage](@ref) or [VectorStorage](@ref) during world construction.
 
