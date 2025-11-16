@@ -27,7 +27,7 @@ mutable struct MutableComponent
     dummy::Int64
 end
 
-struct NoIsBits
+mutable struct NoIsBits
     v::Vector{Int}
 end
 
