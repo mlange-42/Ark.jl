@@ -9,7 +9,7 @@ Depth = 2:2
 
 ## [World](@id world-api)
 
-The World is the central data storage for [Entities](@ref entities-api), [Components](@ref components-api)
+The [World](@ref "The World") is the central data storage for [Entities](@ref entities-api), [Components](@ref components-api)
 and [Resources](@ref resources-api).
 
 ```@docs
@@ -23,7 +23,7 @@ VectorStorage
 
 ## [Entities](@id entities-api)
 
-Entities are the "game objects" or "model entities".
+[Entities](@ref) are the "game objects" or "model entities".
 An entity if just an ID with a generation, but [Components](@ref components-api)
 can be attached to an entity.
 
@@ -42,7 +42,7 @@ is_zero
 
 ## [Components](@id components-api)
 
-Components contain the data associated with [Entities](@ref entities-api)
+[Components](@ref) contain the data associated with [Entities](@ref entities-api).
 
 ```@docs
 get_components
@@ -59,7 +59,7 @@ exchange_components!
 
 ## [Queries](@id queries-api)
 
-Queries are used to filter and process [Entities](@ref entities-api) with a
+[Queries](@ref) are used to filter and process [Entities](@ref entities-api) with a
 certain set of [Components](@ref components-api).
 
 ```@docs
@@ -75,7 +75,7 @@ unpack
 
 ## [Resources](@id resources-api)
 
-Resources are singleton-like data structures that appear only once in a [World](@ref world-api)
+[Resources](@ref) are singleton-like data structures that appear only once in a [World](@ref world-api)
 and are not associated to an [Entity](@ref entities-api).
 
 ```@docs
@@ -99,8 +99,8 @@ length(b::Batch)
 
 ## [Event system](@id events-api)
 
-The event system allows user code to react on structural changes like entity creation and removal
-and component addition and removal.
+The [event system](@ref "Event system") allows user code to react on structural changes
+like entity creation and removal and component addition and removal.
 Further, custom events can be defined and emitted.
 
 ```@docs
