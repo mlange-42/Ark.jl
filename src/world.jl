@@ -3,13 +3,17 @@
     const zero_entity::Entity
 
 The reserved zero [`Entity`](@ref) value.
+Can be used to represent "no entity"/"nil".
 """
 const zero_entity::Entity = _new_entity(1, 0)
 
 """
-    World{CS<:Tuple,CT<:Tuple,N}
+    World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M}
 
-The World is the central ECS storage.
+The World is the central storage for [entities](@ref Entities),
+[components](@ref Components) and [resources](@ref Resources).
+
+See the constructor [World](@ref World(::Union{Type,Pair}...; ::Int, ::Bool)) for details.
 """
 mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
@@ -34,20 +38,48 @@ end
 
 Creates a new, empty [`World`](@ref) for the given component types.
 
+All component types that will be used with the world must be specified.
+This allows Ark to use Julia's compile-time method generation to achieve the best performance.
+
+For each component type, an individual [storage mode](@ref component-storages) can be set.
+See also [VectorStorage](@ref) and [StructArrayStorage](@ref).
+
+Additional arguments can be used to allow mutable component types (forbidden by default and discouraged)
+and an initial capacity for entities in [archetypes](@ref Architecture).
+
 # Arguments
 
   - `comp_types`: The component types used by the world.
   - `initial_capacity`: Initial capacity for entities in each archetype and in the entity index.
   - `allow_mutable`: Allows mutable components. Use with care, as all mutable objects are heap-allocated in Julia.
 
-# Example
+# Examples
+
+A World where all components use the default storage mode:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-world = World(Position, Velocity)
-;
+world = World(
+    Position,
+    Velocity,
+)
 
 # output
 
+World(entities=0, comp_types=(Position, Velocity))
+```
+
+A World with individually configured storage modes:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+world = World(
+    Position => StructArrayStorage,
+    Velocity => StructArrayStorage,
+    Health => VectorStorage,
+)
+
+# output
+
+World(entities=0, comp_types=(Position, Velocity, Health))
 ```
 """
 function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity::Int=128, allow_mutable=false)
@@ -280,6 +312,15 @@ end
     remove_entity!(world::World, entity::Entity)
 
 Removes an [`Entity`](@ref) from the [`World`](@ref).
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+remove_entity!(world, entity)
+
+# output
+
+```
 """
 function remove_entity!(world::World, entity::Entity)
     if !is_alive(world, entity)
@@ -327,7 +368,7 @@ end
 """
     is_locked(world::World)::Bool
 
-Returns whether the world is currently locked for modifications.
+Returns whether the world is currently [locked](@ref world-lock) for modifications.
 """
 function is_locked(world::World)::Bool
     return _is_locked(world._lock)
@@ -354,8 +395,12 @@ Macro version of [`get_components`](@ref) for more ergonomic component type tupl
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 pos, vel = @get_components(world, entity, (Position, Velocity))
+
+# output
+
+(Position(0.0, 0.0), Velocity(0.0, 0.0))
 ```
 """
 macro get_components(world_expr, entity_expr, comp_types_expr)
@@ -378,8 +423,12 @@ For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provi
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 pos, vel = get_components(world, entity, Val.((Position, Velocity)))
+
+# output
+
+(Position(0.0, 0.0), Velocity(0.0, 0.0))
 ```
 """
 @inline function get_components(world::World, entity::Entity, comp_types::Tuple)
@@ -427,8 +476,12 @@ for more ergonomic component type tuples.
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 has = @has_components(world, entity, (Position, Velocity))
+
+# output
+
+true
 ```
 """
 macro has_components(world_expr, entity_expr, comp_types_expr)
@@ -450,8 +503,12 @@ For a more convenient tuple syntax, the macro [`@has_components`](@ref) is provi
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 has = has_components(world, entity, Val.((Position, Velocity)))
+
+# output
+
+true
 ```
 """
 @inline function has_components(world::World, entity::Entity, comp_types::Tuple)
@@ -494,6 +551,15 @@ end
 
 Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
 The entity must already have all these components.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+set_components!(world, entity, (Position(0, 0), Velocity(1, 1)))
+
+# output
+
+```
 """
 @inline function set_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
@@ -528,6 +594,16 @@ end
     new_entity!(world::World, values::Tuple)::Entity
 
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
+
+# output
+
+Entity(3, 0)
+```
 """
 function new_entity!(world::World, values::Tuple)
     entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
@@ -592,11 +668,21 @@ Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples
   - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
   - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `:copy`. Modes are :ref, :copy, :deepcopy.
 
-# Example
+# Examples
+
+Simple copy of an entity:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity1 = @copy_entity!(world, entity)
 
+# output
+
+Entity(3, 0)
+```
+
+Copy an entity, adding and removing some components in the same operation:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity2 = @copy_entity!(world, entity;
     add=(Health(100),),
     remove=(Position, Velocity),
@@ -604,7 +690,7 @@ entity2 = @copy_entity!(world, entity;
 
 # output
 
-Entity(4, 0)
+Entity(3, 0)
 ```
 """
 macro copy_entity!(world_expr, entity_expr)
@@ -650,11 +736,21 @@ For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provide
   - `remove::Tuple`: Component types to remove, like `Val.((Position,Velocity))`.
   - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `Val(:copy)`. Modes are :ref, :copy, :deepcopy.
 
-# Example
+# Examples
+
+Simple copy of an entity:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity1 = copy_entity!(world, entity)
 
+# output
+
+Entity(3, 0)
+```
+
+Copy an entity, adding and removing some components in the same operation:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity2 = copy_entity!(world, entity;
     add=(Health(100),),
     remove=Val.((Position, Velocity)),
@@ -662,7 +758,7 @@ entity2 = copy_entity!(world, entity;
 
 # output
 
-Entity(4, 0)
+Entity(3, 0)
 ```
 """
 @inline function copy_entity!(
@@ -688,12 +784,38 @@ Component types are inferred from the provided default values.
 If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
 that can be used for initialization.
 
+See also [@new_entities!](@ref) and [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple{Vararg{Val}})) for creating entities from component types.
+
 # Arguments
 
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
   - `iterate::Bool`: Whether to return a batch for individual entity initialization.
+
+# Examples
+
+Create 100 entities from default values:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)))
+
+# output
+
+```
+
+Create 100 entities from default values and iterate them:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for (entities, positions, velocities) in new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)); iterate=true)
+    for i in eachindex(entities)
+        positions[i] = Position(rand(), rand())
+    end
+end
+
+# output
+
+```
 """
 function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
@@ -778,11 +900,29 @@ Note that components are not initialized/undef unless set in the iterator.
 Macro version of [`new_entities!`](@ref new_entities!(::World, n:Int, ::Tuple{Vararg{Val}}))
 for ergonomic construction of component mappers.
 
+See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
+
 # Arguments
 
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
+
+# Example
+
+Create 100 entities from component types and initialize them:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for (entities, positions, velocities) in new_entities!(world, 100, Val.((Position, Velocity)))
+    for i in eachindex(entities)
+        positions[i] = Position(rand(), rand())
+        velocities[i] = Velocity(1, 1)
+    end
+end
+
+# output
+
+```
 """
 macro new_entities!(world_expr, n_expr, comp_types_expr)
     quote
@@ -804,11 +944,29 @@ Note that components are not initialized/undef unless set in the iterator!
 
 For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provided.
 
+See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
+
 # Arguments
 
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `Val.((Position, Velocity))`.
+
+# Example
+
+Create 100 entities from component types and initialize them:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for (entities, positions, velocities) in @new_entities!(world, 100, (Position, Velocity))
+    for i in eachindex(entities)
+        positions[i] = Position(rand(), rand())
+        velocities[i] = Velocity(1, 1)
+    end
+end
+
+# output
+
+```
 """
 function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
     return _new_entities_from_types!(world, UInt32(n), comp_types)
@@ -847,6 +1005,15 @@ end
     add_components!(world::World, entity::Entity, values::Tuple)
 
 Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+add_components!(world, entity, (Health(100),))
+
+# output
+
+```
 """
 @inline function add_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
@@ -865,8 +1032,11 @@ for ergonomic construction of component mappers.
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 @remove_components!(world, entity, (Position, Velocity))
+
+# output
+
 ```
 """
 macro remove_components!(world_expr, entity_expr, comp_types_expr)
@@ -888,8 +1058,11 @@ For a more convenient tuple syntax, the macro [`@remove_components!`](@ref) is p
 
 # Example
 
-```julia
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 remove_components!(world, entity, Val.((Position, Velocity)))
+
+# output
+
 ```
 """
 @inline function remove_components!(world::World, entity::Entity, comp_types::Tuple)
@@ -1330,6 +1503,15 @@ Macro version of [`emit_event!`](@ref) that allows more ergonomic event construc
   - `event::EventType`: The [EventType](@ref) to emit.
   - `entity::Entity`: The [Entity](@ref) to emit the event for.
   - `components::Tuple=()`: The component types to emit the event for. Optional.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+@emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
+
+# output
+
+```
 """
 macro emit_event!(world_expr, event_expr, entity_expr, comps_expr=())
     quote
@@ -1354,6 +1536,15 @@ For a more convenient tuple syntax, the macro [`@emit_event!`](@ref) is provided
   - `event::EventType`: The [EventType](@ref) to emit.
   - `entity::Entity`: The [Entity](@ref) to emit the event for.
   - `components::Tuple=()`: The component types to emit the event for. Optional.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+emit_event!(world, OnCollisionDetected, entity, Val.((Position, Velocity)))
+
+# output
+
+```
 """
 function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple=()) where {W<:World}
     if event._id < _custom_events._id

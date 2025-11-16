@@ -66,6 +66,17 @@ Creates a new custom [EventType](@ref).
 Custom event types are best stored in global constants.
 
 The symbol is only used for printing.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+registry = EventRegistry()
+const OnGameOver = new_event_type!(registry, :OnGameOver)
+
+# output
+
+EventType(:OnGameOver)
+```
 """
 function new_event_type!(reg::EventRegistry, symbol::Symbol)
     if length(reg._event_types) == typemax(UInt8)
