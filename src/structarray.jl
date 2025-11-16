@@ -259,7 +259,7 @@ equally efficient in broadcasted operations.
 
 Columns for components without fields, like primitives or label components, fall through `@unpack` unaltered.
 
-See also [unpack(::StructArrayView)](@ref) and [unpack(::StructArrayView)](@ref unpack(::FieldViewable)).
+See also [unpack(::StructArrayView)](@ref) and [unpack(::FieldViewable)](@ref).
 
 # Example
 
