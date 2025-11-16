@@ -7,9 +7,12 @@ The reserved zero [`Entity`](@ref) value.
 const zero_entity::Entity = _new_entity(1, 0)
 
 """
-    World{CS<:Tuple,CT<:Tuple,N}
+    World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M}
 
-The World is the central ECS storage.
+The World is the central storage for [entities](@ref Entities),
+[components](@ref Components) and [resources](@ref Resources).
+
+See the constructor [World](World(::Union{Type,Pair{<:Type,<:Type}}...; ::Int, ::Bool)) for details.
 """
 mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
@@ -34,20 +37,48 @@ end
 
 Creates a new, empty [`World`](@ref) for the given component types.
 
+All component types that will be used with the world must be specified.
+This allows Ark to use Julia's compile-time method generation to achieve the best performance.
+
+For each component type, an individual [storage mode](@ref component-storages) can be set.
+See also [VectorStorage](@ref) and [StructArrayStorage](@ref).
+
+Additional arguments can be used to allow mutable component types (forbidden by default and discouraged)
+and an initial capacity for entities in [archetypes](@ref Architecture).
+
 # Arguments
 
   - `comp_types`: The component types used by the world.
   - `initial_capacity`: Initial capacity for entities in each archetype and in the entity index.
   - `allow_mutable`: Allows mutable components. Use with care, as all mutable objects are heap-allocated in Julia.
 
-# Example
+# Examples
+
+A World where all components use the default storage mode:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-world = World(Position, Velocity)
-;
+world = World(
+    Position,
+    Velocity,
+)
 
 # output
 
+World(entities=0, comp_types=(Position, Velocity))
+```
+
+A World with individually configured storage modes:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+world = World(
+    Position => StructArrayStorage,
+    Velocity => StructArrayStorage,
+    Health => VectorStorage,
+)
+
+# output
+
+World(entities=0, comp_types=(Position, Velocity, Health))
 ```
 """
 function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity::Int=128, allow_mutable=false)
