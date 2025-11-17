@@ -267,6 +267,7 @@ Must be called if a query is not fully iterated.
 function close!(q::Query)
     _unlock(q._world._lock, q._lock)
     q._q_lock.closed = true
+    return nothing
 end
 
 @generated function _get_columns(

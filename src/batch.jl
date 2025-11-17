@@ -92,6 +92,7 @@ function close!(b::Batch)
     end
     b._b_lock.closed = true
     _unlock(b._world._lock, b._lock)
+    return nothing
 end
 
 @generated function _get_columns_at_index(
