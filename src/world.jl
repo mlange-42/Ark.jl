@@ -642,7 +642,7 @@ Entity(3, 0)
         throw(ArgumentError("can't copy a dead entity"))
     end
     if isempty(add) && isempty(remove)
-        return @inline _copy_entity!(world, entity, mode)
+        return @inline _copy_entity!(world, entity, Val(mode))
     end
     return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, Val.(remove), Val(mode))
 end
