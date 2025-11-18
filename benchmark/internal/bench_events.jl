@@ -89,7 +89,7 @@ function setup_event_match_1_of_5(n::Int)
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
 
-    @observe!(world, evt, (Position,)) do entity
+    observe!(world, evt, (Position,)) do entity
     end
 
     for _ in 1:4
