@@ -656,7 +656,7 @@ Component types are inferred from the provided default values.
 If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
 that can be used for initialization.
 
-See also [@new_entities!](@ref) and [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple{Vararg{Val}})) for creating entities from component types.
+See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creating entities from component types.
 
 # Arguments
 
@@ -689,7 +689,7 @@ end
 
 ```
 """
-function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
+Base.@constprop :aggressive function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
@@ -762,14 +762,12 @@ end
 end
 
 """
-    new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
+    new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
 
 Creates the given number of [`Entity`](@ref).
 
 Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
 Note that components are not initialized/undef unless set in the iterator!
-
-For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provided.
 
 See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
 
@@ -777,7 +775,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
 
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
-  - `comp_types::Tuple`: Component types for the new entities, like `Val.((Position, Velocity))`.
+  - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
 
 # Example
 
@@ -795,7 +793,7 @@ end
 
 ```
 """
-Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
+Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_types::Tuple)
     return _new_entities_from_types!(world, UInt32(n), Val.(comp_types))
 end
 
