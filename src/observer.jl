@@ -45,7 +45,7 @@ function observe!(
     components::Tuple=();
     with::Tuple=(),
     without::Tuple=(),
-    exclusive::Val=Val(false),
+    exclusive::Bool=false,
     register::Bool=true,
 ) where {W<:World}
     _Observer_from_types(
