@@ -51,7 +51,10 @@ function observe!(
     _Observer_from_types(
         world, event,
         FunctionWrapper{Nothing,Tuple{Entity}}(fn),
-        Val.(components), Val.(with), Val.(without), Val.(exclusive), register)
+        ntuple(i -> Val(components[i]), length(components)),
+        ntuple(i -> Val(with[i]), length(with)),
+        ntuple(i -> Val(without[i]), length(without)),
+        Val(exclusive), register)
 end
 
 @generated function _Observer_from_types(

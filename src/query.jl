@@ -62,7 +62,12 @@ Base.@constprop :aggressive function Query(
     optional::Tuple=(),
     exclusive::Bool=false,
 )
-    return _Query_from_types(world, Val.(comp_types), Val.(with), Val.(without), Val.(optional), Val(exclusive))
+    return _Query_from_types(world,
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+        ntuple(i -> Val(with[i]), length(with)),
+        ntuple(i -> Val(without[i]), length(without)),
+        ntuple(i -> Val(optional[i]), length(optional)),
+        Val(exclusive))
 end
 
 @generated function _Query_from_types(

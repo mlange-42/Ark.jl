@@ -401,12 +401,11 @@ pos, vel = get_components(world, entity, (Position, Velocity))
 (Position(0.0, 0.0), Velocity(0.0, 0.0))
 ```
 """
-@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple{Vararg{Any,N}}) where N
+@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't get components of a dead entity"))
     end
-    vals = ntuple(i -> Val(comp_types[i]), N)
-    return @inline _get_components(world, entity, vals)
+    return @inline _get_components(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
@@ -457,7 +456,7 @@ true
         throw(ArgumentError("can't check components of a dead entity"))
     end
     index = world._entities[entity._id]
-    return @inline _has_components(world, index, Val.(comp_types))
+    return @inline _has_components(world, index, ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS<:Tuple}
@@ -643,7 +642,14 @@ Entity(3, 0)
     if isempty(add) && isempty(remove)
         return @inline _copy_entity!(world, entity, Val(mode))
     end
-    return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, Val.(remove), Val(mode))
+    return @inline _copy_entity!(
+        world,
+        entity,
+        Val{typeof(add)}(),
+        add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+        Val(mode),
+    )
 end
 
 """
@@ -793,7 +799,7 @@ end
 ```
 """
 Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{DataType}})
-    return _new_entities_from_types!(world, UInt32(n), Val.(comp_types))
+    return _new_entities_from_types!(world, UInt32(n), ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _new_entities_from_types!(world::W, n::UInt32, ::TS) where {W<:World,TS<:Tuple}
@@ -864,7 +870,13 @@ remove_components!(world, entity, (Position, Velocity))
     if !is_alive(world, entity)
         throw(ArgumentError("can't remove components from a dead entity"))
     end
-    return @inline _exchange_components!(world, entity, Val{Tuple{}}(), (), Val.(comp_types))
+    return @inline _exchange_components!(
+        world,
+        entity,
+        Val{Tuple{}}(),
+        (),
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+    )
 end
 
 """
@@ -893,7 +905,13 @@ exchange_components!(world, entity;
     if !is_alive(world, entity)
         throw(ArgumentError("can't exchange components on a dead entity"))
     end
-    return @inline _exchange_components!(world, entity, Val{typeof(add)}(), add, Val.(remove))
+    return @inline _exchange_components!(
+        world,
+        entity,
+        Val{typeof(add)}(),
+        add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+    )
 end
 
 @generated function _exchange_components!(
@@ -1288,7 +1306,7 @@ emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
     if !_has_observers(world._event_manager, event)
         return
     end
-    _emit_event!(world, event, entity, Val.(components))
+    _emit_event!(world, event, entity, ntuple(i -> Val(components[i]), length(components)))
 end
 
 @generated function _emit_event!(world::W, event::EventType, entity::Entity, ::CT) where {W<:World,CT<:Tuple}
