@@ -300,8 +300,8 @@ end
     @inferred Union{Nothing,Tuple{expected_type,Any}} Base.iterate(query)
 end
 
-#@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
 """
+@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
 @testset "Query JET" begin
     world = World(
         Position,
@@ -322,7 +322,7 @@ end
 
     @test_opt f()
 end
-#end
+end
 """
 
 @testset "Query error messages" begin
