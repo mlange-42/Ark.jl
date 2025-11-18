@@ -405,7 +405,8 @@ pos, vel = get_components(world, entity, (Position, Velocity))
     if !is_alive(world, entity)
         throw(ArgumentError("can't get components of a dead entity"))
     end
-    return @inline _get_components(world, entity, Val.(comp_types))
+    vals = ntuple(i -> Val(comp_types[i]), length(comp_types))
+    return @inline _get_components(world, entity, vals)
 end
 
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
