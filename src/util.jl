@@ -9,15 +9,7 @@ function _swap_remove!(v::AbstractArray, i::UInt32)::Bool
     return swapped
 end
 
-@inline function _try_to_types(::Type{TS}) where {TS<:Tuple}
-    if !all(x -> x <: Val, TS.parameters)
-        throw(
-            ArgumentError(
-                lazy"expected a tuple of Val types like Val.((Position, Velocity)), got $TS. " *
-                "Consider using the related macro instead.",
-            ),
-        )
-    end
+@inline function _to_types(::Type{TS}) where {TS<:Tuple}
     return [x.parameters[1] for x in TS.parameters]
 end
 

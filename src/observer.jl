@@ -67,9 +67,9 @@ end
     ::EX,
     register::Bool,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,EX<:Val}
-    comp_types = _try_to_types(CT)
-    with_types = _try_to_types(WT)
-    without_types = _try_to_types(WO)
+    comp_types = _to_types(CT)
+    with_types = _to_types(WT)
+    without_types = _to_types(WO)
 
     if EX === Val{true} && !isempty(without_types)
         throw(ArgumentError("cannot use 'exclusive' together with 'without'"))

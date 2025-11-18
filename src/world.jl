@@ -247,7 +247,7 @@ end
     mode::CP,
 )::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple,CP<:Val}
     add_types = ATS.parameters
-    rem_types = _try_to_types(RTS)
+    rem_types = _to_types(RTS)
     exprs = []
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
@@ -409,7 +409,7 @@ pos, vel = get_components(world, entity, (Position, Velocity))
 end
 
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
-    types = _try_to_types(TS)
+    types = _to_types(TS)
     if length(types) == 0
         return :(())
     end
@@ -460,7 +460,7 @@ true
 end
 
 @generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS<:Tuple}
-    types = _try_to_types(TS)
+    types = _to_types(TS)
     exprs = []
 
     for i in 1:length(types)
@@ -803,7 +803,7 @@ Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_ty
 end
 
 @generated function _new_entities_from_types!(world::W, n::UInt32, ::TS) where {W<:World,TS<:Tuple}
-    types = _try_to_types(TS)
+    types = _to_types(TS)
     exprs = []
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
@@ -922,7 +922,7 @@ end
     ::RTS,
 ) where {W<:World,ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
-    rem_types = _try_to_types(RTS)
+    rem_types = _to_types(RTS)
 
     if isempty(add_types) && isempty(rem_types)
         throw(ArgumentError("either components to add or to remove must be given for exchange_components!"))

@@ -80,10 +80,10 @@ end
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     world_storage_modes = W.parameters[3].parameters
 
-    required_types = _try_to_types(CT)
-    with_types = _try_to_types(WT)
-    without_types = _try_to_types(WO)
-    optional_types = _try_to_types(OT)
+    required_types = _to_types(CT)
+    with_types = _to_types(WT)
+    without_types = _to_types(WO)
+    optional_types = _to_types(OT)
 
     # check for duplicates
     all_comps = vcat(required_types, with_types, without_types, optional_types)
