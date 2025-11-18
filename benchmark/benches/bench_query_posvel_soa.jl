@@ -7,7 +7,7 @@ function setup_query_posvel_soa(n_entities::Int)
     for i in 1:n_entities
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
-    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+    for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
@@ -19,7 +19,7 @@ end
 
 function benchmark_query_posvel_soa(args, n)
     world = args
-    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+    for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]

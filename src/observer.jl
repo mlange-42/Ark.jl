@@ -1,82 +1,5 @@
 
 """
-    @observe!(
-        fn::Function,
-        world::World,
-        event::EventType,
-        components::Tuple=();
-        with::Tuple=(),
-        without::Tuple=(),
-        exclusive::Val=Val(false),
-        register::Bool=true,
-    )
-
-Creates an [Observer](@ref) and (optionally, default) registers it.
-
-Macro version of [`observe!`](@ref) that allows ergonomic construction of observers using simulated keyword arguments.
-
-See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
-
-# Arguments
-
-  - `fn::Function`: A callback function to execute when a matching event is received. Can be used via a `do` block.
-  - `world::World`: The [World](@ref) to observe.
-  - `event::EventType`: The [EventType](@ref) to observe.
-  - `components::Tuple=()`: The component types to observe. Must be empty for `OnCreateEntity` and `OnRemoveEntity`.
-  - `with::Tuple=()`: Components the entity must have.
-  - `without::Tuple=()`: Components the entity must not have.
-  - `exclusive::Bool=false`: Makes the observer exclusive for entities that have exactly the components given be `with`.
-  - `register::Bool=true`: Whether the observer is registered immediately. Alternatively, register later with [observe!](@ref observe!(::World, ::Observer; ::Bool))
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-@observe!(world, OnAddComponents, (Position, Velocity); with=(Altitude,)) do entity
-    println(entity)
-end
-
-# output
-
-Observer(:OnAddComponents, (Position, Velocity); with=(Altitude))
-```
-"""
-macro observe!(fn_expr, world_expr, event_expr)
-    esc(:(@observe!($fn_expr, $world_expr, $event_expr, ())))
-end
-macro observe!(kwargs_expr, fn_expr, world_expr, event_expr)
-    iskwargs_1 = kwargs_expr isa Expr && kwargs_expr.head == :parameters
-    iskwargs_2 = fn_expr isa Expr && fn_expr.head == :parameters
-    if !iskwargs_1 && !iskwargs_2
-        quote
-            observe!(
-                $(esc(kwargs_expr)),
-                $(esc(fn_expr)),
-                $(esc(world_expr)),
-                Val.($(esc(event_expr))),
-            )
-        end
-    else
-        esc(:(@observe!($kwargs_expr, $fn_expr, $world_expr, $event_expr, ())))
-    end
-end
-macro observe!(kwargs_expr, fn_expr, world_expr, event_expr, comps_expr)
-    iskwargs = kwargs_expr isa Expr && kwargs_expr.head == :parameters
-    if !iskwargs
-        kwargs_expr, fn_expr = fn_expr, kwargs_expr
-    end
-    map(x -> (x.args[1] != :register && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
-    quote
-        observe!(
-            $(esc(fn_expr)),
-            $(esc(world_expr)),
-            $(esc(event_expr)),
-            Val.($(esc(comps_expr)));
-            $(esc.(kwargs_expr.args)...),
-        )
-    end
-end
-
-"""
     observe!(
         fn::Function,
         world::World,
@@ -90,8 +13,6 @@ end
 
 Creates an [Observer](@ref) and (optionally, default) registers it.
 
-For a more convenient tuple syntax, the macro [`@observe!`](@ref) is provided.
-
 See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
 
 # Arguments
@@ -108,7 +29,7 @@ See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event t
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-observe!(world, OnAddComponents, Val.((Position, Velocity)); with=Val.((Altitude,))) do entity
+observe!(world, OnAddComponents, (Position, Velocity); with=(Altitude,)) do entity
     println(entity)
 end
 
@@ -124,13 +45,16 @@ function observe!(
     components::Tuple=();
     with::Tuple=(),
     without::Tuple=(),
-    exclusive::Val=Val(false),
+    exclusive::Bool=false,
     register::Bool=true,
 ) where {W<:World}
     _Observer_from_types(
         world, event,
         FunctionWrapper{Nothing,Tuple{Entity}}(fn),
-        components, with, without, exclusive, register)
+        ntuple(i -> Val(components[i]), length(components)),
+        ntuple(i -> Val(with[i]), length(with)),
+        ntuple(i -> Val(without[i]), length(without)),
+        Val(exclusive), register)
 end
 
 @generated function _Observer_from_types(
@@ -143,9 +67,9 @@ end
     ::EX,
     register::Bool,
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,EX<:Val}
-    comp_types = _try_to_types(CT)
-    with_types = _try_to_types(WT)
-    without_types = _try_to_types(WO)
+    comp_types = _to_types(CT)
+    with_types = _to_types(WT)
+    without_types = _to_types(WO)
 
     if EX === Val{true} && !isempty(without_types)
         throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
@@ -195,7 +119,7 @@ end
     observe!(world::World, observer::Observer; unregister::Bool=false)
 
 Registers or un-registers the given [Observer](@ref).
-Note that observers created with [@observe!](@ref) are automatically registered by default.
+Note that observers created with [observe!](@ref) are automatically registered by default.
 """
 function observe!(world::World, observer::Observer; unregister::Bool=false)
     if unregister

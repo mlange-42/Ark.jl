@@ -60,7 +60,7 @@ end
         Velocity,
         Altitude,
     )
-    batch = @new_entities!(world, 100, (Position, Velocity))
+    batch = new_entities!(world, 100, (Position, Velocity))
     @test string(batch) == "Batch(entities=100, comp_types=(Position, Velocity))"
 end
 

@@ -18,7 +18,7 @@ This design encourages a declarative, data-driven approach while maintaining per
 
 ## Example
 
-Use [@observe!](@ref) to observe for events:
+Use [observe!](@ref) to observe for events:
 
 ```@meta
 DocTestSetup = quote
@@ -43,8 +43,8 @@ end
 ```
 
 ```jldoctest; output=false
-@observe!(world, OnAddComponents, (Position, Velocity)) do entity
-    pos, vel = @get_components(world, entity, (Position, Velocity))
+observe!(world, OnAddComponents, (Position, Velocity)) do entity
+    pos, vel = get_components(world, entity, (Position, Velocity))
     println(pos)
     println(vel)
 end
@@ -86,10 +86,10 @@ fn = (event::EventType, entity::Entity) -> begin
     end
 end
 
-@observe!(world, OnAddComponents, (Position,)) do entity
+observe!(world, OnAddComponents, (Position,)) do entity
     fn(OnAddComponents, entity)
 end
-@observe!(world, OnRemoveComponents, (Position,)) do entity
+observe!(world, OnRemoveComponents, (Position,)) do entity
     fn(OnRemoveComponents, entity)
 end
 
@@ -115,7 +115,7 @@ For entity creation and removal, only the keyword arguments can be used.
 An observer that is triggered when a `Position` component is added to an existing entity:
 
 ```jldoctest; output=false
-@observe!(world, OnAddComponents, (Position,)) do entity
+observe!(world, OnAddComponents, (Position,)) do entity
     # ...
 end
 
@@ -128,7 +128,7 @@ An observer that is triggered when a `Position` component is added to an entity
 that has `Velocity`, but not `Altitude` (or rather, had before the operation):
 
 ```jldoctest; output=false
-@observe!(world, OnAddComponents, (Position,);
+observe!(world, OnAddComponents, (Position,);
         with    = (Velocity,),
         without = (Altitude,)
     ) do entity
@@ -143,7 +143,7 @@ Observer(:OnAddComponents, (Position); with=(Velocity), without=(Altitude))
 This observer is triggered when an entity with `Position` is created:
 
 ```jldoctest; output=false
-@observe!(world, OnCreateEntity;
+observe!(world, OnCreateEntity;
         with = (Velocity,)
     ) do entity
     # ...
@@ -157,7 +157,7 @@ Observer(:OnCreateEntity, (); with=(Velocity))
 This observer is triggered when an entity with `Position` as well as `Velocity` is created:
 
 ```jldoctest; output=false
-@observe!(world, OnCreateEntity;
+observe!(world, OnCreateEntity;
         with = (Position, Velocity)
     ) do entity
     # ...
@@ -171,7 +171,7 @@ Observer(:OnCreateEntity, (); with=(Position, Velocity))
 An observer that is triggered when any entity is created, irrespective of its components:
 
 ```jldoctest; output=false
-@observe!(world, OnCreateEntity) do entity
+observe!(world, OnCreateEntity) do entity
     # ...
 end
 
@@ -222,19 +222,19 @@ EventType(:OnTimerElapsed)
 
 Ideally, custom event types are stored as global variables of the applications.
 
-Use [@emit_event!](@ref) to emit custom events:
+Use [emit_event!](@ref) to emit custom events:
 
 ```jldoctest; output=false
 registry = EventRegistry()
 const OnTeleport = new_event_type!(registry, :OnTeleport)
 
 # Add an observer for the event type
-@observe!(world, OnTeleport, (Position,)) do entity
+observe!(world, OnTeleport, (Position,)) do entity
     # ...
 end
 
 # Emit the event for an entity and component type(s)
-@emit_event!(world, OnTeleport, entity, (Position,))
+emit_event!(world, OnTeleport, entity, (Position,))
 
 # output
 
@@ -247,7 +247,7 @@ This is also supported by custom events:
 registry = EventRegistry()
 const OnClick = new_event_type!(registry, :OnClick)
 
-@emit_event!(world, OnClick, ui_element)
+emit_event!(world, OnClick, ui_element)
 
 # output
 
@@ -259,7 +259,7 @@ Note that custom events can also be emitted for the [zero entity](@ref zero_enti
 registry = EventRegistry()
 const OnGameOver = new_event_type!(registry, :OnGameOver)
 
-@emit_event!(world, OnGameOver, zero_entity)
+emit_event!(world, OnGameOver, zero_entity)
 
 # output
 

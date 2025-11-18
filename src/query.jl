@@ -19,7 +19,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
 end
 
 """
-    @Query(
+    Query(
         world::World,
         comp_types::Tuple;
         with::Tuple=(),
@@ -30,22 +30,19 @@ end
 
 Creates a query.
 
-Macro version of [`Query`](@ref Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Val))
-that allows ergonomic construction of queries using simulated keyword arguments.
-
 # Arguments
 
   - `world`: The `World` instance to query.
-  - `comp_types::Tuple`: Components the query filters for and provides access to. Must be a literal tuple like `(Position, Velocity)`.
-  - `with::Tuple`: Additional components the entities must have. Passed as `with=(Health,)`.
-  - `without::Tuple`: Components the entities must not have. Passed as `without=(Altitude,)`.
-  - `optional::Tuple`: Additional components that are optional in the query. Passed as `optional=(Velocity,)`.
+  - `comp_types::Tuple`: Components the query filters for and provides access to.
+  - `with::Tuple`: Additional components the entities must have.
+  - `without::Tuple`: Components the entities must not have.
+  - `optional::Tuple`: Additional components that are optional in the query.
   - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
 
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in @Query(world, (Position, Velocity))
+for (entities, positions, velocities) in Query(world, (Position, Velocity))
     for i in eachindex(entities)
         pos = positions[i]
         vel = velocities[i]
@@ -57,67 +54,20 @@ end
 
 ```
 """
-macro Query(world_expr, comp_types_expr)
-    :(Query($(esc(world_expr)), Val.($(esc(comp_types_expr)))))
-end
-macro Query(kwargs_expr::Expr, world_expr, comp_types_expr)
-    map(x -> (x.args[2] = :(Val.($(x.args[2])))), kwargs_expr.args)
-    quote
-        Query(
-            $(esc(world_expr)),
-            Val.($(esc(comp_types_expr)));
-            $(esc.(kwargs_expr.args)...),
-        )
-    end
-end
-
-"""
-    Query(
-        world::World,
-        comp_types::Tuple;
-        with::Tuple=(),
-        without::Tuple=(),
-        optional::Tuple=(),
-        exclusive::Val=Val(false)
-    )
-
-Creates a query.
-
-For a more convenient tuple syntax, the macro [`@Query`](@ref) is provided.
-
-# Arguments
-
-  - `world`: The `World` instance to query.
-  - `comp_types::Tuple`: Components the query filters for and provides access to. Must be a `Val` tuple like `Val.((Position, Velocity))`.
-  - `with::Tuple`: Additional components the entities must have. Passed as `with=Val.((Health,))`.
-  - `without::Tuple`: Components the entities must not have. Passed as `without=Val.((Altitude,))`.
-  - `optional::Tuple`: Additional components that are optional in the query. Passed as `optional=Val.((Velocity,))`.
-  - `exclusive::Val{Bool}`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in Query(world, Val.((Position, Velocity)))
-    for i in eachindex(entities)
-        pos = positions[i]
-        vel = velocities[i]
-        positions[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
-    end
-end
-
-# output
-
-```
-"""
-function Query(
+Base.@constprop :aggressive function Query(
     world::World,
     comp_types::Tuple;
     with::Tuple=(),
     without::Tuple=(),
     optional::Tuple=(),
-    exclusive::Val=Val(false),
+    exclusive::Bool=false,
 )
-    return _Query_from_types(world, comp_types, with, without, optional, exclusive)
+    return _Query_from_types(world,
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+        ntuple(i -> Val(with[i]), length(with)),
+        ntuple(i -> Val(without[i]), length(without)),
+        ntuple(i -> Val(optional[i]), length(optional)),
+        Val(exclusive))
 end
 
 @generated function _Query_from_types(
@@ -130,10 +80,10 @@ end
 ) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
     world_storage_modes = W.parameters[3].parameters
 
-    required_types = _try_to_types(CT)
-    with_types = _try_to_types(WT)
-    without_types = _try_to_types(WO)
-    optional_types = _try_to_types(OT)
+    required_types = _to_types(CT)
+    with_types = _to_types(WT)
+    without_types = _to_types(WO)
+    optional_types = _to_types(OT)
 
     # check for duplicates
     all_comps = vcat(required_types, with_types, without_types, optional_types)

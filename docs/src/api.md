@@ -32,10 +32,8 @@ Entity
 zero_entity
 new_entity!
 new_entities!
-@new_entities!
 remove_entity!
 copy_entity!
-@copy_entity!
 is_alive
 is_zero
 ```
@@ -46,15 +44,11 @@ is_zero
 
 ```@docs
 get_components
-@get_components
 has_components
-@has_components
 set_components!
 add_components!
 remove_components!
-@remove_components!
 exchange_components!
-@exchange_components!
 ```
 
 ## [Queries](@id queries-api)
@@ -65,7 +59,6 @@ certain set of [Components](@ref components-api).
 ```@docs
 Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Val)
-@Query
 close!(q::Query)
 length(q::Query)
 Entities
@@ -109,9 +102,7 @@ EventRegistry
 EventRegistry()
 new_event_type!
 Observer
-@observe!
 observe!
-@emit_event!
 emit_event!
 ```
 

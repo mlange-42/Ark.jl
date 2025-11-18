@@ -9,7 +9,7 @@ function setup_world_posvel(n_entities::Int)
     end
 
     for e in entities
-        pos, vel = get_components(world, e, Val.((Position, Velocity)))
+        pos, vel = get_components(world, e, (Position, Velocity))
         set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
     end
 
@@ -19,7 +19,7 @@ end
 function benchmark_world_posvel(args, n)
     entities, world = args
     for e in entities
-        pos, vel = get_components(world, e, Val.((Position, Velocity)))
+        pos, vel = get_components(world, e, (Position, Velocity))
         set_components!(world, e, (Position(pos.x + vel.dx, pos.y + vel.dy),))
     end
 end

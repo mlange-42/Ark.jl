@@ -264,7 +264,7 @@ See also [unpack(::StructArrayView)](@ref) and [unpack(::FieldViewable)](@ref).
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for columns in @Query(world, (Position, Velocity))
+for columns in Query(world, (Position, Velocity))
     @unpack entities, (x, y), (dx, dy) = columns
     @inbounds x .+= dx
     @inbounds y .+= dy

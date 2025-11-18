@@ -27,17 +27,17 @@ include("batch.jl")
 #include("docs.jl") # doctest setup
 
 export World
-export is_alive, new_entity!, new_entities!, @new_entities!, copy_entity!, @copy_entity!
+export is_alive, new_entity!, new_entities!, copy_entity!
 export remove_entity!, zero_entity, is_locked, reset!
-export get_components, @get_components, set_components!, has_components, @has_components
-export add_components!, remove_components!, @remove_components!
-export exchange_components!, @exchange_components!
+export get_components, set_components!, has_components
+export add_components!, remove_components!
+export exchange_components!
 export get_resource, has_resource, add_resource!, set_resource!, remove_resource!
 
 export Entity
 export is_zero
 
-export Query, @Query, Batch
+export Query, Batch
 export close!
 
 export Entities
@@ -45,7 +45,7 @@ export Entities
 export EventType, EventRegistry, new_event_type!
 export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
 
-export Observer, observe!, @observe!, emit_event!, @emit_event!
+export Observer, observe!, emit_event!
 export unpack, @unpack
 
 export StructArrayStorage, VectorStorage

@@ -247,7 +247,7 @@ end
     mode::CP,
 )::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple,CP<:Val}
     add_types = ATS.parameters
-    rem_types = _try_to_types(RTS)
+    rem_types = _to_types(RTS)
     exprs = []
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
@@ -386,60 +386,30 @@ function _check_locked(world::World)
 end
 
 """
-    @get_components(world::World, entity::Entity, comp_types::Tuple)
-
-Get the given components for an [`Entity`](@ref).
-Components are returned in a tuple.
-
-Macro version of [`get_components`](@ref) for more ergonomic component type tuples.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-pos, vel = @get_components(world, entity, (Position, Velocity))
-
-# output
-
-(Position(0.0, 0.0), Velocity(0.0, 0.0))
-```
-"""
-macro get_components(world_expr, entity_expr, comp_types_expr)
-    quote
-        get_components(
-            $(esc(world_expr)),
-            $(esc(entity_expr)),
-            Val.($(esc(comp_types_expr))),
-        )
-    end
-end
-
-"""
     get_components(world::World, entity::Entity, comp_types::Tuple)
 
 Get the given components for an [`Entity`](@ref).
 Components are returned in a tuple.
 
-For a more convenient tuple syntax, the macro [`@get_components`](@ref) is provided.
-
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-pos, vel = get_components(world, entity, Val.((Position, Velocity)))
+pos, vel = get_components(world, entity, (Position, Velocity))
 
 # output
 
 (Position(0.0, 0.0), Velocity(0.0, 0.0))
 ```
 """
-@inline function get_components(world::World, entity::Entity, comp_types::Tuple)
+@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't get components of a dead entity"))
     end
-    return @inline _get_components(world, entity, comp_types)
+    return @inline _get_components(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
-    types = _try_to_types(TS)
+    types = _to_types(TS)
     if length(types) == 0
         return :(())
     end
@@ -467,60 +437,30 @@ end
 end
 
 """
-    @has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
-
-Returns whether an [`Entity`](@ref) has all given components.
-
-Macro version of [`has_components`](@ref has_components(::World, ::Entity, ::Tuple))
-for more ergonomic component type tuples.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-has = @has_components(world, entity, (Position, Velocity))
-
-# output
-
-true
-```
-"""
-macro has_components(world_expr, entity_expr, comp_types_expr)
-    quote
-        has_components(
-            $(esc(world_expr)),
-            $(esc(entity_expr)),
-            Val.($(esc(comp_types_expr))),
-        )
-    end
-end
-
-"""
     has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
 
 Returns whether an [`Entity`](@ref) has all given components.
 
-For a more convenient tuple syntax, the macro [`@has_components`](@ref) is provided.
-
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-has = has_components(world, entity, Val.((Position, Velocity)))
+has = has_components(world, entity, (Position, Velocity))
 
 # output
 
 true
 ```
 """
-@inline function has_components(world::World, entity::Entity, comp_types::Tuple)
+@inline Base.@constprop :aggressive function has_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't check components of a dead entity"))
     end
     index = world._entities[entity._id]
-    return @inline _has_components(world, index, comp_types)
+    return @inline _has_components(world, index, ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS<:Tuple}
-    types = _try_to_types(TS)
+    types = _to_types(TS)
     exprs = []
 
     for i in 1:length(types)
@@ -561,7 +501,7 @@ set_components!(world, entity, (Position(0, 0), Velocity(1, 1)))
 
 ```
 """
-@inline function set_components!(world::World, entity::Entity, values::Tuple)
+@inline Base.@constprop :aggressive function set_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't set components of a dead entity"))
     end
@@ -605,7 +545,7 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
 Entity(3, 0)
 ```
 """
-function new_entity!(world::World, values::Tuple)
+Base.@constprop :aggressive function new_entity!(world::World, values::Tuple)
     entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
     if _has_observers(world._event_manager, OnCreateEntity)
         _fire_create_entity(world._event_manager, entity, world._archetypes[arch].mask)
@@ -646,7 +586,7 @@ end
 end
 
 """
-    @copy_entity!(
+    copy_entity!(
         world::World,
         entity::Entity;
         add::Tuple=(),
@@ -658,83 +598,13 @@ Copies an [`Entity`](@ref), optionally adding and/or removing components.
 
 Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
 
-Macro version of [`copy_entity!`](@ref) for more ergonomic component type tuples.
-
 # Arguments
 
   - `world`: The `World` instance to query.
   - `entity::Entity`: The entity to copy.
   - `add::Tuple`: Components to add, like `with=(Health(0),)`.
   - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
-  - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `:copy`. Modes are :ref, :copy, :deepcopy.
-
-# Examples
-
-Simple copy of an entity:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-entity1 = @copy_entity!(world, entity)
-
-# output
-
-Entity(3, 0)
-```
-
-Copy an entity, adding and removing some components in the same operation:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-entity2 = @copy_entity!(world, entity;
-    add=(Health(100),),
-    remove=(Position, Velocity),
-)
-
-# output
-
-Entity(3, 0)
-```
-"""
-macro copy_entity!(world_expr, entity_expr)
-    :(copy_entity!($(esc(world_expr)), $(esc(entity_expr))))
-end
-macro copy_entity!(kwargs_expr, world_expr, entity_expr)
-    for x in kwargs_expr.args
-        if x.args[1] == :remove
-            x.args[2] = :(Val.($(x.args[2])))
-        elseif x.args[1] == :mode
-            x.args[2] = :(Val($(x.args[2])))
-        end
-    end
-    quote
-        copy_entity!(
-            $(esc(world_expr)),
-            $(esc(entity_expr));
-            $(esc.(kwargs_expr.args)...),
-        )
-    end
-end
-
-"""
-    copy_entity!(
-        world::World,
-        entity::Entity;
-        add::Tuple=(),
-        remove::Tuple=(),
-        mode=Val(:copy),
-    )
-
-Copies an [`Entity`](@ref), optionally adding and/or removing components.
-
-Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
-
-For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provided.
-
-# Arguments
-
-  - `world`: The `World` instance to query.
-  - `entity::Entity`: The entity to copy.
-  - `add::Tuple`: Components to add, like `with=(Health(0),)`.
-  - `remove::Tuple`: Component types to remove, like `Val.((Position,Velocity))`.
-  - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `Val(:copy)`. Modes are :ref, :copy, :deepcopy.
+  - `mode::Tuple`: Copy mode for mutable and non-isbits components. Modes are :ref, :copy, :deepcopy.
 
 # Examples
 
@@ -753,7 +623,7 @@ Copy an entity, adding and removing some components in the same operation:
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity2 = copy_entity!(world, entity;
     add=(Health(100),),
-    remove=Val.((Position, Velocity)),
+    remove=(Position, Velocity),
 )
 
 # output
@@ -761,18 +631,25 @@ entity2 = copy_entity!(world, entity;
 Entity(3, 0)
 ```
 """
-@inline function copy_entity!(
+@inline Base.@constprop :aggressive function copy_entity!(
     world::World, entity::Entity;
     add::Tuple=(), remove::Tuple=(),
-    mode::Val=Val(:copy),
+    mode::Symbol=:copy,
 )
     if !is_alive(world, entity)
         throw(ArgumentError("can't copy a dead entity"))
     end
     if isempty(add) && isempty(remove)
-        return @inline _copy_entity!(world, entity, mode)
+        return @inline _copy_entity!(world, entity, Val(mode))
     end
-    return @inline _copy_entity!(world, entity, Val{typeof(add)}(), add, remove, mode)
+    return @inline _copy_entity!(
+        world,
+        entity,
+        Val{typeof(add)}(),
+        add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+        Val(mode),
+    )
 end
 
 """
@@ -784,7 +661,7 @@ Component types are inferred from the provided default values.
 If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
 that can be used for initialization.
 
-See also [@new_entities!](@ref) and [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple{Vararg{Val}})) for creating entities from component types.
+See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creating entities from component types.
 
 # Arguments
 
@@ -817,7 +694,7 @@ end
 
 ```
 """
-function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
+Base.@constprop :aggressive function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
@@ -890,15 +767,12 @@ end
 end
 
 """
-    @new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
+    new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
 
 Creates the given number of [`Entity`](@ref).
 
 Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator.
-
-Macro version of [`new_entities!`](@ref new_entities!(::World, n:Int, ::Tuple{Vararg{Val}}))
-for ergonomic construction of component mappers.
+Note that components are not initialized/undef unless set in the iterator!
 
 See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
 
@@ -913,7 +787,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
 Create 100 entities from component types and initialize them:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in new_entities!(world, 100, Val.((Position, Velocity)))
+for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
     for i in eachindex(entities)
         positions[i] = Position(rand(), rand())
         velocities[i] = Velocity(1, 1)
@@ -924,56 +798,12 @@ end
 
 ```
 """
-macro new_entities!(world_expr, n_expr, comp_types_expr)
-    quote
-        new_entities!(
-            $(esc(world_expr)),
-            $(esc(n_expr)),
-            Val.($(esc(comp_types_expr))),
-        )
-    end
-end
-
-"""
-    new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})::Batch
-
-Creates the given number of [`Entity`](@ref).
-
-Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator!
-
-For a more convenient tuple syntax, the macro [`@new_entities!`](@ref) is provided.
-
-See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
-
-# Arguments
-
-  - `world::World`: The `World` instance to use.
-  - `n::Int`: The number of entities to create.
-  - `comp_types::Tuple`: Component types for the new entities, like `Val.((Position, Velocity))`.
-
-# Example
-
-Create 100 entities from component types and initialize them:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in @new_entities!(world, 100, (Position, Velocity))
-    for i in eachindex(entities)
-        positions[i] = Position(rand(), rand())
-        velocities[i] = Velocity(1, 1)
-    end
-end
-
-# output
-
-```
-"""
-function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{Val}})
-    return _new_entities_from_types!(world, UInt32(n), comp_types)
+Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{DataType}})
+    return _new_entities_from_types!(world, UInt32(n), ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _new_entities_from_types!(world::W, n::UInt32, ::TS) where {W<:World,TS<:Tuple}
-    types = _try_to_types(TS)
+    types = _to_types(TS)
     exprs = []
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
@@ -1015,7 +845,7 @@ add_components!(world, entity, (Health(100),))
 
 ```
 """
-@inline function add_components!(world::World, entity::Entity, values::Tuple)
+@inline Base.@constprop :aggressive function add_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't add components to a dead entity"))
     end
@@ -1023,66 +853,41 @@ add_components!(world, entity, (Health(100),))
 end
 
 """
-    @remove_components!(world::World, entity::Entity, comp_types::Tuple)
-
-Removes the given components from an [`Entity`](@ref).
-
-Macro version of [`remove_components!`](@ref remove_components!(::World, ::Entity, ::Tuple))
-for ergonomic construction of component mappers.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-@remove_components!(world, entity, (Position, Velocity))
-
-# output
-
-```
-"""
-macro remove_components!(world_expr, entity_expr, comp_types_expr)
-    quote
-        remove_components!(
-            $(esc(world_expr)),
-            $(esc(entity_expr)),
-            Val.($(esc(comp_types_expr))),
-        )
-    end
-end
-
-"""
     remove_components!(world::World, entity::Entity, comp_types::Tuple)
 
 Removes the given components from an [`Entity`](@ref).
 
-For a more convenient tuple syntax, the macro [`@remove_components!`](@ref) is provided.
-
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-remove_components!(world, entity, Val.((Position, Velocity)))
+remove_components!(world, entity, (Position, Velocity))
 
 # output
 
 ```
 """
-@inline function remove_components!(world::World, entity::Entity, comp_types::Tuple)
+@inline Base.@constprop :aggressive function remove_components!(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't remove components from a dead entity"))
     end
-    return @inline _exchange_components!(world, entity, Val{Tuple{}}(), (), comp_types)
+    return @inline _exchange_components!(
+        world,
+        entity,
+        Val{Tuple{}}(),
+        (),
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+    )
 end
 
 """
-    @exchange_components!(world::World, entity::Entity; add::Tuple, remove::Tuple)
+    exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple, remove::Tuple)
 
-Removes the given components from an [`Entity`](@ref).
-
-Macro version of [`exchange_components!`](@ref) for more ergonomic component type tuples.
+Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
 
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-@exchange_components!(world, entity;
+exchange_components!(world, entity;
     add=(Health(100),),
     remove=(Position, Velocity),
 )
@@ -1091,44 +896,22 @@ Macro version of [`exchange_components!`](@ref) for more ergonomic component typ
 
 ```
 """
-macro exchange_components!(world_expr, entity_expr)
-    :(exchange_components!($(esc(world_expr)), $(esc(entity_expr))))
-end
-macro exchange_components!(kwargs_expr, world_expr, entity_expr)
-    map(x -> (x.args[1] == :remove && (x.args[2] = :(Val.($(x.args[2]))))), kwargs_expr.args)
-    quote
-        exchange_components!(
-            $(esc(world_expr)),
-            $(esc(entity_expr));
-            $(esc.(kwargs_expr.args)...),
-        )
-    end
-end
-
-"""
-    exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple, remove::Tuple)
-
-Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
-
-For a more convenient tuple syntax, the macro [`@exchange_components!`](@ref) is provided.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-exchange_components!(world, entity;
-    add=(Health(100),),
-    remove=Val.((Position, Velocity)),
+@inline Base.@constprop :aggressive function exchange_components!(
+    world::World,
+    entity::Entity;
+    add::Tuple=(),
+    remove::Tuple=(),
 )
-
-# output
-
-```
-"""
-@inline function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
     if !is_alive(world, entity)
         throw(ArgumentError("can't exchange components on a dead entity"))
     end
-    return @inline _exchange_components!(world, entity, Val{typeof(add)}(), add, remove)
+    return @inline _exchange_components!(
+        world,
+        entity,
+        Val{typeof(add)}(),
+        add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+    )
 end
 
 @generated function _exchange_components!(
@@ -1139,7 +922,7 @@ end
     ::RTS,
 ) where {W<:World,ATS<:Tuple,RTS<:Tuple}
     add_types = ATS.parameters
-    rem_types = _try_to_types(RTS)
+    rem_types = _to_types(RTS)
 
     if isempty(add_types) && isempty(rem_types)
         throw(ArgumentError("either components to add or to remove must be given for exchange_components!"))
@@ -1492,46 +1275,11 @@ function remove_resource!(world::World, res_type::Type{T}) where T
 end
 
 """
-    @emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
-
-Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
-The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
-
-Macro version of [`emit_event!`](@ref) that allows more ergonomic event construction.
-
-  - `world::World`: The [World](@ref) to emit the event.
-  - `event::EventType`: The [EventType](@ref) to emit.
-  - `entity::Entity`: The [Entity](@ref) to emit the event for.
-  - `components::Tuple=()`: The component types to emit the event for. Optional.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-@emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
-
-# output
-
-```
-"""
-macro emit_event!(world_expr, event_expr, entity_expr, comps_expr=())
-    quote
-        emit_event!(
-            $(esc(world_expr)),
-            $(esc(event_expr)),
-            $(esc(entity_expr)),
-            Val.($(esc(comps_expr))),
-        )
-    end
-end
-
-"""
     emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
 
 Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
 The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
 
-For a more convenient tuple syntax, the macro [`@emit_event!`](@ref) is provided.
-
   - `world::World`: The [World](@ref) to emit the event.
   - `event::EventType`: The [EventType](@ref) to emit.
   - `entity::Entity`: The [Entity](@ref) to emit the event for.
@@ -1540,20 +1288,25 @@ For a more convenient tuple syntax, the macro [`@emit_event!`](@ref) is provided
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-emit_event!(world, OnCollisionDetected, entity, Val.((Position, Velocity)))
+emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
 
 # output
 
 ```
 """
-function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple=()) where {W<:World}
+@inline Base.@constprop :aggressive function emit_event!(
+    world::W,
+    event::EventType,
+    entity::Entity,
+    components::Tuple=(),
+) where {W<:World}
     if event._id < _custom_events._id
         throw(ArgumentError("only custom events can be emitted manually"))
     end
     if !_has_observers(world._event_manager, event)
         return
     end
-    _emit_event!(world, event, entity, components)
+    _emit_event!(world, event, entity, ntuple(i -> Val(components[i]), length(components)))
 end
 
 @generated function _emit_event!(world::W, event::EventType, entity::Entity, ::CT) where {W<:World,CT<:Tuple}

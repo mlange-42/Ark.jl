@@ -3,7 +3,7 @@
 
 [Entity](@ref Entities) identifier.
 
-Entities can only be constructed using a [World](@ref) via [new_entity!](@ref) and [new_entities!](@ref)/[@new_entities!](@ref).
+Entities can be constructed using a [World](@ref) via [new_entity!](@ref).
 
 Entities can be safely stored in [components](@ref Components) and [resources](@ref Resources).
 """

@@ -4,7 +4,7 @@
 
 ### Breaking changes
 
-- Macros use semicolon instead of comma before kwargs, just like function (#193)
+- Removes the macros for the convenient tuple syntax, the syntax is used in ordinary functions now (#305)
 - Throws more explicit exception types instead of generic `ErrorException` (#202)
 - Query argument `optional` adds further components instead of making existing ones optional (#253)
 

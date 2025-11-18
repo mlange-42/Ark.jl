@@ -23,7 +23,7 @@ function update!(s::MovementSystem, world::World)
     dist_range = s.max_flee_distance - min_dist
 
     counter = rand(1:23)
-    for (_, positions, velocities, targets) in @Query(world, (Position, Velocity, Target))
+    for (_, positions, velocities, targets) in Query(world, (Position, Velocity, Target))
         @inbounds for i in eachindex(positions, velocities, targets)
             pos = positions[i]
             vel = velocities[i]
