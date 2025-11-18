@@ -501,7 +501,7 @@ set_components!(world, entity, (Position(0, 0), Velocity(1, 1)))
 
 ```
 """
-@inline function set_components!(world::World, entity::Entity, values::Tuple)
+@inline Base.@constprop :aggressive function set_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't set components of a dead entity"))
     end
@@ -545,7 +545,7 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
 Entity(3, 0)
 ```
 """
-function new_entity!(world::World, values::Tuple)
+Base.@constprop :aggressive function new_entity!(world::World, values::Tuple)
     entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
     if _has_observers(world._event_manager, OnCreateEntity)
         _fire_create_entity(world._event_manager, entity, world._archetypes[arch].mask)
@@ -598,15 +598,13 @@ Copies an [`Entity`](@ref), optionally adding and/or removing components.
 
 Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
 
-For a more convenient tuple syntax, the macro [`@copy_entity!`](@ref) is provided.
-
 # Arguments
 
   - `world`: The `World` instance to query.
   - `entity::Entity`: The entity to copy.
   - `add::Tuple`: Components to add, like `with=(Health(0),)`.
-  - `remove::Tuple`: Component types to remove, like `Val.((Position,Velocity))`.
-  - `mode::Tuple`: Copy mode for mutable and non-isbits components, like `Val(:copy)`. Modes are :ref, :copy, :deepcopy.
+  - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
+  - `mode::Tuple`: Copy mode for mutable and non-isbits components. Modes are :ref, :copy, :deepcopy.
 
 # Examples
 
@@ -648,7 +646,7 @@ Entity(3, 0)
 end
 
 """
-    new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Union{Batch,Nothing}
+    new_entities!(world::World, n::Int, defaults::Tuple{Vararg{DataType}}; iterate::Bool=false)::Union{Batch,Nothing}
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 Component types are inferred from the provided default values.
@@ -689,7 +687,7 @@ end
 
 ```
 """
-Base.@constprop :aggressive function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
+Base.@constprop :aggressive function new_entities!(world::World, n::Int, defaults::Tuple{Vararg{DataType}}; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
@@ -840,7 +838,7 @@ add_components!(world, entity, (Health(100),))
 
 ```
 """
-@inline function add_components!(world::World, entity::Entity, values::Tuple)
+@inline Base.@constprop :aggressive function add_components!(world::World, entity::Entity, values::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't add components to a dead entity"))
     end
