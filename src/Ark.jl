@@ -29,7 +29,7 @@ include("batch.jl")
 export World
 export is_alive, new_entity!, new_entities!, @new_entities!, copy_entity!, @copy_entity!
 export remove_entity!, zero_entity, is_locked, reset!
-export get_components, @get_components, set_components!, has_components, @has_components
+export get_components, set_components!, has_components, @has_components
 export add_components!, remove_components!, @remove_components!
 export exchange_components!, @exchange_components!
 export get_resource, has_resource, add_resource!, set_resource!, remove_resource!

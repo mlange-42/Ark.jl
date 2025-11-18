@@ -386,34 +386,6 @@ function _check_locked(world::World)
 end
 
 """
-    @get_components(world::World, entity::Entity, comp_types::Tuple)
-
-Get the given components for an [`Entity`](@ref).
-Components are returned in a tuple.
-
-Macro version of [`get_components`](@ref) for more ergonomic component type tuples.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-pos, vel = @get_components(world, entity, (Position, Velocity))
-
-# output
-
-(Position(0.0, 0.0), Velocity(0.0, 0.0))
-```
-"""
-macro get_components(world_expr, entity_expr, comp_types_expr)
-    quote
-        get_components(
-            $(esc(world_expr)),
-            $(esc(entity_expr)),
-            Val.($(esc(comp_types_expr))),
-        )
-    end
-end
-
-"""
     get_components(world::World, entity::Entity, comp_types::Tuple)
 
 Get the given components for an [`Entity`](@ref).
@@ -431,11 +403,11 @@ pos, vel = get_components(world, entity, Val.((Position, Velocity)))
 (Position(0.0, 0.0), Velocity(0.0, 0.0))
 ```
 """
-@inline function get_components(world::World, entity::Entity, comp_types::Tuple)
+@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't get components of a dead entity"))
     end
-    return @inline _get_components(world, entity, comp_types)
+    return @inline _get_components(world, entity, Val.(comp_types))
 end
 
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
