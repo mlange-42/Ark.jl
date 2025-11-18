@@ -23,7 +23,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 &mdash;&mdash;
 
-[Features](#features) &nbsp; &bull; &nbsp; [Installation](#installation) &nbsp; &bull; &nbsp; [Usage](#usage)
+[Features](#features) &nbsp; &bull; &nbsp; [Why ECS?](#why-ecs) &nbsp; &bull; &nbsp; [Installation](#installation) &nbsp; &bull; &nbsp; [Usage](#usage)
 </div>
 
 ## Features
@@ -33,6 +33,17 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 - Blazing fast [batch entity creation](https://mlange-42.github.io/Ark.jl/stable/manual/entities.html#Creating-entities).
 - No [systems](https://mlange-42.github.io/Ark.jl/stable/manual/systems). Just [queries](https://mlange-42.github.io/Ark.jl/stable/manual/queries). Use your own structure.
 - Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
+
+## Why ECS?
+
+Entity Component Systems (ECS) offer a clean, scalable way to build individual- and agent-based models
+by separating agent data from behavioral logic.
+Agents are simply collections of components, while systems define how those components interact,
+making simulations modular, extensible, and efficient even with millions of heterogeneous individuals.
+
+Ark.jl brings this architecture to Julia with a lightweight, performance-focused implementation
+that empowers scientific modellers to design complex and performant simulations
+without the need for deep software engineering expertise.
 
 ## Installation
 
