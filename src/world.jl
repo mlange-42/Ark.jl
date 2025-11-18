@@ -883,7 +883,12 @@ exchange_components!(world, entity;
 
 ```
 """
-@inline Base.@constprop :aggressive function exchange_components!(world::World, entity::Entity; add::Tuple=(), remove::Tuple=())
+@inline Base.@constprop :aggressive function exchange_components!(
+    world::World,
+    entity::Entity;
+    add::Tuple=(),
+    remove::Tuple=(),
+)
     if !is_alive(world, entity)
         throw(ArgumentError("can't exchange components on a dead entity"))
     end
@@ -1270,7 +1275,12 @@ emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
 
 ```
 """
-@inline Base.@constprop :aggressive function emit_event!(world::W, event::EventType, entity::Entity, components::Tuple=()) where {W<:World}
+@inline Base.@constprop :aggressive function emit_event!(
+    world::W,
+    event::EventType,
+    entity::Entity,
+    components::Tuple=(),
+) where {W<:World}
     if event._id < _custom_events._id
         throw(ArgumentError("only custom events can be emitted manually"))
     end
