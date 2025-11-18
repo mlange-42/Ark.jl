@@ -401,7 +401,7 @@ pos, vel = get_components(world, entity, (Position, Velocity))
 (Position(0.0, 0.0), Velocity(0.0, 0.0))
 ```
 """
-@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple{Vararg{<:Any,N}}) where N
+@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple{Vararg{Any,N}}) where N
     if !is_alive(world, entity)
         throw(ArgumentError("can't get components of a dead entity"))
     end
