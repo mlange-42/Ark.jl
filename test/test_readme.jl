@@ -11,7 +11,7 @@
     # Time loop
     for i in 1:10
         # Iterate a query (archetypes)
-        for (entities, pos_column, vel_column) in @Query(world, (Position, Velocity))
+        for (entities, pos_column, vel_column) in Query(world, (Position, Velocity))
             # Iterate entities in the current archetype
             for i in eachindex(pos_column)
                 # Get components of the current entity
