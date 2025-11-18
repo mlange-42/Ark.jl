@@ -35,7 +35,7 @@ function setup_query_posvel_32_arch(n_entities::Int)
         error("expected $expected_archetypes archetypes, got $num_archetypes")
     end
     sum = 0
-    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+    for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
@@ -88,7 +88,7 @@ function setup_query_posvel_1k_arch(n_entities::Int)
         error("expected $expected_archetypes archetypes, got $num_archetypes")
     end
     sum = 0
-    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+    for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
@@ -101,7 +101,7 @@ end
 
 function benchmark_query_posvel_many_arch(args, n)
     world, _ = args
-    for (_, pos_column, vel_column) in @Query(world, (Position, Velocity))
+    for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]

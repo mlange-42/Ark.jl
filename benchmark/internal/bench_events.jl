@@ -15,7 +15,7 @@ end
 function benchmark_event_no_obs(args, n)
     world, entities, evt = args
     for entity in entities
-        @emit_event!(world, evt, entity, (Position,))
+        emit_event!(world, evt, entity, (Position,))
     end
     world
 end
@@ -33,7 +33,7 @@ function setup_event_no_match(n::Int)
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
 
-    @observe!(world, evt, (Velocity,)) do entity
+    observe!(world, evt, (Velocity,)) do entity
     end
 
     return world, entities, evt
@@ -42,7 +42,7 @@ end
 function benchmark_event_no_match(args, n)
     world, entities, evt = args
     for entity in entities
-        @emit_event!(world, evt, entity, (Position,))
+        emit_event!(world, evt, entity, (Position,))
     end
     world
 end
@@ -61,7 +61,7 @@ function setup_event_match_1(n::Int)
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
 
-    @observe!(world, evt, (Position,)) do entity
+    observe!(world, evt, (Position,)) do entity
     end
 
     return world, entities, evt
@@ -70,7 +70,7 @@ end
 function benchmark_event_match_1(args, n)
     world, entities, evt = args
     for entity in entities
-        @emit_event!(world, evt, entity, (Position,))
+        emit_event!(world, evt, entity, (Position,))
     end
     world
 end
@@ -93,7 +93,7 @@ function setup_event_match_1_of_5(n::Int)
     end
 
     for _ in 1:4
-        @observe!(world, evt, (Velocity,)) do entity
+        observe!(world, evt, (Velocity,)) do entity
         end
     end
 
@@ -103,7 +103,7 @@ end
 function benchmark_event_match_1_of_5(args, n)
     world, entities, evt = args
     for entity in entities
-        @emit_event!(world, evt, entity, (Position,))
+        emit_event!(world, evt, entity, (Position,))
     end
     world
 end
@@ -122,7 +122,7 @@ function setup_event_capture(n::Int)
         push!(entities, new_entity!(world, (Position(0, 0),)))
     end
 
-    @observe!(world, evt, (Position,)) do entity
+    observe!(world, evt, (Position,)) do entity
         set_components!(world, entity, (Position(Float64(entity._id), 0),))
     end
 
@@ -132,7 +132,7 @@ end
 function benchmark_event_capture(args, n)
     world, entities, evt = args
     for entity in entities
-        @emit_event!(world, evt, entity, (Position,))
+        emit_event!(world, evt, entity, (Position,))
     end
     world
 end

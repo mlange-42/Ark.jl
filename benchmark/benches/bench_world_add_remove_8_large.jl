@@ -28,8 +28,8 @@ function setup_world_add_remove_8_large(n_entities::Int)
                 CompN{5}(0, 0), CompN{6}(0, 0), CompN{7}(0, 0), CompN{8}(0, 0)),
         )
         remove_components!(world, e,
-            Val.((CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
-                CompN{6}, CompN{7}, CompN{8})),
+            (CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
+             CompN{6}, CompN{7}, CompN{8}),
         )
     end
 
@@ -44,8 +44,8 @@ function benchmark_world_add_remove_8_large(args, n)
                 CompN{5}(0, 0), CompN{6}(0, 0), CompN{7}(0, 0), CompN{8}(0, 0)),
         )
         remove_components!(world, e,
-            Val.((CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
-                CompN{6}, CompN{7}, CompN{8})),
+            (CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5},
+             CompN{6}, CompN{7}, CompN{8}),
         )
     end
 end

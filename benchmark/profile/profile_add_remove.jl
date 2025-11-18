@@ -19,7 +19,7 @@ function profile_add_remove()
     for _ in 1:iter
         for e in entities
             add_components!(world, e, (Velocity(0, 0),))
-            @remove_components!(world, e, (Velocity,))
+            remove_components!(world, e, (Velocity,))
         end
     end
 end
