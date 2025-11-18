@@ -451,7 +451,7 @@ has = has_components(world, entity, (Position, Velocity))
 true
 ```
 """
-@inline Base.constprop :aggressive function has_components(world::World, entity::Entity, comp_types::Tuple)
+@inline Base.@constprop :aggressive function has_components(world::World, entity::Entity, comp_types::Tuple)
     if !is_alive(world, entity)
         throw(ArgumentError("can't check components of a dead entity"))
     end
