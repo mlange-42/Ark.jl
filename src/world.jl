@@ -646,7 +646,7 @@ Entity(3, 0)
 end
 
 """
-    new_entities!(world::World, n::Int, defaults::Tuple{Vararg{DataType}}; iterate::Bool=false)::Union{Batch,Nothing}
+    new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Union{Batch,Nothing}
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 Component types are inferred from the provided default values.
@@ -687,7 +687,7 @@ end
 
 ```
 """
-Base.@constprop :aggressive function new_entities!(world::World, n::Int, defaults::Tuple{Vararg{DataType}}; iterate::Bool=false)
+Base.@constprop :aggressive function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
     return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
 end
 
@@ -791,7 +791,7 @@ end
 
 ```
 """
-Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_types::Tuple)
+Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{DataType}})
     return _new_entities_from_types!(world, UInt32(n), Val.(comp_types))
 end
 
