@@ -104,7 +104,7 @@ end
 
 Observer for reacting on built-in and custom events.
 
-See [@observe!](@ref) for details.
+See [observe!](@ref) for details.
 See [EventType](@ref) for built-in, and [EventRegistry](@ref) for custom event types.
 """
 struct Observer{W<:_AbstractWorld,M}

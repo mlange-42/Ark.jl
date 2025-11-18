@@ -623,7 +623,7 @@ Copy an entity, adding and removing some components in the same operation:
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity2 = copy_entity!(world, entity;
     add=(Health(100),),
-    remove=Val.((Position, Velocity)),
+    remove=(Position, Velocity),
 )
 
 # output
@@ -780,7 +780,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
 Create 100 entities from component types and initialize them:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in @new_entities!(world, 100, (Position, Velocity))
+for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
     for i in eachindex(entities)
         positions[i] = Position(rand(), rand())
         velocities[i] = Velocity(1, 1)

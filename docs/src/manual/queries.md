@@ -37,7 +37,7 @@ end
 ```
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in @Query(world, (Position, Velocity))
+for (entities, positions, velocities) in Query(world, (Position, Velocity))
     @inbounds for i in eachindex(entities)
         pos = positions[i]
         vel = velocities[i]
@@ -71,7 +71,7 @@ Queries provide an optional `with` argument that filters for additional componen
 that entities must have, but that are not used by the query.
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in @Query(world,
+for (entities, positions, velocities) in Query(world,
             (Position, Velocity);
             with=(Health,)
         )
@@ -89,7 +89,7 @@ end
 The optional `without` argument allows to exclude entities that have certain components:
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in @Query(world,
+for (entities, positions, velocities) in Query(world,
             (Position, Velocity);
             without=(Health,)
         )
@@ -108,7 +108,7 @@ The optional `exclusive` argument excludes entities that have any other then the
 and those specified by `with`. So it acts like an exhaustive `without`:
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in @Query(world,
+for (entities, positions, velocities) in Query(world,
             (Position, Velocity);
             exclusive=true
         )
@@ -130,7 +130,7 @@ Columns for these components are added at the end of the query iterator tuple.
 They are `nothing` if the current [archetype](@ref Architecture) does not have them.
 
 ```jldoctest; output = false
-for (entities, positions, velocities, healths) in @Query(world,
+for (entities, positions, velocities, healths) in Query(world,
             (Position, Velocity);
             optional=(Health,)
         )
@@ -161,7 +161,7 @@ world = World(
 
 # ...
 
-for columns in Query(world, Val.((Position, Velocity)))
+for columns in Query(world, (Position, Velocity))
     @unpack entities, (x, y), (dx, sy) = columns
     @inbounds x .+= dx
     @inbounds y .+= dy
@@ -189,7 +189,7 @@ operations must be applied only after the query iteration has finished.
 # vector for entities to be removed from te world
 to_remove = Entity[]
 
-for (entities, positions) in @Query(world, (Position,))
+for (entities, positions) in Query(world, (Position,))
     @inbounds for i in eachindex(entities)
         pos = positions[i]
 

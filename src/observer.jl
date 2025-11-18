@@ -116,7 +116,7 @@ end
     observe!(world::World, observer::Observer; unregister::Bool=false)
 
 Registers or un-registers the given [Observer](@ref).
-Note that observers created with [@observe!](@ref) are automatically registered by default.
+Note that observers created with [observe!](@ref) are automatically registered by default.
 """
 function observe!(world::World, observer::Observer; unregister::Bool=false)
     if unregister

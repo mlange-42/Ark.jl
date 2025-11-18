@@ -58,10 +58,10 @@ new_entities!(world, 100, (
 
 This may be sufficient in some use cases, but most often we will use a second approach:
 
-From **component types** with subsequent manual initialization using the macro [@new_entities!](@ref):
+From **component types** with subsequent manual initialization using the macro [new_entities!](@ref):
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in @new_entities!(world, 100, (Position, Velocity))
+for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
     for i in eachindex(entities)
         positions[i] = Position(i, i)
         velocities[i] = Velocity(0, 0)
@@ -73,7 +73,7 @@ end
 ```
 
 The nested loop shown here will be explained in detail in the chapter on [Queries](@ref),
-which work in the same way at the [Batch](@ref) iterator that is returned from [@new_entities!](@ref)
+which work in the same way at the [Batch](@ref) iterator that is returned from [new_entities!](@ref)
 and that is used here.
 
 Note that with the second approach, all components of all entities should be set as they are otherwise uninitialized.

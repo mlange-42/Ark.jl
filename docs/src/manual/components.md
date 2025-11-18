@@ -19,7 +19,7 @@ by the optional argument `allow_mutable` of the [world constructor](@ref World(:
 
 Although the majority of the logic in an application that uses Ark will be performed in [Queries](@ref),
 it may be necessary to access components for a particular entity.
-One or more components of an entity can be accessed via [@get_components](@ref):
+One or more components of an entity can be accessed via [get_components](@ref):
 
 ```@meta
 DocTestSetup = quote
@@ -43,7 +43,7 @@ end
 ```
 
 ```jldoctest; output = false
-(pos, vel) = @get_components(world, entity, (Position, Velocity))
+(pos, vel) = get_components(world, entity, (Position, Velocity))
 
 # output
 
@@ -64,13 +64,13 @@ set_components!(world, entity, (Position(0, 0), Velocity(1,1)))
 
 A feature that makes ECS particularly flexible and powerful is the ability to
 add components to and remove them from entities at runtime.
-This works similar to component access and can be done via [add_components!](@ref) and [@remove_components!](@ref):
+This works similar to component access and can be done via [add_components!](@ref) and [remove_components!](@ref):
 
 ```jldoctest; output = false
 entity = new_entity!(world, ())
 
 add_components!(world, entity, (Position(0, 0), Velocity(1,1)))
-@remove_components!(world, entity, (Velocity,))
+remove_components!(world, entity, (Velocity,))
 
 # output
 
@@ -80,13 +80,13 @@ Note that adding an already existing component or removing a missing one results
 
 Also note that it is more efficient to add/remove multiple components at once instead of one by one.
 To allow for efficient exchange of components (i.e. add some and remove others in the same operation),
-[@exchange_components!](@ref) can be used:
+[exchange_components!](@ref) can be used:
 
 
 ```jldoctest; output = false
 entity = new_entity!(world, (Position(0, 0), Velocity(1,1)))
 
-@exchange_components!(world, entity; 
+exchange_components!(world, entity; 
     add    = (Health(100),),
     remove = (Position, Velocity),
 )
@@ -111,7 +111,7 @@ For these columns, Ark offers two storage modes:
   - Not allowed for mutable components.
   - Not allowed for components without fields, like labels and primitives.
   - ≈10-20% runtime overhead for component operations and entity creation.
-  - Slower component access with [@get_components](@ref) and [set_components!](@ref).
+  - Slower component access with [get_components](@ref) and [set_components!](@ref).
 
 The storage mode can be selected per component type by using [StructArrayStorage](@ref) or [VectorStorage](@ref) during world construction.
 
