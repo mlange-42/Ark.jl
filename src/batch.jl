@@ -3,7 +3,14 @@
     Batch
 
 A batch iterator.
-This is returned from batch operations and serves for initializing newly added components.
+This is returned from batch operations and serves for initializing newly added components
+or otherwise processing the manipulated entities.
+
+The batch itself iterates matching archetypes just like a [Query](@ref), while an inner loop or broadcast operations
+must be used to manipulate individual entities.
+
+A batch [locks](@ref world-lock) the [World](@ref World) until it is fully iterated or closed manually.
+This prevents structural changes like creating and removing entities or adding and removing components during the iteration.
 """
 struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N,M}
     _world::W

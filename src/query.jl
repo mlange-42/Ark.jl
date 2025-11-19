@@ -6,7 +6,8 @@ end
 """
     Query
 
-A query for components.
+A query for components. See function
+[Query](@ref Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 """
 struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _mask::_Mask{M}
@@ -29,6 +30,15 @@ end
     )
 
 Creates a query.
+
+A query is an iterator for processing all entities that match the query's criteria.
+The query itself iterates matching archetypes, while an inner loop or broadcast operations
+must be used to manipulate individual entities (see example below).
+
+A query [locks](@ref world-lock) the [World](@ref World) until it is fully iterated or closed manually.
+This prevents structural changes like creating and removing entities or adding and removing components during the iteration.
+
+See the user manual chapter on [Queries](@ref) for more details and examples.
 
 # Arguments
 

@@ -58,7 +58,7 @@ certain set of [Components](@ref components-api).
 
 ```@docs
 Query
-Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Val)
+Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
 close!(q::Query)
 length(q::Query)
 Entities
