@@ -38,7 +38,7 @@ export Entity
 export is_zero
 
 export Query, Batch
-export close!, count_entities
+export query, close!, count_entities
 
 export Entities
 

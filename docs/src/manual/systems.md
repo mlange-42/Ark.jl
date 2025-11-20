@@ -117,7 +117,7 @@ And here the classical movement system:
 struct MovementSystem <: System end
 
 function update!(s::InitializerSystem, w::World)
-    for (entities, positions, velocities) in Query(world, (Position, Velocity))
+    for (entities, positions, velocities) in query(world, (Position, Velocity))
         @inbounds for i in eachindex(entities)
             pos = positions[i]
             vel = velocities[i]
