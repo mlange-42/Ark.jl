@@ -38,7 +38,7 @@ end
 Observer(:OnAddComponents, (Position, Velocity); with=(Altitude))
 ```
 """
-function observe!(
+Base.@constprop :aggressive function observe!(
     fn::Function,
     world::W,
     event::EventType,
