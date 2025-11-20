@@ -60,7 +60,7 @@ certain set of [Components](@ref components-api).
 Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
 close!(::Query)
-count(::Query)
+count_entities(::Query)
 length(::Query)
 Entities
 @unpack
@@ -88,7 +88,7 @@ Behaves like a [Query](@ref) and can be used for component initialization.
 ```@docs
 Batch
 close!(::Batch)
-count(::Batch)
+count_entities(::Batch)
 length(::Batch)
 ```
 

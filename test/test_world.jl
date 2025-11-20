@@ -448,7 +448,7 @@ end
     cnt = 0
     batch = new_entities!(world, 100, (Position, Velocity))
     @test length(batch) == 1
-    @test count(batch) == 100
+    @test count_entities(batch) == 100
     for (ent, pos_col, vel_col) in batch
         @test length(ent) == 100
         @test length(pos_col) == 100

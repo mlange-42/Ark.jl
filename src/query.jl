@@ -214,7 +214,7 @@ function Base.length(q::Query)
 end
 
 """
-    count(q::Query)
+    count_entities(q::Query)
 
 Returns the number of matching entities in the query.
 
@@ -225,7 +225,7 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     The time complexity is linear with the number of archetypes in the query's pre-selection.
     It is equivalent to iterating the query's archetypes and summing up their lengths.
 """
-function Base.count(q::Query)
+function count_entities(q::Query)
     count = 0
     for archetype in q._archetypes
         if isempty(archetype.entities)
