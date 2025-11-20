@@ -208,7 +208,10 @@ function Base.length(q::Query)
         if isempty(archetype.entities)
             continue
         end
-        count += 1
+        if _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+            count += 1
+        end
     end
     count
 end
