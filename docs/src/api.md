@@ -59,9 +59,9 @@ certain set of [Components](@ref components-api).
 ```@docs
 Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
-close!(q::Query)
-count(q::Query)
-length(q::Query)
+close!(::Query)
+count(::Query)
+length(::Query)
 Entities
 @unpack
 unpack
@@ -87,8 +87,9 @@ Behaves like a [Query](@ref) and can be used for component initialization.
 
 ```@docs
 Batch
-close!(b::Batch)
-length(b::Batch)
+close!(::Batch)
+count(::Batch)
+length(::Batch)
 ```
 
 ## [Event system](@id events-api)

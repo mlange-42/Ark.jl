@@ -445,9 +445,10 @@ end
     e = new_entity!(world, (Position(1, 1), Velocity(3, 4)))
     remove_entity!(world, e)
 
-    count = 0
+    cnt = 0
     batch = new_entities!(world, 100, (Position, Velocity))
-    @test length(batch) == 100
+    @test length(batch) == 1
+    @test count(batch) == 100
     for (ent, pos_col, vel_col) in batch
         @test length(ent) == 100
         @test length(pos_col) == 100
@@ -456,25 +457,25 @@ end
             @test is_alive(world, ent[i]) == true
             pos_col[i] = Position(i + 1, i + 1)
             vel_col[i] = Velocity(i + 1, i + 1)
-            count += 1
+            cnt += 1
         end
         @test is_locked(world) == true
     end
-    @test count == 100
+    @test cnt == 100
     @test is_locked(world) == false
     @test length(world._archetypes[2].entities) == 101
     @test length(world._storages[offset_ID+2].data[2]) == 101
     @test length(world._storages[offset_ID+3].data[2]) == 101
 
-    count = 0
+    cnt = 0
     for (ent, pos_col, vel_col) in Query(world, (Position, Velocity))
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(i, i)
-            count += 1
+            cnt += 1
         end
     end
-    @test count == 101
+    @test cnt == 101
 end
 
 @testset "World new_entities! with values" begin
