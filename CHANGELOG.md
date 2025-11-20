@@ -17,6 +17,7 @@
 - Adds keyword argument `initial_capacity` to World constructor (#288)
 - Adds function `reset!` for resetting and reusing a world to avoid reallocations (#292)
 - Adds function `length` for queries and batches (#298)
+- Adds function `count_entities` for queries and batches (#316)
 
 ### Performance
 

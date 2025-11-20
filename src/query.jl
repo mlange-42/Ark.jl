@@ -194,6 +194,31 @@ end
 """
     length(q::Query)
 
+Returns the number of matching archetypes with at least one entity in the query.
+
+Does not iterate or [close!](@ref close!(::Query)) the query.
+
+!!! note
+
+    The time complexity is linear with the number of archetypes in the query's pre-selection.
+"""
+function Base.length(q::Query)
+    count = 0
+    for archetype in q._archetypes
+        if isempty(archetype.entities)
+            continue
+        end
+        if _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+            count += 1
+        end
+    end
+    count
+end
+
+"""
+    count_entities(q::Query)
+
 Returns the number of matching entities in the query.
 
 Does not iterate or [close!](@ref close!(::Query)) the query.
@@ -203,7 +228,7 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     The time complexity is linear with the number of archetypes in the query's pre-selection.
     It is equivalent to iterating the query's archetypes and summing up their lengths.
 """
-function Base.length(q::Query)
+function count_entities(q::Query)
     count = 0
     for archetype in q._archetypes
         if isempty(archetype.entities)
