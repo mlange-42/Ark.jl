@@ -3,8 +3,8 @@ function setup_query_create(n)
     world = World(Position, Velocity)
 
     for i in 1:n
-        query = Query(world, (Position, Velocity))
-        close!(query)
+        q = query(world, (Position, Velocity))
+        close!(q)
     end
 
     return world
@@ -14,8 +14,8 @@ function benchmark_query_create(args, n)
     world = args
 
     for i in 1:n
-        query = Query(world, (Position, Velocity))
-        close!(query)
+        q = query(world, (Position, Velocity))
+        close!(q)
     end
 
     return world

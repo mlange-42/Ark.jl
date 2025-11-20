@@ -468,7 +468,7 @@ end
     @test length(world._storages[offset_ID+3].data[2]) == 101
 
     cnt = 0
-    for (ent, pos_col, vel_col) in Query(world, (Position, Velocity))
+    for (ent, pos_col, vel_col) in query(world, (Position, Velocity))
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(i, i)
@@ -514,7 +514,7 @@ end
     @test length(world._storages[offset_ID+3].data[2]) == 101
 
     count = 0
-    for (ent, pos_col, vel_col) in Query(world, (Position, Velocity))
+    for (ent, pos_col, vel_col) in query(world, (Position, Velocity))
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(i, i)
@@ -528,7 +528,7 @@ end
     @test is_locked(world) == false
 
     count = 0
-    for (ent, pos_col, vel_col) in Query(world, (Position, Velocity))
+    for (ent, pos_col, vel_col) in query(world, (Position, Velocity))
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             if i <= 101
@@ -729,7 +729,7 @@ end
     @test e._id == 2
     @test e._gen == 0
 
-    q = Query(world, ())
+    q = query(world, ())
     @test_throws(
         "InvalidStateException: cannot modify a locked world: " *
         "collect entities into a vector and apply changes after query iteration has completed",

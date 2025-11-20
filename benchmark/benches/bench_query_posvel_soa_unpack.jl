@@ -7,7 +7,7 @@ function setup_query_posvel_soa_unpack(n_entities::Int)
     for i in 1:n_entities
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
     end
-    for columns in Query(world, (Position, Velocity))
+    for columns in query(world, (Position, Velocity))
         @unpack _, (x, y), (dx, dy) = columns
         @inbounds x .+= dx
         @inbounds y .+= dy
@@ -17,7 +17,7 @@ end
 
 function benchmark_query_posvel_soa_unpack(args, n)
     world = args
-    for columns in Query(world, (Position, Velocity))
+    for columns in query(world, (Position, Velocity))
         @unpack _, (x, y), (dx, dy) = columns
         @inbounds x .+= dx
         @inbounds y .+= dy

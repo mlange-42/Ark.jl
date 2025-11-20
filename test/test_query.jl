@@ -9,13 +9,13 @@
     end
 
     for i in 1:10
-        query = Query(world, (Position, Velocity))
-        @test Base.IteratorSize(typeof(query)) == Base.SizeUnknown()
-        @test query._has_excluded == false
-        @test length(query) == 1
-        @test count_entities(query) == 10
+        q = query(world, (Position, Velocity))
+        @test Base.IteratorSize(typeof(q)) == Base.SizeUnknown()
+        @test q._has_excluded == false
+        @test length(q) == 1
+        @test count_entities(q) == 10
         count = 0
-        for (entities, vec_pos, vec_vel) in query
+        for (entities, vec_pos, vec_vel) in q
             @test isa(vec_pos, FieldViewable{Position}) == true
             @test isa(vec_vel, FieldViewable{Velocity}) == true
             @test length(entities) == length(vec_pos)
@@ -46,12 +46,12 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity); with=(Altitude,))
-    @test length(query) == 1
-    @test count_entities(query) == 10
+    q = query(world, (Position, Velocity); with=(Altitude,))
+    @test length(q) == 1
+    @test count_entities(q) == 10
 
     count = 0
-    for (ent, vec_pos, vec_vel) in query
+    for (ent, vec_pos, vec_vel) in q
         for i in eachindex(ent)
             e = ent[i]
             @test has_components(world, e, (Altitude,)) == true
@@ -69,12 +69,12 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity); without=(Altitude,))
-    @test length(query) == 1
-    @test count_entities(query) == 10
+    q = query(world, (Position, Velocity); without=(Altitude,))
+    @test length(q) == 1
+    @test count_entities(q) == 10
 
     count = 0
-    for (ent, vec_pos, vec_vel) in query
+    for (ent, vec_pos, vec_vel) in q
         for i in eachindex(ent)
             e = ent[i]
             @test has_components(world, e, (Altitude,)) == false
@@ -92,14 +92,14 @@ end
         new_entity!(world, (Position(i, i * 2), Velocity(1, 1), Altitude(5)))
     end
 
-    query = Query(world, (Position, Velocity); optional=(Altitude,))
-    @test length(query) == 2
-    @test count_entities(query) == 20
+    q = query(world, (Position, Velocity); optional=(Altitude,))
+    @test length(q) == 2
+    @test count_entities(q) == 20
 
     count = 0
     indices = Vector{Int}()
     arch = 1
-    for (ent, vec_pos, vec_vel, vec_alt) in query
+    for (ent, vec_pos, vec_vel, vec_alt) in q
         if arch == 1
             @test vec_alt == nothing
         else
@@ -125,16 +125,16 @@ end
 
     @test_throws(
         "ArgumentError: cannot use 'exclusive' together with 'without'",
-        Query(world, (Position, Velocity); without=(Altitude,), exclusive=true),
+        query(world, (Position, Velocity); without=(Altitude,), exclusive=true),
     )
 
-    query = Query(world, (Position, Velocity); with=(Altitude,), exclusive=true)
-    @test query._has_excluded == true
-    @test length(query) == 1
-    @test count_entities(query) == 10
+    q = query(world, (Position, Velocity); with=(Altitude,), exclusive=true)
+    @test q._has_excluded == true
+    @test length(q) == 1
+    @test count_entities(q) == 10
 
     count = 0
-    for (ent, vec_pos, vec_vel) in query
+    for (ent, vec_pos, vec_vel) in q
         for i in eachindex(ent)
             e = ent[i]
             @test has_components(world, e, (Health,)) == false
@@ -152,13 +152,13 @@ end
         new_entity!(world, (Position(i, i * 2),))
     end
 
-    query = Query(world, (Position, Velocity))
-    @test length(query) == 0
-    @test count_entities(query) == 0
+    q = query(world, (Position, Velocity))
+    @test length(q) == 0
+    @test count_entities(q) == 0
 
     count = 0
     arches = 0
-    for (ent, vec_pos) in query
+    for (ent, vec_pos) in q
         for i in eachindex(ent)
             count += 1
         end
@@ -176,13 +176,13 @@ end
         new_entity!(world, (Velocity(i, i * 2),))
     end
 
-    query = Query(world, ())
-    @test length(query) == 2
-    @test count_entities(query) == 20
+    q = query(world, ())
+    @test length(q) == 2
+    @test count_entities(q) == 20
 
     count = 0
     arches = 0
-    for (ent,) in query
+    for (ent,) in q
         for i in eachindex(ent)
             count += 1
         end
@@ -203,7 +203,7 @@ end
         new_entity!(world, (Position(0, 0), Velocity(i, i)))
     end
 
-    for (entities, vec) in Query(world, (Velocity,))
+    for (entities, vec) in query(world, (Velocity,))
         @test isa(vec, StructArrayView)
         for i in eachindex(vec)
             pos = vec[i]
@@ -211,7 +211,7 @@ end
         end
     end
 
-    for arch in Query(world, (Position, Velocity))
+    for arch in query(world, (Position, Velocity))
         @unpack e, pos, (dx, dy) = arch
         @test isa(e, Entities)
         @test isa(dx, SubArray{Float64})
@@ -232,7 +232,7 @@ end
         new_entity!(world, (Position(i, i), Velocity(i, i), NoIsBits([]), Int64(1)))
     end
 
-    for columns in Query(world, (Position, Velocity))
+    for columns in query(world, (Position, Velocity))
         @unpack _, (x, y), (dx, dy) = columns
         @test x isa FieldView
         @test y isa FieldView
@@ -241,13 +241,13 @@ end
         @test x[10] == 10
     end
 
-    for (_, positions, no_isbits, int) in Query(world, (Position, NoIsBits, Int64))
+    for (_, positions, no_isbits, int) in query(world, (Position, NoIsBits, Int64))
         @test positions isa FieldViewable
         @test no_isbits isa FieldViewable
         @test int isa SubArray
     end
 
-    for columns in Query(world, (Position, NoIsBits, Int64))
+    for columns in query(world, (Position, NoIsBits, Int64))
         @unpack _, (x, y), (vec,), int = columns
         @test x isa FieldView
         @test y isa FieldView
@@ -265,7 +265,7 @@ end
     )
     @test_throws(
         "ArgumentError: duplicate component types in query: Altitude, Health",
-        Query(world, (Position, Velocity, Altitude); optional=(Altitude, Health), without=(Health,))
+        query(world, (Position, Velocity, Altitude); optional=(Altitude, Health), without=(Health,))
     )
 end
 
@@ -284,7 +284,7 @@ end
         new_entity!(world, (Position(i, i), Velocity(i, i), Altitude(0), NoIsBits([]), Int64(1), Float64(1.0)))
     end
 
-    query = Query(world, (Position, Velocity, Int64); optional=(NoIsBits, Altitude, Float64))
+    q = query(world, (Position, Velocity, Int64); optional=(NoIsBits, Altitude, Float64))
 
     @inferred Tuple{
         Entities,
@@ -301,10 +301,10 @@ end
         Union{Nothing,FieldViews.FieldViewable{NoIsBits,1,Vector{NoIsBits}}},
         Union{Nothing,FieldViews.FieldViewable{Altitude,1,Vector{Altitude}}},
         Union{Nothing,SubArray{Float64,1,Vector{Float64},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
-    } Base.eltype(typeof(query))
+    } Base.eltype(typeof(q))
 
-    expected_type = Base.eltype(typeof(query))
-    @inferred Union{Nothing,Tuple{expected_type,Any}} Base.iterate(query)
+    expected_type = Base.eltype(typeof(q))
+    @inferred Union{Nothing,Tuple{expected_type,Any}} Base.iterate(q)
 end
 
 """
@@ -320,7 +320,7 @@ end
     new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0)))
 
     f = () -> begin
-        for (e, p, v) in Query(world, (Position, Vector); with=(Altitude,), without=(Health,))
+        for (e, p, v) in query(world, (Position, Vector); with=(Altitude,), without=(Health,))
             if length(e) != 1
                 error("")
             end
@@ -335,20 +335,20 @@ end
 @testset "Query error messages" begin
     world = World(Dummy, Position, Velocity)
 
-    query = Query(world, (Position, Velocity))
-    for _ in query
+    q = query(world, (Position, Velocity))
+    for _ in q
     end
     @test_throws(
         "InvalidStateException: query closed, queries can't be used multiple times",
-        for _ in query
+        for _ in q
         end
     )
 
-    query = Query(world, (Position, Velocity))
-    close!(query)
+    q = query(world, (Position, Velocity))
+    close!(q)
     @test_throws(
         "InvalidStateException: query closed, queries can't be used multiple times",
-        for _ in query
+        for _ in q
         end
     )
 end
@@ -361,12 +361,12 @@ end
         Health,
         CompN{1},
     )
-    query = Query(world, (Position, Velocity))
-    @test string(query) == "Query((Position, Velocity))"
+    q = query(world, (Position, Velocity))
+    @test string(q) == "Query((Position, Velocity))"
 
-    query = Query(world, (Position, Velocity); optional=(Altitude,), with=(Health,), exclusive=true)
-    @test string(query) == "Query((Position, Velocity); optional=(Altitude), with=(Health), exclusive=true)"
+    q = query(world, (Position, Velocity); optional=(Altitude,), with=(Health,), exclusive=true)
+    @test string(q) == "Query((Position, Velocity); optional=(Altitude), with=(Health), exclusive=true)"
 
-    query = Query(world, (Position, Velocity); optional=(Altitude,), without=(Health,))
-    @test string(query) == "Query((Position, Velocity); optional=(Altitude), without=(Health))"
+    q = query(world, (Position, Velocity); optional=(Altitude,), without=(Health,))
+    @test string(q) == "Query((Position, Velocity); optional=(Altitude), without=(Health))"
 end

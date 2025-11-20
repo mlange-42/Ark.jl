@@ -7,7 +7,7 @@ end
     Query
 
 A query for components. See function
-[Query](@ref Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
+[query](@ref query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 """
 struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _mask::_Mask{M}
@@ -20,7 +20,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
 end
 
 """
-    Query(
+    query(
         world::World,
         comp_types::Tuple;
         with::Tuple=(),
@@ -52,7 +52,7 @@ See the user manual chapter on [Queries](@ref) for more details and examples.
 # Example
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in Query(world, (Position, Velocity))
+for (entities, positions, velocities) in query(world, (Position, Velocity))
     for i in eachindex(entities)
         pos = positions[i]
         vel = velocities[i]
@@ -64,7 +64,7 @@ end
 
 ```
 """
-Base.@constprop :aggressive function Query(
+Base.@constprop :aggressive function query(
     world::World,
     comp_types::Tuple;
     with::Tuple=(),
