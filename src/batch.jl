@@ -67,6 +67,18 @@ end
 """
     length(b::Batch)
 
+Returns the number of archetypes in the batch.
+For batch entity creation, the number of archetype is always 1.
+
+Does not iterate or [close!](@ref close!(::Batch)) the batch.
+"""
+function Base.length(b::Batch)
+    return length(b._archetypes)
+end
+
+"""
+    count(b::Batch)
+
 Returns the number of entities in the batch.
 
 Does not iterate or [close!](@ref close!(::Batch)) the batch.
@@ -74,9 +86,9 @@ Does not iterate or [close!](@ref close!(::Batch)) the batch.
 !!! note
 
     The time complexity is linear with the number of archetypes in the batch.
-    For batch entity creation, the number os archetype is always 1.
+    For batch entity creation, the number of archetype is always 1.
 """
-function Base.length(b::Batch)
+function Base.count(b::Batch)
     count = 0
     for archetype in b._archetypes
         count += archetype.end_idx - archetype.start_idx + 1

@@ -60,6 +60,7 @@ certain set of [Components](@ref components-api).
 Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
 close!(q::Query)
+count(q::Query)
 length(q::Query)
 Entities
 @unpack
