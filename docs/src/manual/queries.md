@@ -8,11 +8,11 @@ For cases where components of a particular entity are required, see section [Acc
 
 ## Basic queries
 
-By default, a [Query](@ref queries-api) lets you iterate over all entities that have the query's components,
+By default, a [Query](@ref queries-api) iterates over all entities that have the query's components,
 and provides efficient access to these components.
 
 Here, we are interested only in non-exclusive sets.
-So the entities that are processed may have further components, but they are not of interest
+So the entities that are processed may have further components, but these are not of interest
 for that particular piece of game or model logic.
 
 ```@meta
@@ -153,7 +153,7 @@ Individual fields of components can be accessed as vectors in queries, e.g. usin
 This is particularly useful for components that use the StructArray [storage modes](@ref component-storages),
 as it allows for SIMD-accelerated vectorized operations.
 
-```jldoctest; setup = :(using Ark), output = false
+```jldoctest query-fields; setup = :(using Ark), output = false
 world = World(
     Position => StructArrayStorage,
     Velocity => StructArrayStorage,
@@ -173,6 +173,19 @@ end
 
 However, when iterating components that use StructArray storage without unpacking individual fields,
 there is a certain overhead and SIMD optimization may not be possible.
+
+Note that it is also possible to access field vectors by the field's name:
+
+
+```jldoctest query-fields; output = false
+for (_, positions, velocities) in Query(world, (Position, Velocity))
+    @inbounds positions.x .+= velocities.dx
+    @inbounds positions.y .+= velocities.dy
+end
+
+# output
+
+```
 
 ## [World lock](@id world-lock)
 
