@@ -244,6 +244,7 @@ end
 
 function collect_entities(q::Query)
     all_entities = Vector{Entity}(undef, count_entities(q))
+    offset = 1
     for archetype in q._archetypes
         if isempty(archetype.entities)
             continue
@@ -251,7 +252,8 @@ function collect_entities(q::Query)
         if _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             e = archetype.entities
-            unsafe_copyto!(all_entities, length(all_entities)+1, e, 1, length(e))
+            unsafe_copyto!(all_entities, offset, e, 1, length(e))
+            offset += length(e)
         end
     end
     return all_entities
@@ -260,6 +262,7 @@ end
 function collect_entities!(q::Query, all_entities::AbstractVector{Entity})
     count = count_entities(q)
     resize!(all_entities, count)
+    offset = 1
     for archetype in q._archetypes
         if isempty(archetype.entities)
             continue
@@ -267,7 +270,8 @@ function collect_entities!(q::Query, all_entities::AbstractVector{Entity})
         if _contains_all(archetype.mask, q._mask) &&
            !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             e = archetype.entities
-            unsafe_copyto!(all_entities, length(all_entities)+1, e, 1, length(e))
+            unsafe_copyto!(all_entities, offset, e, 1, length(e))
+            offset += length(e)
         end
     end
     return all_entities
