@@ -242,6 +242,39 @@ function count_entities(q::Query)
     count
 end
 
+function collect_entities(q::Query)
+    all_entities = Vector{Entity}(undef, count_entities(q))
+    for archetype in q._archetypes
+        if isempty(archetype.entities)
+            continue
+        end
+        if _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+            e = archetype.entities
+            unsafe_copyto!(all_entities, length(all_entities)+1, e, 1, length(e))
+        end
+    end
+    return all_entities
+end
+
+function collect_entities!(q::Query, all_entities::AbstractVector{Entity})
+    count = count_entities(q)
+    if length(all_entities) != count
+        error(lazy"Container size mismatch: expected $count, got $(length(all_entities))")
+    end
+    for archetype in q._archetypes
+        if isempty(archetype.entities)
+            continue
+        end
+        if _contains_all(archetype.mask, q._mask) &&
+           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+            e = archetype.entities
+            unsafe_copyto!(all_entities, length(all_entities)+1, e, 1, length(e))
+        end
+    end
+    return all_entities
+end
+
 """
     close!(q::Query)
 
