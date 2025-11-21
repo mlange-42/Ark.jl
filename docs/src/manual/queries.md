@@ -176,7 +176,6 @@ there is a certain overhead and SIMD optimization may not be possible.
 
 Note that it is also possible to access field vectors by the field's name:
 
-
 ```jldoctest query-fields; output = false
 for (_, positions, velocities) in Query(world, (Position, Velocity))
     @inbounds positions.x .+= velocities.dx
