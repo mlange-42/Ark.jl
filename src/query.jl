@@ -259,9 +259,7 @@ end
 
 function collect_entities!(q::Query, all_entities::AbstractVector{Entity})
     count = count_entities(q)
-    if length(all_entities) != count
-        error(lazy"Container size mismatch: expected $count, got $(length(all_entities))")
-    end
+    resize!(all_entities, count)
     for archetype in q._archetypes
         if isempty(archetype.entities)
             continue
