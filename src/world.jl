@@ -1368,6 +1368,7 @@ function reset!(world::W) where {W<:World}
     end
 
     empty!(world._resources)
+    return nothing
 end
 
 function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
