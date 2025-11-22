@@ -234,7 +234,7 @@ function Base.show(io::IO, a::StructArrayView{C,CS}) where {C,CS<:NamedTuple}
             print(io, "\n $el")
         end
         print(io, "\n ⋮")
-        for el in a[end-4:end]
+        for el in a[(end-4):end]
             print(io, "\n $el")
         end
         print(io, "\n")
