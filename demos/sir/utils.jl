@@ -4,5 +4,8 @@ function rate_to_probability(r::T, t::T) where {T<:AbstractFloat}
 end
 
 function get_count(world, ::Type{T}) where {T<:HealthState}
-    return count_entities(Query(world, (), with=(T,)))
+    q = Query(world, (), with=(T,))
+    count = count_entities(q)
+    close!(q)
+    return count
 end

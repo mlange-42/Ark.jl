@@ -19,7 +19,7 @@ function record_frame!(world, obs_S, obs_I, obs_R)
 end
 
 function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
-    get_resource(world, Terminate).stop = false
+    get_resource(world, Terminate).stop = true
     btn_run.label[] = "Run"
 
     Parameters.@unpack N, I0, beta, c, r, dt = get_resource(world, Params)
@@ -46,7 +46,7 @@ function app()
     default_beta = 0.05
     default_r = 0.25
 
-    fig = Figure(size=(1000, 800), fontsize=18)
+    fig = Figure(size=(1200, 800), fontsize=18)
 
     ax = Axis(fig[1, 1],
         title  = "SIR Model Trajectory",
