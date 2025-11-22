@@ -11,5 +11,5 @@ struct Params
     beta::Float64
     c::Float64
     r::Float64
-    δt::Float64
+    dt::Float64
 end

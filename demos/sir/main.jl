@@ -22,10 +22,10 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
     get_resource(world, Terminate).stop = false
     btn_run.label[] = "Run"
 
-    Parameters.@unpack N, I0, beta, c, r, δt = get_resource(world, Params)
+    Parameters.@unpack N, I0, beta, c, r, dt = get_resource(world, Params)
     reset!(world)
     N, beta, r = sl_N.value[], sl_beta.value[], sl_r.value[]
-    initialize_world!(world, N, I0, beta, c, r, δt)
+    initialize_world!(world, N, I0, beta, c, r, dt)
 
     empty!(obs_S[])
     empty!(obs_I[])
@@ -36,7 +36,7 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
 end
 
 function app()
-    δt = 0.1
+    dt = 0.1
     nsteps = 5000
     c = 10.0
     I0 = 5
@@ -88,7 +88,7 @@ function app()
     axislegend(ax)
 
     world = new_world(default_N)
-    initialize_world!(world, default_N, I0, default_beta, c, default_r, δt)
+    initialize_world!(world, default_N, I0, default_beta, c, default_r, dt)
     reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
 
     on(btn_run.clicks) do _
