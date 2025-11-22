@@ -12,3 +12,8 @@ function initialize!(s::DrawGrass, world::World)
 
     Makie.transform!(hm, scale=Vec3f(size.scale, size.scale, 1))
 end
+
+function update!(s::DrawGrass, world::World)
+    grass = get_resource(world, GrassGrid)
+    notify(grass.grass)
+end
