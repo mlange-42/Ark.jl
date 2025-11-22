@@ -19,13 +19,13 @@ function record_frame!(world, obs_S, obs_I, obs_R)
 end
 
 function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
-    get_resource(world, Terminate).stop = true
     btn_run.label[] = "Run"
 
     Parameters.@unpack N, I0, beta, c, r, dt = get_resource(world, Params)
     reset!(world)
     N, beta, r = sl_N.value[], sl_beta.value[], sl_r.value[]
     initialize_world!(world, N, I0, beta, c, r, dt)
+    get_resource(world, Terminate).stop = true
 
     empty!(obs_S[])
     empty!(obs_I[])
@@ -37,7 +37,6 @@ end
 
 function app()
     dt = 0.1
-    nsteps = 5000
     c = 10.0
     I0 = 5
 
