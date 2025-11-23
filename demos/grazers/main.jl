@@ -6,7 +6,9 @@ using GeometryBasics
 include("../_common/scheduler.jl")
 include("../_common/resources.jl")
 include("../_common/terminate.jl")
+include("components.jl")
 include("resources.jl")
+include("sys/init_grazers.jl")
 include("sys/grow_grass.jl")
 include("sys/draw_grass.jl")
 include("sys/draw_grazers.jl")
@@ -14,7 +16,7 @@ include("sys/draw_grazers.jl")
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World()
+    world = World(Position, Rotation)
 
     size = WorldSize(80, 60, 10)
     add_resource!(world, size)
@@ -25,10 +27,11 @@ function main()
     scheduler = Scheduler(
         world,
         (
+            InitGrazers(count=2500),
             GrowGrass(growth_rate=0.01),
             DrawGrass(),
             DrawGrazers(),
-            TerminationSystem(IS_CI ? 240 : -1) # Short run in CI tests
+            TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
 
