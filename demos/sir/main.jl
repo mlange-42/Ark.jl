@@ -80,7 +80,7 @@ function app()
     controls = GridLayout(fig[2, 1])
 
     lbl_N = Label(controls[1, 1], "Population (N):")
-    sl_N = Slider(controls[1, 2], range=[10^x for x in 1:7], startvalue=default_N)
+    sl_N = Slider(controls[1, 2], range=[10^x for x in 1:6], startvalue=default_N)
     lbl_N_val = Label(controls[1, 3], lift(x -> "$(x)", sl_N.value), width=100, halign=:left)
 
     lbl_beta = Label(controls[2, 1], "Infection Rate (beta):")
