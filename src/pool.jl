@@ -56,13 +56,13 @@ end
 
 mutable struct _BitPool
     const bits::Vector{Int}
-    length::UInt8
-    next::UInt8
-    available::UInt8
+    length::Int
+    next::Int
+    available::Int
 end
 
 function _BitPool()
-    return _BitPool(zeros(UInt8, 64), 0, 0, 0)
+    return _BitPool(zeros(Int, 64), 0, 0, 0)
 end
 
 function _get_bit(p::_BitPool)::Int

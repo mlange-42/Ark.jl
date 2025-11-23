@@ -89,7 +89,7 @@ function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity:
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable), initial_capacity)
 end
 
-@generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
+@generated function _component_id(::Type{CS}, ::Type{C})::Int where {CS<:Tuple,C}
     for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
             return :($i)
