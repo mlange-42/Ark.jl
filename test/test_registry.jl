@@ -7,10 +7,10 @@
     id_float = _register_component!(registry, Float64)
     id_pos = _register_component!(registry, Position)
 
-    # Check that IDs are UInt8 and unique
-    @test isa(id_int, UInt8)
-    @test isa(id_float, UInt8)
-    @test isa(id_pos, UInt8)
+    # Check that IDs are Int and unique
+    @test isa(id_int, Int)
+    @test isa(id_float, Int)
+    @test isa(id_pos, Int)
     @test id_int != id_float != id_pos
 
     @test _get_id!(registry, Int) == id_int
