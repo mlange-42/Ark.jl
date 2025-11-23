@@ -4,7 +4,7 @@ using GLMakie
 include("model.jl")
 
 const IS_CI = "CI" in keys(ENV)
-GLMakie.activate!(render_on_demand=true, focus_on_show=!IS_CI)
+GLMakie.activate!(render_on_demand=true, focus_on_show=(!IS_CI))
 
 function record_frame!(world, obs_S, obs_I, obs_R)
     s_count = get_count(world, S)
@@ -38,6 +38,27 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
     autolimits!(ax)
 end
 
+function update_sim!(world, sl_N, sl_r, sl_beta)
+    N, beta, r = sl_N.value[], sl_beta.value[], sl_r.value[]
+    params = get_resource(world, Params)
+    if N > params.N
+        new_entities!(world, N-params.N, (S(),))
+    elseif N < params.N
+        all_entities = get_resource(world, Buffer).ents
+        resize!(all_entities, 0)
+        for (entities,) in Query(world, ())
+            append!(all_entities, entities)
+        end
+        shuffle!(all_entities)
+        for i in 1:(params.N-N)
+            remove_entity!(world, all_entities[i])
+        end
+    end
+    params.N = N
+    params.beta = beta
+    params.r = r
+end
+
 function app()
     dt = 0.1
     c = 10.0
@@ -48,7 +69,7 @@ function app()
     default_beta = 0.05
     default_r = 0.25
 
-    fig = Figure(size=(1200, 800), fontsize=18)
+    fig = Figure(size=(1000, 600), fontsize=18)
 
     ax = Axis(fig[1, 1],
         title  = "SIR Model Trajectory",
@@ -60,19 +81,19 @@ function app()
 
     lbl_N = Label(controls[1, 1], "Population (N):")
     sl_N = Slider(controls[1, 2], range=[10^x for x in 1:7], startvalue=default_N)
-    lbl_N_val = Label(controls[1, 3], lift(x -> "$(x)", sl_N.value))
+    lbl_N_val = Label(controls[1, 3], lift(x -> "$(x)", sl_N.value), width=100, halign=:left)
 
     lbl_beta = Label(controls[2, 1], "Infection Rate (beta):")
     sl_beta = Slider(controls[2, 2], range=0.0:0.01:1.0, startvalue=default_beta)
-    lbl_beta_val = Label(controls[2, 3], lift(x -> "$(round(x, digits=2))", sl_beta.value))
+    lbl_beta_val = Label(controls[2, 3], lift(x -> "$(round(x, digits=2))", sl_beta.value), halign=:left)
 
     lbl_r = Label(controls[3, 1], "Recovery Rate (r):")
     sl_r = Slider(controls[3, 2], range=0.0:0.01:1.0, startvalue=default_r)
-    lbl_r_val = Label(controls[3, 3], lift(x -> "$(round(x, digits=2))", sl_r.value))
+    lbl_r_val = Label(controls[3, 3], lift(x -> "$(round(x, digits=2))", sl_r.value), halign=:left)
 
     lbl_fps = Label(controls[4, 1], "Simulation FPS:")
-    sl_fps = Slider(controls[4, 2], range=[1, [10:10:600;]...], startvalue=300)
-    lbl_fps_val = Label(controls[4, 3], lift(x -> "$(x)", sl_fps.value))
+    sl_fps = Slider(controls[4, 2], range=[2^x for x in 1:10], startvalue=2^6)
+    lbl_fps_val = Label(controls[4, 3], lift(x -> "$(x)", sl_fps.value), halign=:left)
 
     btn_run = Button(controls[5, 1], label="Run", width=100, tellwidth=false)
     btn_reset = Button(controls[5, 2], label="Reset", width=100, tellwidth=false)
@@ -103,19 +124,20 @@ function app()
     end
 
     on(sl_N.value) do _
-        reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
+        update_sim!(world, sl_N, sl_r, sl_beta)
     end
     on(sl_r.value) do _
-        reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
+        update_sim!(world, sl_N, sl_r, sl_beta)
     end
     on(sl_beta.value) do _
-        reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
+        update_sim!(world, sl_N, sl_r, sl_beta)
     end
 
     screen = display(fig)
-
+    t_tot = 0.0
     @async while true
         if IS_CI || get_resource(world, Terminate).stop == false
+            t0 = time_ns()
             step_world!(world)
             record_frame!(world, obs_S, obs_I, obs_R)
             autolimits!(ax)
@@ -123,8 +145,15 @@ function app()
                 IS_CI && close(screen)
                 get_resource(world, Terminate).stop = true
                 btn_run.label[] = "Run"
+                t_tot = 0.0
             end
-            sleep(1.0 / sl_fps.value[])
+            t1 = time_ns()
+            t_tot += (t1-t0)
+            sleep_every = max(1, exponent(sl_fps.value[])-3)
+            if get_resource(world, Tick).tick % sleep_every == 0
+                sleep(max(0, sleep_every/sl_fps.value[]-t_tot/10^9))
+                t_tot = 0.0
+            end
         else
             sleep(0.1)
         end
