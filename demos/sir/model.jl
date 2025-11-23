@@ -14,7 +14,7 @@ function initialize_world!(world::World, N::Int, I0::Int, beta::Float64, c::Floa
     add_resource!(world, Tick(0))
     add_resource!(world, Time(0.0))
     add_resource!(world, Terminate(false))
-    add_resource!(world, Buffer(Entity[], Entity[], Float64[]))
+    add_resource!(world, Buffer(Entity[], Entity[], Float64[], Entity[]))
     add_resource!(world, Params(N, I0, beta, c, r, dt))
 
     new_entities!(world, N - I0, (S(),))
@@ -38,7 +38,7 @@ function step_world!(world::World)
     prob_recovery = rate_to_probability(r, dt)
 
     buffer = get_resource(world, Buffer)
-    Parameters.@unpack s_to_i, i_to_r, rands = buffer
+    Parameters.@unpack s_to_i, i_to_r, rands, ents = buffer
 
     # S -> I Transition
     for (entities,) in Query(world, (), with=(S,))
