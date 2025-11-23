@@ -10,16 +10,20 @@ include("utils.jl")
 
 new_world(N) = World(S, I, R; initial_capacity=10^7)
 
-function initialize_world!(world::World, N::Int, I0::Int, beta::Float64, c::Float64, r::Float64, dt::Float64)
+function initialize_world!(world::World, N::Int, I0::Int, beta::Float64, c::Float64, r::Float64, dt, buffer=nothing)
     add_resource!(world, Tick(0))
     add_resource!(world, Time(0.0))
     add_resource!(world, Terminate(false))
-    add_resource!(world, Buffer(Entity[], Entity[], Float64[], Entity[]))
+
+    if isnothing(buffer)
+        add_resource!(world, Buffer(Entity[], Entity[], Float64[], Entity[]))
+    else
+        add_resource!(world, buffer)
+    end
     add_resource!(world, Params(N, I0, beta, c, r, dt))
 
     new_entities!(world, N - I0, (S(),))
     new_entities!(world, I0, (I(),))
-
     return world
 end
 
@@ -71,8 +75,8 @@ function step_world!(world::World)
     end
 
     # Cleanup buffers
-    empty!(i_to_r)
-    empty!(s_to_i)
+    resize!(i_to_r, 0)
+    resize!(s_to_i, 0)
 
     return world
 end
