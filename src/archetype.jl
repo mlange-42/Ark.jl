@@ -1,18 +1,18 @@
 
 struct _Archetype{M}
     entities::Entities
-    components::Vector{UInt8}  # Indices into the global ComponentStorage list
+    components::Vector{Int}  # Indices into the global ComponentStorage list
     mask::_Mask{M}
     node::_GraphNode{M}
     id::UInt32
 end
 
 function _Archetype(id::UInt32, node::_GraphNode)
-    _Archetype(Entities(0), Vector{UInt8}(), node.mask, node, id)
+    _Archetype(Entities(0), Vector{Int}(), node.mask, node, id)
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, cap::Int, components::UInt8...)
-    _Archetype(Entities(cap), collect(UInt8, components), node.mask, node, id)
+function _Archetype(id::UInt32, node::_GraphNode, cap::Int, components::Int...)
+    _Archetype(Entities(cap), collect(Int, components), node.mask, node, id)
 end
 
 function _add_entity!(arch::_Archetype, entity::Entity)::Int

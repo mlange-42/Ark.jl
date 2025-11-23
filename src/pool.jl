@@ -55,7 +55,7 @@ function _reset!(p::_EntityPool)
 end
 
 mutable struct _BitPool
-    const bits::Vector{UInt8}
+    const bits::Vector{Int}
     length::UInt8
     next::UInt8
     available::UInt8
@@ -65,7 +65,7 @@ function _BitPool()
     return _BitPool(zeros(UInt8, 64), 0, 0, 0)
 end
 
-function _get_bit(p::_BitPool)::UInt8
+function _get_bit(p::_BitPool)::Int
     if p.available == 0
         return _get_new_bit(p)
     end
@@ -77,7 +77,7 @@ function _get_bit(p::_BitPool)::UInt8
     return curr
 end
 
-function _get_new_bit(p::_BitPool)::UInt8
+function _get_new_bit(p::_BitPool)::Int
     if p.length >= 64
         throw(
             InvalidStateException(
@@ -94,7 +94,7 @@ function _get_new_bit(p::_BitPool)::UInt8
     return b
 end
 
-function _recycle(p::_BitPool, b::UInt8)
+function _recycle(p::_BitPool, b::Int)
     temp = p.next
     p.next = b
     p.bits[b] = temp
