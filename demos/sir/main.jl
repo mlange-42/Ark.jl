@@ -3,6 +3,10 @@ using GLMakie
 
 include("model.jl")
 
+const IS_CI = "CI" in keys(ENV)
+
+GLMakie.activate!(render_on_demand=true, focus_on_show=!IS_CI)
+
 function record_frame!(world, obs_S, obs_I, obs_R)
     s_count = get_count(world, S)
     i_count = get_count(world, I)
@@ -122,14 +126,10 @@ function app()
         else
             sleep(0.1)
         end
-
-        if !events(fig).window_open[]
-            break
-        end
     end
 
-    return fig
+    screen = display(fig)
+    wait(screen)
 end
 
-screen = display(app())
-wait(screen)
+app()
