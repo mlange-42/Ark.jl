@@ -1,4 +1,6 @@
 
+module SIR
+
 using GLMakie
 
 include("model.jl")
@@ -39,7 +41,7 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
     autolimits!(ax)
 end
 
-function app()
+function __init__()
     dt = 0.1
     c = 10.0
     I0 = 5
@@ -132,4 +134,4 @@ function app()
     wait(screen)
 end
 
-app()
+end
