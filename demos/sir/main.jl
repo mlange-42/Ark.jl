@@ -131,4 +131,5 @@ function app()
     return fig
 end
 
-app()
+screen = display(app())
+wait(screen)
