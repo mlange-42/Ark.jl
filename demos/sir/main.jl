@@ -113,7 +113,6 @@ function app()
     world = new_world(default_N)
     initialize_world!(world, default_N, I0, default_beta, c, default_r, dt)
     get_resource(world, Terminate).stop = true
-    GC.gc(); GC.gc()
 
     on(btn_run.clicks) do _
         get_resource(world, Terminate).stop = !get_resource(world, Terminate).stop
@@ -135,6 +134,7 @@ function app()
     end
 
     screen = display(fig)
+    GC.gc()
     t_tot = 0.0
     @async while true
         if IS_CI || get_resource(world, Terminate).stop == false
