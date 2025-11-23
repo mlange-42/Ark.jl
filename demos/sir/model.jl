@@ -8,7 +8,7 @@ include("resources.jl")
 include("components.jl")
 include("utils.jl")
 
-new_world(N) = World(S, I, R; initial_capacity=N)
+new_world(N) = World(S, I, R; initial_capacity=10^7)
 
 function initialize_world!(world::World, N::Int, I0::Int, beta::Float64, c::Float64, r::Float64, dt::Float64)
     add_resource!(world, Tick(0))
