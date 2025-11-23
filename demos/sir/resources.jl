@@ -3,9 +3,10 @@ struct Buffer
     i_to_r::Vector{Entity}
     s_to_i::Vector{Entity}
     rands::Vector{Float64}
+    ents::Vector{Entity}
 end
 
-struct Params
+mutable struct Params
     N::Int
     I0::Int
     beta::Float64
