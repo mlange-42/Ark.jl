@@ -1,11 +1,10 @@
 
-module SIR
-
 using GLMakie
 
 include("model.jl")
 
 const IS_CI = "CI" in keys(ENV)
+GLMakie.activate!(render_on_demand=true, focus_on_show=!IS_CI)
 
 function record_frame!(world, obs_S, obs_I, obs_R)
     s_count = get_count(world, S)
@@ -39,9 +38,7 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
     autolimits!(ax)
 end
 
-function __init__()
-    GLMakie.activate!(render_on_demand=true, focus_on_show=!IS_CI)
-
+function app()
     dt = 0.1
     c = 10.0
     I0 = 5
@@ -115,13 +112,15 @@ function __init__()
         reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
     end
 
+    screen = display(fig)
+
     @async while true
         if IS_CI || get_resource(world, Terminate).stop == false
             step_world!(world)
             record_frame!(world, obs_S, obs_I, obs_R)
             autolimits!(ax)
             if get_count(world, I) == 0
-                IS_CI && return
+                IS_CI && close(screen)
                 get_resource(world, Terminate).stop = true
                 btn_run.label[] = "Run"
             end
@@ -131,8 +130,7 @@ function __init__()
         end
     end
 
-    screen = display(fig)
     wait(screen)
 end
 
-end
+app()
