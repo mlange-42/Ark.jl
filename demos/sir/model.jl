@@ -71,8 +71,8 @@ function step_world!(world::World)
     end
 
     # Cleanup buffers
-    resize!(i_to_r, 0)
-    resize!(s_to_i, 0)
+    empty!(i_to_r)
+    empty!(s_to_i)
 
     return world
 end
