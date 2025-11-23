@@ -151,35 +151,35 @@ function _Mask(mask::_MutableMask)
 end
 
 @inline function _set_bit!(mask::_MutableMask{1}, i::Int)
-    offset = i - 1
+    offset = (i - 1) % UInt64
     val = UInt64(1) << (offset % UInt64)
     mask.bits[1] |= val
 end
 @inline function _set_bit!(mask::_MutableMask, i::Int)
     chunk = (i - 1) >>> 6
-    offset = (i - 1) & UInt64(0x3F)
-    val = UInt64(1) << (offset % UInt64)
+    offset = ((i - 1) % UInt64) & UInt64(0x3F)
+    val = UInt64(1) << offset
     mask.bits[chunk+1] |= val
 end
 
 @inline function _clear_bit!(mask::_MutableMask{1}, i::Int)
-    offset = i - 1
+    offset = (i - 1) % UInt64
     val = ~(UInt64(1) << offset)
     mask.bits[1] &= val
 end
 @inline function _clear_bit!(mask::_MutableMask, i::Int)
     chunk = (i - 1) >>> 6
-    offset = (i - 1) & UInt64(0x3F)
+    offset = ((i - 1) % UInt64) & UInt64(0x3F)
     val = ~(UInt64(1) << offset)
     mask.bits[chunk+1] &= val
 end
 
 @inline function _get_bit(mask::Union{_Mask{1},_MutableMask{1}}, i::Int)::Bool
-    offset = i - 1 # which bit within that UInt64
-    return (mask.bits[1] >> offset) & 1 == 1
+    offset = (i - 1) % UInt64 # which bit within that UInt64
+    return (mask.bits[1] >> offset) & UInt64(1) == UInt64(1)
 end
 @inline function _get_bit(mask::Union{_Mask,_MutableMask}, i::Int)::Bool
     chunk = (i - 1) >>> 6 # which UInt64 (0-based)
-    offset = (i - 1) & UInt64(0x3F) # which bit within that UInt64
-    return (mask.bits[chunk+1] >> offset) & 1 == 1
+    offset = ((i - 1) % UInt64) & UInt64(0x3F) # which bit within that UInt64
+    return (mask.bits[chunk+1] >> offset) & UInt64(1) == UInt64(1)
 end
