@@ -25,9 +25,10 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
     btn_run.label[] = "Run"
 
     Parameters.@unpack N, I0, beta, c, r, dt = get_resource(world, Params)
+    buffer = get_resource(world, Buffer)
     reset!(world)
     N, beta, r = sl_N.value[], sl_beta.value[], sl_r.value[]
-    initialize_world!(world, N, I0, beta, c, r, dt)
+    initialize_world!(world, N, I0, beta, c, r, dt, buffer)
     get_resource(world, Terminate).stop = true
 
     empty!(obs_S[])
@@ -35,7 +36,6 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
     empty!(obs_R[])
 
     record_frame!(world, obs_S, obs_I, obs_R)
-    autolimits!(ax)
 end
 
 function update_sim!(world, sl_N, sl_r, sl_beta)
@@ -134,6 +134,7 @@ function app()
     end
 
     screen = display(fig)
+    autolimits!(ax)
     GC.gc()
     t_tot = 0.0
     @async while true
