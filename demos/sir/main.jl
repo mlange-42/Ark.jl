@@ -7,8 +7,6 @@ include("model.jl")
 
 const IS_CI = "CI" in keys(ENV)
 
-GLMakie.activate!(render_on_demand=true, focus_on_show=!IS_CI)
-
 function record_frame!(world, obs_S, obs_I, obs_R)
     s_count = get_count(world, S)
     i_count = get_count(world, I)
@@ -42,6 +40,8 @@ function reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta
 end
 
 function __init__()
+    GLMakie.activate!(render_on_demand=true, focus_on_show=!IS_CI)
+
     dt = 0.1
     c = 10.0
     I0 = 5
