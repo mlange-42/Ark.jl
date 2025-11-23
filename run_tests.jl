@@ -1,3 +1,3 @@
 using Pkg
-Pkg.activate(".")
+Pkg.activate("test")
 Pkg.test("Ark"; test_args=ARGS)
