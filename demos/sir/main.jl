@@ -164,5 +164,5 @@ function app()
     wait(screen)
 end
 
-precompile(update_sim!, (typeof(World(S,I,R)), Slider, Slider, Slider))
+precompile(update_sim!, (typeof(World(S, I, R)), Slider, Slider, Slider))
 app()
