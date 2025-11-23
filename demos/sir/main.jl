@@ -116,11 +116,12 @@ function __init__()
     end
 
     @async while true
-        if get_resource(world, Terminate).stop == false
+        if IS_CI || get_resource(world, Terminate).stop == false
             step_world!(world)
             record_frame!(world, obs_S, obs_I, obs_R)
             autolimits!(ax)
             if get_count(world, I) == 0
+                IS_CI && return
                 get_resource(world, Terminate).stop = true
                 btn_run.label[] = "Run"
             end
