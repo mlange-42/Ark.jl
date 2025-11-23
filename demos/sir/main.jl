@@ -42,7 +42,7 @@ function update_sim!(world, sl_N, sl_r, sl_beta)
     N, beta, r = sl_N.value[], sl_beta.value[], sl_r.value[]
     params = get_resource(world, Params)
     if N > params.N
-        new_entities!(world, N-params.N, (S(),))
+        new_entities!(world, N - params.N, (S(),))
     elseif N < params.N
         all_entities = get_resource(world, Buffer).ents
         resize!(all_entities, 0)
@@ -148,10 +148,10 @@ function app()
                 t_tot = 0.0
             end
             t1 = time_ns()
-            t_tot += (t1-t0)
-            sleep_every = max(1, exponent(sl_fps.value[])-3)
+            t_tot += (t1 - t0)
+            sleep_every = max(1, exponent(sl_fps.value[]) - 3)
             if get_resource(world, Tick).tick % sleep_every == 0
-                sleep(max(0, sleep_every/sl_fps.value[]-t_tot/10^9))
+                sleep(max(0, sleep_every / sl_fps.value[] - t_tot / 10^9))
                 t_tot = 0.0
             end
         else
