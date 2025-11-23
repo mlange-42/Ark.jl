@@ -202,12 +202,12 @@ function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::I
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
+        @inline _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
     for comp in new_archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
+        @inline _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
     end
 
     if swapped
