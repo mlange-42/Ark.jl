@@ -112,7 +112,8 @@ function app()
 
     world = new_world(default_N)
     initialize_world!(world, default_N, I0, default_beta, c, default_r, dt)
-    reset_sim!(world, obs_S, obs_I, obs_R, btn_run, ax, sl_N, sl_r, sl_beta)
+    get_resource(world, Terminate).stop = true
+    GC.gc(); GC.gc()
 
     on(btn_run.clicks) do _
         get_resource(world, Terminate).stop = !get_resource(world, Terminate).stop
