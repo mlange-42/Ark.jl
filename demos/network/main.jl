@@ -74,14 +74,13 @@ function run!(world::World, scheduler::Scheduler)
     window = get_resource(world, Window)
     on(window.screen.render_tick) do _
         if !update!(scheduler)
-            GLMakie.closeall()
+            close(window.screen)
         end
     end
 
     GLMakie.start_renderloop!(window.screen)
 
     wait(window.screen)
-    GLMakie.closeall()
 end
 
 main()
