@@ -13,7 +13,7 @@ include("sys/network_plot.jl")
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World(Position)
+    world = World(Position, Edge)
 
     size = WorldSize(800, 600)
     add_resource!(world, size)
