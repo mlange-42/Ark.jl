@@ -57,9 +57,9 @@ function setup_makie(world::World, size::WorldSize)
     xlims!(ax, low=0, high=size.width)
     ylims!(ax, low=0, high=size.height)
 
-    scatter!(ax, data.nodes, color=:green, markersize=5)
-    linesegments!(ax, data.edges)
-    scatter!(ax, data.travelers, color=:blue, markersize=10)
+    scatter!(ax, data.nodes, markersize=15, color=:lightgray)
+    linesegments!(ax, data.edges, linewidth=10, color=:lightgray)
+    scatter!(ax, data.travelers, color=:white, strokecolor=:black, strokewidth=1, markersize=8)
 
     screen = display(f)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Network demo")
