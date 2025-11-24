@@ -4,7 +4,7 @@ using GLMakie
 include("model.jl")
 
 const IS_CI = "CI" in keys(ENV)
-GLMakie.activate!(render_on_demand=true, focus_on_show=(!IS_CI))
+GLMakie.activate!(render_on_demand=false, focus_on_show=(!IS_CI))
 
 function record_frame!(world, obs_S, obs_I, obs_R)
     s_count = get_count(world, S)
