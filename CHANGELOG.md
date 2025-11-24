@@ -27,6 +27,7 @@
 ### Documentation
 
 - Adds an animated logo demo (#268)
+- Adds a basic SIR demo (#324)
 
 ### Other
 
