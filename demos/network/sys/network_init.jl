@@ -46,7 +46,11 @@ function initialize!(s::NetworkInit, world::World)
     end
 
     for (e1, e2) in edges
-        new_entity!(world, (Edge(e1, e2),))
+        p1, = get_components(world, e1, (Position,))
+        p2, = get_components(world, e2, (Position,))
+        dx = p1[1] - p2[1]
+        dy = p1[2] - p2[2]
+        new_entity!(world, (Edge(e1, e2), EdgePosition(p1, p2), EdgeLength(sqrt(dx * dx + dy * dy))))
     end
 end
 

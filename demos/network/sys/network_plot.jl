@@ -13,11 +13,9 @@ function initialize!(s::NetworkPlot, world::World)
     for (_, positions) in Query(world, (Position,))
         append!(node_data, positions)
     end
-    for (_, edges) in Query(world, (Edge,))
+    for (_, edges) in Query(world, (EdgePosition,))
         for edge in edges
-            p1, = get_components(world, edge.node_a, (Position,))
-            p2, = get_components(world, edge.node_b, (Position,))
-            push!(edge_data, (p1, p2))
+            push!(edge_data, (edge.node_a, edge.node_b))
         end
     end
 
