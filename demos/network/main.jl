@@ -46,7 +46,7 @@ function setup_makie(world::World, size::WorldSize)
         framerate=60.0,
         vsync=true,
         renderloop=GLMakie.renderloop,
-        render_on_demand=true,
+        render_on_demand=false,
         focus_on_show=!IS_CI,
     )
 
