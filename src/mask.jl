@@ -176,10 +176,10 @@ end
 
 @inline function _get_bit(mask::Union{_Mask{1},_MutableMask{1}}, i::Int)::Bool
     offset = (i - 1) % UInt64 # which bit within that UInt64
-    return (mask.bits[1] >> offset) & UInt64(1) == UInt64(1)
+    return ((mask.bits[1] >> offset) & UInt64(1)) % Bool
 end
 @inline function _get_bit(mask::Union{_Mask,_MutableMask}, i::Int)::Bool
     chunk = (i - 1) >>> 6 # which UInt64 (0-based)
     offset = ((i - 1) % UInt64) & UInt64(0x3F) # which bit within that UInt64
-    return (mask.bits[chunk+1] >> offset) & UInt64(1) == UInt64(1)
+    return ((mask.bits[chunk+1] >> offset) & UInt64(1)) % Bool
 end
