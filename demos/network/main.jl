@@ -17,7 +17,7 @@ include("sys/traveler_plot.jl")
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World(Position, Node, Edge, EdgePosition, EdgeLength, Traveler)
+    world = World(Position, Node, Edge, EdgePosition, EdgeLength, Traveler, Color)
 
     size = WorldSize(800, 600)
     add_resource!(world, size)
@@ -28,7 +28,7 @@ function main()
         world,
         (
             NetworkInit(distance=50),
-            TravelerInit(count=100),
+            TravelerInit(count=250),
             TravelerMovement(speed=0.2),
             NetworkPlot(),
             TravelerPlot(),
@@ -50,7 +50,7 @@ function setup_makie(world::World, size::WorldSize)
     data = PlotData()
     add_resource!(world, data)
 
-    f = Figure(backgroundcolor=:white)
+    f = Figure(size=(size.width, size.height), backgroundcolor=:white)
 
     ax = Axis(f[1, 1], aspect=DataAspect())
     hidedecorations!(ax)
@@ -59,7 +59,7 @@ function setup_makie(world::World, size::WorldSize)
 
     scatter!(ax, data.nodes, markersize=15, color=:lightgray)
     linesegments!(ax, data.edges, linewidth=10, color=:lightgray)
-    scatter!(ax, data.travelers, color=:white, strokecolor=:black, strokewidth=1, markersize=8)
+    scatter!(ax, data.travelers, color=data.colors, strokecolor=:black, strokewidth=1, markersize=8)
 
     screen = display(f)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Network demo")

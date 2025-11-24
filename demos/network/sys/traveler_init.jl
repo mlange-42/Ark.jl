@@ -14,13 +14,14 @@ function initialize!(s::TravelerInit, world::World)
         append!(edges, zip(entities, positions, lengths))
     end
 
-    for (_, travelers, positions) in new_entities!(world, s.count, (Traveler, Position))
+    for (_, travelers, positions, colors) in new_entities!(world, s.count, (Traveler, Position, Color))
         for i in eachindex(travelers)
             edge, edge_pos, edge_len = rand(edges)
             pos = rand() * edge_len.length
             fwd = rand(Bool)
             travelers[i] = Traveler(edge, pos, fwd)
             positions[i] = position(pos, fwd, edge_pos, edge_len)
+            colors[i] = Color(HSL(rand() * 360, 0.5 + rand() * 0.3, 0.4 + rand() * 0.3))
         end
     end
 end

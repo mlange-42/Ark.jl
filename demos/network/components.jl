@@ -26,3 +26,5 @@ struct Traveler
     position::Float64
     forward::Bool
 end
+
+Color = RGBf
