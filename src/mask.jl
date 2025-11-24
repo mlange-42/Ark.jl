@@ -24,7 +24,7 @@ function _Mask{M}(bits::T...) where {M,T<:Integer}
     for b in bits
         @check 1 ≤ b ≤ M * 64
         chunk = (b - 1) >>> 6
-        offset = (b - 1) & T(0x3F)
+        offset = ((b - 1) & T(0x3F)) % UInt64
         chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
     end
     return _Mask(chunks)
@@ -49,7 +49,7 @@ function _Mask{M}(::_Not, bits::T...) where {M,T<:Integer}
     for b in bits
         @check 1 ≤ b ≤ M * 64
         chunk = (b - 1) >>> 6
-        offset = (b - 1) & T(0x3F)
+        offset = ((b - 1) & T(0x3F)) % UInt64
         mask = ~(UInt64(1) << offset)
         chunks = Base.setindex(chunks, chunks[chunk+1] & mask, chunk + 1)
     end
@@ -115,7 +115,7 @@ function _active_bit_indices(mask::_Mask{M})::Vector{Int} where M
         while chunk != 0
             tz = trailing_zeros(chunk)
             push!(indices, base + tz + 1)
-            chunk &= chunk - 1  # clear lowest set bit
+            chunk &= chunk - UInt64(1) # clear lowest set bit
         end
     end
     return indices
