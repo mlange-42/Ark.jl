@@ -152,7 +152,7 @@ end
 
 @inline function _set_bit!(mask::_MutableMask{1}, i::Int)
     offset = (i - 1) % UInt64
-    val = UInt64(1) << (offset % UInt64)
+    val = UInt64(1) << offset
     mask.bits[1] |= val
 end
 @inline function _set_bit!(mask::_MutableMask, i::Int)
