@@ -20,7 +20,6 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _storages::CS
     const _archetypes::Vector{_Archetype{M}}
     const _index::_ComponentIndex{M}
-    const _registry::_ComponentRegistry
     const _entity_pool::_EntityPool
     const _lock::_Lock
     const _graph::_Graph{M}
@@ -1008,6 +1007,10 @@ end
     initial_capacity::Int,
 ) where {CS<:Tuple,ST<:Tuple,MUT}
     types = CS.parameters
+    duplicates = setdiff(types, unique(types))
+    if !isempty(duplicates)
+        throw(ArgumentError(lazy"duplicate component type $(first(duplicates)) during world creation"))
+    end
     storage_val_types = ST.parameters
     allow_mutable = MUT::Bool
 
@@ -1070,13 +1073,10 @@ end
 
     storage_mode_type = :(Tuple{$(storage_val_types...)})
 
-    # Component registration
-    id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
     M = max(1, cld(length(types), 64))
     return quote
-        registry = _ComponentRegistry()
         ids = $id_tuple
         graph = _Graph{$(M)}()
         index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
@@ -1087,7 +1087,6 @@ end
             $storage_tuple,
             [_Archetype(UInt32(1), graph.nodes[1])],
             _ComponentIndex{$(M)}($(length(types))),
-            registry,
             _EntityPool(UInt32(1024)),
             _Lock(),
             graph,
