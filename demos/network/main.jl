@@ -28,7 +28,7 @@ function main()
         world,
         (
             NetworkInit(distance=50),
-            TravelerInit(count=1000),
+            TravelerInit(count=100),
             TravelerMovement(speed=0.2),
             NetworkPlot(),
             TravelerPlot(),

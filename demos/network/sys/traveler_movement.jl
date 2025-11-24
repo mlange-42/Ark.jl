@@ -14,15 +14,26 @@ function update!(s::TravelerMovement, world::World)
             traveler = travelers[i]
             new_fwd = traveler.forward
             new_pos = traveler.position + s.speed
+            new_edge = traveler.edge
 
-            edge_pos, edge_len = get_components(world, traveler.edge, (EdgePosition, EdgeLength))
+            edge, edge_pos, edge_len = get_components(world, new_edge, (Edge, EdgePosition, EdgeLength))
 
             if traveler.position > edge_len.length
-                new_fwd = !new_fwd
-                new_pos = 0.0
+                offset = traveler.position - edge_len.length
+                node_entity = new_fwd ? edge.node_b : edge.node_a
+                node, = get_components(world, node_entity, (Node,))
+                while true
+                    new_edge = rand(node.edges)
+                    if new_edge != traveler.edge
+                        break
+                    end
+                end
+                edge, edge_pos, edge_len = get_components(world, new_edge, (Edge, EdgePosition, EdgeLength))
+                new_fwd = edge.node_a == node_entity
+                new_pos = offset
             end
 
-            travelers[i] = Traveler(traveler.edge, new_pos, new_fwd)
+            travelers[i] = Traveler(new_edge, new_pos, new_fwd)
             positions[i] = position(new_pos, new_fwd, edge_pos, edge_len)
         end
     end
