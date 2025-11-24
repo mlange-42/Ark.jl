@@ -38,7 +38,7 @@ function _Mask{1}(::_Not, bits::Integer...)
     chunk = typemax(UInt64)
     for b in bits
         @check 1 ≤ b ≤ 64
-        offset = b - 1
+        offset = (b - 1) % UInt64
         chunk &= ~(UInt64(1) << offset)
     end
     return _Mask((chunk,))
