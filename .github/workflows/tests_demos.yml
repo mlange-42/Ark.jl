@@ -33,4 +33,5 @@ jobs:
       run: |
         cd demos
         julia --color=yes --project=. logo/main.jl
+        xvfb-run --auto-servernum -s '-screen 0 1024x768x24' julia --color=yes --project=. sir/main.jl
         xvfb-run --auto-servernum -s '-screen 0 1024x768x24' julia --color=yes --project=. network/main.jl

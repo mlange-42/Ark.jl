@@ -83,7 +83,7 @@ function Base.show(io::IO, e::Entities)
         print(io, "Entities[$elems]")
     else
         first = join(e[1:5], ", ")
-        last = join(e[end-4:end], ", ")
+        last = join(e[(end-4):end], ", ")
         print(io, "Entities[$first, …, $last]")
     end
 end
