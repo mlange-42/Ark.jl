@@ -9,7 +9,7 @@
     new_entity!(world, (Position(1, 2),))
     new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
-    M = (@isdefined fake_types) ? 2 : 1
+    M = (@isdefined fake_types) ? 5 : 1
     storages = (world._storages[1],)
     batch = Batch{typeof(world),Tuple{Position},typeof(world).parameters[3],1,M}(world,
         [
