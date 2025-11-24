@@ -1,5 +1,5 @@
 
-Position = Point2f
+const Position = Point2f
 
 struct Node
     edges::Vector{Entity}
@@ -27,4 +27,4 @@ struct Traveler
     forward::Bool
 end
 
-Color = RGBf
+const Color = RGBf
