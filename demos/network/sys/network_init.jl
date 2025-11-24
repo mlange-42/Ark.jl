@@ -57,5 +57,5 @@ function col_row(idx::Int, cols::Int)
 end
 
 function index(col::Int, row::Int, cols::Int)
-    return row * cols + col
+    return row * cols + col + 1
 end

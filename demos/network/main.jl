@@ -23,7 +23,7 @@ function main()
     scheduler = Scheduler(
         world,
         (
-            NetworkInit(distance=100),
+            NetworkInit(distance=50),
             NetworkPlot(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
