@@ -10,6 +10,7 @@ end
 
 struct PlotData
     nodes::Observable{Vector{Position}}
+    edges::Observable{Vector{Tuple{Position,Position}}}
 end
 
-PlotData() = PlotData(Observable(Vector{Position}()))
+PlotData() = PlotData(Observable(Vector{Position}()), Observable(Vector{Tuple{Position,Position}}()))

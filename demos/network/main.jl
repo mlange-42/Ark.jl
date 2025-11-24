@@ -51,6 +51,7 @@ function setup_makie(world::World, size::WorldSize)
     ylims!(ax, low=0, high=size.height)
 
     scatter!(ax, data.nodes, color=:green, markersize=5)
+    linesegments!(ax, data.edges)
 
     screen = display(f)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Network demo")
