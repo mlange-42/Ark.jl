@@ -15,7 +15,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _world::W
     _archetypes::Vector{_Archetype{M}}
     _q_lock::_QueryLock
-    _lock::UInt8
+    _lock::Int
     _has_excluded::Bool
 end
 
@@ -123,7 +123,7 @@ end
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
 
     storage_modes = [
-        world_storage_modes[Int(_component_id(W.parameters[1], T))]
+        world_storage_modes[_component_id(W.parameters[1], T)]
         for T in comp_types
     ]
     comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
@@ -152,7 +152,7 @@ end
     end
 end
 
-function _get_archetypes(world::World, ids::Tuple{Vararg{UInt8}})
+function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     comps = world._index.components
     rare_comp = @inbounds comps[ids[1]]
     min_len = length(rare_comp)
