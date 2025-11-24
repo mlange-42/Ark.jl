@@ -10,7 +10,7 @@ function initialize!(s::NetworkPlot, world::World)
     resize!(node_data, 0)
     resize!(edge_data, 0)
 
-    for (_, positions) in Query(world, (Position,))
+    for (_, positions) in Query(world, (Position,); with=(Node,))
         append!(node_data, positions)
     end
     for (_, edges) in Query(world, (EdgePosition,))

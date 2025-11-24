@@ -7,13 +7,17 @@ include("../_common/resources.jl")
 include("../_common/terminate.jl")
 include("components.jl")
 include("resources.jl")
+include("util.jl")
 include("sys/network_init.jl")
+include("sys/traveler_init.jl")
+include("sys/traveler_movement.jl")
 include("sys/network_plot.jl")
+include("sys/traveler_plot.jl")
 
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World(Position, Node, Edge, EdgePosition, EdgeLength)
+    world = World(Position, Node, Edge, EdgePosition, EdgeLength, Traveler)
 
     size = WorldSize(800, 600)
     add_resource!(world, size)
@@ -24,7 +28,10 @@ function main()
         world,
         (
             NetworkInit(distance=50),
+            TravelerInit(count=1000),
+            TravelerMovement(speed=0.2),
             NetworkPlot(),
+            TravelerPlot(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
@@ -52,6 +59,7 @@ function setup_makie(world::World, size::WorldSize)
 
     scatter!(ax, data.nodes, color=:green, markersize=5)
     linesegments!(ax, data.edges)
+    scatter!(ax, data.travelers, color=:blue, markersize=10)
 
     screen = display(f)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Network demo")

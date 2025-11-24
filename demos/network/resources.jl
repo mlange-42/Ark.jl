@@ -11,6 +11,11 @@ end
 struct PlotData
     nodes::Observable{Vector{Position}}
     edges::Observable{Vector{Tuple{Position,Position}}}
+    travelers::Observable{Vector{Position}}
 end
 
-PlotData() = PlotData(Observable(Vector{Position}()), Observable(Vector{Tuple{Position,Position}}()))
+PlotData() = PlotData(
+    Observable(Vector{Position}()),
+    Observable(Vector{Tuple{Position,Position}}()),
+    Observable(Vector{Position}()),
+)

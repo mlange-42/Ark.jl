@@ -20,3 +20,9 @@ end
 struct EdgeLength
     length::Float64
 end
+
+struct Traveler
+    edge::Entity
+    position::Float64
+    forward::Bool
+end

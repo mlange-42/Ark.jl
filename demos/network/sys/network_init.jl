@@ -31,7 +31,7 @@ function initialize!(s::NetworkInit, world::World)
     end
 
     edges = Tuple{Entity,Entity}[]
-    for (entities,) in Query(world, (); with=(Position,))
+    for (entities,) in Query(world, (); with=(Position, Node))
         for i in eachindex(entities)
             entity = entities[i]
             col, row = col_row(i, cols)
