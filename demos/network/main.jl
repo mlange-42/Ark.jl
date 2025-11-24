@@ -45,6 +45,7 @@ function setup_makie(world::World, size::WorldSize)
         vsync=true,
         renderloop=GLMakie.renderloop,
         render_on_demand=true,
+        focus_on_show=!IS_CI,
     )
 
     data = PlotData()
@@ -78,7 +79,9 @@ function run!(world::World, scheduler::Scheduler)
     end
 
     GLMakie.start_renderloop!(window.screen)
+
     wait(window.screen)
+    GLMakie.closeall()
 end
 
 main()
