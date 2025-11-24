@@ -110,13 +110,13 @@ end
 @testset "World create archetype" begin
     world = World(Position, Velocity)
 
-    arch1 = _find_or_create_archetype!(world, world._graph.nodes[1], (UInt8(1),), ())
+    arch1 = _find_or_create_archetype!(world, world._graph.nodes[1], (1,), ())
     @test arch1 == 2
 
-    arch2 = _find_or_create_archetype!(world, world._graph.nodes[1], (UInt8(1), UInt8(2)), ())
+    arch2 = _find_or_create_archetype!(world, world._graph.nodes[1], (1, 2), ())
     @test arch2 == 3
 
-    arch3 = _find_or_create_archetype!(world, world._graph.nodes[1], (UInt8(1),), ())
+    arch3 = _find_or_create_archetype!(world, world._graph.nodes[1], (1,), ())
     @test arch3 == arch1
 
     entity, _ = _create_entity!(world, arch1)
@@ -130,7 +130,7 @@ end
 
     # Register Int component
     id_int = _component_id(params, Int)
-    @test isa(id_int, UInt8)
+    @test isa(id_int, Int)
     @test world._registry.types[id_int] == Int
     @test length(world._storages) == N_fake + 2
     @test world._storages[id_int] isa _ComponentStorage{Int,Vector{Int}}
@@ -138,7 +138,7 @@ end
 
     # Register Position component
     id_pos = _component_id(params, Position)
-    @test isa(id_pos, UInt8)
+    @test isa(id_pos, Int)
     @test world._registry.types[id_pos] == Position
     @test length(world._storages) == N_fake + 2
     @test world._storages[id_pos] isa _ComponentStorage{Position,Vector{Position}}

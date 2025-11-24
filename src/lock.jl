@@ -7,14 +7,14 @@ function _Lock()
     _Lock(_BitPool(), 0)
 end
 
-function _lock(lock::_Lock)::UInt8
+function _lock(lock::_Lock)::Int
     l = _get_bit(lock.pool)
-    lock.lock_bits |= UInt64(1) << (l - 1)
+    lock.lock_bits |= UInt64(1) << ((l - 1) % UInt64)
     return l
 end
 
-function _unlock(lock::_Lock, b::UInt8)
-    if ((lock.lock_bits >> (b - 1)) & 0x01) == 0
+function _unlock(lock::_Lock, b::Int)
+    if !(((lock.lock_bits >> ((b - 1) % UInt64)) & UInt64(1)) % Bool)
         throw(
             InvalidStateException(
                 "unbalanced unlock. Did you close a query that was already iterated?",
@@ -22,7 +22,7 @@ function _unlock(lock::_Lock, b::UInt8)
             ),
         )
     end
-    lock.lock_bits &= ~(UInt64(1) << (b - 1))
+    lock.lock_bits &= ~(UInt64(1) << ((b - 1) % UInt64))
     _recycle(lock.pool, b)
 end
 

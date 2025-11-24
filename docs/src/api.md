@@ -14,7 +14,7 @@ and [Resources](@ref resources-api).
 
 ```@docs
 World
-World(::Type...; ::Bool)
+World(::Type...)
 reset!
 is_locked
 StructArrayStorage

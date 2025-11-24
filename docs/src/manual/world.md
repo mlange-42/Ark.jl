@@ -10,7 +10,7 @@ Most applications will have exactly one world, but multiple worlds can exist at 
 
 When creating a new world, all [Component types](@ref Components) that can exist in it must be specified.
 
-```jldoctest; output = false
+```jldoctest world; output = false
 using Ark
 
 struct Position
@@ -24,14 +24,28 @@ struct Velocity
 end
 
 world = World(Position, Velocity)
-; # Suppress print output
 
 # output
 
+World(entities=0, comp_types=(Position, Velocity))
 ```
 
 This may seem unusual, but it allows Ark to leverage Julia's compile-time programming
 features for the best performance.
+
+## Initial capacity
+
+The [World constructor](@ref World(::Type...)) takes an option keyword argument `initial_capacity`
+to allocate memory for the given number of [entities](@ref Entities) in each [archetype](@ref Architecture).
+This is useful to speed up entity creations by avoiding repeated allocations.
+
+```jldoctest world; output = false
+world = World(Position, Velocity; initial_capacity=1024)
+
+# output
+
+World(entities=0, comp_types=(Position, Velocity))
+```
 
 ## World reset
 
@@ -41,6 +55,13 @@ perform calibration, or for optimization purposes.
 
 To maximize efficiency, Ark provides a [reset!](@ref) function that resets a simulation world for subsequent reuse.
 This significantly accelerates model initialization by reusing already allocated memory and avoiding costly reallocation.
+
+```jldoctest world; output = false
+reset!(world)
+
+# output
+
+```
 
 ## World functionality
 

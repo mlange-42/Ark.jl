@@ -89,10 +89,10 @@ function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity:
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable), initial_capacity)
 end
 
-@generated function _component_id(::Type{CS}, ::Type{C})::UInt8 where {CS<:Tuple,C}
+@generated function _component_id(::Type{CS}, ::Type{C})::Int where {CS<:Tuple,C}
     for (i, S) in enumerate(CS.parameters)
         if S <: _ComponentStorage && S.parameters[1] === C
-            return :(UInt8($i))
+            return :($i)
         end
     end
     return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
@@ -111,8 +111,8 @@ end
 function _find_or_create_archetype!(
     world::World,
     start::_GraphNode,
-    add::Tuple{Vararg{UInt8}},
-    remove::Tuple{Vararg{UInt8}},
+    add::Tuple{Vararg{Int}},
+    remove::Tuple{Vararg{Int}},
 )::UInt32
     node = _find_node(world._graph, start, add, remove)
 
@@ -343,7 +343,7 @@ function remove_entity!(world::World, entity::Entity)
     swapped = _swap_remove!(archetype.entities._data, index.row)
 
     # Only operate on storages for components present in this archetype
-    for comp::UInt8 in archetype.components
+    for comp in archetype.components
         _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
     end
 
@@ -1110,7 +1110,7 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _activate_new_column_for_comp!(world::World{CS}, comp::UInt8, index::Int) where {CS}
+@generated function _activate_new_column_for_comp!(world::World{CS}, comp::Int, index::Int) where {CS}
     n = length(CS.parameters)
     exprs = Expr[]
     for i in 1:n
@@ -1125,7 +1125,7 @@ end
 
 @generated function _ensure_column_size_for_comp!(
     world::World{CS},
-    comp::UInt8,
+    comp::Int,
     arch::UInt32,
     needed::Int,
 ) where {CS<:Tuple}
@@ -1143,7 +1143,7 @@ end
 
 @generated function _move_component_data!(
     world::World{CS},
-    comp::UInt8,
+    comp::Int,
     old_arch::UInt32,
     new_arch::UInt32,
     row::UInt32,
@@ -1162,7 +1162,7 @@ end
 
 @generated function _copy_component_data!(
     world::World{CS},
-    comp::UInt8,
+    comp::Int,
     old_arch::UInt32,
     new_arch::UInt32,
     old_row::UInt32,
@@ -1188,7 +1188,7 @@ end
 
 @generated function _clear_component_data!(
     world::World{CS},
-    comp::UInt8,
+    comp::Int,
     arch::UInt32,
 ) where {CS<:Tuple}
     n = length(CS.parameters)
@@ -1205,7 +1205,7 @@ end
 
 @generated function _swap_remove_in_column_for_comp!(
     world::World{CS},
-    comp::UInt8,
+    comp::Int,
     arch::UInt32,
     row::UInt32,
 ) where {CS<:Tuple}
@@ -1368,6 +1368,7 @@ function reset!(world::W) where {W<:World}
     end
 
     empty!(world._resources)
+    return nothing
 end
 
 function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}

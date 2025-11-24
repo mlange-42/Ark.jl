@@ -57,7 +57,7 @@ time = tick.time
 0
 ```
 
-As getting a resource is not particularly fast (10-15ns),
+As getting a resource is not particularly fast (≈10ns),
 this should not be done in hot loops like queries, but beforehand.
 
 The existence of a resource type in the World can be checked with [has_resource](@ref):

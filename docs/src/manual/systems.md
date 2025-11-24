@@ -5,7 +5,7 @@ This is a deliberate decision, based on these reasons:
 
 - Systems can be hard to integrate into frameworks, like a game engine's update loop.  
   Ark wants to stay flexible and is completely engine-agnostic.
-- Systems are usually tied to queries in a 1:1 relation, while it is easily possible to combine multiple queries.
+- Systems are usually tied to queries in a 1:1 relation, while it can be very useful to combine multiple queries.
 - Systems and a scheduler are easy to implement, so this is left to the user.
 
 Below, we provide an example for how to implement systems and a scheduler.
@@ -86,7 +86,7 @@ run! (generic function with 1 method)
 
 ### Initializer system
 
-Now we can write some systems. First one that creates some entities.
+Now we can write some systems. First one that creates some entities:
 
 ```jldoctest systems; output = false
 struct InitializerSystem <: System
@@ -107,7 +107,7 @@ end
 initialize! (generic function with 2 methods)
 ```
 
-As we have the abstract type, we only need to implement the functions that are required for the system.
+As we have the abstract type, we only need to implement the functions that are actually required for the system.
 
 ### Movement system
 

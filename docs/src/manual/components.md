@@ -12,7 +12,7 @@ In Ark, any type can be used as a component.
 However, it is highly recommended to use immutable types,
 because mutable objects are usually allocated on the heap in Julia,
 which defeats Ark's claim of high performance.
-Immutable types are disallowed by default, but can be enabled when constructing a [World](@ref)
+Mutable types are disallowed by default, but can be enabled when constructing a [World](@ref)
 by the optional argument `allow_mutable` of the [world constructor](@ref World(::Type...; ::Bool)).
 
 ## Accessing components

@@ -19,7 +19,7 @@ jobs:
       with:
         access_token: ${{ github.token }}
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
     - name: Set up Julia
       uses: ./.github/actions/setup-julia
       with:
@@ -34,3 +34,4 @@ jobs:
         cd demos
         julia --color=yes --project=. logo/main.jl
         xvfb-run --auto-servernum -s '-screen 0 1024x768x24' julia --color=yes --project=. sir/main.jl
+        xvfb-run --auto-servernum -s '-screen 0 1024x768x24' julia --color=yes --project=. network/main.jl

@@ -30,7 +30,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 
 - Designed for [performance](https://mlange-42.github.io/Ark.jl/stable/benchmarks) and highly optimized.
 - Well-[documented](https://mlange-42.github.io/Ark.jl/stable/), type-stable [API](https://mlange-42.github.io/Ark.jl/stable/api).
-- Blazing fast [batch entity creation](https://mlange-42.github.io/Ark.jl/stable/manual/entities.html#Creating-entities).
+- Blazing fast [batch entity creation](https://mlange-42.github.io/Ark.jl/stable/manual/entities.html#creating-entities).
 - No [systems](https://mlange-42.github.io/Ark.jl/stable/manual/systems). Just [queries](https://mlange-42.github.io/Ark.jl/stable/manual/queries). Use your own structure.
 - Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
 

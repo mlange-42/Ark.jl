@@ -27,7 +27,7 @@ function _find_or_create(g::_Graph, mask::_MutableMask)
     return g.nodes[end]
 end
 
-function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{UInt8}}, remove::Tuple{Vararg{UInt8}})
+function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}})
     curr = start
 
     _set_mask!(g.mask, start.mask)

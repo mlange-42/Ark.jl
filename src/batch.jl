@@ -16,7 +16,7 @@ struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N,M}
     _world::W
     _archetypes::Vector{_BatchArchetype{M}}
     _b_lock::_QueryLock
-    _lock::UInt8
+    _lock::Int
 end
 
 @generated function _Batch_from_types(
@@ -31,7 +31,7 @@ end
 
     # TODO: keeping this for now to make iteration consistent with queries
     storage_modes = [
-        world_storage_modes[Int(_component_id(CS, T))]
+        world_storage_modes[_component_id(CS, T)]
         for T in comp_types
     ]
     comp_tuple_type = Expr(:curly, :Tuple, comp_types...)

@@ -13,6 +13,7 @@
 - Adds an event system with events for structural changes as well as custom events (#155)
 - Adds storage modes Vector and StructArray, which can be selected per component type (#207, #225)
 - Adds field view, so field access for query columns works equally for Vector and StructArray storages (#213)
+- Adds support to manage an arbitrary number of components in the `World` (#230, #327, #330)
 - Adds `@copy_entity!` for copying an entity and optionally adding and removing components (#262, #266)
 - Adds keyword argument `initial_capacity` to World constructor (#288)
 - Adds function `reset!` for resetting and reusing a world to avoid reallocations (#292)
@@ -28,6 +29,7 @@
 
 - Adds an animated logo demo (#268)
 - Adds a basic SIR demo (#324)
+- Adds a demo with travelers on a network (#334)
 
 ### Other
 
