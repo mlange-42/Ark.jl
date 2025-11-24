@@ -28,6 +28,7 @@
 ### Documentation
 
 - Adds an animated logo demo (#268)
+- Adds a demo with travelers on a network (#334)
 
 ### Other
 
