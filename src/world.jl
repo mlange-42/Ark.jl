@@ -1073,7 +1073,7 @@ end
 
     storage_mode_type = :(Tuple{$(storage_val_types...)})
 
-    id_tuple = Expr(:tuple, id_exprs...)
+    id_tuple = Expr(:tuple, collect(1:length(types))...)
 
     M = max(1, cld(length(types), 64))
     return quote
