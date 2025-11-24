@@ -22,7 +22,7 @@ function _unlock(lock::_Lock, b::Int)
             ),
         )
     end
-    lock.lock_bits &= ~(UInt64(1) << (b - 1))
+    lock.lock_bits &= ~(UInt64(1) << ((b - 1) % UInt64))
     _recycle(lock.pool, b)
 end
 
