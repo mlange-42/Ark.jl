@@ -8,11 +8,12 @@ include("../_common/terminate.jl")
 include("components.jl")
 include("resources.jl")
 include("sys/network_init.jl")
+include("sys/network_plot.jl")
 
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World()
+    world = World(Position)
 
     size = WorldSize(800, 600)
     add_resource!(world, size)
@@ -22,7 +23,8 @@ function main()
     scheduler = Scheduler(
         world,
         (
-            NetworkInit(count=1000),
+            NetworkInit(distance=100),
+            NetworkPlot(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
@@ -38,7 +40,17 @@ function setup_makie(world::World, size::WorldSize)
         render_on_demand=true,
     )
 
+    data = PlotData()
+    add_resource!(world, data)
+
     f = Figure(backgroundcolor=:white)
+
+    ax = Axis(f[1, 1], aspect=DataAspect())
+    hidedecorations!(ax)
+    xlims!(ax, low=0, high=size.width)
+    ylims!(ax, low=0, high=size.height)
+
+    scatter!(ax, data.nodes, color=:green, markersize=5)
 
     screen = display(f)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Network demo")

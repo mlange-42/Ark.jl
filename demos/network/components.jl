@@ -1,8 +1,5 @@
 
-struct Position
-    x::Float64
-    y::Float64
-end
+Position = Point2f
 
 struct Node
     edges::Vector{Entity}
