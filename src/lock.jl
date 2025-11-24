@@ -7,9 +7,9 @@ function _Lock()
     _Lock(_BitPool(), 0)
 end
 
-function _lock(lock::_Lock)
+function _lock(lock::_Lock)::Int
     l = _get_bit(lock.pool)
-    lock.lock_bits |= UInt64(1) << (l - 1)
+    lock.lock_bits |= UInt64(1) << ((l - 1) % UInt64)
     return l
 end
 
