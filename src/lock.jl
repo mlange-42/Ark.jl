@@ -14,7 +14,7 @@ function _lock(lock::_Lock)::Int
 end
 
 function _unlock(lock::_Lock, b::Int)
-    if ((lock.lock_bits >> (b - 1)) & UInt64(0x01)) == 0
+    if ((lock.lock_bits >> (b - 1)) & UInt64(1)) % Bool
         throw(
             InvalidStateException(
                 "unbalanced unlock. Did you close a query that was already iterated?",
