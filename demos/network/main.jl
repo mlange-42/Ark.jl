@@ -4,6 +4,7 @@ using GLMakie
 
 include("../_common/scheduler.jl")
 include("../_common/resources.jl")
+include("../_common/profile.jl")
 include("../_common/terminate.jl")
 include("components.jl")
 include("resources.jl")
@@ -32,6 +33,7 @@ function main()
             TravelerMovement(speed=0.2),
             NetworkPlot(),
             TravelerPlot(),
+            ProfilingSystem(60),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
