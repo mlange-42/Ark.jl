@@ -1007,7 +1007,7 @@ end
     initial_capacity::Int,
 ) where {CS<:Tuple,ST<:Tuple,MUT}
     types = CS.parameters
-    duplicates = setdiff(types, unique(types))
+    duplicates = setdiff(tuple(types...), unique(tuple(types...)))
     if !isempty(duplicates)
         throw(ArgumentError(lazy"duplicate component type $(first(duplicates)) during world creation"))
     end
