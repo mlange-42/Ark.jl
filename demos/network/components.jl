@@ -5,6 +5,8 @@ struct Node
     edges::Vector{Entity}
 end
 
+Node() = Node(Vector{Entity}())
+
 struct Edge
     node_a::Entity
     node_b::Entity

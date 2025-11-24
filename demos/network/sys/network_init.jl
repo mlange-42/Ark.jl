@@ -18,7 +18,7 @@ function initialize!(s::NetworkInit, world::World)
 
     all_entities = Entity[]
 
-    for (entities, positions) in new_entities!(world, rows * cols, (Position,))
+    for (entities, positions, nodes) in new_entities!(world, rows * cols, (Position, Node))
         append!(all_entities, entities)
         for i in eachindex(positions)
             col, row = col_row(i, cols)
@@ -26,6 +26,7 @@ function initialize!(s::NetworkInit, world::World)
                 col * s.distance + offset_x + (rand() * 2 - 1) * jitter,
                 row * s.distance + offset_y + (rand() * 2 - 1) * jitter,
             )
+            nodes[i] = Node()
         end
     end
 
@@ -50,7 +51,12 @@ function initialize!(s::NetworkInit, world::World)
         p2, = get_components(world, e2, (Position,))
         dx = p1[1] - p2[1]
         dy = p1[2] - p2[2]
-        new_entity!(world, (Edge(e1, e2), EdgePosition(p1, p2), EdgeLength(sqrt(dx * dx + dy * dy))))
+        edge = new_entity!(world, (Edge(e1, e2), EdgePosition(p1, p2), EdgeLength(sqrt(dx * dx + dy * dy))))
+
+        n1, = get_components(world, e1, (Node,))
+        n2, = get_components(world, e2, (Node,))
+        push!(n1.edges, edge)
+        push!(n2.edges, edge)
     end
 end
 
