@@ -37,7 +37,7 @@ end
         println(entity)
     end
 
-    M = (@isdefined fake_types) ? 2 : 1
+    M = (@isdefined fake_types) ? 5 : 1
     @test obs._comps == _Mask{M}(offset_ID + 1, offset_ID + 2)
     @test obs._with == _Mask{M}()
     @test obs._without == _Mask{M}()
