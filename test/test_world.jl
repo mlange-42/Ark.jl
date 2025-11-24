@@ -2,7 +2,6 @@
 @testset "World creation" begin
     world = World()
     @test isa(world, World)
-    @test isa(world._registry, _ComponentRegistry)
 
     !(@isdefined fake_types) && @test world._storages == ()
     @test length(world._archetypes) == 1
@@ -131,7 +130,6 @@ end
     # Register Int component
     id_int = _component_id(params, Int)
     @test isa(id_int, UInt8)
-    @test world._registry.types[id_int] == Int
     @test length(world._storages) == N_fake + 2
     @test world._storages[id_int] isa _ComponentStorage{Int,Vector{Int}}
     @test length(world._storages[id_int].data) == 1
@@ -139,7 +137,6 @@ end
     # Register Position component
     id_pos = _component_id(params, Position)
     @test isa(id_pos, UInt8)
-    @test world._registry.types[id_pos] == Position
     @test length(world._storages) == N_fake + 2
     @test world._storages[id_pos] isa _ComponentStorage{Position,Vector{Position}}
     @test length(world._storages[id_pos].data) == 1
@@ -203,7 +200,6 @@ end
     @test world._archetypes[3].components == [pos_id, vel_id]
 
     @test length(world._storages) == N_fake + 2
-    @test length(world._registry.types) == N_fake + 2
 
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
