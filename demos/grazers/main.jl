@@ -14,20 +14,13 @@ include("sys/draw_grazers.jl")
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    size = WorldSize(80, 60, 10)
-    GLMakie.activate!(
-        framerate=60.0,
-        vsync=true,
-        renderloop=GLMakie.renderloop,
-        render_on_demand=true,
-    )
-    scene = Scene(camera=campixel!, size=(size.width * size.scale, size.height * size.scale), backgroundcolor=:black)
-    screen = display(scene)
-    GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Grazers demo")
-
     world = World()
+
+    size = WorldSize(80, 60, 10)
     add_resource!(world, size)
-    add_resource!(world, Window(scene, screen))
+
+    window = setup_makie(size)
+    add_resource!(world, window)
 
     scheduler = Scheduler(
         world,
@@ -39,16 +32,35 @@ function main()
         ),
     )
 
+    run!(world, scheduler)
+end
+
+function setup_makie(size::WorldSize)
+    GLMakie.activate!(
+        framerate=60.0,
+        vsync=true,
+        renderloop=GLMakie.renderloop,
+        render_on_demand=true,
+    )
+    scene = Scene(camera=campixel!, size=(size.width * size.scale, size.height * size.scale), backgroundcolor=:black)
+    screen = display(scene)
+    GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Grazers demo")
+
+    return Window(scene, screen)
+end
+
+function run!(world::World, scheduler::Scheduler)
     initialize!(scheduler)
 
-    on(screen.render_tick) do _
+    window = get_resource(world, Window)
+    on(window.screen.render_tick) do _
         if !update!(scheduler)
             GLMakie.closeall()
         end
     end
 
-    GLMakie.start_renderloop!(screen)
-    wait(screen)
+    GLMakie.start_renderloop!(window.screen)
+    wait(window.screen)
 end
 
 main()
