@@ -1,5 +1,5 @@
 
-mutable struct GrowGrass <: System
+struct GrowGrass <: System
     growth_rate::Float64
 end
 
