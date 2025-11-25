@@ -6,7 +6,6 @@ using CoherentNoise
 
 include("../_common/scheduler.jl")
 include("../_common/resources.jl")
-include("../_common/profile.jl")
 include("../_common/terminate.jl")
 include("components.jl")
 include("resources.jl")
@@ -48,7 +47,6 @@ function main()
             GrassDraw(),
             GrazerDraw(),
             UpdatePlots(),
-            ProfilingSystem(60),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
@@ -77,8 +75,8 @@ function setup_makie(world::World, size::WorldSize)
 
     ax1 = Axis(f[1, 2],
         title="Search behavior",
-        xlabel="Max angle *90°",
-        ylabel="Reverse prob. *0.1",
+        xlabel="Max angle ×90°",
+        ylabel="Reverse prob. ×0.1",
         backgroundcolor=:white, alignmode=Outside())
     scatter!(ax1, data.max_angle, data.reverse_prob, color=:green, markersize=2)
     ylims!(ax1, low=0, high=1)
@@ -93,7 +91,7 @@ function setup_makie(world::World, size::WorldSize)
     xlims!(ax2, low=0, high=1)
 
     ax3 = Axis(f[3, 2], title="Reproduction",
-        xlabel="#Offspring *10",
+        xlabel="#Offspring ×10",
         ylabel="Energy share",
         backgroundcolor=:white, alignmode=Outside())
     scatter!(ax3, data.num_offspring, data.energy_share, color=:green, markersize=2)
