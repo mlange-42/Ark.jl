@@ -1,10 +1,15 @@
 
 struct BoidsNeighbors <: System
+    max_distance::Float64
 end
+
+BoidsNeighbors(;
+    max_distance::Float64,
+) = BoidsNeighbors(max_distance)
 
 function update!(s::BoidsNeighbors, world::World)
     tick = get_resource(world, Tick).tick
-    max_dist_sq = 25 * 25
+    max_dist_sq = s.max_distance * s.max_distance
     # TODO: use a grid for acceleration
     for (entities1, positions1, neighbors, updates) in Query(world, (Position, Neighbors, UpdateStep))
         for i in eachindex(positions1, neighbors, updates)

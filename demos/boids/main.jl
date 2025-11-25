@@ -27,10 +27,17 @@ function main()
         world,
         (
             BoidsInit(count=100),
-            BoidsNeighbors(),
-            BoidsMovement(),
+            BoidsNeighbors(max_distance=25.0),
+            BoidsMovement(
+                avoid_factor=0.005,
+                avoid_distance=10.0,
+                cohesion_factor=0.002,
+                align_factor=0.002,
+                min_speed=0.2,
+                max_speed=0.5,
+            ),
             BoidsPlot(),
-            TerminationSystem(IS_CI ? 240 : -1) # Short run in CI tests
+            TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
 
