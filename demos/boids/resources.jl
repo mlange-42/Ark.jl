@@ -8,11 +8,11 @@ struct Window
 end
 
 struct PlotData
-    positions::Observable{Vector{Position}}
-    rotations::Observable{Vector{Rotation}}
+    positions::Observable{Vector{Point2f}}
+    rotations::Observable{Vector{Float64}}
 end
 
 PlotData() = PlotData(
-    Observable(Vector{Position}()),
-    Observable(Vector{Rotation}()),
+    Observable(Vector{Point2f}()),
+    Observable(Vector{Float64}()),
 )

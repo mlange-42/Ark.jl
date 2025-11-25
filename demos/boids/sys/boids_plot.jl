@@ -11,8 +11,8 @@ function update!(s::BoidsPlot, world::World)
     resize!(rot_data, 0)
 
     for (_, positions, rotations) in Query(world, (Position, Rotation))
-        append!(pos_data, positions)
-        append!(rot_data, rotations)
+        append!(pos_data, getfield.(positions, :p))
+        append!(rot_data, getfield.(rotations, :r))
     end
 
     notify(data.positions)

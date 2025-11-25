@@ -5,15 +5,17 @@ using GeometryBasics
 include("../_common/resources.jl")
 include("../_common/scheduler.jl")
 include("../_common/terminate.jl")
+include("util.jl")
 include("components.jl")
 include("resources.jl")
 include("sys/boids_init.jl")
+include("sys/boids_movement.jl")
 include("sys/boids_plot.jl")
 
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World(Position, Rotation)
+    world = World(Position, Velocity, Rotation)
 
     size = WorldSize(800, 600)
     add_resource!(world, size)
@@ -24,8 +26,9 @@ function main()
         world,
         (
             BoidsInit(count=100),
+            BoidsMovement(),
             BoidsPlot(),
-            TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
+            TerminationSystem(IS_CI ? 240 : -1) # Short run in CI tests
         ),
     )
 
