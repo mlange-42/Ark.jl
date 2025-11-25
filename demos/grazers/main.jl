@@ -60,6 +60,7 @@ function setup_makie(world::World, size::WorldSize)
         vsync=true,
         renderloop=GLMakie.renderloop,
         render_on_demand=false,
+        focus_on_show=!IS_CI,
     )
 
     size = (size.width * size.scale, size.height * size.scale)
@@ -110,7 +111,7 @@ function run!(world::World, scheduler::Scheduler)
     on(window.screen.render_tick) do _
         for _ in 1:speed.speed
             if !update!(scheduler)
-                GLMakie.closeall()
+                close(window.screen)
             end
         end
     end
