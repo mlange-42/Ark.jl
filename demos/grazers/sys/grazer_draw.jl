@@ -1,8 +1,8 @@
 
-struct DrawGrazers <: System
+struct GrazerDraw <: System
 end
 
-function initialize!(s::DrawGrazers, world::World)
+function initialize!(s::GrazerDraw, world::World)
     size = get_resource(world, WorldSize)
     win = get_resource(world, Window)
 
@@ -18,7 +18,7 @@ function initialize!(s::DrawGrazers, world::World)
     Makie.transform!(sc, scale=Vec3f(size.scale, size.scale, 1))
 end
 
-function update!(s::DrawGrazers, world::World)
+function update!(s::GrazerDraw, world::World)
     grazers = get_resource(world, Grazers)
     pos = grazers.positions[]
     rot = grazers.rotations[]

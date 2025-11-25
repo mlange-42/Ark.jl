@@ -1,11 +1,11 @@
 
-struct MortalityGrazers <: System
+struct GrazerMortality <: System
     to_remove::Vector{Entity}
 end
 
-MortalityGrazers() = MortalityGrazers(Vector{Entity}())
+GrazerMortality() = GrazerMortality(Vector{Entity}())
 
-function update!(s::MortalityGrazers, world::World)
+function update!(s::GrazerMortality, world::World)
     resize!(s.to_remove, 0)
 
     for (entities, energies) in Query(world, (Energy,))

@@ -1,12 +1,12 @@
 
-struct DecisionGrazers <: System
+struct GrazerDecision <: System
     to_graze::Vector{Entity}
     to_move::Vector{Entity}
 end
 
-DecisionGrazers() = DecisionGrazers(Vector{Entity}(), Vector{Entity}())
+GrazerDecision() = GrazerDecision(Vector{Entity}(), Vector{Entity}())
 
-function update!(s::DecisionGrazers, world::World)
+function update!(s::GrazerDecision, world::World)
     resize!(s.to_graze, 0)
     resize!(s.to_move, 0)
 

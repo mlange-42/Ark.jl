@@ -1,15 +1,15 @@
 
-struct MetabolizeGrazers <: System
+struct GrazerMetabolism <: System
     base_rate::Float64
     move_rate::Float64
 end
 
-MetabolizeGrazers(;
+GrazerMetabolism(;
     base_rate::Float64=0.01,
     move_rate::Float64=0.025,
-) = MetabolizeGrazers(base_rate, move_rate)
+) = GrazerMetabolism(base_rate, move_rate)
 
-function update!(s::MetabolizeGrazers, world::World)
+function update!(s::GrazerMetabolism, world::World)
     for (_, energy) in Query(world, (Energy,); with=(Grazing,))
         energy.value .-= s.base_rate
         energy.value .= clamp.(energy.value, 0, 1)

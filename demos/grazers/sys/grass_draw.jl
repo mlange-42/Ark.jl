@@ -1,8 +1,8 @@
 
-struct DrawGrass <: System
+struct GrassDraw <: System
 end
 
-function initialize!(s::DrawGrass, world::World)
+function initialize!(s::GrassDraw, world::World)
     size = get_resource(world, WorldSize)
     win = get_resource(world, Window)
     grass = get_resource(world, GrassGrid)
@@ -15,7 +15,7 @@ function initialize!(s::DrawGrass, world::World)
     )
 end
 
-function update!(s::DrawGrass, world::World)
+function update!(s::GrassDraw, world::World)
     grass = get_resource(world, GrassGrid)
     notify(grass.grass)
 end

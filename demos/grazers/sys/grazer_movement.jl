@@ -1,13 +1,13 @@
 
-struct MoveGrazers <: System
+struct GrazerMovement <: System
     speed::Float64
 end
 
-MoveGrazers(;
+GrazerMovement(;
     speed::Float64=0.1,
-) = MoveGrazers(speed)
+) = GrazerMovement(speed)
 
-function update!(s::MoveGrazers, world::World)
+function update!(s::GrazerMovement, world::World)
     size = get_resource(world, WorldSize)
     for (_, positions, rotations, genes) in Query(world, (Position, Rotation, Genes); with=(Moving,))
         for i in eachindex(positions, rotations)

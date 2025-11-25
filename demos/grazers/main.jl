@@ -8,14 +8,14 @@ include("../_common/resources.jl")
 include("../_common/terminate.jl")
 include("components.jl")
 include("resources.jl")
-include("sys/init_grazers.jl")
-include("sys/grow_grass.jl")
-include("sys/move_grazers.jl")
-include("sys/metabol_grazers.jl")
-include("sys/mortality_grazers.jl")
-include("sys/decision_grazers.jl")
-include("sys/draw_grass.jl")
-include("sys/draw_grazers.jl")
+include("sys/grazer_init.jl")
+include("sys/grass_growth.jl")
+include("sys/grazer_movement.jl")
+include("sys/grazer_metabolism.jl")
+include("sys/grazer_mortality.jl")
+include("sys/grazer_decision.jl")
+include("sys/grass_draw.jl")
+include("sys/grazer_draw.jl")
 
 const IS_CI = "CI" in keys(ENV)
 
@@ -31,14 +31,14 @@ function main()
     scheduler = Scheduler(
         world,
         (
-            InitGrazers(count=1000),
-            GrowGrass(growth_rate=0.01),
-            MoveGrazers(speed=0.1),
-            MetabolizeGrazers(base_rate=0.01, move_rate=0.025),
-            MortalityGrazers(),
-            DecisionGrazers(),
-            DrawGrass(),
-            DrawGrazers(),
+            GrazerInit(count=1000),
+            GrassGrowth(growth_rate=0.01),
+            GrazerMovement(speed=0.1),
+            GrazerMetabolism(base_rate=0.01, move_rate=0.025),
+            GrazerMortality(),
+            GrazerDecision(),
+            GrassDraw(),
+            GrazerDraw(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )

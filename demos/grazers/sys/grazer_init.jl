@@ -1,13 +1,13 @@
 
-struct InitGrazers <: System
+struct GrazerInit <: System
     count::Int
 end
 
-InitGrazers(;
+GrazerInit(;
     count::Int=100,
-) = InitGrazers(count)
+) = GrazerInit(count)
 
-function initialize!(s::InitGrazers, world::World)
+function initialize!(s::GrazerInit, world::World)
     size = get_resource(world, WorldSize)
     for (_, positions, rotations, energies, genes, _) in new_entities!(world, s.count,
         (Position, Rotation, Energy, Genes, Moving))

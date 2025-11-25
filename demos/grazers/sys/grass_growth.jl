@@ -1,19 +1,19 @@
 
-struct GrowGrass <: System
+struct GrassGrowth <: System
     growth_rate::Float64
 end
 
-GrowGrass(;
+GrassGrowth(;
     growth_rate::Float64=0.01,
-) = GrowGrass(growth_rate)
+) = GrassGrowth(growth_rate)
 
-function initialize!(s::GrowGrass, world::World)
+function initialize!(s::GrassGrowth, world::World)
     size = get_resource(world, WorldSize)
     grass = GrassGrid(Observable([rand() * 0.25 + 0.25 for x in 1:size.width, y in 1:size.height]))
     add_resource!(world, grass)
 end
 
-function update!(s::GrowGrass, world::World)
+function update!(s::GrassGrowth, world::World)
     grass = get_resource(world, GrassGrid)
 
     vals = grass.grass[]
