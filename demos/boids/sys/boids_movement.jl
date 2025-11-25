@@ -6,6 +6,8 @@ struct BoidsMovement <: System
     cohesion_factor::Float64
     min_speed::Float64
     max_speed::Float64
+    margin::Float64
+    margin_factor::Float64
 end
 
 BoidsMovement(;
@@ -15,12 +17,24 @@ BoidsMovement(;
     cohesion_factor::Float64,
     min_speed::Float64,
     max_speed::Float64,
-) = BoidsMovement(avoid_factor, avoid_distance, align_factor, cohesion_factor, min_speed, max_speed)
+    margin::Float64,
+    margin_factor::Float64,
+) = BoidsMovement(
+    avoid_factor,
+    avoid_distance,
+    align_factor,
+    cohesion_factor,
+    min_speed,
+    max_speed,
+    margin,
+    margin_factor,
+)
 
 function update!(s::BoidsMovement, world::World)
+    size = get_resource(world, WorldSize)
     avoid_dist_sq = s.avoid_distance * s.avoid_distance
     for (_, positions, velocities, neighbors) in Query(world, (Position, Velocity, Neighbors))
-        for i in eachindex(positions, velocities)
+        for i in eachindex(positions, velocities, neighbors)
             pos = positions[i].p
             vel = velocities[i].v
             neigh = neighbors[i].n
@@ -53,6 +67,17 @@ function update!(s::BoidsMovement, world::World)
                 vy +=
                     close_y * s.avoid_factor + (avg_vy - vel[1]) * s.align_factor +
                     (avg_y - pos[2]) * s.cohesion_factor
+            end
+
+            if pos[1] < s.margin
+                vx += s.margin_factor
+            elseif pos[1] > size.width - s.margin
+                vx -= s.margin_factor
+            end
+            if pos[2] < s.margin
+                vy += s.margin_factor
+            elseif pos[2] > size.height - s.margin
+                vy -= s.margin_factor
             end
 
             speed = sqrt(vx * vx + vy * vy)

@@ -26,15 +26,17 @@ function main()
     scheduler = Scheduler(
         world,
         (
-            BoidsInit(count=100),
+            BoidsInit(count=250),
             BoidsNeighbors(max_distance=25.0),
             BoidsMovement(
                 avoid_factor=0.005,
                 avoid_distance=10.0,
                 cohesion_factor=0.002,
-                align_factor=0.002,
-                min_speed=0.2,
-                max_speed=0.5,
+                align_factor=0.005,
+                min_speed=0.5,
+                max_speed=1.0,
+                margin=100.0,
+                margin_factor=0.02,
             ),
             BoidsPlot(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
@@ -51,7 +53,7 @@ function setup_makie(world::World, size::WorldSize)
         renderloop=GLMakie.renderloop,
         render_on_demand=false,
     )
-    scene = Scene(camera=campixel!, size=(800, 600), backgroundcolor=:black)
+    scene = Scene(camera=campixel!, size=(size.width, size.height), backgroundcolor=:black)
 
     boid_shape = Polygon(Point2f[(3, 0), (-5, 4), (-3, 0), (-5, -4)])
     data = PlotData()
