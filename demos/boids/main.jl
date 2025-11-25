@@ -1,32 +1,71 @@
+using Ark
 using GLMakie
 using GeometryBasics
 
+include("../_common/resources.jl")
+include("../_common/scheduler.jl")
+include("../_common/terminate.jl")
+include("components.jl")
+include("resources.jl")
+include("sys/boids_init.jl")
+include("sys/boids_plot.jl")
+
+const IS_CI = "CI" in keys(ENV)
+
 function main()
+    world = World(Position, Rotation)
+
+    size = WorldSize(800, 600)
+    add_resource!(world, size)
+
+    setup_makie(world, size)
+
+    scheduler = Scheduler(
+        world,
+        (
+            BoidsInit(count=100),
+            BoidsPlot(),
+            TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
+        ),
+    )
+
+    run!(world, scheduler)
+end
+
+function setup_makie(world::World, size::WorldSize)
     GLMakie.activate!(
         framerate=60.0,
         vsync=true,
         renderloop=GLMakie.renderloop,
-        render_on_demand=true,
+        render_on_demand=false,
     )
     scene = Scene(camera=campixel!, size=(800, 600), backgroundcolor=:black)
+
+    boid_shape = Polygon(Point2f[(3, 0), (-5, 4), (-3, 0), (-5, -4)])
+    data = PlotData()
+
+    meshscatter!(scene, data.positions; rotation=data.rotations, marker=boid_shape, color=:green, markersize=1)
+
     screen = display(scene)
+    GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Boids demo")
 
-    boid_shape = Polygon(Point2f[(0, 3), (4, -5), (0, -3), (-4, -5)])
+    add_resource!(world, data)
+    add_resource!(world, Window(screen))
+end
 
-    positions = Observable([Point2f(rand() * 800, rand() * 600) for _ in 1:100])
-    rotations = Observable([rand() * 2π for _ in 1:100])
+function run!(world::World, scheduler::Scheduler)
+    initialize!(scheduler)
 
-    meshscatter!(scene, positions; rotation=rotations, marker=boid_shape, color=:green, markersize=1)
-
-    on(screen.render_tick) do _
-        for i in eachindex(rotations[])
-            rotations[][i] += 0.01
+    window = get_resource(world, Window)
+    on(window.screen.render_tick) do _
+        if !update!(scheduler)
+            close(window.screen)
         end
-        notify(rotations)
     end
 
-    GLMakie.start_renderloop!(screen)
-    wait(screen)
+    GLMakie.start_renderloop!(window.screen)
+
+    wait(window.screen)
 end
 
 main()
