@@ -7,6 +7,7 @@ include("../_common/scheduler.jl")
 include("../_common/resources.jl")
 include("../_common/terminate.jl")
 include("resources.jl")
+include("sys/grow_grass.jl")
 include("sys/draw_grass.jl")
 include("sys/draw_grazers.jl")
 
@@ -22,19 +23,19 @@ function main()
     )
     scene = Scene(camera=campixel!, size=(size.width * size.scale, size.height * size.scale), backgroundcolor=:black)
     screen = display(scene)
+    GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Grazers demo")
 
     world = World()
     add_resource!(world, size)
-    grass = GrassGrid(Observable([sin(x / 10) * cos(y / 10) for x in 1:size.width, y in 1:size.height]))
-    add_resource!(world, grass)
     add_resource!(world, Window(scene, screen))
 
     scheduler = Scheduler(
         world,
         (
+            GrowGrass(growth_rate=0.01),
             DrawGrass(),
             DrawGrazers(),
-            TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
+            TerminationSystem(IS_CI ? 240 : -1) # Short run in CI tests
         ),
     )
 
