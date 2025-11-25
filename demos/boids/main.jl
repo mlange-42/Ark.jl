@@ -9,6 +9,7 @@ include("util.jl")
 include("components.jl")
 include("resources.jl")
 include("sys/boids_init.jl")
+include("sys/boids_neighbors.jl")
 include("sys/boids_movement.jl")
 include("sys/boids_plot.jl")
 
@@ -26,6 +27,7 @@ function main()
         world,
         (
             BoidsInit(count=100),
+            BoidsNeighbors(),
             BoidsMovement(),
             BoidsPlot(),
             TerminationSystem(IS_CI ? 240 : -1) # Short run in CI tests
