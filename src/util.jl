@@ -31,7 +31,6 @@ function _format_type(T)
     end
 end
 
-
 function throw_if_add_remove_same_operation(add, remove)
     if !isempty(intersect(add, remove))
         throw(ArgumentError("component added and removed in the same exchange operation"))
