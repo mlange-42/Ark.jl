@@ -1,19 +1,22 @@
 
 struct GrassGrowth <: System
     growth_rate::Float64
+    feature_size::Float64
 end
 
 GrassGrowth(;
     growth_rate::Float64=0.01,
-) = GrassGrowth(growth_rate)
+    feature_size::Float64=25.0,
+) = GrassGrowth(growth_rate, feature_size)
 
 function initialize!(s::GrassGrowth, world::World)
     size = get_resource(world, WorldSize)
 
     cap = zeros(Float64, size.width, size.height)
     sampler = fbm_fractal_2d(source=opensimplex2_2d(), octaves=4)
+    scale = 1.0 / s.feature_size
     for x in 1:size.width, y in 1:size.height
-        cap[x, y] = clamp(sample(sampler, x * 0.1, y * 0.1) + 0.25, 0.01, 1)
+        cap[x, y] = clamp(sample(sampler, x * scale, y * scale) + 0.33, 0.01, 1)
     end
 
     grass = GrassGrid(cap, Observable(copy(cap)))

@@ -13,7 +13,7 @@ function initialize!(s::GrazerDraw, world::World)
 
     add_resource!(world, Grazers(positions, rotations))
 
-    sc = meshscatter!(win.scene, positions; rotation=rotations, marker=boid_shape, color=:blue, markersize=0.1)
+    sc = meshscatter!(win.scene, positions; rotation=rotations, marker=boid_shape, color=:white, markersize=0.12)
 
     Makie.transform!(sc, scale=Vec3f(size.scale, size.scale, 1))
 end

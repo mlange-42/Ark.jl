@@ -26,7 +26,7 @@ const IS_CI = "CI" in keys(ENV)
 function main()
     world = World(Position, Rotation, Energy, Genes, Moving, Grazing)
 
-    size = WorldSize(80, 60, 10)
+    size = WorldSize(120, 100, 6)
     add_resource!(world, size)
 
     setup_makie(world, size)
@@ -37,7 +37,7 @@ function main()
         world,
         (
             GrazerInit(count=1000),
-            GrassGrowth(growth_rate=0.01),
+            GrassGrowth(growth_rate=0.01, feature_size=23.0),
             GrazerMovement(speed=0.1),
             GrazerFeeding(max_grazing=0.05, efficiency=1.0, threshold=0.1),
             GrazerReproduction(max_offspring=10, cross_rate=0.2, mutation_rate=0.01),
