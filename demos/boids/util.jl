@@ -12,3 +12,11 @@ function distance_sq(a::Point2f, b::Point2f)
     dy = a[2] - b[2]
     return dx * dx + dy * dy
 end
+
+function normalize(dx::Float64, dy::Float64)
+    len = sqrt(dx * dx + dy * dy)
+    if len == 0.0
+        return 0.0, 0.0
+    end
+    return (dx / len, dy / len)
+end

@@ -8,6 +8,7 @@ include("../_common/terminate.jl")
 include("util.jl")
 include("components.jl")
 include("resources.jl")
+include("sys/mouse.jl")
 include("sys/boids_init.jl")
 include("sys/boids_neighbors.jl")
 include("sys/boids_movement.jl")
@@ -27,9 +28,10 @@ function main()
         world,
         (
             BoidsInit(count=1000),
+            MouseSystem(),
             BoidsNeighbors(max_distance=25),
             BoidsMovement(
-                avoid_factor=0.005,
+                avoid_factor=0.1,
                 avoid_distance=10.0,
                 cohesion_factor=0.002,
                 align_factor=0.005,
@@ -37,6 +39,8 @@ function main()
                 max_speed=1.0,
                 margin=150.0,
                 margin_factor=0.1,
+                mouse_radius=200.0,
+                mouse_avoid_factor=1.0,
             ),
             BoidsPlot(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
@@ -52,6 +56,7 @@ function setup_makie(world::World, size::WorldSize)
         vsync=true,
         renderloop=GLMakie.renderloop,
         render_on_demand=false,
+        focus_on_show=!IS_CI,
     )
     scene = Scene(camera=campixel!, size=(size.width, size.height), backgroundcolor=:black)
 
@@ -64,7 +69,7 @@ function setup_makie(world::World, size::WorldSize)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Boids demo")
 
     add_resource!(world, data)
-    add_resource!(world, Window(screen))
+    add_resource!(world, Window(screen, scene))
 end
 
 function run!(world::World, scheduler::Scheduler)

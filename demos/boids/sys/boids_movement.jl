@@ -8,6 +8,8 @@ struct BoidsMovement <: System
     max_speed::Float64
     margin::Float64
     margin_factor::Float64
+    mouse_radius::Float64
+    mouse_avoid_factor::Float64
 end
 
 BoidsMovement(;
@@ -19,6 +21,8 @@ BoidsMovement(;
     max_speed::Float64,
     margin::Float64,
     margin_factor::Float64,
+    mouse_radius::Float64,
+    mouse_avoid_factor::Float64,
 ) = BoidsMovement(
     avoid_factor,
     avoid_distance,
@@ -28,11 +32,16 @@ BoidsMovement(;
     max_speed,
     margin,
     margin_factor,
+    mouse_radius,
+    mouse_avoid_factor,
 )
 
 function update!(s::BoidsMovement, world::World)
     size = get_resource(world, WorldSize)
+    mouse = get_resource(world, Mouse)
+
     avoid_dist_sq = s.avoid_distance * s.avoid_distance
+    mouse_dist_sq = s.mouse_radius * s.mouse_radius
     for (_, positions, velocities, neighbors) in Query(world, (Position, Velocity, Neighbors))
         for i in eachindex(positions, velocities, neighbors)
             pos = positions[i].p
@@ -61,12 +70,24 @@ function update!(s::BoidsMovement, world::World)
                 avg_y /= length(neigh)
                 avg_vx /= length(neigh)
                 avg_vy /= length(neigh)
+
+                close_x, close_y = normalize(close_x, close_y)
                 vx +=
                     close_x * s.avoid_factor + (avg_vx - vel[1]) * s.align_factor +
                     (avg_x - pos[1]) * s.cohesion_factor
                 vy +=
                     close_y * s.avoid_factor + (avg_vy - vel[1]) * s.align_factor +
                     (avg_y - pos[2]) * s.cohesion_factor
+            end
+
+            if mouse.inside
+                dist_sq = distance_sq(Point2f(mouse.x, mouse.y), pos)
+                if dist_sq < mouse_dist_sq
+                    f = 1 - sqrt(dist_sq) / s.mouse_radius
+                    dx, dy = normalize(pos[1] - mouse.x, pos[2] - mouse.y)
+                    vx += dx * s.avoid_factor * f
+                    vy += dy * s.avoid_factor * f
+                end
             end
 
             if pos[1] < s.margin
