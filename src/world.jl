@@ -941,7 +941,7 @@ end
     throw_if_add_remove_same_operation(add_ids, rem_ids)
     throw_if_id_twice(add_ids)
     throw_if_id_twice(rem_ids)
-    
+
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_arch = world._archetypes[index.archetype]))
     push!(
