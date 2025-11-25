@@ -1,4 +1,5 @@
 using Ark
+using Colors
 using GLMakie
 using GeometryBasics
 
@@ -20,14 +21,15 @@ function main()
     grass = GrassGrid(Observable([sin(x / 10) * cos(y / 10) for x in 1:width, y in 1:height]))
     add_resource!(world, grass)
 
-    hm = heatmap!(scene, 1:width, 1:height, grass.grass, colormap=:viridis)
+    black_to_green = [RGB(0, 0, 0), RGB(0, 1, 0)]
+    hm = heatmap!(scene, 1:width, 1:height, grass.grass, colormap=black_to_green, colorrange=(0, 1))
 
     boid_shape = Polygon(Point2f[(0, 3), (4, -5), (0, -3), (-4, -5)])
 
     positions = Observable([Point2f(rand() * 80, rand() * 60) for _ in 1:100])
     rotations = Observable([rand() * 2π for _ in 1:100])
 
-    sc = meshscatter!(scene, positions; rotation=rotations, marker=boid_shape, color=:green, markersize=0.1)
+    sc = meshscatter!(scene, positions; rotation=rotations, marker=boid_shape, color=:white, markersize=0.1)
 
     Makie.transform!(hm, scale=Vec3f(10, 10, 1))
     Makie.transform!(sc, scale=Vec3f(10, 10, 1))
