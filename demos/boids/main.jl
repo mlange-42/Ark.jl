@@ -29,10 +29,10 @@ function main()
         (
             BoidsInit(count=1000),
             MouseSystem(),
-            BoidsNeighbors(max_distance=25),
+            BoidsNeighbors(max_distance=18),
             BoidsMovement(
                 avoid_factor=0.1,
-                avoid_distance=10.0,
+                avoid_distance=6.0,
                 cohesion_factor=0.002,
                 align_factor=0.005,
                 min_speed=0.5,
@@ -60,7 +60,7 @@ function setup_makie(world::World, size::WorldSize)
     )
     scene = Scene(camera=campixel!, size=(size.width, size.height), backgroundcolor=:black)
 
-    boid_shape = Polygon(Point2f[(3, 0), (-5, 4), (-3, 0), (-5, -4)])
+    boid_shape = Polygon(Point2f[(2, 0), (-3, 4), (-1, 0), (-3, -4)])
     data = PlotData()
 
     meshscatter!(scene, data.positions; rotation=data.rotations, marker=boid_shape, color=:white, markersize=1)
