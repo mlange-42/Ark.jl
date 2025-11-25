@@ -23,8 +23,9 @@ function _find_or_create(g::_Graph, mask::_MutableMask)
             return node
         end
     end
-    push!(g.nodes, _GraphNode(_Mask(mask), typemax(UInt32)))
-    return g.nodes[end]
+    node = _GraphNode(_Mask(mask), typemax(UInt32))
+    push!(g.nodes, node)
+    return node
 end
 
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}})
@@ -32,7 +33,7 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
 
     _set_mask!(g.mask, start.mask)
     for b in remove
-        if !_get_bit(g.mask, b)
+        if !_get_bit(start.mask, b)
             throw(ArgumentError("entity does not have component to remove"))
         end
         _clear_bit!(g.mask, b)
@@ -47,10 +48,8 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
         end
     end
     for b in add
-        if _get_bit(g.mask, b)
-            throw(ArgumentError("entity already has component to add, or it was added twice"))
-        elseif _get_bit(start.mask, b)
-            throw(ArgumentError("component added and removed in the same exchange operation"))
+        if _get_bit(start.mask, b)
+            throw(ArgumentError("entity already has component to add"))
         end
         _set_bit!(g.mask, b)
 

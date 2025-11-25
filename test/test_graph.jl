@@ -39,13 +39,7 @@
 
     # Test error on adding duplicate component
     @test_throws(
-        "ArgumentError: entity already has component to add, or it was added twice",
+        "ArgumentError: entity already has component to add",
         _find_node(graph, node3, (5,), ())
-    )
-
-    # Test add and remove same
-    @test_throws(
-        "ArgumentError: component added and removed in the same exchange operation",
-        _find_node(graph, node3, (5,), (5,))
     )
 end

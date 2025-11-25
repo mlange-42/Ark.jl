@@ -30,3 +30,16 @@ function _format_type(T)
         return string(T)
     end
 end
+
+
+function throw_if_add_remove_same_operation(add, remove)
+    if !isempty(intersect(add, remove))
+        throw(ArgumentError("component added and removed in the same exchange operation"))
+    end
+end
+
+function throw_if_id_twice(add)
+    if length(add) != length(unique(add))
+        throw(ArgumentError("component added twice"))
+    end
+end

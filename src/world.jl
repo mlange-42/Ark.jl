@@ -252,6 +252,9 @@ end
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+    throw_if_add_remove_same_operation(add_ids, rem_ids)
+    throw_if_id_twice(add_ids)
+    throw_if_id_twice(rem_ids)
 
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_archetype = world._archetypes[index.archetype]))
@@ -558,6 +561,7 @@ end
     exprs = []
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    throw_if_id_twice(ids)
 
     push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
@@ -709,6 +713,7 @@ end
     exprs = []
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    throw_if_id_twice(ids)
 
     push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
@@ -807,6 +812,7 @@ end
     exprs = []
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    throw_if_id_twice(ids)
 
     push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
@@ -932,7 +938,10 @@ end
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
-
+    throw_if_add_remove_same_operation(add_ids, rem_ids)
+    throw_if_id_twice(add_ids)
+    throw_if_id_twice(rem_ids)
+    
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_arch = world._archetypes[index.archetype]))
     push!(
