@@ -29,7 +29,7 @@
 
 - Adds an animated logo demo (#268)
 - Adds a basic SIR demo (#324)
-- Adds a demo on an evolutionary model for grazers (#325)
+- Adds a demo of an evolutionary model for grazers (#325)
 - Adds a demo with travelers on a network (#334)
 - Adds a boids/flocking demo (#337)
 - Adds a page listing demos with screenshots to the user manual (#339)
