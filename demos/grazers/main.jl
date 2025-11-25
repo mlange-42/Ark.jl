@@ -10,13 +10,14 @@ include("components.jl")
 include("resources.jl")
 include("sys/init_grazers.jl")
 include("sys/grow_grass.jl")
+include("sys/move_grazers.jl")
 include("sys/draw_grass.jl")
 include("sys/draw_grazers.jl")
 
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World(Position, Rotation)
+    world = World(Position, Rotation, Genes, Moving, Grazing)
 
     size = WorldSize(80, 60, 10)
     add_resource!(world, size)
@@ -27,8 +28,9 @@ function main()
     scheduler = Scheduler(
         world,
         (
-            InitGrazers(count=2500),
+            InitGrazers(count=1000),
             GrowGrass(growth_rate=0.01),
+            MoveGrazers(speed=0.1),
             DrawGrass(),
             DrawGrazers(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests

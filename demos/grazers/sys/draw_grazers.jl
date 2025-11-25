@@ -6,7 +6,7 @@ function initialize!(s::DrawGrazers, world::World)
     size = get_resource(world, WorldSize)
     win = get_resource(world, Window)
 
-    boid_shape = Polygon(Point2f[(0, 3), (4, -5), (0, -3), (-4, -5)])
+    boid_shape = Polygon(Point2f[(3, 0), (-5, 4), (-3, 0), (-5, -4)])
 
     positions = Observable(Point2f[])
     rotations = Observable(Float64[])
