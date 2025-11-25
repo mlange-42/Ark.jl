@@ -15,7 +15,7 @@ include("sys/boids_plot.jl")
 const IS_CI = "CI" in keys(ENV)
 
 function main()
-    world = World(Position, Velocity, Rotation)
+    world = World(Position, Velocity, Rotation, Neighbors, UpdateStep)
 
     size = WorldSize(800, 600)
     add_resource!(world, size)
@@ -47,7 +47,7 @@ function setup_makie(world::World, size::WorldSize)
     boid_shape = Polygon(Point2f[(3, 0), (-5, 4), (-3, 0), (-5, -4)])
     data = PlotData()
 
-    meshscatter!(scene, data.positions; rotation=data.rotations, marker=boid_shape, color=:green, markersize=1)
+    meshscatter!(scene, data.positions; rotation=data.rotations, marker=boid_shape, color=:white, markersize=1)
 
     screen = display(scene)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Boids demo")
