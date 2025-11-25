@@ -59,11 +59,35 @@ function setup_makie(size::WorldSize)
         renderloop=GLMakie.renderloop,
         render_on_demand=true,
     )
-    scene = Scene(camera=campixel!, size=(size.width * size.scale, size.height * size.scale), backgroundcolor=:black)
-    screen = display(scene)
+
+    size = (size.width * size.scale, size.height * size.scale)
+    f = Figure(figure_padding=1, size=(size[1] + 260, size[2]), backgroundcolor=:white)
+    #colsize!(f.layout, 1, Fixed(size[1]))
+
+    scene = LScene(
+        f[1:3, 1], width=size[1], height=size[2],
+        scenekw=(camera=campixel!, size=size, backgroundcolor=:black),
+    )
+
+    ax1 = Axis(f[1, 2], title="Scatter 1", backgroundcolor=:white)
+    scatter!(ax1, rand(10), rand(10), color=:red)
+    ylims!(ax1, low=0, high=1)
+    xlims!(ax1, low=0, high=1)
+
+    ax2 = Axis(f[2, 2], title="Scatter 2", backgroundcolor=:white)
+    scatter!(ax2, rand(10), rand(10), color=:blue)
+    ylims!(ax2, low=0, high=1)
+    xlims!(ax2, low=0, high=1)
+
+    ax3 = Axis(f[3, 2], title="Scatter 3", backgroundcolor=:white)
+    scatter!(ax3, rand(10), rand(10), color=:green)
+    ylims!(ax3, low=0, high=1)
+    xlims!(ax3, low=0, high=1)
+
+    screen = display(f)
     GLMakie.GLFW.SetWindowTitle(screen.glscreen, "Grazers demo")
 
-    return Window(scene, screen)
+    return Window(scene.scene, screen)
 end
 
 function run!(world::World, scheduler::Scheduler)
