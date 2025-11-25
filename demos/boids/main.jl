@@ -18,7 +18,7 @@ const IS_CI = "CI" in keys(ENV)
 function main()
     world = World(Position, Velocity, Rotation, Neighbors, UpdateStep)
 
-    size = WorldSize(800, 600)
+    size = WorldSize(1000, 700)
     add_resource!(world, size)
 
     setup_makie(world, size)
@@ -26,7 +26,7 @@ function main()
     scheduler = Scheduler(
         world,
         (
-            BoidsInit(count=250),
+            BoidsInit(count=1000),
             BoidsNeighbors(max_distance=25.0),
             BoidsMovement(
                 avoid_factor=0.005,
@@ -35,8 +35,8 @@ function main()
                 align_factor=0.005,
                 min_speed=0.5,
                 max_speed=1.0,
-                margin=100.0,
-                margin_factor=0.02,
+                margin=150.0,
+                margin_factor=0.1,
             ),
             BoidsPlot(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests

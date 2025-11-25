@@ -70,14 +70,18 @@ function update!(s::BoidsMovement, world::World)
             end
 
             if pos[1] < s.margin
-                vx += s.margin_factor
+                f = 1 - pos[1] / s.margin
+                vx += s.margin_factor * f * f
             elseif pos[1] > size.width - s.margin
-                vx -= s.margin_factor
+                f = 1 - (size.width - pos[1]) / s.margin
+                vx -= s.margin_factor * f * f
             end
             if pos[2] < s.margin
-                vy += s.margin_factor
+                f = 1 - pos[2] / s.margin
+                vy += s.margin_factor * f * f
             elseif pos[2] > size.height - s.margin
-                vy -= s.margin_factor
+                f = 1 - (size.height - pos[2]) / s.margin
+                vy -= s.margin_factor * f * f
             end
 
             speed = sqrt(vx * vx + vy * vy)

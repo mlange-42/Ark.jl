@@ -16,3 +16,7 @@ PlotData() = PlotData(
     Observable(Vector{Point2f}()),
     Observable(Vector{Float64}()),
 )
+
+struct Grid
+    entities::Array{Vector{Entity},2}
+end
