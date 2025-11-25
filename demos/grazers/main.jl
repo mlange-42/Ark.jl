@@ -63,7 +63,7 @@ function setup_makie(world::World, size::WorldSize)
     )
 
     size = (size.width * size.scale, size.height * size.scale)
-    f = Figure(figure_padding=1, size=(size[1] + 265, size[2] + 2), backgroundcolor=:white)
+    f = Figure(figure_padding=(2, 15, 2, 2), size=(size[1] + 265, size[2] + 4), backgroundcolor=:white)
     colsize!(f.layout, 1, Fixed(size[1] + 2))
 
     scene = LScene(
