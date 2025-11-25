@@ -6,6 +6,7 @@ using CoherentNoise
 
 include("../_common/scheduler.jl")
 include("../_common/resources.jl")
+include("../_common/profile.jl")
 include("../_common/terminate.jl")
 include("components.jl")
 include("resources.jl")
@@ -47,6 +48,7 @@ function main()
             GrassDraw(),
             GrazerDraw(),
             UpdatePlots(),
+            ProfilingSystem(60),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
         ),
     )
