@@ -17,8 +17,8 @@ function update!(s::GrazerMovement, world::World)
 
             r = (r + (rand() * 2 - 1) * max_angle + 2 * π) % (2 * π)
             positions[i] = Position(
-                (p[1] + s.speed * cos(r) + size.width) % size.width,
-                (p[2] + s.speed * sin(r) + size.height) % size.height,
+                (p[1] + s.speed * cos(r) + size.width) % (size.width - 0.001),
+                (p[2] + s.speed * sin(r) + size.height) % (size.height - 0.001),
             )
             rotations[i] = r
         end

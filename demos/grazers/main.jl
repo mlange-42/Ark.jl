@@ -37,9 +37,9 @@ function main()
         world,
         (
             GrazerInit(count=1000),
-            GrassGrowth(growth_rate=0.01, feature_size=23.0),
+            GrassGrowth(growth_rate=0.025, feature_size=23.0),
             GrazerMovement(speed=0.1),
-            GrazerFeeding(max_grazing=0.05, efficiency=1.0, threshold=0.1),
+            GrazerFeeding(max_grazing=0.025, efficiency=1.0, threshold=0.1),
             GrazerReproduction(max_offspring=10, cross_rate=0.2, mutation_rate=0.01),
             GrazerMetabolism(base_rate=0.005, move_rate=0.01),
             GrazerMortality(),
