@@ -27,7 +27,7 @@ function main()
         world,
         (
             BoidsInit(count=1000),
-            BoidsNeighbors(max_distance=25.0),
+            BoidsNeighbors(max_distance=25),
             BoidsMovement(
                 avoid_factor=0.005,
                 avoid_distance=10.0,
