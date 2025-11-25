@@ -16,7 +16,8 @@ function initialize!(s::GrassGrowth, world::World)
     sampler = fbm_fractal_2d(source=opensimplex2_2d(), octaves=4)
     scale = 1.0 / s.feature_size
     for x in 1:size.width, y in 1:size.height
-        cap[x, y] = clamp(sample(sampler, x * scale, y * scale) + 0.33, 0.01, 1)
+        offset = 0.33
+        cap[x, y] = clamp(sample(sampler, x * scale, y * scale) + offset, 0.01, 1)
     end
 
     grass = GrassGrid(cap, Observable(copy(cap)))

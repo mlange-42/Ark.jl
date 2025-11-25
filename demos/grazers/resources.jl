@@ -24,8 +24,8 @@ struct Grazers
 end
 
 struct PlotData
-    energy::Observable{Vector{Float64}}
     max_angle::Observable{Vector{Float64}}
+    reverse_prob::Observable{Vector{Float64}}
 
     move_thresh::Observable{Vector{Float64}}
     graze_thresh::Observable{Vector{Float64}}

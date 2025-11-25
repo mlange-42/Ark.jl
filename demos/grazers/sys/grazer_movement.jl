@@ -13,9 +13,13 @@ function update!(s::GrazerMovement, world::World)
         for i in eachindex(positions, rotations)
             r = rotations[i]
             p = positions[i]
-            max_angle = genes[i].max_angle * 0.5 * π
+            g = genes[i]
+            max_angle = g.max_angle * 0.5 * π
 
             r = (r + (rand() * 2 - 1) * max_angle + 2 * π) % (2 * π)
+            if rand() * 10 < g.reverse_prob
+                r = (r + π + 2 * π) % (2 * π)
+            end
             positions[i] = Position(
                 (p[1] + s.speed * cos(r) + size.width) % (size.width - 0.001),
                 (p[2] + s.speed * sin(r) + size.height) % (size.height - 0.001),

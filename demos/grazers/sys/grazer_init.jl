@@ -19,7 +19,8 @@ function initialize!(s::GrazerInit, world::World)
             rotations[i] = Rotation(rand() * 2 * π)
             energies[i] = Energy(rand() * 0.5 + 0.5)
             genes[i] = Genes(
-                max_angle=rand() * 0.25 * π,
+                max_angle=rand(),
+                reverse_prob=rand(),
                 move_thresh=rand(),
                 graze_thresh=rand(),
                 num_offspring=rand(),

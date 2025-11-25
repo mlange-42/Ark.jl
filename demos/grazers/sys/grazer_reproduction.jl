@@ -51,6 +51,7 @@ function update!(s::GrazerReproduction, world::World)
             child = copy_entity!(world, rep.mother)
             genes = Genes(
                 max_angle=mutate(m.max_angle, f.max_angle, s.cross_rate, s.mutation_rate),
+                reverse_prob=mutate(m.reverse_prob, f.reverse_prob, s.cross_rate, s.mutation_rate),
                 move_thresh=mutate(m.move_thresh, f.move_thresh, s.cross_rate, s.mutation_rate),
                 graze_thresh=mutate(m.graze_thresh, f.graze_thresh, s.cross_rate, s.mutation_rate),
                 num_offspring=mutate(m.num_offspring, f.num_offspring, s.cross_rate, s.mutation_rate),

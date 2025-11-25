@@ -37,7 +37,7 @@ function main()
         world,
         (
             GrazerInit(count=1000),
-            GrassGrowth(growth_rate=0.025, feature_size=23.0),
+            GrassGrowth(growth_rate=0.01, feature_size=23.0),
             GrazerMovement(speed=0.1),
             GrazerFeeding(max_grazing=0.025, efficiency=1.0, threshold=0.1),
             GrazerReproduction(max_offspring=10, cross_rate=0.2, mutation_rate=0.01),
@@ -73,17 +73,24 @@ function setup_makie(world::World, size::WorldSize)
 
     data = PlotData()
 
-    ax1 = Axis(f[1, 2], title="Scatter 1", backgroundcolor=:white)
-    scatter!(ax1, data.energy, data.max_angle, color=:red, markersize=2)
+    ax1 = Axis(f[1, 2],
+        title="Search behavior",
+        xlabel="Max angle *π",
+        ylabel="Reverse prob. *0.1", backgroundcolor=:white)
+    scatter!(ax1, data.max_angle, data.reverse_prob, color=:green, markersize=2)
     ylims!(ax1, low=0, high=1)
     xlims!(ax1, low=0, high=1)
 
-    ax2 = Axis(f[2, 2], title="Scatter 2", backgroundcolor=:white)
-    scatter!(ax2, data.move_thresh, data.graze_thresh, color=:blue, markersize=2)
+    ax2 = Axis(f[2, 2], title="Movement thresholds",
+        xlabel="Threshold move (rel.)",
+        ylabel="Threshold graze", backgroundcolor=:white)
+    scatter!(ax2, data.move_thresh, data.graze_thresh, color=:green, markersize=2)
     ylims!(ax2, low=0, high=1)
     xlims!(ax2, low=0, high=1)
 
-    ax3 = Axis(f[3, 2], title="Scatter 3", backgroundcolor=:white)
+    ax3 = Axis(f[3, 2], title="Reproduction",
+        xlabel="#Offspring *10",
+        ylabel="Energy share", backgroundcolor=:white)
     scatter!(ax3, data.num_offspring, data.energy_share, color=:green, markersize=2)
     ylims!(ax3, low=0, high=1)
     xlims!(ax3, low=0, high=1)
