@@ -22,6 +22,8 @@ function initialize!(s::GrazerInit, world::World)
                 max_angle=rand() * 0.25 * π,
                 move_thresh=rand(),
                 graze_thresh=rand(),
+                num_offspring=rand(),
+                energy_share=rand(),
             )
         end
     end

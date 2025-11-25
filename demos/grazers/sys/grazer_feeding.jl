@@ -2,12 +2,14 @@
 struct GrazerFeeding <: System
     max_grazing::Float64
     efficiency::Float64
+    threshold::Float64
 end
 
 GrazerFeeding(;
     max_grazing::Float64=0.05,
     efficiency::Float64=1.0,
-) = GrazerFeeding(max_grazing, efficiency)
+    threshold::Float64=0.1,
+) = GrazerFeeding(max_grazing, efficiency, threshold)
 
 function update!(s::GrazerFeeding, world::World)
     grass = get_resource(world, GrassGrid).grass[]
@@ -17,7 +19,7 @@ function update!(s::GrazerFeeding, world::World)
             pos = positions[i]
             cx, cy = floor(Int, pos[1]) + 1, floor(Int, pos[2]) + 1
             grass_here = grass[cx, cy]
-            if grass_here <= s.max_grazing
+            if grass_here <= s.threshold + s.max_grazing
                 continue
             end
             grass[cx, cy] = grass_here - s.max_grazing

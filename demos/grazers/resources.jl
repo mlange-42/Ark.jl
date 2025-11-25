@@ -8,6 +8,10 @@ struct WorldSize
     scale::Int
 end
 
+mutable struct SimulationSpeed
+    speed::Int
+end
+
 struct Window
     scene::GLMakie.Scene
     screen::GLMakie.Screen

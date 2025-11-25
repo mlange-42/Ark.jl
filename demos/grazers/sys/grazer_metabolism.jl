@@ -5,7 +5,7 @@ struct GrazerMetabolism <: System
 end
 
 GrazerMetabolism(;
-    base_rate::Float64=0.01,
+    base_rate::Float64=0.005,
     move_rate::Float64=0.025,
 ) = GrazerMetabolism(base_rate, move_rate)
 
