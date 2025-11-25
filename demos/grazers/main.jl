@@ -11,6 +11,7 @@ include("resources.jl")
 include("sys/grazer_init.jl")
 include("sys/grass_growth.jl")
 include("sys/grazer_movement.jl")
+include("sys/grazer_feeding.jl")
 include("sys/grazer_metabolism.jl")
 include("sys/grazer_mortality.jl")
 include("sys/grazer_decision.jl")
@@ -34,6 +35,7 @@ function main()
             GrazerInit(count=1000),
             GrassGrowth(growth_rate=0.01),
             GrazerMovement(speed=0.1),
+            GrazerFeeding(max_grazing=0.05, efficiency=1.0),
             GrazerMetabolism(base_rate=0.01, move_rate=0.025),
             GrazerMortality(),
             GrazerDecision(),
