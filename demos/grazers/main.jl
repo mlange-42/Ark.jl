@@ -59,7 +59,7 @@ function setup_makie(world::World, size::WorldSize)
         framerate=60.0,
         vsync=true,
         renderloop=GLMakie.renderloop,
-        render_on_demand=true,
+        render_on_demand=false,
     )
 
     size = (size.width * size.scale, size.height * size.scale)
