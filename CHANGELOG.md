@@ -30,6 +30,7 @@
 - Adds an animated logo demo (#268)
 - Adds a basic SIR demo (#324)
 - Adds a demo with travelers on a network (#334)
+- Adds a demo on an evolutionary model for grazers (#325).
 
 ### Other
 
