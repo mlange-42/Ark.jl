@@ -31,6 +31,7 @@ makedocs(;
             "manual/events.md",
             "manual/architecture.md"
         ],
+        "Demos" => "demos.md",
         "Public API" => "api.md",
         "Benchmarks" => "benchmarks.md"
     ],
