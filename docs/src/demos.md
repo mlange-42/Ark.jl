@@ -3,42 +3,96 @@
 The Ark repository contains a number of runnable [demos](https://github.com/mlange-42/Ark.jl/tree/main/demos).
 These are listed here, alongside instructions for running them.
 
-## Available demos
+## Running a demo
 
-### Logo
+```@raw html
+<details>
+<summary><b>Click for instructions</b></summary>
+<br/>
+<p>
+First, clone the repository and `cd` into it:
+</p>
+
+<pre><code class="language-shell hljs">git clone https://github.com/mlange-42/Ark.jl.git
+cd Ark.jl
+</code></pre>
+
+<p>
+Next, instantiate the demos project:
+</p>
+
+<pre><code class="language-shell hljs">julia --project=demos -e 'using Pkg; Pkg.develop(path="."); Pkg.instantiate()'
+</code></pre>
+
+<p>
+Run individual demos like this:
+</p>
+
+<pre><code class="language-shell hljs">julia --project=demos demos/&lt;DEMO&gt;/main.jl
+</code></pre>
+
+<p>
+Most of the demos are interactive, so try hovering the mouse over the window.
+</p>
+
+</details>
+```
+
+## Logo
 
 An animated, interactive Ark.jl logo.
 Use only the most basic features of Ark.
+[Source code](https://github.com/mlange-42/Ark.jl/tree/main/demos/logo).
 
 ```@raw html
 <div style="text-align: center;">
-<img alt="Logo demo" src="https://github.com/user-attachments/assets/68de9316-0ed3-4b73-bc58-ed5830512ecb" />
+<img alt="Logo demo" src="assets/screenshots/logo.png" />
 </div>
 ```
 
-[Source code](https://github.com/mlange-42/Ark.jl/tree/main/demos/logo)
+## SIR
 
-## Running a demo
+A simple individual-based epidemiologic SIR model.
+[Source code](https://github.com/mlange-42/Ark.jl/tree/main/demos/sir).
 
-First, clone the repository and `cd` into it:
-
-```
-git clone https://github.com/mlange-42/Ark.jl.git
-cd Ark.jl
-```
-
-Next, instantiate the demos project:
-
-```
-julia --project=demos -e 'using Pkg; Pkg.develop(path="."); Pkg.instantiate()'
+```@raw html
+<div style="text-align: center;">
+<img alt="SIR demo" src="assets/screenshots/sir.png" />
+</div>
 ```
 
-Run individual demos like this:
+## Boids
 
+Boids model, resembling bird flocks or fish schools.
+Makes use of entities stored in a spatial acceleration structure, as well as in components.
+[Source code](https://github.com/mlange-42/Ark.jl/tree/main/demos/boids).
+
+```@raw html
+<div style="text-align: center;">
+<img alt="SIR demo" src="assets/screenshots/boids.png" />
+</div>
 ```
-julia --project=demos demos/<DEMO>/main.jl
+
+## Network
+
+Random travelers on a network.
+Makes massive use of entities stored in components.
+[Source code](https://github.com/mlange-42/Ark.jl/tree/main/demos/network).
+
+```@raw html
+<div style="text-align: center;">
+<img alt="SIR demo" src="assets/screenshots/network.png" />
+</div>
 ```
 
-Most of the demos are interactive, so try hovering the mouse over the window.
+## Grazers
 
+An model for the evolution of the foraging behavior of grazers.
+Dynamically adds and removes components to handle behavioral states.
+[Source code](https://github.com/mlange-42/Ark.jl/tree/main/demos/grazers).
 
+```@raw html
+<div style="text-align: center;">
+<img alt="SIR demo" src="assets/screenshots/grazers.png" />
+</div>
+```

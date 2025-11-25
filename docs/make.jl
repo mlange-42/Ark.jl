@@ -34,8 +34,8 @@ makedocs(;
             "manual/architecture.md"
         ],
         "Demos" => "demos.md",
+        "Benchmarks" => "benchmarks.md",
         "Public API" => "api.md",
-        "Benchmarks" => "benchmarks.md"
     ],
     warnonly = false,
 )
