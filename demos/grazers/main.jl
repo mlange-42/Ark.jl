@@ -13,6 +13,7 @@ include("sys/grow_grass.jl")
 include("sys/move_grazers.jl")
 include("sys/metabol_grazers.jl")
 include("sys/mortality_grazers.jl")
+include("sys/decision_grazers.jl")
 include("sys/draw_grass.jl")
 include("sys/draw_grazers.jl")
 
@@ -35,6 +36,7 @@ function main()
             MoveGrazers(speed=0.1),
             MetabolizeGrazers(base_rate=0.01, move_rate=0.025),
             MortalityGrazers(),
+            DecisionGrazers(),
             DrawGrass(),
             DrawGrazers(),
             TerminationSystem(IS_CI ? 240 : -1), # Short run in CI tests
