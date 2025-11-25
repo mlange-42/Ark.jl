@@ -1,4 +1,5 @@
 struct GrassGrid
+    capacity::Array{Float64,2}
     grass::Observable{Array{Float64,2}}
 end
 
@@ -21,3 +22,23 @@ struct Grazers
     positions::Observable{Vector{Point2f}}
     rotations::Observable{Vector{Float64}}
 end
+
+struct PlotData
+    energy::Observable{Vector{Float64}}
+    max_angle::Observable{Vector{Float64}}
+
+    move_thresh::Observable{Vector{Float64}}
+    graze_thresh::Observable{Vector{Float64}}
+
+    num_offspring::Observable{Vector{Float64}}
+    energy_share::Observable{Vector{Float64}}
+end
+
+PlotData() = PlotData(
+    Observable(Float64[]),
+    Observable(Float64[]),
+    Observable(Float64[]),
+    Observable(Float64[]),
+    Observable(Float64[]),
+    Observable(Float64[]),
+)

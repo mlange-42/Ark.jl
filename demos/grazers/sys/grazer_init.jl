@@ -13,8 +13,8 @@ function initialize!(s::GrazerInit, world::World)
         (Position, Rotation, Energy, Genes, Moving))
         for i in eachindex(positions)
             positions[i] = Position(
-                rand() * size.width,
-                rand() * size.height,
+                rand() * size.width - 0.01,
+                rand() * size.height - 0.01,
             )
             rotations[i] = Rotation(rand() * 2 * π)
             energies[i] = Energy(rand() * 0.5 + 0.5)
