@@ -3,7 +3,9 @@ using Documenter
 
 DocMeta.setdocmeta!(Ark, :DocTestSetup, :(using Ark); recursive=true)
 
-doctest(Ark)
+if !("--skip-tests" in ARGS)
+    doctest(Ark)
+end
 
 #! format: off
 makedocs(;
@@ -11,7 +13,7 @@ makedocs(;
     sitename = "Ark.jl",
     authors  = "Martin Lange <martin_lange_@gmx.net>, Adriano Meligrana <adriano.meligrana@centai.eu>",
     format   = Documenter.HTML(;
-        description="Ark.jl is an archetype-based entity component system (ECS) for Julia.",
+        description="Ark.jl is an archetype-based Entity Component System (ECS) for Julia.",
         canonical="https://mlange-42.github.io/Ark.jl/stable",
         edit_link="main",
         prettyurls=false,
@@ -31,8 +33,9 @@ makedocs(;
             "manual/events.md",
             "manual/architecture.md"
         ],
+        "Demos" => "demos.md",
+        "Benchmarks" => "benchmarks.md",
         "Public API" => "api.md",
-        "Benchmarks" => "benchmarks.md"
     ],
     warnonly = false,
 )

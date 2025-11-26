@@ -57,6 +57,10 @@ without the need for deep software engineering expertise.
 - [Event system](@ref)
 - [Architecture](@ref)
 
+[Demos](@ref)
+
+[Benchmarks](@ref)
+
 ## API Outline
 
 ```@contents

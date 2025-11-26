@@ -2,6 +2,10 @@
 
 This folder contains several stand-alone demos for Ark.jl.
 
+For an overview of the available demos, including screenshots,
+see the [Demos](https://mlange-42.github.io/Ark.jl/stable/demos.html)
+page in the user manual.
+
 ## Usage
 
 First, clone the repository and `cd` into it:
