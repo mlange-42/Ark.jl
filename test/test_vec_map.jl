@@ -1,7 +1,7 @@
 
 @testset "_VecMap basic functionality" begin
     # Create a new map
-    map = _VecMap{Int,4}()
+    map = _VecMap{4}()
 
     # Initially, getting any index should return nothing
     @test _get_map(map, 1) === nothing
