@@ -1,6 +1,6 @@
 # Changelog
 
-## [[unpublished]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...main)
+## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 
 ### Breaking changes
 
@@ -32,7 +32,7 @@
 - Adds a demo of an evolutionary model for grazers (#325)
 - Adds a demo with travelers on a network (#334)
 - Adds a boids/flocking demo (#337)
-- Adds a page listing demos with screenshots to the user manual (#339)
+- Adds a page listing all demos with screenshots in the user manual (#339)
 
 ### Other
 
