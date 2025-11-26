@@ -1,4 +1,3 @@
-# src/vec_map.jl
 const _vec_map_chunk_size = 16
 
 struct _VecMap{M}
