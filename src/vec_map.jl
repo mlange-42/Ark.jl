@@ -17,7 +17,7 @@ function _get_map(m::_VecMap, index::Int)
     @inbounds return m.data[index]
 end
 
-function _set_map!(m::_VecMap, index::Int, value::Int)
+@inline function _set_map!(m::_VecMap, index::Int, value::Int)
     curr_len = length(m.data)
     if curr_len < index
         new_len = (index + _vec_map_chunk_size) & -_vec_map_chunk_size
