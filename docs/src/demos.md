@@ -46,7 +46,7 @@ Use only the most basic features of Ark.
 
 ```@raw html
 <div style="text-align: center;">
-<img alt="Logo demo" src="assets/screenshots/logo.png" />
+<img alt="Logo demo" src="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/gh-images/screenshots/logo.png" />
 </div>
 ```
 
@@ -57,7 +57,7 @@ A simple individual-based epidemiologic SIR model.
 
 ```@raw html
 <div style="text-align: center;">
-<img alt="SIR demo" src="assets/screenshots/sir.png" />
+<img alt="SIR demo" src="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/gh-images/screenshots/sir.png" />
 </div>
 ```
 
@@ -69,7 +69,7 @@ Makes use of entities stored in a spatial acceleration structure, as well as in 
 
 ```@raw html
 <div style="text-align: center;">
-<img alt="SIR demo" src="assets/screenshots/boids.png" />
+<img alt="SIR demo" src="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/gh-images/screenshots/boids.png" />
 </div>
 ```
 
@@ -81,7 +81,7 @@ Makes massive use of entities stored in components.
 
 ```@raw html
 <div style="text-align: center;">
-<img alt="SIR demo" src="assets/screenshots/network.png" />
+<img alt="SIR demo" src="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/gh-images/screenshots/network.png" />
 </div>
 ```
 
@@ -93,6 +93,6 @@ Dynamically adds and removes components to handle behavioral states.
 
 ```@raw html
 <div style="text-align: center;">
-<img alt="SIR demo" src="assets/screenshots/grazers.png" />
+<img alt="SIR demo" src="https://raw.githubusercontent.com/mlange-42/Ark.jl/refs/heads/gh-images/screenshots/grazers.png" />
 </div>
 ```
