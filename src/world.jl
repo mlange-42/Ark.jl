@@ -141,55 +141,6 @@ end
     old_table::_Table,
     add::Tuple{Vararg{Int}},
     remove::Tuple{Vararg{Int}},
-)::UInt32
-    old_arch = world._archetypes[old_table.archetype]
-    new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
-    new_arch = world._archetypes[new_arch_index]
-
-    # Find existing relations that were not removed.
-    all_relations = world._temp_relations
-    requires_copy = true
-    if _has_relations(old_table)
-        if length(remove) > 0
-            for rel in old_table.relations
-                if _get_bit(new_arch.mask, rel[1])
-                    push!(world._temp_relations, rel)
-                end
-            end
-        else
-            all_relations = old_table.relations
-            requires_copy = false
-        end
-    end
-
-    new_table, found = _get_table(world, new_arch, all_relations)
-
-    if found
-        if requires_copy
-            resize!(all_relations, 0)
-        end
-        return new_table.id
-    end
-
-    # TODO: ensure that relations are the same and in the same order as in the archetype
-    if length(all_relations) > 0
-        sort!(all_relations)
-    end
-    # TODO: recycle table
-    if requires_copy
-        new_table_id = _create_table!(world, new_arch, copy(all_relations))
-        resize!(all_relations, 0)
-        return new_table_id
-    end
-
-    return _create_table!(world, new_arch, all_relations)
-end
-
-@inline function _find_or_create_table!(
-    world::World,
-    old_table::_Table,
-    add::Tuple{Vararg{Int}},
-    remove::Tuple{Vararg{Int}},
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
 )::UInt32
@@ -479,7 +430,7 @@ end
         :(
             new_table_index =
                 _find_or_create_table!(
-                    world, old_table, $add_ids, $rem_ids,
+                    world, old_table, $add_ids, $rem_ids, (), (),
                 )
         ),
     )
@@ -798,11 +749,7 @@ end
 
     # TODO: check relation components are actually relations
 
-    if isempty(rel_types)
-        push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, ())))
-    else
-        push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets)))
-    end
+    push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets)))
     push!(exprs, :(tmp = _create_entity!(world, table)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
@@ -953,7 +900,7 @@ end
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, ())))
+    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), (), ())))
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
     push!(exprs, :(table = world._tables[table_idx]))
 
@@ -1051,7 +998,7 @@ end
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, ())))
+    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), (), ())))
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
     push!(exprs, :(table = world._tables[table_idx]))
 
@@ -1184,7 +1131,7 @@ end
         :(
             new_table_index =
                 _find_or_create_table!(
-                    world, old_table, $add_ids, $rem_ids,
+                    world, old_table, $add_ids, $rem_ids, (), (),
                 )
         ),
     )
