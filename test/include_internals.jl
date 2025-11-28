@@ -19,5 +19,6 @@ using Ark: _BatchArchetype, _QueryLock
 using Ark: _has_observers
 using Ark: _StructArray, _StructArray_type, StructArrayView
 using Ark: _format_type
+using Ark: _TableIDs, _add_table!, _remove_table!
 
 using FieldViews
