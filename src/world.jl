@@ -703,18 +703,37 @@ end
 end
 
 """
-    new_entity!(world::World, values::Tuple)::Entity
+    new_entity!(world::World, values::Tuple; relations::Tuple=())::Entity
 
 Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
 
-# Example
+# Arguments
+
+  - `world::World`: The `World` instance to use.
+  - `values::Tuple`: Component values for the entity.
+  - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+
+# Examples
+
+Create an entity with components:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
 
 # output
 
-Entity(3, 0)
+Entity(4, 0)
+```
+
+Create an entity with components and relationships:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,))
+
+# output
+
+Entity(4, 0)
 ```
 """
 Base.@constprop :aggressive function new_entity!(
@@ -805,7 +824,7 @@ entity1 = copy_entity!(world, entity)
 
 # output
 
-Entity(3, 0)
+Entity(4, 0)
 ```
 
 Copy an entity, adding and removing some components in the same operation:
@@ -818,7 +837,7 @@ entity2 = copy_entity!(world, entity;
 
 # output
 
-Entity(3, 0)
+Entity(4, 0)
 ```
 """
 @inline Base.@constprop :aggressive function copy_entity!(
