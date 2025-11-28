@@ -279,6 +279,10 @@ function _get_table_slow_path(
     end
 
     tables = index[target_id]
+    if length(arch.relations) == 1
+        return world._tables[tables.ids[1]], true
+    end
+
     for table_id in tables.ids
         table = world._tables[table_id]
         if _matches_exact(world._relations, table, relations)
