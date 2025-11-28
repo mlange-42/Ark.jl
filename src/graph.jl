@@ -10,7 +10,7 @@ end
 
 struct _Graph{M}
     mask::_MutableMask{M}
-    nodes::Dict{_Mask{M}, _GraphNode{M}}
+    nodes::Dict{_Mask{M},_GraphNode{M}}
 end
 
 function _Graph{M}() where M
@@ -19,7 +19,7 @@ end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)
     immut_mask = _Mask(mask)
-    get!(()->_GraphNode(immut_mask, typemax(UInt32)), g.nodes, immut_mask)
+    get!(() -> _GraphNode(immut_mask, typemax(UInt32)), g.nodes, immut_mask)
 end
 
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}})
