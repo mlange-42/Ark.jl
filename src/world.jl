@@ -281,6 +281,30 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return UInt32(index)
 end
 
+function _get_exchange_targets(
+    world::World,
+    old_table::_Table,
+    relations::Tuple{Vararg{Int}},
+    targets::Tuple{Vararg{Entity}},
+)
+    new_relations = world._temp_relations
+    append!(new_relations, old_table.relations)
+
+    changed = false
+    for (rel, trg) in zip(relations, targets)
+        index = world._relations[rel].tables[old_table.id]
+
+        @check new_relations[index].first == rel
+        if new_relations[index].second == trg
+            continue
+        end
+        new_relations[index] = Pair(rel, trg)
+        changed = true
+    end
+
+    return new_relations, changed
+end
+
 @inline function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
     if length(arch.tables) == 0
         return world._tables[1], false
@@ -813,6 +837,65 @@ end
             $(Expr(:block, exprs...))
         end
     end
+end
+
+# TODO: write docs
+@inline Base.@constprop :aggressive function set_relations!(world::World, entity::Entity, relations::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't set components of a dead entity"))
+    end
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _set_relations!(world, entity, rel_types, targets)
+end
+
+@generated function _set_relations!(
+    world::W,
+    entity::Entity,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,TR<:Tuple}
+    rel_types = _to_types(TR)
+
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
+
+    exprs = []
+    push!(exprs, :(_set_relations!(world, entity, $rel_ids, targets)))
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+function _set_relations!(
+    world::World,
+    entity::Entity,
+    relations::Tuple{Vararg{Int}},
+    targets::Tuple{Vararg{Entity}},
+)
+    index = world._entities[entity._id]
+    old_table = world._tables[index.table]
+    archetype = world._archetypes[old_table.archetype]
+    relations, changed = _get_exchange_targets(world, old_table, relations, targets)
+    if !changed
+        resize!(relations, 0)
+        return
+    end
+
+    new_table, found = _get_table(world, archetype, relations)
+    if !found
+        new_table_id = _create_table!(world, archetype, copy(relations))
+        new_table = world._tables[new_table_id]
+    end
+    resize!(relations, 0)
+
+    row = _move_entity!(world, entity, new_table.id)
 end
 
 """

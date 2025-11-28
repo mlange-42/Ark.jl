@@ -408,7 +408,8 @@ end
     parent2 = new_entity!(world, ())
 
     entity1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
-    entity2 = new_entity!(world,
+    entity2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    entity3 = new_entity!(world,
         (Position(0, 0), ChildOf2(), ChildOf());
         relations=(ChildOf => parent2, ChildOf2 => parent1),
     )
@@ -416,14 +417,21 @@ end
     parents = get_relations(world, entity1, (ChildOf,))
     @test parents == (parent1,)
 
-    parents = get_relations(world, entity2, (ChildOf,))
+    parents = get_relations(world, entity3, (ChildOf,))
     @test parents == (parent2,)
 
-    parents = get_relations(world, entity2, (ChildOf2,))
+    parents = get_relations(world, entity3, (ChildOf2,))
     @test parents == (parent1,)
 
-    parents = get_relations(world, entity2, (ChildOf, ChildOf2))
+    parents = get_relations(world, entity3, (ChildOf, ChildOf2))
     @test parents == (parent2, parent1)
+
+    set_relations!(world, entity1, (ChildOf => parent2,))
+    parents = get_relations(world, entity1, (ChildOf,))
+    @test parents == (parent2,)
+
+    parents = get_relations(world, entity2, (ChildOf,))
+    @test parents == (parent1,)
 
     @test_throws(
         "ArgumentError: duplicate component types: ChildOf",
