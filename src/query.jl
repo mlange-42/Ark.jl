@@ -196,8 +196,9 @@ end
 @inline function Base.iterate(q::Query, state::Tuple{Int,Int})
     arch, tab = state
     while arch <= length(q._archetypes)
-        archetype = q._archetypes[arch]
         if tab == 0
+            archetype = q._archetypes[arch]
+
             if isempty(archetype.tables.tables) ||
                !_contains_all(archetype.mask, q._mask) ||
                (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
