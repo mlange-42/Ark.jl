@@ -170,7 +170,7 @@ end
 
     # TODO: ensure that relations are the same and in the same order as in the archetype
     if length(all_relations) > 0
-        sort!(all_relations; by=first)
+        sort!(all_relations)
     end
     # TODO: recycle table
     if requires_copy
