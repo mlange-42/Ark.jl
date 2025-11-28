@@ -1,4 +1,4 @@
-using Ark: _Mask, _Mask, _set_mask!
+using Ark: _Mask, _set_mask!
 
 function setup_set_mask()
     mask_a = _Mask{4}(1, 65, 129, 193, 194, 195)
