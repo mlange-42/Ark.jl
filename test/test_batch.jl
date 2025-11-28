@@ -13,8 +13,8 @@
     storages = (world._storages[1],)
     batch = Batch{typeof(world),Tuple{Position},typeof(world).parameters[3],1,M}(world,
         [
-            _BatchArchetype(world._archetypes[2], UInt32(1), UInt32(1)),
-            _BatchArchetype(world._archetypes[3], UInt32(1), UInt32(1)),
+            _BatchTable(world._tables[2], world._archetypes[2], UInt32(1), UInt32(1)),
+            _BatchTable(world._tables[3], world._archetypes[3], UInt32(1), UInt32(1)),
         ], _QueryLock(false), _lock(world._lock))
 
     arches = 0
@@ -37,8 +37,8 @@
 
     batch = Batch{typeof(world),Tuple{Position},typeof(world).parameters[3],1,M}(world,
         [
-            _BatchArchetype(world._archetypes[2], UInt32(1), UInt32(2)),
-            _BatchArchetype(world._archetypes[3], UInt32(1), UInt32(2)),
+            _BatchTable(world._tables[2], world._archetypes[2], UInt32(1), UInt32(2)),
+            _BatchTable(world._tables[3], world._archetypes[3], UInt32(1), UInt32(2)),
         ], _QueryLock(false), _lock(world._lock))
     @test length(batch) == 2
     @test count_entities(batch) == 4

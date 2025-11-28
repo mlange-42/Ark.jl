@@ -20,6 +20,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _storages::CS
     const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
+    const _tables::Vector{_Table}
     const _index::_ComponentIndex{M}
     const _registry::_ComponentRegistry
     const _entity_pool::_EntityPool
@@ -134,6 +135,71 @@ function _find_or_create_archetype!(
     return archetype
 end
 
+function _find_or_create_table!(
+    world::World,
+    old_table::_Table,
+    add::Tuple{Vararg{Int}},
+    remove::Tuple{Vararg{Int}},
+    relations::Pair{Int,Entity}...,
+)::UInt32
+    old_arch = world._archetypes[old_table.archetype]
+    new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
+    new_arch = world._archetypes[new_arch_index]
+
+    all_relations = Pair{Int,Entity}[]
+    if length(remove) > 0
+        for rel in old_table.relations
+            if _get_bit(new_arch.mask, rel[1])
+                push!(all_relations, rel)
+            end
+        end
+        append!(all_relations, relations)
+    else
+        if length(relations) > 0
+            append!(all_relations, old_table.relations)
+            append!(all_relations, relations)
+        else
+            all_relations = old_table.relations
+        end
+    end
+
+    new_table, found = _get_table(world, new_arch, all_relations...)
+    new_table_id = new_table.id
+    if !found
+        # TODO: ensure that relations are the same and in tha same order as in the archetype
+        sort!(all_relations; by=first)
+        new_table_id = _create_table!(world, new_arch, all_relations...)
+    end
+
+    return new_table_id
+end
+
+function _create_table!(world::World, arch::_Archetype, relations::Pair{Int,Entity}...)::UInt32
+    if length(relations) < length(arch.relations)
+        # TODO: check duplicates
+        throw(ArgumentError("relation targets must be fully specified"))
+    end
+    # TODO: check that all components are relations
+    # TODO: check that the archetype contains all components
+
+    # TODO: recycle tables if available
+
+    new_table_id = length(world._tables) + 1
+    table = _new_table(UInt32(new_table_id), arch.id, world._initial_capacity, relations...)
+    push!(world._tables, table)
+
+    _push_empty_to_all_storages!(world)
+
+    for comp in arch.components
+        _activate_new_column_for_comp!(world, comp, new_table_id)
+        push!(world._index.components[comp], arch)
+    end
+
+    _add_table!(arch, table)
+
+    return UInt32(new_table_id)
+end
+
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
     components = _active_bit_indices(node.mask)
     relations = Int[]
@@ -144,18 +210,13 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     end
 
     arch =
-        _Archetype(UInt32(length(world._archetypes) + 1), node, relations, world._initial_capacity, components...)
+        _Archetype(UInt32(length(world._archetypes) + 1), node, _TableIDs(), relations, components...)
     push!(world._archetypes, arch)
 
     index = length(world._archetypes)
     node.archetype = UInt32(index)
 
-    _push_empty_to_all!(world)
-
-    for comp in components
-        _activate_new_column_for_comp!(world, comp, index)
-        push!(world._index.components[comp], arch)
-    end
+    _push_zero_to_all_relations!(world)
 
     for (i, comp) in enumerate(relations)
         _activate_relation_for_comp!(world, comp, index, i)
@@ -164,81 +225,104 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return UInt32(index)
 end
 
-@inline function _create_entity!(world::World, archetype_index::UInt32)::Tuple{Entity,Int}
+function _get_table(world::World, arch::_Archetype, relations::Pair{Int,Entity}...)::Tuple{_Table,Bool}
+    if length(arch.tables) == 0
+        return world._tables[1], false
+    end
+    if !_has_relations(arch)
+        return world._tables[arch.tables[1]], true
+    end
+    return _get_table_slow_path(world, arch, relations...)
+end
+
+function _get_table_slow_path(
+    world::World,
+    arch::_Archetype,
+    relations::Pair{Int,Entity}...,
+)::Tuple{_Table,Bool}
+    # TODO: implement relation index
+    return world._tables[1], false
+end
+
+@inline function _create_entity!(world::World, table_index::UInt32)::Tuple{Entity,Int}
     _check_locked(world)
 
     entity = _get_entity(world._entity_pool)
-    archetype = world._archetypes[archetype_index]
+    table = world._tables[table_index]
+    archetype = world._archetypes[table.archetype]
 
-    index = _add_entity!(archetype, entity)
+    index = _add_entity!(table, entity)
 
     for comp in archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, index)
+        _ensure_column_size_for_comp!(world, comp, table_index, index)
     end
 
     if entity._id > length(world._entities)
-        push!(world._entities, _EntityIndex(archetype_index, UInt32(index)))
+        push!(world._entities, _EntityIndex(table_index, UInt32(index)))
     else
-        @inbounds world._entities[entity._id] = _EntityIndex(archetype_index, UInt32(index))
+        @inbounds world._entities[entity._id] = _EntityIndex(table_index, UInt32(index))
     end
     return entity, index
 end
 
-function _create_entities!(world::World, archetype_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32}
+function _create_entities!(world::World, table_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32}
     _check_locked(world)
 
-    archetype = world._archetypes[Int(archetype_index)]
-    old_length = length(archetype.entities)
+    table = world._tables[Int(table_index)]
+    archetype = world._archetypes[table.archetype]
+    old_length = length(table.entities)
     new_length = old_length + n
 
-    resize!(archetype, new_length)
+    resize!(table, new_length)
     for i in (old_length+1):new_length
         entity = _get_entity(world._entity_pool)
-        @inbounds archetype.entities._data[i] = entity
+        @inbounds table.entities._data[i] = entity
 
         if entity._id > length(world._entities)
-            push!(world._entities, _EntityIndex(archetype_index, i))
+            push!(world._entities, _EntityIndex(table_index, i))
         else
-            @inbounds world._entities[Int(entity._id)] = _EntityIndex(archetype_index, i)
+            @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, i)
         end
     end
 
     for comp in archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, new_length)
+        _ensure_column_size_for_comp!(world, comp, table_index, new_length)
     end
 
     return old_length + 1, new_length
 end
 
-function _move_entity!(world::World, entity::Entity, archetype_index::UInt32)::Int
+function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
     _check_locked(world)
 
     index = world._entities[entity._id]
-    old_archetype = world._archetypes[index.archetype]
-    new_archetype = world._archetypes[archetype_index]
+    old_table = world._tables[index.table]
+    new_table = world._tables[table_index]
+    old_archetype = world._archetypes[old_table.archetype]
+    new_archetype = world._archetypes[new_table.archetype]
 
-    new_row = _add_entity!(new_archetype, entity)
-    swapped = _swap_remove!(old_archetype.entities._data, index.row)
+    new_row = _add_entity!(new_table, entity)
+    swapped = _swap_remove!(old_table.entities._data, index.row)
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
     for comp in old_archetype.components
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        _move_component_data!(world, comp, index.archetype, archetype_index, index.row)
+        _move_component_data!(world, comp, index.table, table_index, index.row)
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
     for comp in new_archetype.components
-        _ensure_column_size_for_comp!(world, comp, archetype_index, new_row)
+        _ensure_column_size_for_comp!(world, comp, table_index, new_row)
     end
 
     if swapped
-        swap_entity = old_archetype.entities[index.row]
+        swap_entity = old_table.entities[index.row]
         world._entities[swap_entity._id] = index
     end
 
-    world._entities[entity._id] = _EntityIndex(archetype_index, UInt32(new_row))
+    world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
     return new_row
 end
 
@@ -246,14 +330,15 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     _check_locked(world)
 
     index = world._entities[entity._id]
-    new_entity, new_row = _create_entity!(world, index.archetype)
-    archetype = world._archetypes[index.archetype]
+    new_entity, new_row = _create_entity!(world, index.table)
+    table = world._tables[index.table]
+    archetype = world._archetypes[table.archetype]
 
     for comp in archetype.components
-        _copy_component_data!(world, comp, index.archetype, index.archetype, index.row, UInt32(new_row), mode)
+        _copy_component_data!(world, comp, index.table, index.table, index.row, UInt32(new_row), mode)
     end
 
-    world._entities[new_entity._id] = _EntityIndex(index.archetype, UInt32(new_row))
+    world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
 
     if _has_observers(world._event_manager, OnCreateEntity)
         _fire_create_entity(world._event_manager, new_entity, archetype.mask)
@@ -277,19 +362,21 @@ end
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
 
     push!(exprs, :(index = world._entities[entity._id]))
-    push!(exprs, :(old_archetype = world._archetypes[index.archetype]))
+    push!(exprs, :(old_table = world._tables[index.table]))
+    push!(exprs, :(old_archetype = world._archetypes[old_table.archetype]))
     push!(
         exprs,
         :(
-            new_arch_index =
-                _find_or_create_archetype!(
-                    world, old_archetype.node, $add_ids, $rem_ids,
+            new_table_index =
+                _find_or_create_table!(
+                    world, old_table, $add_ids, $rem_ids,
                 )
         ),
     )
-    push!(exprs, :(new_archetype = world._archetypes[new_arch_index]))
+    push!(exprs, :(new_table = world._tables[new_table_index]))
+    push!(exprs, :(new_archetype = world._archetypes[new_table.archetype]))
 
-    push!(exprs, :(entity_and_row = _create_entity!(world, new_arch_index)))
+    push!(exprs, :(entity_and_row = _create_entity!(world, new_table_index)))
     push!(exprs, :(new_entity = entity_and_row[1]))
     push!(exprs, :(new_row = entity_and_row[2]))
 
@@ -300,7 +387,7 @@ end
                 if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
-                _copy_component_data!(world, comp, index.archetype, new_arch_index, index.row, UInt32(new_row), mode)
+                _copy_component_data!(world, comp, index.table, new_table_index, index.row, UInt32(new_row), mode)
             end
         ),
     )
@@ -312,7 +399,7 @@ end
         val_expr = :(add.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_arch_index]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
         push!(exprs, :(@inbounds $col_sym[new_row] = $val_expr))
     end
 
@@ -352,7 +439,8 @@ function remove_entity!(world::World, entity::Entity)
     _check_locked(world)
 
     index = world._entities[entity._id]
-    archetype = world._archetypes[index.archetype]
+    table = world._tables[index.table]
+    archetype = world._archetypes[table.archetype]
 
     if _has_observers(world._event_manager, OnRemoveEntity)
         l = _lock(world._lock)
@@ -363,15 +451,15 @@ function remove_entity!(world::World, entity::Entity)
         _unlock(world._lock, l)
     end
 
-    swapped = _swap_remove!(archetype.entities._data, index.row)
+    swapped = _swap_remove!(table.entities._data, index.row)
 
     # Only operate on storages for components present in this archetype
     for comp in archetype.components
-        _swap_remove_in_column_for_comp!(world, comp, index.archetype, index.row)
+        _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
     end
 
     if swapped
-        swap_entity = archetype.entities[index.row]
+        swap_entity = table.entities[index.row]
         world._entities[swap_entity._id] = index
     end
 
@@ -446,7 +534,7 @@ end
         val_sym = Symbol("v", i)
 
         push!(exprs, :($(stor_sym) = _get_storage(world, $T)))
-        push!(exprs, :($(val_sym) = _get_component($(stor_sym), idx.archetype, idx.row)))
+        push!(exprs, :($(val_sym) = _get_component($(stor_sym), idx.table, idx.row)))
     end
 
     vals = [:($(Symbol("v", i))) for i in 1:length(types)]
@@ -492,7 +580,7 @@ end
         col_sym = Symbol("col", i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :($col_sym = $stor_sym.data[index.archetype]))
+        push!(exprs, :($col_sym = $stor_sym.data[index.table]))
         push!(exprs, :(
             if length($col_sym) == 0
                 return false
@@ -541,7 +629,7 @@ end
         val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(_set_component!($stor_sym, idx.archetype, idx.row, $val_expr)))
+        push!(exprs, :(_set_component!($stor_sym, idx.table, idx.row, $val_expr)))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -569,9 +657,10 @@ Entity(3, 0)
 ```
 """
 Base.@constprop :aggressive function new_entity!(world::World, values::Tuple)
-    entity, arch = _new_entity!(world, Val{typeof(values)}(), values)
+    entity, table_id = _new_entity!(world, Val{typeof(values)}(), values)
+    table = world._tables[table_id]
     if _has_observers(world._event_manager, OnCreateEntity)
-        _fire_create_entity(world._event_manager, entity, world._archetypes[arch].mask)
+        _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].mask)
     end
     return entity
 end
@@ -582,8 +671,8 @@ end
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
-    push!(exprs, :(tmp = _create_entity!(world, archetype)))
+    push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, ())))
+    push!(exprs, :(tmp = _create_entity!(world, table)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
 
@@ -595,11 +684,11 @@ end
         val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table]))
         push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
     end
 
-    push!(exprs, Expr(:return, Expr(:tuple, :entity, :archetype)))
+    push!(exprs, Expr(:return, Expr(:tuple, :entity, :table)))
 
     return quote
         @inbounds begin
@@ -733,9 +822,9 @@ end
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
-    push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
-    push!(exprs, :(archetype = world._archetypes[archetype_idx]))
+    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, ())))
+    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
+    push!(exprs, :(table = world._tables[table_idx]))
 
     if length(types) > 0
         body_exprs = Expr(:block)
@@ -746,7 +835,7 @@ end
             val_expr = :(values.$i)
 
             push!(body_exprs.args, :($stor_sym = _get_storage(world, $T)))
-            push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[archetype_idx]))
+            push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[table_idx]))
             push!(body_exprs.args, :(fill!(view($col_sym, Int(indices[1]):Int(indices[2])), $val_expr)))
         end
         push!(exprs, :(
@@ -764,7 +853,7 @@ end
             if iterate
                 batch = _Batch_from_types(
                     world,
-                    [_BatchArchetype(archetype, indices...)],
+                    [_BatchTable(table, world._archetypes[table.archetype], indices...)],
                     $ts_val_expr,
                 )
                 return batch
@@ -773,7 +862,7 @@ end
                     l = _lock(world._lock)
                     _fire_create_entities(
                         world._event_manager,
-                        _BatchArchetype(archetype, indices...),
+                        _BatchTable(table, world._archetypes[table.archetype], indices...),
                     )
                     _unlock(world._lock, l)
                 end
@@ -831,17 +920,18 @@ end
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
-    push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
-    push!(exprs, :(archetype = world._archetypes[archetype_idx]))
+    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, ())))
+    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
+    push!(exprs, :(table = world._tables[table_idx]))
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
     push!(exprs,
-        :(batch = _Batch_from_types(
-            world,
-            [_BatchArchetype(archetype, indices[1], indices[2])],
-            $ts_val_expr)
+        :(
+            batch = _Batch_from_types(
+                world,
+                [_BatchTable(table, world._archetypes[table.archetype], indices[1], indices[2])],
+                $ts_val_expr)
         ),
     )
 
@@ -957,16 +1047,17 @@ end
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
 
     push!(exprs, :(index = world._entities[entity._id]))
-    push!(exprs, :(old_arch = world._archetypes[index.archetype]))
+    push!(exprs, :(old_table = world._tables[index.table]))
     push!(
         exprs,
         :(
-            new_arch_index =
-                _find_or_create_archetype!(
-                    world, old_arch.node, $add_ids, $rem_ids,
+            new_table_index =
+                _find_or_create_table!(
+                    world, old_table, $add_ids, $rem_ids,
                 )
         ),
     )
+    push!(exprs, :(new_table = world._tables[new_table_index]))
 
     if length(rem_types) > 0
         push!(
@@ -977,7 +1068,7 @@ end
                     _fire_remove_components(
                         world._event_manager, entity,
                         old_arch.mask,
-                        world._archetypes[new_arch_index].mask,
+                        world._archetypes[new_table.archetype].mask,
                         true,
                     )
                     _unlock(world._lock, l)
@@ -986,7 +1077,7 @@ end
         )
     end
 
-    push!(exprs, :(row = _move_entity!(world, entity, new_arch_index)))
+    push!(exprs, :(row = _move_entity!(world, entity, new_table_index)))
 
     for i in 1:length(add_types)
         T = add_types[i]
@@ -995,7 +1086,7 @@ end
         val_expr = :(add.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_arch_index]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
         push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
     end
 
@@ -1007,7 +1098,7 @@ end
                     _fire_add_components(
                         world._event_manager, entity,
                         old_arch.mask,
-                        world._archetypes[new_arch_index].mask,
+                        world._archetypes[new_table.archetype].mask,
                         true,
                     )
                 end
@@ -1112,7 +1203,8 @@ end
             index,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), first(graph.nodes)[2])],
+            [_Archetype(UInt32(1), first(graph.nodes)[2], _TableIDs(1))],
+            [_new_table(UInt32(1), UInt32(1))],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),
@@ -1128,12 +1220,21 @@ end
     end
 end
 
-@generated function _push_empty_to_all!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
+@generated function _push_empty_to_all_storages!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
     comp_types = CT.parameters
     n = length(comp_types)
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(_add_column!(world._storages.$i)))
+    end
+    return Expr(:block, exprs...)
+end
+
+@generated function _push_zero_to_all_relations!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
+    comp_types = CT.parameters
+    n = length(comp_types)
+    exprs = Expr[]
+    for i in 1:n
         if comp_types[i].parameters[1] <: Relationship
             push!(exprs, :(_add_column!(world._relations[$i])))
         end
@@ -1383,7 +1484,8 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
         throw(ArgumentError("can't emit event for a dead entity"))
     end
     index = world._entities[entity._id]
-    entity_mask = world._archetypes[index.archetype].mask
+    table = world._tables[index.table]
+    entity_mask = world._archetypes[table.archetype].mask
 
     if !_contains_all(entity_mask, mask)
         throw(ArgumentError("entity does not have all components of the event emitted for it"))
@@ -1408,10 +1510,11 @@ function reset!(world::W) where {W<:World}
     _reset!(world._lock)
     _reset!(world._event_manager)
 
-    for archetype in world._archetypes
-        resize!(archetype, 0)
+    for table in world._tables
+        resize!(table, 0)
+        archetype = world._archetypes[table.archetype]
         for comp in archetype.components
-            _clear_component_data!(world, comp, archetype.id)
+            _clear_component_data!(world, comp, table.id)
         end
     end
 
@@ -1422,6 +1525,6 @@ end
 function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
     comp_types = CT.parameters
     type_names = join(map(_format_type, comp_types), ", ")
-    entities = sum(length(arch.entities) for arch in world._archetypes)
+    entities = sum(length(arch.entities) for arch in world._tables)
     print(io, "World(entities=$entities, comp_types=($type_names))")
 end

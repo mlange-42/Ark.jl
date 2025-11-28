@@ -1,6 +1,7 @@
 
 using Ark
-using Ark: _find_or_create_archetype!, _create_entity!, _move_entity!, _get_storage, _component_id, _get_relations
+using Ark: _find_or_create_archetype!, _find_or_create_table!
+using Ark: _create_entity!, _move_entity!, _get_storage, _component_id, _get_relations
 using Ark: _new_entity, _EntityIndex, _ComponentStorage
 using Ark: _new_entities_column
 using Ark: _Archetype, _add_entity!, _has_relations
@@ -15,7 +16,7 @@ using Ark: _Lock, _lock, _unlock, _is_locked
 using Ark: _ComponentStorage
 using Ark: _VecMap, _get_map, _set_map!
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create
-using Ark: _BatchArchetype, _QueryLock
+using Ark: _BatchTable, _QueryLock
 using Ark: _has_observers
 using Ark: _StructArray, _StructArray_type, StructArrayView
 using Ark: _format_type

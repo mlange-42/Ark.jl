@@ -112,21 +112,22 @@ end
     @test length(world._storages) == N_fake + 32
 end
 
-@testset "World create archetype" begin
+@testset "World create table" begin
     world = World(Position, Velocity)
-    node = first(world._graph.nodes)[2]
 
-    arch1 = _find_or_create_archetype!(world, node, (1,), ())
-    @test arch1 == 2
+    table1 = _find_or_create_table!(world, world._tables[1], (1,), ())
+    @test table1 == 2
+    @test world._tables[table1].archetype == 2
 
-    arch2 = _find_or_create_archetype!(world, node, (1, 2), ())
-    @test arch2 == 3
+    table2 = _find_or_create_table!(world, world._tables[1], (1, 2), ())
+    @test table2 == 3
+    @test world._tables[table2].archetype == 3
 
-    arch3 = _find_or_create_archetype!(world, node, (1,), ())
-    @test arch3 == arch1
+    table3 = _find_or_create_table!(world, world._tables[1], (1,), ())
+    @test table3 == table1
 
-    entity, _ = _create_entity!(world, arch1)
-    _move_entity!(world, entity, arch2)
+    entity, _ = _create_entity!(world, table1)
+    _move_entity!(world, entity, table2)
     remove_entity!(world, entity)
 end
 
@@ -187,26 +188,27 @@ end
         _get_relations(world, Float64))
 end
 
-@testset "_find_or_create_archetype! Tests" begin
+@testset "_find_or_create_table! Tests" begin
     world = World(Position, Velocity)
     params = typeof(world).parameters[1]
-    node = first(world._graph.nodes)[2]
 
     pos_id = _component_id(params, Position)
     @test pos_id == offset_ID + UInt8(1)
 
-    index = _find_or_create_archetype!(world, node, (pos_id,), ())
+    index = _find_or_create_table!(world, world._tables[1], (pos_id,), ())
     @test index == 2
+    @test length(world._tables) == 2
     @test length(world._archetypes) == 2
 
     vel_id = _component_id(params, Velocity)
     @test vel_id == offset_ID + UInt8(2)
 
-    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
+    index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), ())
     @test index == 3
+    @test length(world._tables) == 3
     @test length(world._archetypes) == 3
 
-    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
+    index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), ())
     @test index == 3
 
     @test world._archetypes[2].components == [pos_id]
@@ -231,23 +233,23 @@ end
     vel_id = _component_id(params, Velocity)
     node = first(world._graph.nodes)[2]
 
-    arch_index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
-    @test arch_index == 2
+    table_index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), ())
+    @test table_index == 2
 
-    entity, index = _create_entity!(world, arch_index)
+    entity, index = _create_entity!(world, table_index)
     @test entity == _new_entity(2, 0)
     @test index == 1
-    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(arch_index, UInt32(1))]
+    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(table_index, UInt32(1))]
 
     remove_entity!(world, entity)
-    entity, index = _create_entity!(world, arch_index)
+    entity, index = _create_entity!(world, table_index)
     @test entity == _new_entity(2, 1)
 
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
 
-    @test length(pos_storage.data[arch_index]) == 1
-    @test length(vel_storage.data[arch_index]) == 1
+    @test length(pos_storage.data[table_index]) == 1
+    @test length(vel_storage.data[table_index]) == 1
 end
 
 @testset "World get/set components" begin
@@ -354,7 +356,7 @@ end
 
     @test entity2._id == entity._id + 1
     @test entity2._id == 3
-    @test world._archetypes[2].entities == [entity, entity2]
+    @test world._tables[2].entities == [entity, entity2]
     @test length(world._storages[offset_ID+2].data[2]) == 2
     @test length(world._storages[offset_ID+3].data[2]) == 2
 
@@ -474,7 +476,7 @@ end
     end
     @test cnt == 100
     @test is_locked(world) == false
-    @test length(world._archetypes[2].entities) == 101
+    @test length(world._tables[2].entities) == 101
     @test length(world._storages[offset_ID+2].data[2]) == 101
     @test length(world._storages[offset_ID+3].data[2]) == 101
 

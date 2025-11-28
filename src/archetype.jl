@@ -1,12 +1,12 @@
 
 struct _TableIDs
-    ids::Vector{Int}
-    indices::Dict{Int,Int}
+    ids::Vector{UInt32}
+    indices::Dict{UInt32,Int}
 end
 
-function _TableIDs(ids::Int...)
-    vec = Int[ids...]
-    indices = Dict{Int,Int}()
+function _TableIDs(ids::Integer...)
+    vec = UInt32[ids...]
+    indices = Dict{UInt32,Int}()
 
     for (i, id) in enumerate(ids)
         indices[id] = i
@@ -15,13 +15,13 @@ function _TableIDs(ids::Int...)
     return _TableIDs(vec, indices)
 end
 
-function _add_table!(ids::_TableIDs, id::Int)
+function _add_table!(ids::_TableIDs, id::UInt32)
     push!(ids.ids, id)
     ids.indices[id] = length(ids.ids)
     return nothing
 end
 
-function _remove_table!(ids::_TableIDs, id::Int)
+function _remove_table!(ids::_TableIDs, id::UInt32)
     if !haskey(ids.indices, id)
         return false
     end
@@ -36,35 +36,44 @@ function _remove_table!(ids::_TableIDs, id::Int)
     return true
 end
 
+Base.length(t::_TableIDs) = length(t.ids)
+Base.getindex(t::_TableIDs, i::Int) = t.ids[i]
+
 struct _Archetype{M}
-    entities::Entities
     components::Vector{Int}  # Indices into the global ComponentStorage list
     relations::Vector{Int}
+    tables::_TableIDs
     mask::_Mask{M}
     node::_GraphNode{M}
     id::UInt32
 end
 
-function _Archetype(id::UInt32, node::_GraphNode)
-    _Archetype(Entities(0), Vector{Int}(), Vector{Int}(), node.mask, node, id)
+function _Archetype(id::UInt32, node::_GraphNode, tables::_TableIDs)
+    _Archetype(Vector{Int}(), Vector{Int}(), tables, node.mask, node, id)
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, relations::Vector{Int}, cap::Int, components::Int...)
-    _Archetype(Entities(cap), collect(Int, components), relations, node.mask, node, id)
+function _Archetype(
+    id::UInt32,
+    node::_GraphNode,
+    tables::_TableIDs,
+    relations::Vector{Int},
+    components::Int...,
+)
+    _Archetype(collect(Int, components), relations, tables, node.mask, node, id)
 end
 
-function _add_entity!(arch::_Archetype, entity::Entity)::Int
-    push!(arch.entities._data, entity)
-    return length(arch.entities)
+function _add_table!(arch::_Archetype, t::_Table)
+    _add_table!(arch.tables, t.id)
+    if !_has_relations(arch)
+        return
+    end
+    # TODO: add to relations index
 end
 
-Base.resize!(arch::_Archetype, length::Int) = Base.resize!(arch.entities._data, length)
+_has_relations(a::_Archetype) = length(a.relations) > 0
 
-function _has_relations(a::_Archetype)
-    return length(a.relations) > 0
-end
-
-struct _BatchArchetype{M}
+struct _BatchTable{M}
+    table::_Table
     archetype::_Archetype{M}
     start_idx::UInt32
     end_idx::UInt32

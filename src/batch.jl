@@ -14,14 +14,14 @@ This prevents structural changes like creating and removing entities or adding a
 """
 struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N,M}
     _world::W
-    _archetypes::Vector{_BatchArchetype{M}}
+    _tables::Vector{_BatchTable}
     _b_lock::_QueryLock
     _lock::Int
 end
 
 @generated function _Batch_from_types(
     world::W,
-    archetypes::Vector{<:_BatchArchetype},
+    tables::Vector{<:_BatchTable},
     ::Val{CT},
 ) where {W<:World,CT<:Tuple}
     comp_types = CT.parameters
@@ -40,7 +40,7 @@ end
     return quote
         Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$M}(
             world,
-            archetypes,
+            tables,
             _QueryLock(false),
             _lock(world._lock),
         )
@@ -48,7 +48,7 @@ end
 end
 
 @inline function Base.iterate(b::Batch, state::Int)
-    if state <= length(b._archetypes)
+    if state <= length(b._tables)
         result = _get_columns_at_index(b, state)
         return result, state + 1
     end
@@ -73,7 +73,7 @@ For batch entity creation, the number of archetype is always 1.
 Does not iterate or [close!](@ref close!(::Batch)) the batch.
 """
 function Base.length(b::Batch)
-    return length(b._archetypes)
+    return length(b._tables)
 end
 
 """
@@ -90,8 +90,8 @@ Does not iterate or [close!](@ref close!(::Batch)) the batch.
 """
 function count_entities(b::Batch)
     count = 0
-    for archetype in b._archetypes
-        count += archetype.end_idx - archetype.start_idx + 1
+    for table in b._tables
+        count += table.end_idx - table.start_idx + 1
     end
     count
 end
@@ -107,7 +107,7 @@ function close!(b::Batch)
     # TODO: extend for different even types.
     # Note that for the other operations, the full list of archetypes is required.
     if _has_observers(b._world._event_manager, OnCreateEntity)
-        _fire_create_entities(b._world._event_manager, b._archetypes[1])
+        _fire_create_entities(b._world._event_manager, b._tables[1])
     end
     b._b_lock.closed = true
     _unlock(b._world._lock, b._lock)
@@ -121,19 +121,19 @@ end
     storage_modes = SM.parameters
     comp_types = TS.parameters
     exprs = Expr[]
-    push!(exprs, :(arch = b._archetypes[idx]))
-    push!(exprs, :(entities = view(arch.archetype.entities, arch.start_idx:arch.end_idx)))
+    push!(exprs, :(table = b._tables[idx]))
+    push!(exprs, :(entities = view(table.table.entities, table.start_idx:table.end_idx)))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
         push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(arch.archetype.id)]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(table.table.id)]))
 
         if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0
-            push!(exprs, :($vec_sym = FieldViewable(view($col_sym, arch.start_idx:arch.end_idx))))
+            push!(exprs, :($vec_sym = FieldViewable(view($col_sym, table.start_idx:table.end_idx))))
         else
-            push!(exprs, :($vec_sym = view($col_sym, arch.start_idx:arch.end_idx)))
+            push!(exprs, :($vec_sym = view($col_sym, table.start_idx:table.end_idx)))
         end
     end
     result_exprs = [:entities]
@@ -175,6 +175,6 @@ function Base.show(io::IO, batch::Batch{W,TS}) where {W<:World,TS<:Tuple}
     comp_types = TS.parameters
     type_names = join(map(_format_type, comp_types), ", ")
 
-    entities = sum(arch.end_idx - arch.start_idx + 1 for arch in batch._archetypes)
+    entities = sum(arch.end_idx - arch.start_idx + 1 for arch in batch._tables)
     print(io, "Batch(entities=$entities, comp_types=($type_names))")
 end
