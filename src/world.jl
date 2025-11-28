@@ -769,15 +769,12 @@ Entity(3, 0)
 Base.@constprop :aggressive function new_entity!(
     world::World,
     values::Tuple;
-    relations::Tuple{Vararg{DataType}}=(),
-    targets::Tuple{Vararg{Entity}}=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
-    entity, table_id = _new_entity!(
-        world,
-        Val{typeof(values)}(), values,
-        ntuple(i -> Val(relations[i]), length(relations)), targets,
-    )
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
 
+    entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
     table = world._tables[table_id]
     if _has_observers(world._event_manager, OnCreateEntity)
         _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].mask)
