@@ -30,3 +30,12 @@ function _format_type(T)
         return string(T)
     end
 end
+
+@generated function _shallow_copy(x::T) where T
+    names = fieldnames(T)
+    field_exprs = [:($(name) = x.$name) for name in names]
+
+    return quote
+        return $(Expr(:new, T, field_exprs...))
+    end
+end

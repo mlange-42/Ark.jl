@@ -39,8 +39,8 @@ end
     end
 end
 
-function _activate_column!(storage::_ComponentStorage{C,A}, index::Int, cap::Int) where {C,A<:AbstractArray}
-    sizehint!(storage.data[index], cap)
+function _activate_column!(storage::_ComponentStorage{C,A}, arch::Int, cap::Int) where {C,A<:AbstractArray}
+    sizehint!(storage.data[arch], cap)
 end
 
 function _clear_column!(storage::_ComponentStorage{C,A}, arch::UInt32) where {C,A<:AbstractArray}
@@ -107,11 +107,22 @@ function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::U
     _swap_remove!(col, row)
 end
 
-@generated function _shallow_copy(x::T) where T
-    names = fieldnames(T)
-    field_exprs = [:($(name) = x.$name) for name in names]
+struct _ComponentRelations
+    indices::Vector{Int} # Relation index per archetype
+end
 
-    return quote
-        return $(Expr(:new, T, field_exprs...))
+function _new_component_relations(is_relation::Bool)
+    if is_relation
+        return _ComponentRelations(Int[0])
+    else
+        return _ComponentRelations(Int[])
     end
+end
+
+function _add_column!(storage::_ComponentRelations)
+    push!(storage.indices, 0)
+end
+
+function _activate_column!(storage::_ComponentRelations, arch::Int, index::Int)
+    storage.indices[arch] = index
 end

@@ -18,6 +18,7 @@ See the constructor [World](@ref World(::Union{Type,Pair}...; ::Int, ::Bool)) fo
 mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
     const _storages::CS
+    const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
     const _index::_ComponentIndex{M}
     const _registry::_ComponentRegistry
@@ -108,6 +109,16 @@ end
     return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
+@generated function _get_relations(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: _ComponentStorage && S.parameters[1] === C
+            return :(world._relations[$i])
+        end
+    end
+    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
+end
+
 function _find_or_create_archetype!(
     world::World,
     start::_GraphNode,
@@ -144,6 +155,10 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     for comp in components
         _activate_new_column_for_comp!(world, comp, index)
         push!(world._index.components[comp], arch)
+    end
+
+    for (i, comp) in enumerate(relations)
+        _activate_relation_for_comp!(world, comp, index, i)
     end
 
     return UInt32(index)
@@ -1082,6 +1097,9 @@ end
     id_exprs = [:(_register_component!(registry, $T)) for T in types]
     id_tuple = Expr(:tuple, id_exprs...)
 
+    relations_expr = [:(_new_component_relations($T <: Relationship)) for T in types]
+    relations_vec = Expr(:vect, relations_expr...)
+
     M = max(1, cld(length(types), 64))
     return quote
         registry = _ComponentRegistry()
@@ -1093,6 +1111,7 @@ end
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             $storage_tuple,
+            $relations_vec,
             [_Archetype(UInt32(1), first(graph.nodes)[2])],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
@@ -1109,11 +1128,15 @@ end
     end
 end
 
-@generated function _push_empty_to_all!(world::World{CS}) where {CS<:Tuple}
-    n = length(CS.parameters)
+@generated function _push_empty_to_all!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
+    comp_types = CT.parameters
+    n = length(comp_types)
     exprs = Expr[]
     for i in 1:n
         push!(exprs, :(_add_column!(world._storages.$i)))
+        if comp_types[i].parameters[1] <: Relationship
+            push!(exprs, :(_add_column!(world._relations[$i])))
+        end
     end
     return Expr(:block, exprs...)
 end
@@ -1125,6 +1148,23 @@ end
         push!(exprs, :(
             if comp == $i
                 _activate_column!(world._storages.$i, index, world._initial_capacity)
+            end
+        ))
+    end
+    return Expr(:block, exprs...)
+end
+
+@generated function _activate_relation_for_comp!(world::World{CS,CT}, comp::Int, arch::Int, index::Int) where {CS,CT}
+    comp_types = CT.parameters
+    n = length(comp_types)
+    exprs = Expr[]
+    for i in 1:n
+        if !(comp_types[i].parameters[1] <: Relationship)
+            continue
+        end
+        push!(exprs, :(
+            if comp == $i
+                _activate_column!(world._relations[$i], arch, index)
             end
         ))
     end

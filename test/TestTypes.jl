@@ -36,6 +36,7 @@ mutable struct MutableNoIsBits
 end
 
 struct ChildOf <: Relationship end
+struct ChildOf2 <: Relationship end
 
 mutable struct Tick
     time::Int

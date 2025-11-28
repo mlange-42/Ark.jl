@@ -13,6 +13,7 @@ end
         Position,
         Velocity => StructArrayStorage,
         Altitude,
+        ChildOf,
     )
     @test isa(world, World)
     params = typeof(world).parameters[1]
@@ -29,6 +30,10 @@ end
     @test isa(_get_storage(world, Velocity).data[1], _StructArray{Velocity})
     @test isa(_get_storage(world, Altitude), _ComponentStorage{Altitude,Vector{Altitude}})
     @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
+
+    @test length(_get_relations(world, Position).indices) == 0
+    @test length(_get_relations(world, ChildOf).indices) == 1
+    @test _get_relations(world, ChildOf).indices[1] == 0
 end
 
 @testset "World show" begin
@@ -177,6 +182,9 @@ end
 
     @test_throws("ArgumentError: Component type Float64 not found in the World",
         _get_storage(world, Float64))
+
+    @test_throws("ArgumentError: Component type Float64 not found in the World",
+        _get_relations(world, Float64))
 end
 
 @testset "_find_or_create_archetype! Tests" begin
@@ -740,6 +748,32 @@ end
 
     close!(q)
     reset!(world)
+end
+
+@testset "World relations index" begin
+    world = World(Dummy, ChildOf, Position, Velocity, ChildOf2)
+
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()))
+    new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()))
+
+    pos_relations = _get_relations(world, Position)
+    child_relations = _get_relations(world, ChildOf)
+    child2_relations = _get_relations(world, ChildOf2)
+
+    @test length(pos_relations.indices) == 0
+    @test length(child_relations.indices) == 3
+    @test child_relations.indices[1] == 0
+    @test child_relations.indices[2] == 1
+    @test child_relations.indices[3] == 1
+
+    @test length(child2_relations.indices) == 3
+    @test child2_relations.indices[1] == 0
+    @test child2_relations.indices[2] == 0
+    @test child2_relations.indices[3] == 2
+
+    @test world._archetypes[1].relations == []
+    @test world._archetypes[2].relations == [2 + offset_ID]
+    @test world._archetypes[3].relations == [2 + offset_ID, 5 + offset_ID]
 end
 
 @testset "World add/remove resources Tests" begin
