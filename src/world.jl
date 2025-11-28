@@ -7,6 +7,8 @@ Can be used to represent "no entity"/"nil".
 """
 const zero_entity::Entity = _new_entity(1, 0)
 
+const _empty_relations = Pair{Int,Entity}[]
+
 """
     World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M}
 
@@ -148,11 +150,31 @@ end
     new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
     new_arch = world._archetypes[new_arch_index]
 
+    if !_has_relations(new_arch) && isempty(relations)
+        new_table, found = _get_table(world, new_arch)
+        if found
+            return new_table.id
+        end
+        return _create_table!(world, new_arch, _empty_relations)
+    end
+
+    return _find_or_create_table!(world, old_table, new_arch, relations, targets, !isempty(remove))
+end
+
+# internal for handling relations
+function _find_or_create_table!(
+    world::World,
+    old_table::_Table,
+    new_arch::_Archetype,
+    relations::Tuple{Vararg{Int}},
+    targets::Tuple{Vararg{Entity}},
+    has_remove::Bool,
+)::UInt32
     # Find existing relations that were not removed, and add new relations.
     all_relations = world._temp_relations
     requires_copy = true
     if _has_relations(old_table) || !isempty(relations)
-        if length(remove) > 0
+        if has_remove > 0
             for rel in old_table.relations
                 if _get_bit(new_arch.mask, rel[1])
                     push!(all_relations, rel)
@@ -251,7 +273,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return UInt32(index)
 end
 
-function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
+@inline function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
     if length(arch.tables) == 0
         return world._tables[1], false
     end
@@ -259,6 +281,14 @@ function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,E
         return arch.tables[1], true
     end
     return _get_table_slow_path(world, arch, relations)
+end
+
+# only if no relations in archetype and operation
+@inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
+    if length(arch.tables) == 0
+        return world._tables[1], false
+    end
+    return arch.tables[1], true
 end
 
 function _get_table_slow_path(

@@ -4,8 +4,6 @@ mutable struct _QueryCursor
     closed::Bool
 end
 
-const _empty_relations = Pair{Int,Entity}[]
-
 """
     Query
 
