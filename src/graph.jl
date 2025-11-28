@@ -19,12 +19,7 @@ end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)
     immut_mask = _Mask(mask)
-    if immut_mask in keys(g.nodes)
-        return g.nodes[immut_mask]
-    end
-    new_node = _GraphNode(immut_mask, typemax(UInt32))
-    g.nodes[immut_mask] = new_node
-    return new_node
+    get!(()->_GraphNode(immut_mask, typemax(UInt32)), g.nodes, immut_mask)
 end
 
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}})
