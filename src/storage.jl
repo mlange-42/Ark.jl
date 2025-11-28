@@ -108,21 +108,30 @@ function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::U
 end
 
 struct _ComponentRelations
-    indices::Vector{Int} # Relation index per archetype
+    archetypes::Vector{Int} # Relation index per archetype
+    tables::Vector{Int} # Relation index per table
 end
 
 function _new_component_relations(is_relation::Bool)
     if is_relation
-        return _ComponentRelations(Int[0])
+        return _ComponentRelations(Int[0], Int[0])
     else
-        return _ComponentRelations(Int[])
+        return _ComponentRelations(Int[], Int[])
     end
 end
 
-function _add_column!(storage::_ComponentRelations)
-    push!(storage.indices, 0)
+function _add_archetype_column!(rel::_ComponentRelations)
+    push!(rel.archetypes, 0)
 end
 
-function _activate_column!(storage::_ComponentRelations, arch::Int, index::Int)
-    storage.indices[arch] = index
+function _add_table_column!(rel::_ComponentRelations)
+    push!(rel.tables, 0)
+end
+
+function _activate_archetype_column!(rel::_ComponentRelations, arch::Int, index::Int)
+    rel.archetypes[arch] = index
+end
+
+function _activate_table_column!(rel::_ComponentRelations, table::Int, index::Int)
+    rel.tables[table] = index
 end

@@ -234,9 +234,13 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     push!(world._tables, table)
 
     _push_empty_to_all_storages!(world)
-
     for comp in arch.components
         _activate_new_column_for_comp!(world, comp, new_table_id)
+    end
+
+    _push_zero_to_all_table_relations!(world)
+    for (i, comp) in enumerate(relations)
+        _activate_table_relation_for_comp!(world, comp.first, new_table_id, i)
     end
 
     _add_table!(world._relations, arch, table)
@@ -260,14 +264,14 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     index = length(world._archetypes)
     node.archetype = UInt32(index)
 
-    _push_zero_to_all_relations!(world)
+    _push_zero_to_all_archetype_relations!(world)
 
     for comp in arch.components
         push!(world._index.components[comp], arch)
     end
 
     for (i, comp) in enumerate(relations)
-        _activate_relation_for_comp!(world, comp, index, i)
+        _activate_archetype_relation_for_comp!(world, comp, index, i)
     end
 
     return UInt32(index)
@@ -305,7 +309,7 @@ function _get_table_slow_path(
     rel_comp = first_rel.first
     target_id = first_rel.second._id
 
-    rel_idx = world._relations[rel_comp].indices[arch.id]
+    rel_idx = world._relations[rel_comp].archetypes[arch.id]
     index = arch.index[rel_idx]
     if !haskey(index, target_id)
         return world._tables[1], false
@@ -334,7 +338,7 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
     rel_comp = first_rel.first
     target_id = first_rel.second._id
 
-    rel_idx = world._relations[rel_comp].indices[arch.id]
+    rel_idx = world._relations[rel_comp].archetypes[arch.id]
     index = arch.index[rel_idx]
     if !haskey(index, target_id)
         return _empty_tables
@@ -805,6 +809,7 @@ end
     rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
     # TODO: check relation components are actually relations
+    # TODO: check that there are no duplicate relations
 
     push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets)))
     push!(exprs, :(tmp = _create_entity!(world, table)))
@@ -1367,13 +1372,25 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _push_zero_to_all_relations!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
+@generated function _push_zero_to_all_archetype_relations!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
     comp_types = CT.parameters
     n = length(comp_types)
     exprs = Expr[]
     for i in 1:n
         if comp_types[i].parameters[1] <: Relationship
-            push!(exprs, :(_add_column!(world._relations[$i])))
+            push!(exprs, :(_add_archetype_column!(world._relations[$i])))
+        end
+    end
+    return Expr(:block, exprs...)
+end
+
+@generated function _push_zero_to_all_table_relations!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
+    comp_types = CT.parameters
+    n = length(comp_types)
+    exprs = Expr[]
+    for i in 1:n
+        if comp_types[i].parameters[1] <: Relationship
+            push!(exprs, :(_add_table_column!(world._relations[$i])))
         end
     end
     return Expr(:block, exprs...)
@@ -1392,7 +1409,12 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _activate_relation_for_comp!(world::World{CS,CT}, comp::Int, arch::Int, index::Int) where {CS,CT}
+@generated function _activate_archetype_relation_for_comp!(
+    world::World{CS,CT},
+    comp::Int,
+    arch::Int,
+    index::Int,
+) where {CS,CT}
     comp_types = CT.parameters
     n = length(comp_types)
     exprs = Expr[]
@@ -1402,7 +1424,29 @@ end
         end
         push!(exprs, :(
             if comp == $i
-                _activate_column!(world._relations[$i], arch, index)
+                _activate_archetype_column!(world._relations[$i], arch, index)
+            end
+        ))
+    end
+    return Expr(:block, exprs...)
+end
+
+@generated function _activate_table_relation_for_comp!(
+    world::World{CS,CT},
+    comp::Int,
+    table::Int,
+    index::Int,
+) where {CS,CT}
+    comp_types = CT.parameters
+    n = length(comp_types)
+    exprs = Expr[]
+    for i in 1:n
+        if !(comp_types[i].parameters[1] <: Relationship)
+            continue
+        end
+        push!(exprs, :(
+            if comp == $i
+                _activate_table_column!(world._relations[$i], table, index)
             end
         ))
     end

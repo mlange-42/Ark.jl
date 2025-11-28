@@ -80,7 +80,7 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
     end
 
     for (comp, target) in t.relations
-        idx = indices[comp].indices[arch.id]
+        idx = indices[comp].archetypes[arch.id]
         dict = arch.index[idx]
         if haskey(dict, target._id)
             _add_table!(dict[target._id], t)

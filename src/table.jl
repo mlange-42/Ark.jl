@@ -21,7 +21,7 @@ function _matches(indices::Vector{_ComponentRelations}, t::_Table, relations::Ve
         return true
     end
     for (comp, target) in relations
-        idx = indices[comp].indices[t.archetype]
+        idx = indices[comp].tables[t.id]
         if target != t.relations[idx].second
             return false
         end
@@ -37,7 +37,7 @@ function _matches_exact(indices::Vector{_ComponentRelations}, t::_Table, relatio
     for (comp, target) in relations
         # TODO: check for components not in the table
         # TODO: check for components that are no relations
-        idx = indices[comp].indices[t.archetype]
+        idx = indices[comp].tables[t.id]
         if target != t.relations[idx].second
             return false
         end

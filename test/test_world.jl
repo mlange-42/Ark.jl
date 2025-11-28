@@ -31,9 +31,12 @@ end
     @test isa(_get_storage(world, Altitude), _ComponentStorage{Altitude,Vector{Altitude}})
     @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
 
-    @test length(_get_relations(world, Position).indices) == 0
-    @test length(_get_relations(world, ChildOf).indices) == 1
-    @test _get_relations(world, ChildOf).indices[1] == 0
+    @test length(_get_relations(world, Position).archetypes) == 0
+    @test length(_get_relations(world, Position).tables) == 0
+    @test length(_get_relations(world, ChildOf).archetypes) == 1
+    @test length(_get_relations(world, ChildOf).tables) == 1
+    @test _get_relations(world, ChildOf).archetypes[1] == 0
+    @test _get_relations(world, ChildOf).tables[1] == 0
 end
 
 @testset "World show" begin
