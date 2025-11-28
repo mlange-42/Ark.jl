@@ -1,13 +1,13 @@
 
 const _vec_map_chunk_size = 16
 
-struct _VecMap{T,M}
+struct _VecMap{T,M,B}
     data::Vector{T}
-    used::_MutableMask{M}
+    used::_MutableMask{M,B}
 end
 
 function _VecMap{T,M}() where {T,M}
-    _VecMap{T,M}(Vector{T}(undef, 5), _MutableMask{M}())
+    _VecMap(Vector{T}(undef, 5), _MutableMask{M}())
 end
 
 function _get_map(m::_VecMap, index::Int)
