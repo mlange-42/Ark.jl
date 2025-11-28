@@ -144,10 +144,10 @@ end
 
 @testset "_equals" begin
     m = _Mask{4}(1, 2, 100)
-    m2 = _MutableMask{4}(1, 2)
-    @test _equals(m2, m) == false
-
-    _set_bit!(m2, 100)
+    m2 = _MutableMask{4}(m)
     @test _equals(m2, m) == true
+
+    _clear_bit!(m2, 100)
+    @test _equals(m2, m) == false
 end
 
