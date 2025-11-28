@@ -256,7 +256,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
         push!(world._index.components[comp], arch)
     end
 
-    _add_table!(arch, table)
+    _add_table!(world._relations, arch, table)
 
     return UInt32(new_table_id)
 end
@@ -301,8 +301,30 @@ function _get_table_slow_path(
     arch::_Archetype,
     relations::Vector{Pair{Int,Entity}},
 )::Tuple{_Table,Bool}
-    # TODO: implement relation index
-    error("not implemented")
+    if length(relations) < length(arch.relations)
+        # TODO: check duplicates
+        throw(ArgumentError("relation targets must be fully specified"))
+    end
+
+    first_rel = relations[1]
+    rel_comp = first_rel.first
+    target_id = first_rel.second._id
+
+    rel_idx = world._relations[rel_comp].indices[arch.id]
+    index = arch.index[rel_idx]
+    if !haskey(index, target_id)
+        return world._tables[1], false
+    end
+
+    tables = index[target_id]
+    for table_id in tables.ids
+        table = world._tables[table_id]
+        if _matches_exact(world._relations, table, relations)
+            return table, true
+        end
+    end
+
+    return world._tables[1], false
 end
 
 function _get_tables(world::World, arch::_Archetype)::Vector{UInt32}

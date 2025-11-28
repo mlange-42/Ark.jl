@@ -23,6 +23,32 @@
     @test ids.indices[10] == 2
 end
 
+@testset "_Archetype _add_table!" begin
+    world = World(Dummy, Position, ChildOf)
+    child_id = 3 + offset_ID
+
+    t1 =
+        _find_or_create_table!(world, world._tables[1], (2 + offset_ID, child_id), (), [child_id => _new_entity(2, 1)])
+    t2 =
+        _find_or_create_table!(world, world._tables[1], (2 + offset_ID, child_id), (), [child_id => _new_entity(99, 1)])
+
+    arch = world._archetypes[2]
+
+    @test arch.relations == [child_id]
+    @test length(arch.index) == 1
+
+    index = arch.index[1]
+    @test index[2].ids == [2]
+    @test index[99].ids == [3]
+
+    table, found = _get_table(world, arch, [child_id => _new_entity(99, 1)])
+    @test found == true
+    @test table == world._tables[t2]
+
+    table, found = _get_table(world, arch, [child_id => _new_entity(101, 1)])
+    @test found == false
+end
+
 @testset "_Archetype has relations" begin
     world = World(Dummy, Position, ChildOf)
 

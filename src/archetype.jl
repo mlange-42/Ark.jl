@@ -43,13 +43,14 @@ struct _Archetype{M}
     components::Vector{Int}  # Indices into the global ComponentStorage list
     relations::Vector{Int}
     tables::_TableIDs
+    index::Vector{Dict{UInt32,_TableIDs}}
     mask::_Mask{M}
     node::_GraphNode{M}
     id::UInt32
 end
 
 function _Archetype(id::UInt32, node::_GraphNode, tables::_TableIDs)
-    _Archetype(Vector{Int}(), Vector{Int}(), tables, node.mask, node, id)
+    _Archetype(Vector{Int}(), Vector{Int}(), tables, Vector{Dict{UInt32,_TableIDs}}(), node.mask, node, id)
 end
 
 function _Archetype(
@@ -59,16 +60,32 @@ function _Archetype(
     relations::Vector{Int},
     components::Int...,
 )
-    _Archetype(collect(Int, components), relations, tables, node.mask, node, id)
+    _Archetype(
+        collect(Int, components),
+        relations,
+        tables,
+        [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
+        node.mask,
+        node, id,
+    )
 end
 
-function _add_table!(arch::_Archetype, t::_Table)
+function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::_Table)
     _add_table!(arch.tables, t.id)
+
     if !_has_relations(arch)
         return
     end
-    # TODO: add to relations index
-    error("not implemented")
+
+    for (comp, target) in t.relations
+        idx = indices[comp].indices[arch.id]
+        dict = arch.index[idx]
+        if haskey(dict, target._id)
+            _add_table!(dict[target._id], t.id)
+            continue
+        end
+        dict[target._id] = _TableIDs(t.id)
+    end
 end
 
 _has_relations(a::_Archetype) = length(a.relations) > 0
