@@ -361,8 +361,8 @@ end
 
     arch = world._archetypes[2]
     @test length(arch.index[1]) == 2
-    @test arch.index[1][parent1._id].ids == [2]
-    @test arch.index[1][parent2._id].ids == [3]
+    @test arch.index[1][parent1._id].tables == [world._tables[2]]
+    @test arch.index[1][parent2._id].tables == [world._tables[3]]
 end
 
 @testset "World copy_entity!" begin

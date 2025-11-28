@@ -13,13 +13,12 @@ using Ark: _MutableMask, _get_bit, _set_bit!, _clear_bit!, _equals
 using Ark: _EntityPool, _get_entity, _recycle, _is_alive
 using Ark: _BitPool, _get_bit
 using Ark: _Lock, _lock, _unlock, _is_locked
-using Ark: _ComponentStorage
 using Ark: _VecMap, _get_map, _set_map!
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create
 using Ark: _BatchTable, _BatchLock
 using Ark: _has_observers
 using Ark: _StructArray, _StructArray_type, StructArrayView
 using Ark: _format_type
-using Ark: _TableIDs, _add_table!, _remove_table!, _get_table
+using Ark: _TableIDs, _add_table!, _remove_table!, _get_table, _new_table
 
 using FieldViews

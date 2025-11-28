@@ -1,6 +1,6 @@
 
 mutable struct _QueryCursor
-    tables::Vector{UInt32}
+    tables::Vector{_Table}
     closed::Bool
 end
 
@@ -200,7 +200,7 @@ end
     while arch <= length(q._archetypes)
         archetype = q._archetypes[arch]
         if tab == 0
-            if isempty(archetype.tables.ids) ||
+            if isempty(archetype.tables.tables) ||
                !_contains_all(archetype.mask, q._mask) ||
                (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
                 arch += 1
@@ -208,7 +208,7 @@ end
             end
 
             if !_has_relations(archetype)
-                table = q._world._tables[archetype.tables[1]]
+                table = archetype.tables[1]
                 if isempty(table.entities)
                     arch += 1
                     continue
@@ -222,7 +222,7 @@ end
         end
 
         while tab <= length(q._q_lock.tables)
-            table = q._world._tables[q._q_lock.tables[tab]]
+            table = q._q_lock.tables[tab]
             # TODO we can probably optimize here if exactly one relation in archetype and one queries.
             if isempty(table.entities) || !_matches(q._world._relations, table, q._relations)
                 tab += 1
@@ -263,14 +263,14 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 function Base.length(q::Query)
     count = 0
     for archetype in q._archetypes
-        if isempty(archetype.tables.ids) ||
+        if isempty(archetype.tables.tables) ||
            !_contains_all(archetype.mask, q._mask) ||
            (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
 
         if !_has_relations(archetype)
-            table = q._world._tables[archetype.tables[1]]
+            table = archetype.tables[1]
             if isempty(table.entities)
                 continue
             end
@@ -298,14 +298,14 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 function count_entities(q::Query)
     count = 0
     for archetype in q._archetypes
-        if isempty(archetype.tables.ids) ||
+        if isempty(archetype.tables.tables) ||
            !_contains_all(archetype.mask, q._mask) ||
            (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
 
         if !_has_relations(archetype)
-            table = q._world._tables[archetype.tables[1]]
+            table = archetype.tables[1]
             count += length(table.entities)
             continue
         end

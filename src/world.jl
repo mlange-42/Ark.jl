@@ -256,7 +256,7 @@ function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,E
         return world._tables[1], false
     end
     if !_has_relations(arch)
-        return world._tables[arch.tables[1]], true
+        return arch.tables[1], true
     end
     return _get_table_slow_path(world, arch, relations)
 end
@@ -283,11 +283,10 @@ function _get_table_slow_path(
 
     tables = index[target_id]
     if length(arch.relations) == 1
-        return world._tables[tables.ids[1]], true
+        return tables.tables[1], true
     end
 
-    for table_id in tables.ids
-        table = world._tables[table_id]
+    for table in tables.tables
         if _matches_exact(world._relations, table, relations)
             return table, true
         end
@@ -296,9 +295,9 @@ function _get_table_slow_path(
     return world._tables[1], false
 end
 
-function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{UInt32}
+function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{_Table}
     if !_has_relations(arch) || isempty(relations)
-        return arch.tables.ids
+        return arch.tables.tables
     end
 
     first_rel = relations[1]
@@ -311,7 +310,7 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
         return _empty_tables
     end
 
-    return index[target_id].ids
+    return index[target_id].tables
 end
 
 @inline function _create_entity!(world::World, table_index::UInt32)::Tuple{Entity,Int}
@@ -1304,13 +1303,14 @@ end
         graph = _Graph{$(M)}()
         index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
         sizehint!(index, initial_capacity)
+        zero_table = _new_table(UInt32(1), UInt32(1))
 
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), first(graph.nodes)[2], _TableIDs(1))],
-            [_new_table(UInt32(1), UInt32(1))],
+            [_Archetype(UInt32(1), first(graph.nodes)[2], _TableIDs(zero_table))],
+            [zero_table],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),

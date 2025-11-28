@@ -1,26 +1,33 @@
 
 @testset "_TableIDs" begin
-    ids = _TableIDs(9, 8, 7, 6, 5)
+    t1 = _new_table(UInt32(1), UInt32(1))
+    t2 = _new_table(UInt32(2), UInt32(1))
+    t3 = _new_table(UInt32(3), UInt32(1))
+    t4 = _new_table(UInt32(4), UInt32(1))
+    t5 = _new_table(UInt32(5), UInt32(1))
+    t6 = _new_table(UInt32(6), UInt32(1))
 
-    @test ids.ids == [9, 8, 7, 6, 5]
-    @test ids.indices[9] == 1
-    @test ids.indices[5] == 5
+    ids = _TableIDs(t5, t4, t3, t2, t1)
 
-    _add_table!(ids, UInt32(10))
-    @test ids.ids == [9, 8, 7, 6, 5, 10]
-    @test ids.indices[10] == 6
+    @test ids.tables == [t5, t4, t3, t2, t1]
+    @test ids.indices[5] == 1
+    @test ids.indices[1] == 5
 
-    @test _remove_table!(ids, UInt32(8)) == true
-    @test ids.ids == [9, 10, 7, 6, 5]
-    @test ids.indices[10] == 2
+    _add_table!(ids, t6)
+    @test ids.tables == [t5, t4, t3, t2, t1, t6]
+    @test ids.indices[6] == 6
 
-    @test _remove_table!(ids, UInt32(5)) == true
-    @test ids.ids == [9, 10, 7, 6]
-    @test ids.indices[10] == 2
+    @test _remove_table!(ids, t3) == true
+    @test ids.tables == [t5, t4, t6, t2, t1]
+    @test ids.indices[6] == 3
 
-    @test _remove_table!(ids, UInt32(5)) == false
-    @test ids.ids == [9, 10, 7, 6]
-    @test ids.indices[10] == 2
+    @test _remove_table!(ids, t1) == true
+    @test ids.tables == [t5, t4, t6, t2]
+    @test ids.indices[6] == 3
+
+    @test _remove_table!(ids, t1) == false
+    @test ids.tables == [t5, t4, t6, t2]
+    @test ids.indices[6] == 3
 end
 
 @testset "_Archetype _add_table!" begin
@@ -52,8 +59,8 @@ end
     @test length(arch.index) == 1
 
     index = arch.index[1]
-    @test index[2].ids == [2]
-    @test index[99].ids == [3]
+    @test index[2].tables == [world._tables[t1]]
+    @test index[99].tables == [world._tables[t2]]
 
     table, found = _get_table(world, arch, [child_id => _new_entity(99, 1)])
     @test found == true
