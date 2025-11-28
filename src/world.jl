@@ -28,6 +28,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager{World{CS,CT,ST,N,M},M}
+    const _temp_relations::Vector{Pair{Int,Entity}}
     const _initial_capacity::Int
 end
 
@@ -120,7 +121,7 @@ end
     return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
-function _find_or_create_archetype!(
+@inline function _find_or_create_archetype!(
     world::World,
     start::_GraphNode,
     add::Tuple{Vararg{Int}},
@@ -135,7 +136,7 @@ function _find_or_create_archetype!(
     return archetype
 end
 
-function _find_or_create_table!(
+@inline function _find_or_create_table!(
     world::World,
     old_table::_Table,
     add::Tuple{Vararg{Int}},
@@ -146,31 +147,42 @@ function _find_or_create_table!(
     new_arch = world._archetypes[new_arch_index]
 
     # Find existing relations that were not removed.
-    all_relations = Pair{Int,Entity}[]
-    if length(remove) > 0
-        for rel in old_table.relations
-            if _get_bit(new_arch.mask, rel[1])
-                push!(all_relations, rel)
+    all_relations = world._temp_relations
+    requires_copy = true
+    if _has_relations(old_table)
+        if length(remove) > 0
+            for rel in old_table.relations
+                if _get_bit(new_arch.mask, rel[1])
+                    push!(world._temp_relations, rel)
+                end
             end
+        else
+            all_relations = old_table.relations
+            requires_copy = false
         end
-    else
-        all_relations = old_table.relations
     end
 
     new_table, found = _get_table(world, new_arch, all_relations)
-    new_table_id = new_table.id
-    if !found
-        # TODO: ensure that relations are the same and in tha same order as in the archetype
-        if length(all_relations) > 0
-            sort!(all_relations; by=first)
-        end
-        new_table_id = _create_table!(world, new_arch, all_relations)
+
+    if found
+        return new_table.id
     end
 
-    return new_table_id
+    # TODO: ensure that relations are the same and in the same order as in the archetype
+    if length(all_relations) > 0
+        sort!(all_relations; by=first)
+    end
+    # TODO: recycle table
+    if requires_copy
+        new_table_id = _create_table!(world, new_arch, copy(all_relations))
+        resize!(all_relations, 0)
+        return new_table_id
+    end
+
+    return _create_table!(world, new_arch, all_relations)
 end
 
-function _find_or_create_table!(
+@inline function _find_or_create_table!(
     world::World,
     old_table::_Table,
     add::Tuple{Vararg{Int}},
@@ -182,34 +194,45 @@ function _find_or_create_table!(
     new_arch = world._archetypes[new_arch_index]
 
     # Find existing relations that were not removed, and add new relations.
-    all_relations = Pair{Int,Entity}[]
-    if length(remove) > 0
-        for rel in old_table.relations
-            if _get_bit(new_arch.mask, rel[1])
-                push!(all_relations, rel)
+    all_relations = world._temp_relations
+    requires_copy = true
+    if _has_relations(old_table) || !isempty(relations)
+        if length(remove) > 0
+            for rel in old_table.relations
+                if _get_bit(new_arch.mask, rel[1])
+                    push!(all_relations, rel)
+                end
             end
-        end
-        append!(all_relations, relations)
-    else
-        if length(relations) > 0
-            append!(all_relations, old_table.relations)
             append!(all_relations, relations)
         else
-            all_relations = old_table.relations
+            if length(relations) > 0
+                append!(all_relations, old_table.relations)
+                append!(all_relations, relations)
+            else
+                all_relations = old_table.relations
+                requires_copy = false
+            end
         end
     end
 
     new_table, found = _get_table(world, new_arch, all_relations)
-    new_table_id = new_table.id
-    if !found
-        # TODO: ensure that relations are the same and in tha same order as in the archetype
-        if length(all_relations) > 0
-            sort!(all_relations; by=first)
-        end
-        new_table_id = _create_table!(world, new_arch, all_relations)
+
+    if found
+        return new_table.id
     end
 
-    return new_table_id
+    # TODO: ensure that relations are the same and in the same order as in the archetype
+    if length(all_relations) > 0
+        sort!(all_relations; by=first)
+    end
+    # TODO: recycle table
+    if requires_copy
+        new_table_id = _create_table!(world, new_arch, copy(all_relations))
+        resize!(all_relations, 0)
+        return new_table_id
+    end
+
+    return _create_table!(world, new_arch, all_relations)
 end
 
 function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::UInt32
@@ -1269,6 +1292,7 @@ end
                 World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
                 $(M),
             }(),
+            Vector{Pair{Int,Entity}}(),
             initial_capacity,
         )
     end
