@@ -293,6 +293,9 @@ function _get_exchange_targets(
     changed = false
     for (rel, trg) in zip(relations, targets)
         index = world._relations[rel].tables[old_table.id]
+        if index == 0
+            throw(ArgumentError("entity does not have the requested relationship component"))
+        end
 
         @check new_relations[index].first == rel
         if new_relations[index].second == trg
@@ -839,10 +842,24 @@ end
     end
 end
 
-# TODO: write docs
+"""
+    set_relations!(world::World, entity::Entity, relations::Tuple)
+
+Sets relation targets for the given components of an [`Entity`](@ref).
+The entity must already have all these relationship components.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+set_relations!(world, entity, (ChildOf => parent,))
+
+# output
+
+```
+"""
 @inline Base.@constprop :aggressive function set_relations!(world::World, entity::Entity, relations::Tuple)
     if !is_alive(world, entity)
-        throw(ArgumentError("can't set components of a dead entity"))
+        throw(ArgumentError("can't set relation targets of a dead entity"))
     end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))

@@ -51,6 +51,7 @@ add_components!
 remove_components!
 exchange_components!
 get_relations
+set_relations!
 ```
 
 ## [Queries](@id queries-api)

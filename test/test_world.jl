@@ -406,6 +406,8 @@ end
 
     parent1 = new_entity!(world, ())
     parent2 = new_entity!(world, ())
+    dead_parent = new_entity!(world, ())
+    remove_entity!(world, dead_parent)
 
     entity1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
     entity2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
@@ -448,6 +450,27 @@ end
     @test_throws(
         "ArgumentError: can't get relations of a dead entity",
         get_relations(world, zero_entity, (ChildOf,)),
+    )
+
+    @test_throws(
+        "ArgumentError: duplicate component types: ChildOf",
+        set_relations!(world, entity1, (ChildOf => parent1, ChildOf => parent1)),
+    )
+    @test_throws(
+        "ArgumentError: component Position is not a relationship",
+        set_relations!(world, entity1, (Position => parent1,)),
+    )
+    @test_throws(
+        "ArgumentError: entity does not have the requested relationship component",
+        set_relations!(world, entity1, (ChildOf2 => parent1,)),
+    )
+    @test_throws(
+        "ArgumentError: can't set relation targets of a dead entity",
+        set_relations!(world, zero_entity, (ChildOf => parent1,)),
+    )
+    @test_throws(
+        "ArgumentError: can't use a dead entity as relation target, except for the zero entity",
+        set_relations!(world, entity1, (ChildOf => dead_parent,)),
     )
 end
 
