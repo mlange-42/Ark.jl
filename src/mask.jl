@@ -1,59 +1,60 @@
 
 struct _Not end
 
-struct _Mask{M}
-    bits::NTuple{M,UInt64}
+struct _Mask{M,B}
+    bits::B
+    _Mask{M}(bits::B) where {M,B} = new{M,B}(bits)
 end
 
 function _Mask{M}() where M
-    return _Mask(ntuple(_ -> UInt64(0), M))
+    return _Mask{M}(ntuple(_ -> UInt64(0), M))
 end
 
-function _Mask{1}(bits::Integer...)
+function _Mask{1}(bits::Int...)
     chunk = UInt64(0)
     for b in bits
         @check 1 ≤ b ≤ 64
         offset = (b - 1) % UInt64
         chunk |= (UInt64(1) << offset)
     end
-    return _Mask((chunk,))
+    return _Mask{1}(chunk)
 end
 
-function _Mask{M}(bits::T...) where {M,T<:Integer}
+function _Mask{M}(bits::Int...) where {M}
     chunks = ntuple(_ -> UInt64(0), M)
     for b in bits
         @check 1 ≤ b ≤ M * 64
         chunk = (b - 1) >>> 6
-        offset = ((b - 1) & T(0x3F)) % UInt64
+        offset = ((b - 1) & UInt64(0x3F)) % UInt64
         chunks = Base.setindex(chunks, chunks[chunk+1] | (UInt64(1) << offset), chunk + 1)
     end
-    return _Mask(chunks)
+    return _Mask{M}(chunks)
 end
 
 function _Mask{M}(::_Not) where M
-    return _Mask(ntuple(_ -> typemax(UInt64), M))
+    return _Mask{M}(ntuple(_ -> typemax(UInt64), M))
 end
 
-function _Mask{1}(::_Not, bits::Integer...)
+function _Mask{1}(::_Not, bits::Int...)
     chunk = typemax(UInt64)
     for b in bits
         @check 1 ≤ b ≤ 64
         offset = (b - 1) % UInt64
         chunk &= ~(UInt64(1) << offset)
     end
-    return _Mask((chunk,))
+    return _Mask{1}(chunk)
 end
 
-function _Mask{M}(::_Not, bits::T...) where {M,T<:Integer}
+function _Mask{M}(::_Not, bits::Int...) where {M}
     chunks = ntuple(_ -> typemax(UInt64), M)  # 0xFFFFFFFFFFFFFFFF
     for b in bits
         @check 1 ≤ b ≤ M * 64
         chunk = (b - 1) >>> 6
-        offset = ((b - 1) & T(0x3F)) % UInt64
+        offset = ((b - 1) & UInt64(0x3F)) % UInt64
         mask = ~(UInt64(1) << offset)
         chunks = Base.setindex(chunks, chunks[chunk+1] & mask, chunk + 1)
     end
-    return _Mask(chunks)
+    return _Mask{M}(chunks)
 end
 
 @generated function _contains_all(mask1::_Mask{M}, mask2::_Mask{M})::Bool where M
@@ -121,16 +122,37 @@ function _active_bit_indices(mask::_Mask{M})::Vector{Int} where M
     return indices
 end
 
-struct _MutableMask{M}
-    bits::MVector{M,UInt64}
+mutable struct Bit
+    b::UInt64
+end
+
+Base.getindex(bits::Bit, x) = getfield(bits, :b)
+Base.setindex!(bits::Bit, value, x) = setfield!(bits, :b, value)
+
+struct _MutableMask{M,B}
+    bits::B
+    _MutableMask{M}(bits::B) where {M,B} = new{M,B}(bits)
+end
+
+function _MutableMask{1}()
+    return _MutableMask{1}(Bit(UInt64(0)))
 end
 
 function _MutableMask{M}() where M
-    return _MutableMask(zeros(MVector{M,UInt64}))
+    return _MutableMask{M}(zeros(MVector{M,UInt64}))
+end
+
+function _MutableMask{1}(mask::_Mask{1})
+    return _MutableMask{1}(Bit(mask.bits))
 end
 
 function _MutableMask(mask::_Mask{M}) where M
-    return _MutableMask(MVector{M,UInt64}(mask.bits))
+    return _MutableMask{M}(MVector{M,UInt64}(mask.bits))
+end
+
+function _set_mask!(mask::_MutableMask{1}, other::_Mask{1})
+    mask.bits.b = other.bits
+    return mask
 end
 
 function _set_mask!(mask::_MutableMask, other::_Mask)
@@ -146,8 +168,12 @@ end
     return Expr(:call, :*, expr...)
 end
 
-function _Mask(mask::_MutableMask)
-    return _Mask(Tuple(mask.bits))
+function _Mask(mask::_MutableMask{1})
+    return _Mask{1}(mask.bits.b)
+end
+
+function _Mask(mask::_MutableMask{M}) where M
+    return _Mask{M}(Tuple(mask.bits))
 end
 
 @inline function _set_bit!(mask::_MutableMask{1}, i::Int)
