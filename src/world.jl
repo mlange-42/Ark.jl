@@ -187,7 +187,8 @@ end
     old_table::_Table,
     add::Tuple{Vararg{Int}},
     remove::Tuple{Vararg{Int}},
-    relations::Vector{Pair{Int,Entity}},
+    relations::Tuple{Vararg{Int}},
+    targets::Tuple{Vararg{Entity}},
 )::UInt32
     old_arch = world._archetypes[old_table.archetype]
     new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
@@ -207,7 +208,9 @@ end
         else
             if length(relations) > 0
                 append!(all_relations, old_table.relations)
-                append!(all_relations, relations)
+                for i in eachindex(relations)
+                    push!(all_relations, Pair(relations[i], targets[i]))
+                end
             else
                 all_relations = old_table.relations
                 requires_copy = false
@@ -755,8 +758,16 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
 Entity(3, 0)
 ```
 """
-Base.@constprop :aggressive function new_entity!(world::World, values::Tuple)
-    entity, table_id = _new_entity!(world, Val{typeof(values)}(), values)
+Base.@constprop :aggressive function new_entity!(
+    world::World,
+    values::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
+    comp_types = ntuple(i -> relations[i].first, length(relations))
+    comp_vals = ntuple(i -> Val(comp_types[i]), length(comp_types))
+    targets = ntuple(i -> relations[i].second, length(relations))
+
+    entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, comp_vals, targets)
     table = world._tables[table_id]
     if _has_observers(world._event_manager, OnCreateEntity)
         _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].mask)
@@ -764,13 +775,27 @@ Base.@constprop :aggressive function new_entity!(world::World, values::Tuple)
     return entity
 end
 
-@generated function _new_entity!(world::W, ::Val{TS}, values::Tuple) where {W<:World,TS<:Tuple}
+@generated function _new_entity!(
+    world::W,
+    ::Val{TS},
+    values::Tuple,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,TS<:Tuple,TR<:Tuple}
     types = TS.parameters
+    rel_types = _to_types(TR)
     exprs = []
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
-    push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, ())))
+    # TODO: check relation components are actually relations
+
+    if isempty(rel_types)
+        push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, ())))
+    else
+        push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets)))
+    end
     push!(exprs, :(tmp = _create_entity!(world, table)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))

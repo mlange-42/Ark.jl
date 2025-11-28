@@ -342,6 +342,29 @@ end
     end
 end
 
+@testset "World new_entity! relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+        Velocity => StructArrayStorage,
+    )
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+    e1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    e2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+    e3 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+
+    @test length(world._archetypes) == 2
+    @test length(world._tables) == 3
+
+    arch = world._archetypes[2]
+    @test length(arch.index[1]) == 2
+    @test arch.index[1][parent1._id].ids == [2]
+    @test arch.index[1][parent2._id].ids == [3]
+end
+
 @testset "World copy_entity!" begin
     world = World(
         Dummy,

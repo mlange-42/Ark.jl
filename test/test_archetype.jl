@@ -28,9 +28,23 @@ end
     child_id = 3 + offset_ID
 
     t1 =
-        _find_or_create_table!(world, world._tables[1], (2 + offset_ID, child_id), (), [child_id => _new_entity(2, 1)])
+        _find_or_create_table!(
+            world,
+            world._tables[1],
+            (2 + offset_ID, child_id),
+            (),
+            (child_id,),
+            (_new_entity(2, 1),),
+        )
     t2 =
-        _find_or_create_table!(world, world._tables[1], (2 + offset_ID, child_id), (), [child_id => _new_entity(99, 1)])
+        _find_or_create_table!(
+            world,
+            world._tables[1],
+            (2 + offset_ID, child_id),
+            (),
+            (child_id,),
+            (_new_entity(99, 1),),
+        )
 
     arch = world._archetypes[2]
 
