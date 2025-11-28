@@ -126,8 +126,8 @@ mutable struct Bit
     b::UInt64
 end
 
-Base.getindex(bits::Bit, x) = getfield(bits, :b)
-Base.setindex!(bits::Bit, value, x) = setfield!(bits, :b, value)
+Base.getindex(bits::Bit, x::Int) = getfield(bits, :b)
+Base.setindex!(bits::Bit, value::UInt64, x::Int) = setfield!(bits, :b, value)
 
 struct _MutableMask{M,B}
     bits::B
