@@ -39,17 +39,18 @@ end
 struct _Archetype{M}
     entities::Entities
     components::Vector{Int}  # Indices into the global ComponentStorage list
+    relations::Vector{Int}
     mask::_Mask{M}
     node::_GraphNode{M}
     id::UInt32
 end
 
 function _Archetype(id::UInt32, node::_GraphNode)
-    _Archetype(Entities(0), Vector{Int}(), node.mask, node, id)
+    _Archetype(Entities(0), Vector{Int}(), Vector{Int}(), node.mask, node, id)
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, cap::Int, components::Int...)
-    _Archetype(Entities(cap), collect(Int, components), node.mask, node, id)
+function _Archetype(id::UInt32, node::_GraphNode, relations::Vector{Int}, cap::Int, components::Int...)
+    _Archetype(Entities(cap), collect(Int, components), relations, node.mask, node, id)
 end
 
 function _add_entity!(arch::_Archetype, entity::Entity)::Int
@@ -58,6 +59,10 @@ function _add_entity!(arch::_Archetype, entity::Entity)::Int
 end
 
 Base.resize!(arch::_Archetype, length::Int) = Base.resize!(arch.entities._data, length)
+
+function _has_relations(a::_Archetype)
+    return length(a.relations) > 0
+end
 
 struct _BatchArchetype{M}
     archetype::_Archetype{M}

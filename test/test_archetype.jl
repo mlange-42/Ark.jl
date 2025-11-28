@@ -22,3 +22,13 @@
     @test ids.ids == [9, 10, 7, 6]
     @test ids.indices[10] == 2
 end
+
+@testset "_Archetype has relations" begin
+    world = World(Dummy, Position, ChildOf)
+
+    new_entity!(world, (Position(0, 0),))
+    new_entity!(world, (ChildOf(),))
+
+    @test _has_relations(world._archetypes[2]) == false
+    @test _has_relations(world._archetypes[3]) == true
+end

@@ -125,7 +125,15 @@ end
 
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
     components = _active_bit_indices(node.mask)
-    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, world._initial_capacity, components...)
+    relations = Int[]
+    for id in components
+        if _is_relation(world._registry, id)
+            push!(relations, id)
+        end
+    end
+
+    arch =
+        _Archetype(UInt32(length(world._archetypes) + 1), node, relations, world._initial_capacity, components...)
     push!(world._archetypes, arch)
 
     index = length(world._archetypes)

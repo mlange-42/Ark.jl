@@ -35,6 +35,8 @@ mutable struct MutableNoIsBits
     v::Vector{MutableComponent}
 end
 
+struct ChildOf <: Relationship end
+
 mutable struct Tick
     time::Int
 end
