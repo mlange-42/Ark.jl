@@ -19,6 +19,7 @@ reset!
 is_locked
 StructArrayStorage
 VectorStorage
+Relationship
 ```
 
 ## [Entities](@id entities-api)

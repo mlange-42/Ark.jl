@@ -48,6 +48,6 @@ export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
 export Observer, observe!, emit_event!
 export unpack, @unpack
 
-export StructArrayStorage, VectorStorage
+export StructArrayStorage, VectorStorage, Relationship
 
 end
