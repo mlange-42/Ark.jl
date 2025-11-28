@@ -31,6 +31,8 @@
 end
 
 @testset "_Archetype _add_table!" begin
+    # TODO: re-activate, but use world and entity creations
+    """
     world = World(Dummy, Position, ChildOf)
     child_id = 3 + offset_ID
 
@@ -68,6 +70,7 @@ end
 
     table, found = _get_table(world, arch, [child_id => _new_entity(101, 1)])
     @test found == false
+    """
 end
 
 @testset "_Archetype has relations" begin

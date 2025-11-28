@@ -329,6 +329,9 @@ end
         "ArgumentError: duplicate component types: Position",
         new_entity!(world, (Position(1, 2), Position(3, 4)))
     )
+
+    remove_entity!(world, entity)
+    @test is_alive(world, entity) == false
 end
 
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
@@ -360,6 +363,9 @@ end
 
     parent1 = new_entity!(world, ())
     parent2 = new_entity!(world, ())
+    dead_parent = new_entity!(world, ())
+    remove_entity!(world, dead_parent)
+
     e1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
     e2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
     e3 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
@@ -383,6 +389,10 @@ end
     @test_throws(
         "ArgumentError: duplicate component types: ChildOf",
         new_entity!(world, (ChildOf(),); relations=(ChildOf => parent1, ChildOf => parent2))
+    )
+    @test_throws(
+        "ArgumentError: can't use a dead entity as relation target, except for the zero entity",
+        new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => dead_parent,)),
     )
 end
 

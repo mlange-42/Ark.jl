@@ -229,6 +229,8 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     # TODO: check that all components are relations
     # TODO: check that the archetype contains all components
 
+    _check_relation_targets(world, relations)
+
     # TODO: recycle tables if available
 
     new_table_id = length(world._tables) + 1
@@ -598,6 +600,18 @@ function _check_locked(world::World)
                 :locked_world,
             ),
         )
+    end
+end
+
+function _check_relation_targets(world::World, relations::Vector{Pair{Int,Entity}})
+    for rel in relations
+        _check_relation_target(world, rel.second)
+    end
+end
+
+function _check_relation_target(world::World, target::Entity)
+    if !is_zero(target) && !is_alive(world, target)
+        throw(ArgumentError("can't use a dead entity as relation target, except for the zero entity"))
     end
 end
 
