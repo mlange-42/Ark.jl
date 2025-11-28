@@ -1,4 +1,8 @@
 
+mutable struct _BatchLock
+    closed::Bool
+end
+
 """
     Batch
 
@@ -15,7 +19,7 @@ This prevents structural changes like creating and removing entities or adding a
 struct Batch{W<:World,TS<:Tuple,SM<:Tuple,N,M}
     _world::W
     _tables::Vector{_BatchTable}
-    _b_lock::_QueryLock
+    _b_lock::_BatchLock
     _lock::Int
 end
 
@@ -41,7 +45,7 @@ end
         Batch{$W,$comp_tuple_type,$storage_tuple_mode,$(length(comp_types)),$M}(
             world,
             tables,
-            _QueryLock(false),
+            _BatchLock(false),
             _lock(world._lock),
         )
     end
@@ -67,8 +71,8 @@ end
 """
     length(b::Batch)
 
-Returns the number of archetypes in the batch.
-For batch entity creation, the number of archetype is always 1.
+Returns the number of tables in the batch.
+For batch entity creation, the number of tables is always 1.
 
 Does not iterate or [close!](@ref close!(::Batch)) the batch.
 """

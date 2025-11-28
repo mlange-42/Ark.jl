@@ -241,7 +241,15 @@ function _get_table_slow_path(
     relations::Pair{Int,Entity}...,
 )::Tuple{_Table,Bool}
     # TODO: implement relation index
-    return world._tables[1], false
+    error("not implemented")
+end
+
+function _get_tables(world::World, arch::_Archetype, relations::Pair{Int,Entity}...)::Vector{UInt32}
+    if !_has_relations(arch) || isempty(relations)
+        return arch.tables.ids
+    end
+    # TODO: implement relation index
+    error("not implemented")
 end
 
 @inline function _create_entity!(world::World, table_index::UInt32)::Tuple{Entity,Int}
@@ -1067,7 +1075,7 @@ end
                     l = _lock(world._lock)
                     _fire_remove_components(
                         world._event_manager, entity,
-                        old_arch.mask,
+                        world._archetypes[old_table.archetype].mask,
                         world._archetypes[new_table.archetype].mask,
                         true,
                     )
@@ -1097,7 +1105,7 @@ end
                 if _has_observers(world._event_manager, OnAddComponents)
                     _fire_add_components(
                         world._event_manager, entity,
-                        old_arch.mask,
+                        world._archetypes[old_table.archetype].mask,
                         world._archetypes[new_table.archetype].mask,
                         true,
                     )

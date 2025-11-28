@@ -15,7 +15,7 @@
         [
             _BatchTable(world._tables[2], world._archetypes[2], UInt32(1), UInt32(1)),
             _BatchTable(world._tables[3], world._archetypes[3], UInt32(1), UInt32(1)),
-        ], _QueryLock(false), _lock(world._lock))
+        ], _BatchLock(false), _lock(world._lock))
 
     arches = 0
     for (ent, pos_col) in batch
@@ -39,7 +39,7 @@
         [
             _BatchTable(world._tables[2], world._archetypes[2], UInt32(1), UInt32(2)),
             _BatchTable(world._tables[3], world._archetypes[3], UInt32(1), UInt32(2)),
-        ], _QueryLock(false), _lock(world._lock))
+        ], _BatchLock(false), _lock(world._lock))
     @test length(batch) == 2
     @test count_entities(batch) == 4
 

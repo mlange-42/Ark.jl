@@ -1,5 +1,6 @@
 
-mutable struct _QueryLock
+mutable struct _QueryCursor
+    tables::Vector{UInt32}
     closed::Bool
 end
 
@@ -14,7 +15,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _exclude_mask::_Mask{M}
     _world::W
     _archetypes::Vector{_Archetype{M}}
-    _q_lock::_QueryLock
+    _q_lock::_QueryCursor
     _lock::Int
     _has_excluded::Bool
 end
@@ -145,7 +146,7 @@ end
             $(exclude_mask),
             world,
             $(archetypes),
-            _QueryLock(false),
+            _QueryCursor(UInt32[], false),
             _lock(world._lock),
             $(has_excluded),
         )
@@ -166,16 +167,37 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     return rare_comp
 end
 
-@inline function Base.iterate(q::Query, state::Int)
-    while state <= length(q._archetypes)
-        archetype = q._archetypes[state]
-        if !isempty(archetype.entities) &&
-           _contains_all(archetype.mask, q._mask) &&
-           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = _get_columns(q, state)
-            return result, state + 1
+@inline function Base.iterate(q::Query, state::Tuple{Int,Int})
+    arch, tab = state
+    while arch <= length(q._archetypes)
+        archetype = q._archetypes[arch]
+        if tab == 0
+            if isempty(archetype.tables.ids) ||
+               !_contains_all(archetype.mask, q._mask) ||
+               (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+                arch += 1
+                continue
+            end
+            # TODO: handle relations
+            q._q_lock.tables = _get_tables(q._world, archetype)
+            tab = 1
         end
-        state += 1
+
+        if !_has_relations(archetype)
+            table = q._world._tables[archetype.tables[1]]
+            if isempty(table.entities)
+                arch += 1
+                tab = 0
+                continue
+            end
+            result = _get_columns(q, table)
+            return result, (arch + 1, 0)
+        end
+
+        # TODO: handle relations
+        error("not implemented")
+        #while tab <= length(q._q_lock.tables)
+        #end
     end
 
     close!(q)
@@ -188,30 +210,39 @@ end
     end
     q._q_lock.closed = true
 
-    return Base.iterate(q, 1)
+    return Base.iterate(q, (1, 0))
 end
 
 """
     length(q::Query)
 
-Returns the number of matching archetypes with at least one entity in the query.
+Returns the number of matching tables with at least one entity in the query.
 
 Does not iterate or [close!](@ref close!(::Query)) the query.
 
 !!! note
 
-    The time complexity is linear with the number of archetypes in the query's pre-selection.
+    The time complexity is linear with the number of tables in the query's pre-selection.
 """
 function Base.length(q::Query)
     count = 0
     for archetype in q._archetypes
-        if isempty(archetype.entities)
+        if isempty(archetype.tables.ids) ||
+           !_contains_all(archetype.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
-        if _contains_all(archetype.mask, q._mask) &&
-           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+
+        if !_has_relations(archetype)
+            table = q._world._tables[archetype.tables[1]]
+            if isempty(table.entities)
+                continue
+            end
             count += 1
+            continue
         end
+        # TODO: count tables
+        error("not implemented")
     end
     count
 end
@@ -231,13 +262,19 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 function count_entities(q::Query)
     count = 0
     for archetype in q._archetypes
-        if isempty(archetype.entities)
+        if isempty(archetype.tables.ids) ||
+           !_contains_all(archetype.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
-        if _contains_all(archetype.mask, q._mask) &&
-           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            count += length(archetype.entities)
+
+        if !_has_relations(archetype)
+            table = q._world._tables[archetype.tables[1]]
+            count += length(table.entities)
+            continue
         end
+        # TODO: count tables
+        error("not implemented")
     end
     count
 end
@@ -257,21 +294,20 @@ end
 
 @generated function _get_columns(
     q::Query{W,TS,SM,EX,OPT,N,M},
-    idx::Int,
+    table::_Table,
 ) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters
 
     exprs = Expr[]
-    push!(exprs, :(archetype = q._archetypes[idx]))
-    push!(exprs, :(entities = archetype.entities))
+    push!(exprs, :(entities = table.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
         push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table.id]))
 
         if is_optional[i] === Val{true}
             if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0

@@ -68,6 +68,7 @@ function _add_table!(arch::_Archetype, t::_Table)
         return
     end
     # TODO: add to relations index
+    error("not implemented")
 end
 
 _has_relations(a::_Archetype) = length(a.relations) > 0
