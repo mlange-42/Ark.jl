@@ -1,4 +1,4 @@
-using Ark: _Mask, _MutableMask, _is_zero
+using Ark: _Mask, _Mask, _is_zero
 
 function setup_is_zero_mask()
     return _Mask{4}(1, 65, 129, 193, 194, 195)

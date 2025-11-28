@@ -10,21 +10,21 @@ end
 
 struct _Graph{M}
     mask::_MutableMask{M}
-    nodes::Vector{_GraphNode{M}}
+    nodes::Dict{_Mask{M}, _GraphNode{M}}
 end
 
 function _Graph{M}() where M
-    _Graph{M}(_MutableMask{M}(), [_GraphNode(_Mask{M}(), UInt32(1))])
+    _Graph{M}(_MutableMask{M}(), Dict(_Mask{M}() => _GraphNode(_Mask{M}(), UInt32(1))))
 end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)
-    for node in g.nodes
-        if _equals(mask, node.mask)
-            return node
-        end
+    immut_mask = _Mask(mask)
+    if immut_mask in keys(g.nodes)
+        return g.nodes[immut_mask]
     end
-    push!(g.nodes, _GraphNode(_Mask(mask), typemax(UInt32)))
-    return g.nodes[end]
+    new_node = _GraphNode(immut_mask, typemax(UInt32))
+    g.nodes[immut_mask] = new_node
+    return new_node
 end
 
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}})
