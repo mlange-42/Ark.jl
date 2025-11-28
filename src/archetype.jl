@@ -39,6 +39,8 @@ end
 Base.length(t::_TableIDs) = length(t.ids)
 Base.getindex(t::_TableIDs, i::Int) = t.ids[i]
 
+const _empty_tables = Vector{UInt32}()
+
 struct _Archetype{M}
     components::Vector{Int}  # Indices into the global ComponentStorage list
     relations::Vector{Int}

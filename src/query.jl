@@ -4,6 +4,8 @@ mutable struct _QueryCursor
     closed::Bool
 end
 
+const _empty_relations = Pair{Int,Entity}[]
+
 """
     Query
 
@@ -15,6 +17,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _exclude_mask::_Mask{M}
     _world::W
     _archetypes::Vector{_Archetype{M}}
+    _relations::Vector{Pair{Int,Entity}}
     _q_lock::_QueryCursor
     _lock::Int
     _has_excluded::Bool
@@ -27,7 +30,8 @@ end
         with::Tuple=(),
         without::Tuple=(),
         optional::Tuple=(),
-        exclusive::Bool=false
+        exclusive::Bool=false,
+        relations::Tuple=(),
     )
 
 Creates a query.
@@ -72,13 +76,18 @@ Base.@constprop :aggressive function Query(
     without::Tuple=(),
     optional::Tuple=(),
     exclusive::Bool=false,
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
     return _Query_from_types(world,
         ntuple(i -> Val(comp_types[i]), length(comp_types)),
         ntuple(i -> Val(with[i]), length(with)),
         ntuple(i -> Val(without[i]), length(without)),
         ntuple(i -> Val(optional[i]), length(optional)),
-        Val(exclusive))
+        Val(exclusive),
+        rel_types, targets,
+    )
 end
 
 @generated function _Query_from_types(
@@ -88,13 +97,20 @@ end
     ::WO,
     ::OT,
     ::EX,
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val,TR<:Tuple}
     world_storage_modes = W.parameters[3].parameters
 
     required_types = _to_types(CT)
     with_types = _to_types(WT)
     without_types = _to_types(WO)
     optional_types = _to_types(OT)
+    rel_types = _to_types(TR)
+
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
+
+    # TODO: check relation components are actually relations
 
     # check for duplicates
     all_comps = vcat(required_types, with_types, without_types, optional_types)
@@ -141,11 +157,22 @@ end
     archetypes = length(ids_tuple) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
 
     return quote
+        relations = if length(targets) > 0
+            # TODO: can/should we use an ntuple instead?
+            rel = Vector{Pair{Int,Entity}}()
+            for (c, e) in zip($rel_ids, targets)
+                push!(rel, c => e)
+            end
+            rel
+        else
+            _empty_relations
+        end
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$EX,$optional_flags_type,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,
             $(archetypes),
+            relations,
             _QueryCursor(UInt32[], false),
             _lock(world._lock),
             $(has_excluded),
@@ -178,26 +205,33 @@ end
                 arch += 1
                 continue
             end
-            # TODO: handle relations
-            q._q_lock.tables = _get_tables(q._world, archetype)
+
+            if !_has_relations(archetype)
+                table = q._world._tables[archetype.tables[1]]
+                if isempty(table.entities)
+                    arch += 1
+                    continue
+                end
+                result = _get_columns(q, table)
+                return result, (arch + 1, 0)
+            end
+
+            q._q_lock.tables = _get_tables(q._world, archetype, q._relations)
             tab = 1
         end
 
-        if !_has_relations(archetype)
-            table = q._world._tables[archetype.tables[1]]
-            if isempty(table.entities)
-                arch += 1
-                tab = 0
+        while tab <= length(q._q_lock.tables)
+            table = q._world._tables[q._q_lock.tables[tab]]
+            if isempty(table.entities) || !_matches(q._world._relations, table, q._relations)
+                tab += 1
                 continue
             end
             result = _get_columns(q, table)
-            return result, (arch + 1, 0)
+            return result, (arch, tab + 1)
         end
 
-        # TODO: handle relations
-        error("not implemented")
-        #while tab <= length(q._q_lock.tables)
-        #end
+        arch += 1
+        tab = 0
     end
 
     close!(q)

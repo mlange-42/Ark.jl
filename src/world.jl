@@ -215,7 +215,6 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
 
     for comp in arch.components
         _activate_new_column_for_comp!(world, comp, new_table_id)
-        push!(world._index.components[comp], arch)
     end
 
     _add_table!(world._relations, arch, table)
@@ -240,6 +239,10 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     node.archetype = UInt32(index)
 
     _push_zero_to_all_relations!(world)
+
+    for comp in arch.components
+        push!(world._index.components[comp], arch)
+    end
 
     for (i, comp) in enumerate(relations)
         _activate_relation_for_comp!(world, comp, index, i)
@@ -293,20 +296,22 @@ function _get_table_slow_path(
     return world._tables[1], false
 end
 
-function _get_tables(world::World, arch::_Archetype)::Vector{UInt32}
-    if !_has_relations(arch)
-        return arch.tables.ids
-    end
-    # TODO: implement relation index
-    error("not implemented")
-end
-
 function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{UInt32}
     if !_has_relations(arch) || isempty(relations)
         return arch.tables.ids
     end
-    # TODO: implement relation index
-    error("not implemented")
+
+    first_rel = relations[1]
+    rel_comp = first_rel.first
+    target_id = first_rel.second._id
+
+    rel_idx = world._relations[rel_comp].indices[arch.id]
+    index = arch.index[rel_idx]
+    if !haskey(index, target_id)
+        return _empty_tables
+    end
+
+    return index[target_id].ids
 end
 
 @inline function _create_entity!(world::World, table_index::UInt32)::Tuple{Entity,Int}

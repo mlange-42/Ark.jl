@@ -145,6 +145,31 @@ end
     @test count == 10
 end
 
+@testset "Query relations" begin
+    world = World(Dummy, Position, ChildOf)
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+    parent3 = new_entity!(world, ())
+
+    for i in 1:10
+        new_entity!(world, (Position(i, i * 2), ChildOf()); relations=(ChildOf => parent1,))
+        new_entity!(world, (Position(i, i * 2), ChildOf()); relations=(ChildOf => parent2,))
+        new_entity!(world, (Position(i, i * 2), ChildOf()); relations=(ChildOf => parent3,))
+    end
+
+    cnt = 0
+    for (entities, positions) in Query(world, (Position,))
+        cnt += length(entities)
+    end
+    @test cnt == 30
+
+    cnt = 0
+    for (entities, positions) in Query(world, (Position,); relations=(ChildOf => parent2,))
+        cnt += length(entities)
+    end
+    @test cnt == 10
+end
+
 @testset "Query empty" begin
     world = World(Dummy, Position, Velocity)
 
