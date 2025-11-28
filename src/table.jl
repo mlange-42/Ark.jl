@@ -51,3 +51,12 @@ function _add_entity!(t::_Table, entity::Entity)::Int
 end
 
 Base.resize!(t::_Table, length::Int) = Base.resize!(t.entities._data, length)
+
+function _get_relation(rel::_ComponentRelations, table::_Table)
+    @inbounds index = rel.tables[table.id]
+    if index == 0
+        # TODO: comp type as parameter for better error message?
+        throw(ArgumentError("entity does not have the requested relationship component"))
+    end
+    return @inbounds table.relations[index].second
+end

@@ -368,6 +368,51 @@ end
     @test arch.index[1][parent2._id].tables == [world._tables[3]]
 end
 
+@testset "World get/set relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+        ChildOf2,
+    )
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    entity1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    entity2 = new_entity!(world,
+        (Position(0, 0), ChildOf2(), ChildOf());
+        relations=(ChildOf => parent2, ChildOf2 => parent1),
+    )
+
+    parents = get_relations(world, entity1, (ChildOf,))
+    @test parents == (parent1,)
+
+    parents = get_relations(world, entity2, (ChildOf,))
+    @test parents == (parent2,)
+
+    parents = get_relations(world, entity2, (ChildOf2,))
+    @test parents == (parent1,)
+
+    parents = get_relations(world, entity2, (ChildOf, ChildOf2))
+    @test parents == (parent2, parent1)
+
+    @test_throws(
+        "ArgumentError: component Position is not a relationship",
+        get_relations(world, entity1, (Position,)),
+    )
+
+    @test_throws(
+        "ArgumentError: entity does not have the requested relationship component",
+        get_relations(world, entity1, (ChildOf2,)),
+    )
+
+    @test_throws(
+        "ArgumentError: can't get relations of a dead entity",
+        get_relations(world, zero_entity, (ChildOf,)),
+    )
+end
+
 @testset "World copy_entity!" begin
     world = World(
         Dummy,

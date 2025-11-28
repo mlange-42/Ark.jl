@@ -603,7 +603,7 @@ end
     get_components(world::World, entity::Entity, comp_types::Tuple)
 
 Get the given components for an [`Entity`](@ref).
-Components are returned in a tuple.
+Components are returned as a tuple.
 
 # Example
 
@@ -736,6 +736,64 @@ end
     end
 
     push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+"""
+    get_relations(world::World, entity::Entity, comp_types::Tuple)
+
+Get the relation targets for components of an [`Entity`](@ref).
+Targets are returned as a tuple.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+parent, = get_relations(world, entity, (ChildOf,))
+
+# output
+
+(Entity(2, 0),)
+```
+"""
+@inline Base.@constprop :aggressive function get_relations(world::World, entity::Entity, comp_types::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't get relations of a dead entity"))
+    end
+    return @inline _get_relations(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
+end
+
+@generated function _get_relations(world::World, entity::Entity, ::TS) where {TS<:Tuple}
+    types = _to_types(TS)
+    if length(types) == 0
+        return :(())
+    end
+
+    for T in types
+        if !(T <: Relationship)
+            throw(ArgumentError("component $(nameof(T)) is not a relationship"))
+        end
+    end
+
+    exprs = Expr[]
+    push!(exprs, :(@inbounds idx = world._entities[entity._id]))
+    push!(exprs, :(@inbounds table = world._tables[idx.table]))
+
+    for i in 1:length(types)
+        T = types[i]
+        rel_sym = Symbol("rel", i)
+        target_sym = Symbol("t", i)
+
+        push!(exprs, :($(rel_sym) = _get_relations(world, $T)))
+        push!(exprs, :($(target_sym) = _get_relation($(rel_sym), table)))
+    end
+
+    vals = [:($(Symbol("t", i))) for i in 1:length(types)]
+    push!(exprs, Expr(:return, Expr(:tuple, vals...)))
 
     return quote
         @inbounds begin

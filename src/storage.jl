@@ -110,6 +110,7 @@ end
 struct _ComponentRelations
     archetypes::Vector{Int} # Relation index per archetype
     tables::Vector{Int} # Relation index per table
+    # TODO: should we store target entities here directly?
 end
 
 function _new_component_relations(is_relation::Bool)
