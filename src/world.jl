@@ -165,6 +165,9 @@ end
     new_table, found = _get_table(world, new_arch, all_relations)
 
     if found
+        if requires_copy
+            resize!(all_relations, 0)
+        end
         return new_table.id
     end
 
@@ -223,6 +226,9 @@ end
     new_table, found = _get_table(world, new_arch, all_relations)
 
     if found
+        if requires_copy
+            resize!(all_relations, 0)
+        end
         return new_table.id
     end
 
