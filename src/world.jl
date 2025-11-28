@@ -204,7 +204,9 @@ end
                     push!(all_relations, rel)
                 end
             end
-            append!(all_relations, relations)
+            for i in eachindex(relations)
+                push!(all_relations, Pair(relations[i], targets[i]))
+            end
         else
             if length(relations) > 0
                 append!(all_relations, old_table.relations)
