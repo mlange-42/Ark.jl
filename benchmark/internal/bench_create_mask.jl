@@ -1,4 +1,4 @@
-using Ark: _Mask, _MutableMask, _set_mask!
+using Ark: _Mask, _set_mask!
 
 function setup_create_mask()
     return [(rand(1:256), rand(1:256), rand(1:256), rand(1:256)) for _ in 1:1000]

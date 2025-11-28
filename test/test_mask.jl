@@ -141,3 +141,12 @@ end
     expected = UInt8[1, 2, 3, 64, 65, 66, 128, 129, 130, 192, 193, 194]
     @test sort(_active_bit_indices(m2)) == expected
 end
+
+@testset "_equals" begin
+    m = _Mask{4}(1, 2, 100)
+    m2 = _MutableMask(m)
+    @test _equals(m2, m) == true
+
+    _clear_bit!(m2, 100)
+    @test _equals(m2, m) == false
+end
