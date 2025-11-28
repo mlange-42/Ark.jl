@@ -9,8 +9,36 @@ function _swap_remove!(v::AbstractArray, i::UInt32)::Bool
     return swapped
 end
 
-@inline function _to_types(::Type{TS}) where {TS<:Tuple}
+@inline function _to_types(::Type{TS})::Vector{DataType} where {TS<:Tuple}
     return [x.parameters[1] for x in TS.parameters]
+end
+
+@inline function _to_types(vec::Core.SimpleVector)::Vector{DataType}
+    return collect(vec)
+end
+
+@inline function _check_relations(types::Vector{DataType})
+    for T in types
+        if !(T <: Relationship)
+            throw(ArgumentError("component $(nameof(T)) is not a relationship"))
+        end
+    end
+end
+
+@inline function _check_is_subset(subset::Vector{DataType}, types::Vector{DataType})
+    if !isempty(setdiff(subset, types))
+        # TODO: improve error message
+        throw(ArgumentError("all relations must be in the set of component types"))
+    end
+end
+
+@inline function _check_no_duplicates(types::Vector{DataType})
+    unique_types = unique(types)
+    if length(types) != length(unique_types)
+        duplicates = [x for x in unique_types if count(==(x), types) > 1]
+        names = join(map(nameof, duplicates), ", ")
+        throw(ArgumentError("duplicate component types: $names"))
+    end
 end
 
 const DEBUG = ("ARK_RUNNING_TESTS" in keys(ENV) && lowercase(ENV["ARK_RUNNING_TESTS"]) == "true")

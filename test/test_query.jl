@@ -289,7 +289,7 @@ end
         Health,
     )
     @test_throws(
-        "ArgumentError: duplicate component types in query: Altitude, Health",
+        "ArgumentError: duplicate component types: Altitude, Health",
         Query(world, (Position, Velocity, Altitude); optional=(Altitude, Health), without=(Health,))
     )
 end

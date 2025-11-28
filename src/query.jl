@@ -113,12 +113,7 @@ end
 
     # check for duplicates
     all_comps = vcat(required_types, with_types, without_types, optional_types)
-    unique_comps = unique(all_comps)
-    if length(all_comps) != length(unique_comps)
-        duplicates = [x for x in unique_comps if count(==(x), all_comps) > 1]
-        names = join(map(nameof, duplicates), ", ")
-        throw(ArgumentError("duplicate component types in query: $names"))
-    end
+    _check_no_duplicates(all_comps)
 
     comp_types = union(required_types, optional_types)
     non_exclude_types = union(comp_types, with_types)

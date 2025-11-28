@@ -207,6 +207,8 @@ function _find_or_create_table!(
 
     # TODO: ensure that relations are the same and in the same order as in the archetype
     if length(all_relations) > 0
+        # TODO: we may need to copy here when we start to recycle tables
+        # and want to keep them immutable.
         sort!(all_relations; by=first)
     end
     # TODO: recycle table
@@ -773,11 +775,8 @@ end
         return :(())
     end
 
-    for T in types
-        if !(T <: Relationship)
-            throw(ArgumentError("component $(nameof(T)) is not a relationship"))
-        end
-    end
+    _check_relations(types)
+    _check_no_duplicates(types)
 
     exprs = Expr[]
     push!(exprs, :(@inbounds idx = world._entities[entity._id]))
@@ -859,16 +858,18 @@ end
     ::TR,
     targets::Tuple{Vararg{Entity}},
 ) where {W<:World,TS<:Tuple,TR<:Tuple}
-    types = TS.parameters
+    types = _to_types(TS.parameters)
     rel_types = _to_types(TR)
-    exprs = []
+
+    _check_no_duplicates(types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, types)
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
     rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
-    # TODO: check relation components are actually relations
-    # TODO: check that there are no duplicate relations
-
+    exprs = []
     push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets)))
     push!(exprs, :(tmp = _create_entity!(world, table)))
     push!(exprs, :(entity = tmp[1]))

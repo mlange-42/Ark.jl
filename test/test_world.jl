@@ -324,6 +324,11 @@ end
     pos, vel = get_components(world, entity, (Position, Velocity))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
+
+    @test_throws(
+        "ArgumentError: duplicate component types: Position",
+        new_entity!(world, (Position(1, 2), Position(3, 4)))
+    )
 end
 
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
@@ -366,6 +371,19 @@ end
     @test length(arch.index[1]) == 2
     @test arch.index[1][parent1._id].tables == [world._tables[2]]
     @test arch.index[1][parent2._id].tables == [world._tables[3]]
+
+    @test_throws(
+        "ArgumentError: all relations must be in the set of component types",
+        new_entity!(world, (Position(0, 0),); relations=(ChildOf => parent1,))
+    )
+    @test_throws(
+        "ArgumentError: component Position is not a relationship",
+        new_entity!(world, (Position(0, 0),); relations=(Position => parent1,))
+    )
+    @test_throws(
+        "ArgumentError: duplicate component types: ChildOf",
+        new_entity!(world, (ChildOf(),); relations=(ChildOf => parent1, ChildOf => parent2))
+    )
 end
 
 @testset "World get/set relations" begin
@@ -398,15 +416,17 @@ end
     @test parents == (parent2, parent1)
 
     @test_throws(
+        "ArgumentError: duplicate component types: ChildOf",
+        get_relations(world, entity1, (ChildOf, ChildOf)),
+    )
+    @test_throws(
         "ArgumentError: component Position is not a relationship",
         get_relations(world, entity1, (Position,)),
     )
-
     @test_throws(
         "ArgumentError: entity does not have the requested relationship component",
         get_relations(world, entity1, (ChildOf2,)),
     )
-
     @test_throws(
         "ArgumentError: can't get relations of a dead entity",
         get_relations(world, zero_entity, (ChildOf,)),
