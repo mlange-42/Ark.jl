@@ -140,12 +140,48 @@ function _find_or_create_table!(
     old_table::_Table,
     add::Tuple{Vararg{Int}},
     remove::Tuple{Vararg{Int}},
-    relations::Pair{Int,Entity}...,
 )::UInt32
     old_arch = world._archetypes[old_table.archetype]
     new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
     new_arch = world._archetypes[new_arch_index]
 
+    # Find existing relations that were not removed.
+    all_relations = Pair{Int,Entity}[]
+    if length(remove) > 0
+        for rel in old_table.relations
+            if _get_bit(new_arch.mask, rel[1])
+                push!(all_relations, rel)
+            end
+        end
+    else
+        all_relations = old_table.relations
+    end
+
+    new_table, found = _get_table(world, new_arch, all_relations)
+    new_table_id = new_table.id
+    if !found
+        # TODO: ensure that relations are the same and in tha same order as in the archetype
+        if length(all_relations) > 0
+            sort!(all_relations; by=first)
+        end
+        new_table_id = _create_table!(world, new_arch, all_relations)
+    end
+
+    return new_table_id
+end
+
+function _find_or_create_table!(
+    world::World,
+    old_table::_Table,
+    add::Tuple{Vararg{Int}},
+    remove::Tuple{Vararg{Int}},
+    relations::Vector{Pair{Int,Entity}},
+)::UInt32
+    old_arch = world._archetypes[old_table.archetype]
+    new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
+    new_arch = world._archetypes[new_arch_index]
+
+    # Find existing relations that were not removed, and add new relations.
     all_relations = Pair{Int,Entity}[]
     if length(remove) > 0
         for rel in old_table.relations
@@ -163,18 +199,20 @@ function _find_or_create_table!(
         end
     end
 
-    new_table, found = _get_table(world, new_arch, all_relations...)
+    new_table, found = _get_table(world, new_arch, all_relations)
     new_table_id = new_table.id
     if !found
         # TODO: ensure that relations are the same and in tha same order as in the archetype
-        sort!(all_relations; by=first)
-        new_table_id = _create_table!(world, new_arch, all_relations...)
+        if length(all_relations) > 0
+            sort!(all_relations; by=first)
+        end
+        new_table_id = _create_table!(world, new_arch, all_relations)
     end
 
     return new_table_id
 end
 
-function _create_table!(world::World, arch::_Archetype, relations::Pair{Int,Entity}...)::UInt32
+function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::UInt32
     if length(relations) < length(arch.relations)
         # TODO: check duplicates
         throw(ArgumentError("relation targets must be fully specified"))
@@ -185,7 +223,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Pair{Int,Enti
     # TODO: recycle tables if available
 
     new_table_id = length(world._tables) + 1
-    table = _new_table(UInt32(new_table_id), arch.id, world._initial_capacity, relations...)
+    table = _new_table(UInt32(new_table_id), arch.id, world._initial_capacity, relations)
     push!(world._tables, table)
 
     _push_empty_to_all_storages!(world)
@@ -225,26 +263,34 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     return UInt32(index)
 end
 
-function _get_table(world::World, arch::_Archetype, relations::Pair{Int,Entity}...)::Tuple{_Table,Bool}
+function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
     if length(arch.tables) == 0
         return world._tables[1], false
     end
     if !_has_relations(arch)
         return world._tables[arch.tables[1]], true
     end
-    return _get_table_slow_path(world, arch, relations...)
+    return _get_table_slow_path(world, arch, relations)
 end
 
 function _get_table_slow_path(
     world::World,
     arch::_Archetype,
-    relations::Pair{Int,Entity}...,
+    relations::Vector{Pair{Int,Entity}},
 )::Tuple{_Table,Bool}
     # TODO: implement relation index
     error("not implemented")
 end
 
-function _get_tables(world::World, arch::_Archetype, relations::Pair{Int,Entity}...)::Vector{UInt32}
+function _get_tables(world::World, arch::_Archetype)::Vector{UInt32}
+    if !_has_relations(arch)
+        return arch.tables.ids
+    end
+    # TODO: implement relation index
+    error("not implemented")
+end
+
+function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{UInt32}
     if !_has_relations(arch) || isempty(relations)
         return arch.tables.ids
     end

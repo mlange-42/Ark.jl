@@ -10,13 +10,13 @@ function _new_table(id::UInt32, archetype::UInt32)
     return _Table(Entities(0), Pair{Int,Entity}[], id, archetype)
 end
 
-function _new_table(id::UInt32, archetype::UInt32, cap::Int, relations::Pair{Int,Entity}...)
-    return _Table(Entities(cap), collect(Pair{Int,Entity}, relations), id, archetype)
+function _new_table(id::UInt32, archetype::UInt32, cap::Int, relations::Vector{Pair{Int,Entity}})
+    return _Table(Entities(cap), relations, id, archetype)
 end
 
 _has_relations(t::_Table) = length(t.relations) > 0
 
-function _matches(indices::Vector{_ComponentRelations}, t::_Table, relations::Pair{Int,Entity}...)
+function _matches(indices::Vector{_ComponentRelations}, t::_Table, relations::Vector{Pair{Int,Entity}})
     if length(relations) == 0 || !_has_relations(t)
         return true
     end
@@ -29,7 +29,7 @@ function _matches(indices::Vector{_ComponentRelations}, t::_Table, relations::Pa
     return true
 end
 
-function _matches_exact(indices::Vector{_ComponentRelations}, t::_Table, relations::Pair{Int,Entity}...)
+function _matches_exact(indices::Vector{_ComponentRelations}, t::_Table, relations::Vector{Pair{Int,Entity}})
     if length(relations) < length(t.relations)
         # TODO: check for duplicates outside
         throw(ArgumentError("relation targets must be fully specified"))

@@ -118,13 +118,16 @@ end
     table1 = _find_or_create_table!(world, world._tables[1], (1,), ())
     @test table1 == 2
     @test world._tables[table1].archetype == 2
+    @test length(world._tables) == 2
 
     table2 = _find_or_create_table!(world, world._tables[1], (1, 2), ())
     @test table2 == 3
     @test world._tables[table2].archetype == 3
+    @test length(world._tables) == 3
 
     table3 = _find_or_create_table!(world, world._tables[1], (1,), ())
     @test table3 == table1
+    @test length(world._tables) == 3
 
     entity, _ = _create_entity!(world, table1)
     _move_entity!(world, entity, table2)
@@ -210,6 +213,8 @@ end
 
     index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), ())
     @test index == 3
+    @test length(world._tables) == 3
+    @test length(world._archetypes) == 3
 
     @test world._archetypes[2].components == [pos_id]
     @test world._archetypes[3].components == [pos_id, vel_id]
