@@ -174,7 +174,7 @@ end
             world,
             $(archetypes),
             relations,
-            _QueryCursor(UInt32[], false),
+            _QueryCursor(_empty_tables, false),
             _lock(world._lock),
             $(has_excluded),
         )
