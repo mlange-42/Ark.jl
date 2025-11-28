@@ -890,7 +890,7 @@ end
     end
 end
 
-function _set_relations!(
+@inline function _set_relations!(
     world::World,
     entity::Entity,
     relations::Tuple{Vararg{Int}},
@@ -899,20 +899,22 @@ function _set_relations!(
     index = world._entities[entity._id]
     old_table = world._tables[index.table]
     archetype = world._archetypes[old_table.archetype]
-    relations, changed = _get_exchange_targets(world, old_table, relations, targets)
+    new_relations, changed = _get_exchange_targets(world, old_table, relations, targets)
     if !changed
-        resize!(relations, 0)
-        return
+        resize!(new_relations, 0)
+        return nothing
     end
 
-    new_table, found = _get_table(world, archetype, relations)
+    new_table, found = _get_table(world, archetype, new_relations)
     if !found
-        new_table_id = _create_table!(world, archetype, copy(relations))
+        new_table_id = _create_table!(world, archetype, copy(new_relations))
         new_table = world._tables[new_table_id]
     end
-    resize!(relations, 0)
+    resize!(new_relations, 0)
 
-    row = _move_entity!(world, entity, new_table.id)
+    _ = _move_entity!(world, entity, new_table.id)
+
+    return nothing
 end
 
 """
