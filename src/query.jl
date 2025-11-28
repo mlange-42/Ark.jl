@@ -53,6 +53,7 @@ See the user manual chapter on [Queries](@ref) for more details and examples.
   - `without::Tuple`: Components the entities must not have.
   - `optional::Tuple`: Additional components that are optional in the query.
   - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
 
 # Example
 
@@ -222,6 +223,7 @@ end
 
         while tab <= length(q._q_lock.tables)
             table = q._world._tables[q._q_lock.tables[tab]]
+            # TODO we can probably optimize here if exactly one relation in archetype and one queries.
             if isempty(table.entities) || !_matches(q._world._relations, table, q._relations)
                 tab += 1
                 continue
