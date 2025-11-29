@@ -22,14 +22,21 @@ function _find_or_create(g::_Graph, mask::_MutableMask)
     get!(() -> _GraphNode(immut_mask, typemax(UInt32)), g.nodes, immut_mask)
 end
 
-function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}})
-    curr = start
+function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}}, 
+        add_mask::_Mask, rem_mask::_Mask)
+    if _is_not_zero(_clear_bits(rem_mask, start.mask))
+        throw(ArgumentError("entity does not have component to remove"))
+    elseif add_mask.bits != _clear_bits(add_mask, start.mask).bits
+        throw(ArgumentError("entity already has component to add, or it was added twice"))
+    end
+    new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
+    get!(() -> _create_path(g, start, add, remove), g.nodes, new_mask)
+end
 
+function _create_path(g, start, add, remove)
+    curr = start
     _set_mask!(g.mask, start.mask)
     for b in remove
-        if !_get_bit(g.mask, b)
-            throw(ArgumentError("entity does not have component to remove"))
-        end
         _clear_bit!(g.mask, b)
 
         if _get_bit(curr.neighbors.used, b)
@@ -42,11 +49,6 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
         end
     end
     for b in add
-        if _get_bit(g.mask, b)
-            throw(ArgumentError("entity already has component to add, or it was added twice"))
-        elseif _get_bit(start.mask, b)
-            throw(ArgumentError("component added and removed in the same exchange operation"))
-        end
         _set_bit!(g.mask, b)
 
         if _get_bit(curr.neighbors.used, b)

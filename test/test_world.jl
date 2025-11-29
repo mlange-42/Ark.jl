@@ -111,13 +111,13 @@ end
     world = World(Position, Velocity)
     node = first(world._graph.nodes)[2]
 
-    arch1 = _find_or_create_archetype!(world, node, (1,), ())
+    arch1 = _find_or_create_archetype!(world, node, (1,), (), _Mask{1}(1,), _Mask{1}())
     @test arch1 == 2
 
-    arch2 = _find_or_create_archetype!(world, node, (1, 2), ())
+    arch2 = _find_or_create_archetype!(world, node, (1, 2), (), _Mask{1}(1, 2), _Mask{1}())
     @test arch2 == 3
 
-    arch3 = _find_or_create_archetype!(world, node, (1,), ())
+    arch3 = _find_or_create_archetype!(world, node, (1,), (), _Mask{1}(1,), _Mask{1}())
     @test arch3 == arch1
 
     entity, _ = _create_entity!(world, arch1)
@@ -187,18 +187,18 @@ end
     pos_id = _component_id(params, Position)
     @test pos_id == offset_ID + UInt8(1)
 
-    index = _find_or_create_archetype!(world, node, (pos_id,), ())
+    index = _find_or_create_archetype!(world, node, (pos_id,), (), _Mask{1}(pos_id), _Mask{1}())
     @test index == 2
     @test length(world._archetypes) == 2
 
     vel_id = _component_id(params, Velocity)
     @test vel_id == offset_ID + UInt8(2)
 
-    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
+    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{1}(pos_id, vel_id), _Mask{1}())
     @test index == 3
     @test length(world._archetypes) == 3
 
-    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
+    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{1}(pos_id, vel_id), _Mask{1}())
     @test index == 3
 
     @test world._archetypes[2].components == [pos_id]
@@ -223,7 +223,7 @@ end
     vel_id = _component_id(params, Velocity)
     node = first(world._graph.nodes)[2]
 
-    arch_index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
+    arch_index = _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{1}(pos_id, vel_id), _Mask{1}())
     @test arch_index == 2
 
     entity, index = _create_entity!(world, arch_index)

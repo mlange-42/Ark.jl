@@ -113,8 +113,10 @@ function _find_or_create_archetype!(
     start::_GraphNode,
     add::Tuple{Vararg{Int}},
     remove::Tuple{Vararg{Int}},
+    add_mask::_Mask,
+    rem_mask::_Mask,
 )::UInt32
-    node = _find_node(world._graph, start, add, remove)
+    node = _find_node(world._graph, start, add, remove, add_mask, rem_mask)
 
     archetype = (node.archetype == typemax(UInt32)) ?
                 _create_archetype!(world, node) :
@@ -250,8 +252,12 @@ end
     rem_types = _to_types(RTS)
     exprs = []
 
-    add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
-    rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+    CS = W.parameters[1]
+    add_ids = tuple([_component_id(CS, T) for T in add_types]...)
+    rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(add_ids...)
+    rem_mask = _Mask{M}(rem_ids...)
 
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_archetype = world._archetypes[index.archetype]))
@@ -260,7 +266,7 @@ end
         :(
             new_arch_index =
                 _find_or_create_archetype!(
-                    world, old_archetype.node, $add_ids, $rem_ids,
+                    world, old_archetype.node, $add_ids, $rem_ids, $add_mask, $rem_mask,
                 )
         ),
     )
@@ -557,9 +563,13 @@ end
     types = TS.parameters
     exprs = []
 
-    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    CS = W.parameters[1]
+    ids = tuple([_component_id(CS, T) for T in types]...)
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(ids...)
+    rem_mask = _Mask{M}()
 
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
+    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)))
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
@@ -708,9 +718,13 @@ end
     types = TS.parameters
     exprs = []
 
-    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    CS = W.parameters[1]
+    ids = tuple([_component_id(CS, T) for T in types]...)
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(ids...)
+    rem_mask = _Mask{M}()
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
@@ -806,9 +820,13 @@ end
     types = _to_types(TS)
     exprs = []
 
-    ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    CS = W.parameters[1]
+    ids = tuple([_component_id(CS, T) for T in types]...)
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(ids...)
+    rem_mask = _Mask{M}()
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, ())))
+    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)))
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
@@ -930,8 +948,12 @@ end
 
     exprs = []
 
-    add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
-    rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+    CS = W.parameters[1]
+    add_ids = tuple([_component_id(CS, T) for T in add_types]...)
+    rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(add_ids...)
+    rem_mask = _Mask{M}(rem_ids...)
 
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_arch = world._archetypes[index.archetype]))
@@ -940,7 +962,7 @@ end
         :(
             new_arch_index =
                 _find_or_create_archetype!(
-                    world, old_arch.node, $add_ids, $rem_ids,
+                    world, old_arch.node, $add_ids, $rem_ids, $add_mask, $rem_mask,
                 )
         ),
     )
