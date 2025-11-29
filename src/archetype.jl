@@ -90,7 +90,7 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
     end
 end
 
-_has_relations(a::_Archetype) = length(a.relations) > 0
+_has_relations(a::_Archetype) = !isempty(a.relations)
 
 struct _BatchTable{M}
     table::_Table

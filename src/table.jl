@@ -14,15 +14,15 @@ function _new_table(id::UInt32, archetype::UInt32, cap::Int, relations::Vector{P
     return _Table(Entities(cap), relations, id, archetype)
 end
 
-_has_relations(t::_Table) = length(t.relations) > 0
+_has_relations(t::_Table) = !isempty(t.relations)
 
 function _matches(indices::Vector{_ComponentRelations}, t::_Table, relations::Vector{Pair{Int,Entity}})
     if length(relations) == 0 || !_has_relations(t)
         return true
     end
     for (comp, target) in relations
-        idx = indices[comp].tables[t.id]
-        if target != t.relations[idx].second
+        trg = indices[comp].targets[t.id]
+        if target._id != trg._id
             return false
         end
     end
@@ -37,8 +37,8 @@ function _matches_exact(indices::Vector{_ComponentRelations}, t::_Table, relatio
     for (comp, target) in relations
         # TODO: check for components not in the table
         # TODO: check for components that are no relations
-        idx = indices[comp].tables[t.id]
-        if target != t.relations[idx].second
+        trg = indices[comp].targets[t.id]
+        if target._id != trg._id
             return false
         end
     end
@@ -53,10 +53,10 @@ end
 Base.resize!(t::_Table, length::Int) = Base.resize!(t.entities._data, length)
 
 function _get_relation(rel::_ComponentRelations, table::_Table)
-    @inbounds index = rel.tables[table.id]
-    if index == 0
+    @inbounds trg = rel.targets[table.id]
+    if trg._id == 0
         # TODO: comp type as parameter for better error message?
         throw(ArgumentError("entity does not have the requested relationship component"))
     end
-    return @inbounds table.relations[index].second
+    return trg
 end

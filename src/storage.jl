@@ -109,15 +109,14 @@ end
 
 struct _ComponentRelations
     archetypes::Vector{Int} # Relation index per archetype
-    tables::Vector{Int} # Relation index per table
-    # TODO: should we store target entities here directly?
+    targets::Vector{Entity} # Target entity ID per table
 end
 
 function _new_component_relations(is_relation::Bool)
     if is_relation
-        return _ComponentRelations(Int[0], Int[0])
+        return _ComponentRelations(Int[0], Entity[_no_entity])
     else
-        return _ComponentRelations(Int[], Int[])
+        return _ComponentRelations(Int[], Entity[])
     end
 end
 
@@ -126,13 +125,13 @@ function _add_archetype_column!(rel::_ComponentRelations)
 end
 
 function _add_table_column!(rel::_ComponentRelations)
-    push!(rel.tables, 0)
+    push!(rel.targets, _no_entity)
 end
 
 function _activate_archetype_column!(rel::_ComponentRelations, arch::Int, index::Int)
     rel.archetypes[arch] = index
 end
 
-function _activate_table_column!(rel::_ComponentRelations, table::Int, index::Int)
-    rel.tables[table] = index
+function _activate_table_column!(rel::_ComponentRelations, table::Int, entity::Entity)
+    rel.targets[table] = entity
 end

@@ -32,11 +32,11 @@ end
     @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
 
     @test length(_get_relations(world, Position).archetypes) == 0
-    @test length(_get_relations(world, Position).tables) == 0
+    @test length(_get_relations(world, Position).targets) == 0
     @test length(_get_relations(world, ChildOf).archetypes) == 1
-    @test length(_get_relations(world, ChildOf).tables) == 1
+    @test length(_get_relations(world, ChildOf).targets) == 1
     @test _get_relations(world, ChildOf).archetypes[1] == 0
-    @test _get_relations(world, ChildOf).tables[1] == 0
+    @test _get_relations(world, ChildOf).targets[1] == _no_entity
 end
 
 @testset "World show" begin

@@ -7,6 +7,8 @@ Can be used to represent "no entity"/"nil".
 """
 const zero_entity::Entity = _new_entity(1, 0)
 
+const _no_entity::Entity = _new_entity(0, 0)
+
 const _empty_relations = Pair{Int,Entity}[]
 
 """
@@ -244,7 +246,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
 
     _push_zero_to_all_table_relations!(world)
     for (i, comp) in enumerate(relations)
-        _activate_table_relation_for_comp!(world, comp.first, new_table_id, i)
+        _activate_table_relation_for_comp!(world, comp.first, new_table_id, comp.second)
     end
 
     _add_table!(world._relations, arch, table)
@@ -292,15 +294,15 @@ function _get_exchange_targets(
 
     changed = false
     for (rel, trg) in zip(relations, targets)
-        index = world._relations[rel].tables[old_table.id]
-        if index == 0
+        target = world._relations[rel].targets[old_table.id]
+        if target._id == 0
             throw(ArgumentError("entity does not have the requested relationship component"))
         end
 
-        @check new_relations[index].first == rel
-        if new_relations[index].second == trg
+        if target._id == trg._id
             continue
         end
+        index = world._relations[rel].archetypes[old_table.archetype]
         new_relations[index] = Pair(rel, trg)
         changed = true
     end
@@ -960,8 +962,8 @@ Base.@constprop :aggressive function new_entity!(
     targets = ntuple(i -> relations[i].second, length(relations))
 
     entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
-    table = world._tables[table_id]
     if _has_observers(world._event_manager, OnCreateEntity)
+        table = world._tables[table_id]
         _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].mask)
     end
     return entity
@@ -1610,7 +1612,7 @@ end
     world::World{CS,CT},
     comp::Int,
     table::Int,
-    index::Int,
+    target::Entity,
 ) where {CS,CT}
     comp_types = CT.parameters
     n = length(comp_types)
@@ -1621,7 +1623,7 @@ end
         end
         push!(exprs, :(
             if comp == $i
-                _activate_table_column!(world._relations[$i], table, index)
+                _activate_table_column!(world._relations[$i], table, target)
             end
         ))
     end
