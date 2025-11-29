@@ -121,6 +121,9 @@ function _active_bit_indices(mask::_Mask{M})::Vector{Int} where M
     return indices
 end
 
+Base.hash(m::_Mask) = hash(m.bits)
+Base.hash(m::_Mask, h::UInt) = hash(m.bits, h)
+
 struct _MutableMask{M}
     bits::MVector{M,UInt64}
 end
