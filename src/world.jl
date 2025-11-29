@@ -148,9 +148,9 @@ end
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
 )::UInt32
-    old_arch = world._archetypes[old_table.archetype]
+    @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
-    new_arch = world._archetypes[new_arch_index]
+    @inbounds new_arch = world._archetypes[new_arch_index]
 
     if !_has_relations(new_arch) && isempty(relations)
         new_table, found = _get_table(world, new_arch)
@@ -182,13 +182,13 @@ function _find_or_create_table!(
                     push!(all_relations, rel)
                 end
             end
-            for i in eachindex(relations)
+            @inbounds for i in eachindex(relations)
                 push!(all_relations, Pair(relations[i], targets[i]))
             end
         else
             if length(relations) > 0
                 append!(all_relations, old_table.relations)
-                for i in eachindex(relations)
+                @inbounds for i in eachindex(relations)
                     push!(all_relations, Pair(relations[i], targets[i]))
                 end
             else
@@ -294,7 +294,7 @@ function _get_exchange_targets(
 
     changed = false
     for (rel, trg) in zip(relations, targets)
-        target = world._relations[rel].targets[old_table.id]
+        @inbounds target = world._relations[rel].targets[old_table.id]
         if target._id == 0
             throw(ArgumentError("entity does not have the requested relationship component"))
         end
@@ -302,8 +302,8 @@ function _get_exchange_targets(
         if target._id == trg._id
             continue
         end
-        index = world._relations[rel].archetypes[old_table.archetype]
-        new_relations[index] = Pair(rel, trg)
+        @inbounds index = world._relations[rel].archetypes[old_table.archetype]
+        @inbounds new_relations[index] = Pair(rel, trg)
         changed = true
     end
 
@@ -312,10 +312,10 @@ end
 
 @inline function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
     if length(arch.tables) == 0
-        return world._tables[1], false
+        return @inbounds world._tables[1], false
     end
     if !_has_relations(arch)
-        return arch.tables[1], true
+        return @inbounds arch.tables[1], true
     end
     return _get_table_slow_path(world, arch, relations)
 end
@@ -323,9 +323,9 @@ end
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
     if length(arch.tables) == 0
-        return world._tables[1], false
+        return @inbounds world._tables[1], false
     end
-    return arch.tables[1], true
+    return @inbounds arch.tables[1], true
 end
 
 function _get_table_slow_path(
@@ -338,19 +338,19 @@ function _get_table_slow_path(
         throw(ArgumentError("relation targets must be fully specified"))
     end
 
-    first_rel = relations[1]
+    @inbounds first_rel = relations[1]
     rel_comp = first_rel.first
     target_id = first_rel.second._id
 
-    rel_idx = world._relations[rel_comp].archetypes[arch.id]
+    @inbounds rel_idx = world._relations[rel_comp].archetypes[arch.id]
     index = arch.index[rel_idx]
     if !haskey(index, target_id)
-        return world._tables[1], false
+        return @inbounds world._tables[1], false
     end
 
-    tables = index[target_id]
+    @inbounds tables = index[target_id]
     if length(arch.relations) == 1
-        return tables.tables[1], true
+        return @inbounds tables.tables[1], true
     end
 
     for table in tables.tables
@@ -359,7 +359,7 @@ function _get_table_slow_path(
         end
     end
 
-    return world._tables[1], false
+    return @inbounds world._tables[1], false
 end
 
 function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{_Table}
@@ -367,17 +367,17 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
         return arch.tables.tables
     end
 
-    first_rel = relations[1]
+    @inbounds first_rel = relations[1]
     rel_comp = first_rel.first
     target_id = first_rel.second._id
 
-    rel_idx = world._relations[rel_comp].archetypes[arch.id]
-    index = arch.index[rel_idx]
+    @inbounds rel_idx = world._relations[rel_comp].archetypes[arch.id]
+    @inbounds index = arch.index[rel_idx]
     if !haskey(index, target_id)
         return _empty_tables
     end
 
-    return index[target_id].tables
+    return @inbounds index[target_id].tables
 end
 
 @inline function _create_entity!(world::World, table_index::UInt32)::Tuple{Entity,Int}

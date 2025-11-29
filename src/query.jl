@@ -192,7 +192,7 @@ end
     arch, tab = state
     while arch <= length(q._archetypes)
         if tab == 0
-            archetype = q._archetypes[arch]
+            @inbounds archetype = q._archetypes[arch]
 
             if isempty(archetype.tables.tables) ||
                !_contains_all(archetype.mask, q._mask) ||
@@ -202,7 +202,7 @@ end
             end
 
             if !_has_relations(archetype)
-                table = archetype.tables[1]
+                @inbounds table = archetype.tables[1]
                 if isempty(table.entities)
                     arch += 1
                     continue
@@ -216,7 +216,7 @@ end
         end
 
         while tab <= length(q._q_lock.tables)
-            table = q._q_lock.tables[tab]
+            @inbounds table = q._q_lock.tables[tab]
             # TODO we can probably optimize here if exactly one relation in archetype and one queries.
             if isempty(table.entities) || !_matches(q._world._relations, table, q._relations)
                 tab += 1
@@ -264,7 +264,7 @@ function Base.length(q::Query)
         end
 
         if !_has_relations(archetype)
-            table = archetype.tables[1]
+            @inbounds table = archetype.tables[1]
             if isempty(table.entities)
                 continue
             end

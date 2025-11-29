@@ -37,7 +37,7 @@ function _remove_table!(ids::_TableIDs, table::_Table)
 end
 
 Base.length(t::_TableIDs) = length(t.tables)
-Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
+Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
 const _empty_tables = Vector{_Table}()
 

@@ -48,7 +48,7 @@ function _clear_column!(storage::_ComponentStorage{C,A}, arch::UInt32) where {C,
 end
 
 function _ensure_column_size!(storage::_ComponentStorage{C,A}, arch::UInt32, needed::Int) where {C,A<:AbstractArray}
-    col = storage.data[arch]
+    @inbounds col = storage.data[arch]
     if length(col) < needed
         resize!(col, needed)
     end
@@ -62,9 +62,9 @@ function _move_component_data!(
 ) where {C,A<:AbstractArray}
     # TODO: this can probably be optimized for StructArray storage
     # by moving per component instead of unpacking/packing.
-    old_vec = s.data[old_arch]
-    new_vec = s.data[new_arch]
-    push!(new_vec, old_vec[row])
+    @inbounds old_vec = s.data[old_arch]
+    @inbounds new_vec = s.data[new_arch]
+    @inbounds push!(new_vec, old_vec[row])
     _swap_remove!(old_vec, row)
 end
 
@@ -84,13 +84,13 @@ end
 
     if CP === Val{:ref} || (isbitstype(C) && !ismutabletype(C))
         # no copy required for immutable isbits
-        push!(exprs, :(new_vec[new_row] = old_vec[old_row]))
+        push!(exprs, :(@inbounds new_vec[new_row] = old_vec[old_row]))
     elseif CP === Val{:copy} || isbitstype(C)
         # no deep copy required for (mutable) isbits
-        push!(exprs, :(new_vec[new_row] = _shallow_copy(old_vec[old_row])))
+        push!(exprs, :(@inbounds new_vec[new_row] = _shallow_copy(old_vec[old_row])))
     else # CP === Val{:deepcopy}
         # validity if checked before the call.
-        push!(exprs, :(new_vec[new_row] = deepcopy(old_vec[old_row])))
+        push!(exprs, :(@inbounds new_vec[new_row] = deepcopy(old_vec[old_row])))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -103,7 +103,7 @@ end
 end
 
 function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
-    col = s.data[arch]
+    @inbounds col = s.data[arch]
     _swap_remove!(col, row)
 end
 
@@ -129,9 +129,9 @@ function _add_table_column!(rel::_ComponentRelations)
 end
 
 function _activate_archetype_column!(rel::_ComponentRelations, arch::Int, index::Int)
-    rel.archetypes[arch] = index
+    @inbounds rel.archetypes[arch] = index
 end
 
 function _activate_table_column!(rel::_ComponentRelations, table::Int, entity::Entity)
-    rel.targets[table] = entity
+    @inbounds rel.targets[table] = entity
 end
