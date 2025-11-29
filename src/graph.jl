@@ -10,18 +10,18 @@ end
 
 struct _Graph{M}
     mask::_MutableMask{M}
-    nodes::Dictionary{_Mask{M},_GraphNode{M}}
+    nodes::Dictionary{NTuple{M,UInt64},_GraphNode{M}}
 end
 
 function _Graph{M}() where M
-    g = _Graph{M}(_MutableMask{M}(), Dictionary{_Mask{M},_GraphNode{M}}())
-    set!(g.nodes, _Mask{M}(), _GraphNode(_Mask{M}(), UInt32(1)))
+    g = _Graph{M}(_MutableMask{M}(), Dictionary{NTuple{M,UInt64},_GraphNode{M}}())
+    set!(g.nodes, _Mask{M}().bits, _GraphNode(_Mask{M}(), UInt32(1)))
     return g
 end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)
     immut_mask = _Mask(mask)
-    get!(() -> _GraphNode(immut_mask, typemax(UInt32)), g.nodes, immut_mask)
+    get!(() -> _GraphNode(immut_mask, typemax(UInt32)), g.nodes, immut_mask.bits)
 end
 
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}}, 
@@ -32,7 +32,7 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
         throw(ArgumentError("entity already has component to add, or it was added twice"))
     end
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    get(() -> _create_path(g, start, add, remove), g.nodes, new_mask)
+    get(() -> _create_path(g, start, add, remove), g.nodes, new_mask.bits)
 end
 
 function _create_path(g, start, add, remove)

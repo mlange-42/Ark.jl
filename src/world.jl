@@ -1097,7 +1097,7 @@ end
     id_tuple = Expr(:tuple, id_exprs...)
 
     M = max(1, cld(length(types), 64))
-    start_mask = _Mask{M}()
+    start_mask = _Mask{M}().bits
     return quote
         registry = _ComponentRegistry()
         ids = $id_tuple

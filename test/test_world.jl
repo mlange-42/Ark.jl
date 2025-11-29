@@ -109,7 +109,7 @@ end
 
 @testset "World create archetype" begin
     world = World(Position, Velocity)
-    node = world._graph.nodes[_Mask{1}()]
+    node = world._graph.nodes[_Mask{1}().bits]
 
     arch1 = _find_or_create_archetype!(world, node, (1,), (), _Mask{1}(1,), _Mask{1}())
     @test arch1 == 2
@@ -182,7 +182,7 @@ end
 @testset "_find_or_create_archetype! Tests" begin
     world = World(Position, Velocity)
     params = typeof(world).parameters[1]
-    node = world._graph.nodes[_Mask{1}()]
+    node = world._graph.nodes[_Mask{1}().bits]
 
     pos_id = _component_id(params, Position)
     @test pos_id == offset_ID + UInt8(1)
@@ -221,7 +221,7 @@ end
     params = typeof(world).parameters[1]
     pos_id = _component_id(params, Position)
     vel_id = _component_id(params, Velocity)
-    node = world._graph.nodes[_Mask{1}()]
+    node = world._graph.nodes[_Mask{1}().bits]
 
     arch_index = _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{1}(pos_id, vel_id), _Mask{1}())
     @test arch_index == 2
