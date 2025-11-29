@@ -14,7 +14,7 @@ struct _Graph{M}
 end
 
 function _Graph{M}() where M
-    _Graph{M}(_MutableMask{M}(), Dictionary(_Mask{M}() => _GraphNode(_Mask{M}(), UInt32(1))))
+    _Graph{M}(_MutableMask{M}(), Dictionary(_Mask{M}(), _GraphNode(_Mask{M}(), UInt32(1))))
 end
 
 function _find_or_create(g::_Graph, mask::_MutableMask)
