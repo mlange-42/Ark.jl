@@ -10,7 +10,7 @@ end
 
 struct _Graph{M}
     mask::_MutableMask{M}
-    nodes::Dict{_Mask{M},_GraphNode{M}}
+    nodes::Dictionary{_Mask{M},_GraphNode{M}}
 end
 
 function _Graph{M}() where M
