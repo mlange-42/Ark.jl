@@ -32,8 +32,8 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
         end
         _clear_bit!(g.mask, b)
 
-        if _get_bit(curr.neighbors.used, b)
-            curr = curr.neighbors.data[b]
+        if _in_map(curr.neighbors, b)
+            curr = _get_map(curr.neighbors, b)
         else
             next = _find_or_create(g, g.mask)
             _set_map!(next.neighbors, b, curr)
@@ -49,8 +49,8 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
         end
         _set_bit!(g.mask, b)
 
-        if _get_bit(curr.neighbors.used, b)
-            curr = curr.neighbors.data[b]
+        if _in_map(curr.neighbors, b)
+            curr = _get_map(curr.neighbors, b)
         else
             next = _find_or_create(g, g.mask)
             _set_map!(next.neighbors, b, curr)

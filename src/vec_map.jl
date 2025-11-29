@@ -2,26 +2,29 @@
 const _vec_map_chunk_size = 16
 
 struct _VecMap{T,M}
+    map::Vector{Int}
     data::Vector{T}
-    used::_MutableMask{M}
 end
 
 function _VecMap{T,M}() where {T,M}
-    _VecMap{T,M}(Vector{T}(undef, 5), _MutableMask{M}())
-end
-
-function _get_map(m::_VecMap, index::Int)
-    if !_get_bit(m.used, index)
-        return nothing
-    end
-    @inbounds return m.data[index]
+    _VecMap{T,M}(zeros(Int, 5), Vector{T}())
 end
 
 function _set_map!(m::_VecMap{T}, index::Int, value::T) where T
-    if length(m.data) < index
+    prev_size = length(m.map)
+    if prev_size < index
         size = (index + _vec_map_chunk_size) & -_vec_map_chunk_size
-        resize!(m.data, size)
+        resize!(m.map, size)
+        @inbounds m.map[prev_size+1:size] .= 0
     end
-    _set_bit!(m.used, index)
-    @inbounds m.data[index] = value
+    push!(m.data, value)
+    @inbounds m.map[index] = length(m.data)
+end
+
+function _get_map(m::_VecMap, index::Int)
+    @inbounds m.data[m.map[index]]
+end
+
+function _in_map(m::_VecMap, index::Int)
+    index <= length(m.map) && @inbounds m.map[index] != 0
 end

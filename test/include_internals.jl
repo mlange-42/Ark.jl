@@ -13,7 +13,7 @@ using Ark: _EntityPool, _get_entity, _recycle, _is_alive
 using Ark: _BitPool, _get_bit
 using Ark: _Lock, _lock, _unlock, _is_locked
 using Ark: _ComponentStorage
-using Ark: _VecMap, _get_map, _set_map!
+using Ark: _VecMap, _in_map, _get_map, _set_map!
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create
 using Ark: _BatchArchetype, _QueryLock
 using Ark: _has_observers
