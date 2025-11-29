@@ -366,9 +366,13 @@ end
     dead_parent = new_entity!(world, ())
     remove_entity!(world, dead_parent)
 
+    @test world._targets[parent1._id] == false
+
     e1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
     e2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
     e3 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+
+    @test world._targets[parent1._id] == true
 
     @test length(world._archetypes) == 2
     @test length(world._tables) == 3

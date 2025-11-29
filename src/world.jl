@@ -21,9 +21,11 @@ See the constructor [World](@ref World(::Union{Type,Pair}...; ::Int, ::Bool)) fo
 """
 mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
+    const _targets::BitVector
     const _storages::CS
     const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
+    const _relation_archetypes::Vector{_Archetype{M}}
     const _tables::Vector{_Table}
     const _index::_ComponentIndex{M}
     const _registry::_ComponentRegistry
@@ -246,7 +248,9 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
 
     _push_zero_to_all_table_relations!(world)
     for (i, comp) in enumerate(relations)
-        _activate_table_relation_for_comp!(world, comp.first, new_table_id, comp.second)
+        entity = comp.second
+        _activate_table_relation_for_comp!(world, comp.first, new_table_id, entity)
+        world._targets[entity._id] = true
     end
 
     _add_table!(world._relations, arch, table)
@@ -266,6 +270,9 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     arch =
         _Archetype(UInt32(length(world._archetypes) + 1), node, _TableIDs(), relations, components...)
     push!(world._archetypes, arch)
+    if _has_relations(arch)
+        push!(world._relation_archetypes, arch)
+    end
 
     index = length(world._archetypes)
     node.archetype = UInt32(index)
@@ -395,8 +402,10 @@ end
 
     if entity._id > length(world._entities)
         push!(world._entities, _EntityIndex(table_index, UInt32(index)))
+        push!(world._targets, false)
     else
         @inbounds world._entities[entity._id] = _EntityIndex(table_index, UInt32(index))
+        @inbounds world._targets[entity._id] = false
     end
     return entity, index
 end
@@ -416,8 +425,10 @@ function _create_entities!(world::World, table_index::UInt32, n::UInt32)::Tuple{
 
         if entity._id > length(world._entities)
             push!(world._entities, _EntityIndex(table_index, i))
+            push!(world._targets, false)
         else
             @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, i)
+            @inbounds world._targets[entity._id] = false
         end
     end
 
@@ -610,6 +621,12 @@ function remove_entity!(world::World, entity::Entity)
     end
 
     _recycle(world._entity_pool, entity)
+
+    if world._targets[entity._id]
+        _cleanup_archetypes(world, entity)
+        world._targets[entity._id] = false
+    end
+
     return nothing
 end
 
@@ -1607,13 +1624,18 @@ end
         graph = _Graph{$(M)}()
         index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
         sizehint!(index, initial_capacity)
+        targets = BitVector((false,))
+        sizehint!(targets, initial_capacity)
+
         zero_table = _new_table(UInt32(1), UInt32(1))
 
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
+            targets,
             $storage_tuple,
             $relations_vec,
             [_Archetype(UInt32(1), first(graph.nodes)[2], _TableIDs(zero_table))],
+            Vector{_Archetype{$(M)}}(),
             [zero_table],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
@@ -1956,6 +1978,7 @@ function reset!(world::W) where {W<:World}
     _check_locked(world)
 
     resize!(world._entities, 1)
+    resize!(world._targets, 1)
     _reset!(world._entity_pool)
     _reset!(world._lock)
     _reset!(world._event_manager)
@@ -1977,4 +2000,8 @@ function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
     type_names = join(map(_format_type, comp_types), ", ")
     entities = sum(length(arch.entities) for arch in world._tables)
     print(io, "World(entities=$entities, comp_types=($type_names))")
+end
+
+function _cleanup_archetypes(world::World, entity::Entity)
+    # TODO: cleanup
 end
