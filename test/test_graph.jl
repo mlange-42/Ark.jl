@@ -20,7 +20,7 @@
     @test length(graph.nodes) == 2  # no new node added
 
     # Test _find_node: add and remove components
-    start = first(graph.nodes)[2]
+    start = graph.nodes[_Mask{1}()]
     add = (5,)
     remove = ()
 

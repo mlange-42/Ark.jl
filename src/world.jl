@@ -1097,6 +1097,7 @@ end
     id_tuple = Expr(:tuple, id_exprs...)
 
     M = max(1, cld(length(types), 64))
+    start_mask = _Mask{M}()
     return quote
         registry = _ComponentRegistry()
         ids = $id_tuple
@@ -1107,7 +1108,7 @@ end
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             $storage_tuple,
-            [_Archetype(UInt32(1), first(graph.nodes)[2])],
+            [_Archetype(UInt32(1), graph.nodes[$start_mask])],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),
