@@ -696,6 +696,31 @@ end
     end
 end
 
+@testset "World new_entities! with relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+    )
+    parent = new_entity!(world, ())
+
+    for (_, positions, children) in new_entities!(world, 100, (Position, ChildOf); relations=(ChildOf => parent,))
+        for i in eachindex(positions, children)
+            positions[i] = Position(1, 1)
+            children[i] = ChildOf()
+        end
+    end
+
+    new_entities!(world, 100, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,), iterate=false)
+
+    for (entities, children) in Query(world, (ChildOf,))
+        for i in eachindex(entities)
+            parents = get_relations(world, entities[i], (ChildOf,))
+            @test parents == (parent,)
+        end
+    end
+end
+
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World new_entities! JET" begin
         world = World(
@@ -759,6 +784,21 @@ end
         has_components(world, zero_entity, (Position, Velocity)))
 end
 
+@testset "World add/remove components with relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+    )
+
+    parent = new_entity!(world, ())
+    e1 = new_entity!(world, ())
+    add_components!(world, e1, (Position(1, 2), ChildOf()); relations=(ChildOf => parent,))
+
+    parents = get_relations(world, e1, (ChildOf,))
+    @test parents == (parent,)
+end
+
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World add/remove component JET" begin
         world = World(
@@ -803,6 +843,17 @@ end
 
     @test_throws("either components to add or to remove must be given for exchange_components!",
         exchange_components!(world, e1))
+end
+
+@testset "World exchange components with relations" begin
+    world = World(Dummy, ChildOf, Position, Velocity)
+
+    parent = new_entity!(world, ())
+    e1 = new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+    exchange_components!(world, e1; remove=(Velocity,), add=(ChildOf(),), relations=(ChildOf => parent,))
+
+    parents = get_relations(world, e1, (ChildOf,))
+    @test parents == (parent,)
 end
 
 """
