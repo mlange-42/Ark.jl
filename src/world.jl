@@ -488,14 +488,24 @@ end
     ::Val{ATS},
     add::Tuple,
     ::RTS,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
     mode::CP,
-)::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple,CP<:Val}
-    add_types = ATS.parameters
+)::Entity where {W<:World,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,CP<:Val}
+    add_types = _to_types(ATS.parameters)
     rem_types = _to_types(RTS)
+    rel_types = _to_types(TR)
     exprs = []
+
+    _check_no_duplicates(add_types)
+    _check_no_duplicates(rem_types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, add_types)
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_table = world._tables[index.table]))
@@ -505,7 +515,7 @@ end
         :(
             new_table_index =
                 _find_or_create_table!(
-                    world, old_table, $add_ids, $rem_ids, (), (),
+                    world, old_table, $add_ids, $rem_ids, $rel_ids, targets,
                 )
         ),
     )
@@ -1020,6 +1030,7 @@ end
         entity::Entity;
         add::Tuple=(),
         remove::Tuple=(),
+        relations::Tuple=(),
         mode=:copy,
     )
 
@@ -1033,6 +1044,7 @@ Mutable and non-isbits components are shallow copied by default. This can be cha
   - `entity::Entity`: The entity to copy.
   - `add::Tuple`: Components to add, like `with=(Health(0),)`.
   - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
   - `mode::Tuple`: Copy mode for mutable and non-isbits components. Modes are :ref, :copy, :deepcopy.
 
 # Examples
@@ -1063,26 +1075,30 @@ Entity(4, 0)
 @inline Base.@constprop :aggressive function copy_entity!(
     world::World, entity::Entity;
     add::Tuple=(), remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
     mode::Symbol=:copy,
 )
     if !is_alive(world, entity)
         throw(ArgumentError("can't copy a dead entity"))
     end
-    if isempty(add) && isempty(remove)
+    if isempty(add) && isempty(remove) && isempty(relations)
         return @inline _copy_entity!(world, entity, Val(mode))
     end
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
     return @inline _copy_entity!(
         world,
         entity,
         Val{typeof(add)}(),
         add,
         ntuple(i -> Val(remove[i]), length(remove)),
+        rel_types, targets,
         Val(mode),
     )
 end
 
 """
-    new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)::Union{Batch,Nothing}
+    new_entities!(world::World, n::Int, defaults::Tuple; relations:Tuple=(), iterate::Bool=false)::Union{Batch,Nothing}
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 Component types are inferred from the provided default values.
@@ -1097,6 +1113,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creati
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
   - `iterate::Bool`: Whether to return a batch for individual entity initialization.
 
 # Examples
@@ -1123,8 +1140,29 @@ end
 
 ```
 """
-Base.@constprop :aggressive function new_entities!(world::World, n::Int, defaults::Tuple; iterate::Bool=false)
-    return _new_entities_from_defaults!(world, UInt32(n), Val{typeof(defaults)}(), defaults, iterate)
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    defaults::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+    iterate::Bool=false,
+)
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return _new_entities_from_defaults!(world, UInt32(n),
+        Val{typeof(defaults)}(), defaults,
+        rel_types, targets, iterate)
+end
+
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    defaults::Tuple{};
+    iterate::Bool=false,
+)
+    return _new_entities_from_defaults!(world, UInt32(n),
+        Val{typeof(defaults)}(), defaults,
+        (), (), iterate)
 end
 
 @generated function _new_entities_from_defaults!(
@@ -1132,14 +1170,23 @@ end
     n::UInt32,
     ::Val{TS},
     values::Tuple,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
     iterate::Bool,
-) where {W<:World,TS<:Tuple}
-    types = TS.parameters
-    exprs = []
+) where {W<:World,TS<:Tuple,TR<:Tuple}
+    types = _to_types(TS.parameters)
+    rel_types = _to_types(TR)
+
+    _check_no_duplicates(types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, types)
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
-    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), (), ())))
+    exprs = []
+    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets)))
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
     push!(exprs, :(table = world._tables[table_idx]))
 
@@ -1196,7 +1243,7 @@ end
 end
 
 """
-    new_entities!(world::World, n::Int, comp_types::Tuple)::Batch
+    new_entities!(world::World, n::Int, comp_types::Tuple; relations:Tuple=())::Batch
 
 Creates the given number of [`Entity`](@ref).
 
@@ -1210,6 +1257,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
 
 # Example
 
@@ -1227,17 +1275,39 @@ end
 
 ```
 """
-Base.@constprop :aggressive function new_entities!(world::World, n::Int, comp_types::Tuple{Vararg{DataType}})
-    return _new_entities_from_types!(world, UInt32(n), ntuple(i -> Val(comp_types[i]), length(comp_types)))
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    comp_types::Tuple{Vararg{DataType}};
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return _new_entities_from_types!(world, UInt32(n),
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+        rel_types, targets)
 end
 
-@generated function _new_entities_from_types!(world::W, n::UInt32, ::TS) where {W<:World,TS<:Tuple}
+@generated function _new_entities_from_types!(
+    world::W,
+    n::UInt32,
+    ::TS,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,TS<:Tuple,TR<:Tuple}
     types = _to_types(TS)
-    exprs = []
+    rel_types = _to_types(TR)
+
+    _check_no_duplicates(types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, types)
 
     ids = tuple([_component_id(W.parameters[1], T) for T in types]...)
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
-    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), (), ())))
+    exprs = []
+    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets)))
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
     push!(exprs, :(table = world._tables[table_idx]))
 
