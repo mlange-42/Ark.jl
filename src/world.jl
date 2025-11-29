@@ -1262,7 +1262,7 @@ end
 end
 
 """
-    add_components!(world::World, entity::Entity, values::Tuple)
+    add_components!(world::World, entity::Entity, values::Tuple; relations::Tuple)
 
 Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
 
@@ -1275,11 +1275,18 @@ add_components!(world, entity, (Health(100),))
 
 ```
 """
-@inline Base.@constprop :aggressive function add_components!(world::World, entity::Entity, values::Tuple)
+@inline Base.@constprop :aggressive function add_components!(
+    world::World,
+    entity::Entity,
+    values::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
     if !is_alive(world, entity)
         throw(ArgumentError("can't add components to a dead entity"))
     end
-    return @inline _exchange_components!(world, entity, Val{typeof(values)}(), values, ())
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(world, entity, Val{typeof(values)}(), values, (), rel_types, targets)
 end
 
 """
@@ -1306,11 +1313,12 @@ remove_components!(world, entity, (Position, Velocity))
         Val{Tuple{}}(),
         (),
         ntuple(i -> Val(comp_types[i]), length(comp_types)),
+        (), (),
     )
 end
 
 """
-    exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple, remove::Tuple)
+    exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple, remove::Tuple, relations::Tuple)
 
 Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
 
@@ -1331,16 +1339,20 @@ exchange_components!(world, entity;
     entity::Entity;
     add::Tuple=(),
     remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
     if !is_alive(world, entity)
         throw(ArgumentError("can't exchange components on a dead entity"))
     end
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
     return @inline _exchange_components!(
         world,
         entity,
         Val{typeof(add)}(),
         add,
         ntuple(i -> Val(remove[i]), length(remove)),
+        rel_types, targets,
     )
 end
 
@@ -1350,18 +1362,28 @@ end
     ::Val{ATS},
     add::Tuple,
     ::RTS,
-) where {W<:World,ATS<:Tuple,RTS<:Tuple}
-    add_types = ATS.parameters
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,ATS<:Tuple,RTS<:Tuple,TR<:Tuple}
+    add_types = _to_types(ATS.parameters)
     rem_types = _to_types(RTS)
+    rel_types = _to_types(TR)
 
     if isempty(add_types) && isempty(rem_types)
         throw(ArgumentError("either components to add or to remove must be given for exchange_components!"))
     end
 
+    _check_no_duplicates(add_types)
+    _check_no_duplicates(rem_types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, add_types)
+
     exprs = []
 
     add_ids = tuple([_component_id(W.parameters[1], T) for T in add_types]...)
     rem_ids = tuple([_component_id(W.parameters[1], T) for T in rem_types]...)
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_table = world._tables[index.table]))
@@ -1370,7 +1392,7 @@ end
         :(
             new_table_index =
                 _find_or_create_table!(
-                    world, old_table, $add_ids, $rem_ids, (), (),
+                    world, old_table, $add_ids, $rem_ids, $rel_ids, targets,
                 )
         ),
     )
