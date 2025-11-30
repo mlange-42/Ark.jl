@@ -97,12 +97,8 @@ end
     return :(_Mask{$M}(($(expr...),)))
 end
 
-@inline @generated function _is_zero(m::_Mask{M})::Bool where M
-    expr = Expr[]
-    for i in 1:M
-        push!(expr, :((m.bits[$i] == 0)))
-    end
-    return Expr(:call, :*, expr...)
+@inline function _is_zero(m::_Mask{M})::Bool where M
+    return m == _Mask{M}()
 end
 
 _is_not_zero(m::_Mask)::Bool = !_is_zero(m)
@@ -120,6 +116,21 @@ function _active_bit_indices(mask::_Mask{M})::Vector{Int} where M
     end
     return indices
 end
+
+# TODO: simplify this when Julia 1.13 is released
+# from new hashing methodology in Base on Julia nightly
+const tuplehash_seed = UInt === UInt64 ? 0x77cfa1eef01bca90 : 0xf01bca90
+hash_mix_linear(x::Union{UInt64,UInt32}, h::UInt) = 3h - x
+function hash_finalizer(x::UInt64)
+    x ⊻= (x >> 32)
+    x *= 0x63652a4cd374b267
+    x ⊻= (x >> 33)
+    return x
+end
+_hash(x::UInt64, h::UInt) = hash_finalizer(hash_mix_linear(x, h))
+_hash(::Tuple{}, h::UInt) = h ⊻ tuplehash_seed
+_hash(t::Tuple, h::UInt) = _hash(t[1], _hash(Base.tail(t), h))
+Base.hash(m::_Mask, h::UInt) = _hash(m.bits[1], _hash(Base.tail(m.bits), h))
 
 struct _MutableMask{M}
     bits::MVector{M,UInt64}
