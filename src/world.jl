@@ -213,15 +213,6 @@ function _find_or_create_table!(
         sort!(all_relations; by=first)
     end
 
-    # TODO: ensure that relations are the same and in the same order as in the archetype.
-    # TODO: remove these checks if we are sure this works correctly.
-    @check length(new_arch.relations) == length(all_relations)
-    @check for (i, comp) in enumerate(new_arch.relations)
-        if all_relations[i].first != comp
-            error("mismatch of relations for table creation")
-        end
-    end
-
     new_table_id, found = _get_free_table!(new_arch)
     if found
         _recycle_table!(world, new_arch, new_table_id, all_relations)
