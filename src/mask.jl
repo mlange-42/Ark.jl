@@ -123,7 +123,6 @@ end
 
 # TODO: simplify this when Julia 1.13 is released
 # from new hashing methodology in Base on Julia nightly
-const HASH_SEED = UInt == UInt64 ? 0xbdd89aa982704029 : 0xeabe9406
 const tuplehash_seed = UInt === UInt64 ? 0x77cfa1eef01bca90 : 0xf01bca90
 hash_mix_linear(x::Union{UInt64, UInt32}, h::UInt) = 3h - x
 function hash_finalizer(x::UInt64)
