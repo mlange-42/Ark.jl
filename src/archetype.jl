@@ -131,7 +131,9 @@ function _free_table!(a::_Archetype, table::_Table)
             _remove_table!(tables, table)
         end
     end
-    _remove_table!(a.target_tables, table)
+    for (_, tables) in a.target_tables
+        _remove_table!(tables, table)
+    end
 end
 
 function _get_free_table!(a::_Archetype)::Tuple{UInt32,Bool}
