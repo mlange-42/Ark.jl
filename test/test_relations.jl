@@ -57,3 +57,5 @@
     parents = get_relations(world, e2, (ChildOf,))
     @test parents == (parent4,)
 end
+
+@testset "Relations multiple" begin end

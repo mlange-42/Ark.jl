@@ -157,14 +157,20 @@ end
         new_entity!(world, (Position(i, i * 2), ChildOf()); relations=(ChildOf => parent3,))
     end
 
+    query = Query(world, (Position,))
+    @test length(query) == 3
+    @test count_entities(query) == 30
     cnt = 0
-    for (entities, positions) in Query(world, (Position,))
+    for (entities, positions) in query
         cnt += length(entities)
     end
     @test cnt == 30
 
+    query = Query(world, (Position,); relations=(ChildOf => parent2,))
+    @test length(query) == 1
+    @test count_entities(query) == 10
     cnt = 0
-    for (entities, positions) in Query(world, (Position,); relations=(ChildOf => parent2,))
+    for (entities, positions) in query
         cnt += length(entities)
     end
     @test cnt == 10

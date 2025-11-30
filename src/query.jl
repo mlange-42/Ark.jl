@@ -217,7 +217,7 @@ end
 
         while tab <= length(q._q_lock.tables)
             @inbounds table = q._q_lock.tables[tab]
-            # TODO we can probably optimize here if exactly one relation in archetype and one queries.
+            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
             if isempty(table.entities) || !_matches(q._world._relations, table, q._relations)
                 tab += 1
                 continue
@@ -271,8 +271,14 @@ function Base.length(q::Query)
             count += 1
             continue
         end
-        # TODO: count tables
-        error("not implemented")
+
+        tables = _get_tables(q._world, archetype, q._relations)
+        for table in tables
+            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._relations)
+                count += 1
+            end
+        end
     end
     count
 end
@@ -303,8 +309,14 @@ function count_entities(q::Query)
             count += length(table.entities)
             continue
         end
-        # TODO: count tables
-        error("not implemented")
+
+        tables = _get_tables(q._world, archetype, q._relations)
+        for table in tables
+            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._relations)
+                count += length(table.entities)
+            end
+        end
     end
     count
 end
