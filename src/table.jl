@@ -30,10 +30,10 @@ function _matches(indices::Vector{_ComponentRelations}, t::_Table, relations::Ve
 end
 
 function _matches_exact(indices::Vector{_ComponentRelations}, t::_Table, relations::Vector{Pair{Int,Entity}})
-    if length(relations) < length(t.relations)
-        # TODO: check for duplicates outside
-        throw(ArgumentError("relation targets must be fully specified"))
-    end
+    # This check is done in _get_table_slow_path
+    #if length(relations) < length(t.relations)
+    #    throw(ArgumentError("relation targets must be fully specified"))
+    #end
     for (comp, target) in relations
         # TODO: check for components not in the table
         # TODO: check for components that are no relations

@@ -382,6 +382,9 @@ end
     @test arch.index[1][parent1._id].tables == [world._tables[2]]
     @test arch.index[1][parent2._id].tables == [world._tables[3]]
 
+    e4 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+    @test get_relations(world, e4, (ChildOf,)) == get_relations(world, e2, (ChildOf,))
+
     @test_throws(
         "ArgumentError: all relations must be in the set of component types",
         new_entity!(world, (Position(0, 0),); relations=(ChildOf => parent1,))
@@ -398,6 +401,39 @@ end
         "ArgumentError: can't use a dead entity as relation target, except for the zero entity",
         new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => dead_parent,)),
     )
+end
+
+@testset "World new_entity! multiple relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+        ChildOf2,
+    )
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    e1 = new_entity!(world, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent1, ChildOf2 => parent2))
+    e2 = new_entity!(world, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent2, ChildOf2 => parent1))
+    e3 = new_entity!(world, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent1, ChildOf2 => parent2))
+
+    @test length(world._archetypes[2].tables) == 2
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (parent1, parent2)
+    @test get_relations(world, e2, (ChildOf, ChildOf2)) == (parent2, parent1)
+    @test get_relations(world, e3, (ChildOf, ChildOf2)) == (parent1, parent2)
+
+    remove_entity!(world, parent1)
+    remove_entity!(world, parent2)
+
+    @test length(world._archetypes[2].tables) == 1
+
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
+    @test get_relations(world, e2, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
+    @test get_relations(world, e3, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
 end
 
 @testset "World get/set relations" begin
