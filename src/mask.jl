@@ -133,6 +133,7 @@ function hash_finalizer(x::UInt64)
 end
 _hash(x::UInt64, h::UInt) = hash_finalizer(hash_mix_linear(x, h))
 _hash(::Tuple{}, h::UInt) = h ⊻ tuplehash_seed
+_hash(t::Tuple, h::UInt) = hash(t[1], hash(tail(t), h))
 Base.hash(m::_Mask, h::UInt) = _hash(m.bits[1], _hash(Base.tail(m.bits), h))
 
 struct _MutableMask{M}
