@@ -2,6 +2,7 @@
 isdefined(@__MODULE__, :Memory) || const Memory = Vector # Compat for Julia < 1.11
 
 const LOAD_FACTOR = 0.75
+const RSHIFT = sizeof(UInt) * 7
 
 mutable struct _Mask_Map{N,V}
     keys::Memory{_Mask{N}}
@@ -60,7 +61,7 @@ macro _get_value_loop()
         mask = d.mask
         h = hash(key)
         idx = (h & mask) + 1
-        h2 = (h % UInt8) | 0x01
+        h2 = (h >> RSHIFT) % UInt8 | 0x01
         @inbounds h2_idx = d.occupied[idx]
         @inbounds while h2_idx != 0x00
             if h2 == h2_idx && d.keys[idx] == key
