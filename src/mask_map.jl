@@ -4,8 +4,7 @@ isdefined(@__MODULE__, :Memory) || const Memory = Vector # Compat for Julia < 1.
 const LOAD_FACTOR = 0.75
 
 mutable struct _Mask_Map{N,V}
-    keys::Memory{_Mask{N}}
-    vals::Memory{V}
+    keys_vals::Memory{Tuple{_Mask{N},V}}
     occupied::Memory{UInt8}
     count::Int
     mask::Int
@@ -13,43 +12,37 @@ mutable struct _Mask_Map{N,V}
     function _Mask_Map{N,V}(initial_size::Int=2) where {N,V}
         # Force power of 2 size
         sz = nextpow(2, initial_size)
-        keys = Memory{_Mask{N}}(undef, sz)
-        vals = Memory{V}(undef, sz)
+        keys_vals = Memory{Tuple{_Mask{N},V}}(undef, sz)
         occupied = zeros(UInt8, sz)
         max_load = floor(Int, sz * LOAD_FACTOR)
-        new{N,V}(keys, vals, occupied, 0, sz - 1, max_load)
+        new{N,V}(keys_vals, occupied, 0, sz - 1, max_load)
     end
 end
 
 function _grow!(d::_Mask_Map{N,V}) where {N,V}
-    old_keys = d.keys
-    old_vals = d.vals
+    old_keys_vals = d.keys_vals
     old_occupied = d.occupied
-    old_cap = length(old_keys)
+    old_cap = length(old_keys_vals)
 
     new_cap = old_cap << 1
     new_mask = new_cap - 1
-    new_keys = Memory{_Mask{N}}(undef, new_cap)
-    new_vals = Memory{V}(undef, new_cap)
+    new_keys_vals = Memory{Tuple{_Mask{N},V}}(undef, new_cap)
     new_occupied = zeros(UInt8, new_cap)
 
     @inbounds for i in 1:old_cap
         h2 = old_occupied[i]
         if h2 != 0x00
-            k = old_keys[i]
-            v = old_vals[i]
+            k, v = old_keys_vals[i]
             idx = (hash(k) & new_mask) + 1
             while new_occupied[idx] != 0x00
                 idx = (idx & new_mask) + 1
             end
-            new_keys[idx] = k
-            new_vals[idx] = v
+            new_keys_vals[idx] = (k, v)
             new_occupied[idx] = h2
         end
     end
 
-    d.keys = new_keys
-    d.vals = new_vals
+    d.keys_vals = new_keys_vals
     d.occupied = new_occupied
     d.mask = new_mask
     d.max_load = floor(Int, new_cap * LOAD_FACTOR)
@@ -63,8 +56,9 @@ macro _get_value_loop()
         h2 = (h % UInt8) | 0x01
         @inbounds h2_idx = d.occupied[idx]
         @inbounds while h2_idx != 0x00
-            if h2 == h2_idx && d.keys[idx] == key
-                return d.vals[idx]
+            if h2 == h2_idx 
+                hash_key, val = d.keys_vals[idx] 
+                hash_key == key && return val
             end
             idx = (idx & mask) + 1
             h2_idx = d.occupied[idx]
@@ -89,8 +83,7 @@ function Base.get!(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
     @_get_value_loop()
     val = f()
     @inbounds begin
-        d.keys[idx] = key
-        d.vals[idx] = val
+        d.keys_vals[idx] = (key, val)
         d.occupied[idx] = h2
         d.count += 1
     end
