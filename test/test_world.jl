@@ -904,28 +904,40 @@ end
 end
 
 @testset "World reset!" begin
-    world = World(Dummy, Position, Velocity)
+    world = World(Dummy, Position, Velocity, ChildOf)
 
     obs = observe!(world, OnAddComponents, (Position,)) do _
     end
 
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
     new_entity!(world, (Position(1, 1),))
     new_entity!(world, (Velocity(1, 1),))
     new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+    new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent1,))
+    new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent2,))
 
     reset!(world)
 
     @test length(world._entities) == 1
     @test length(world._entity_pool.entities) == 1
-    @test length(world._tables[2].entities) == 0
-    @test length(world._tables[3].entities) == 0
-    @test length(world._tables[4].entities) == 0
-    @test length(world._storages[offset_ID+2].data[2]) == 0
-    @test length(world._storages[offset_ID+2].data[3]) == 0
-    @test length(world._storages[offset_ID+2].data[4]) == 0
-    @test length(world._storages[offset_ID+3].data[2]) == 0
-    @test length(world._storages[offset_ID+3].data[3]) == 0
-    @test length(world._storages[offset_ID+3].data[4]) == 0
+
+    for t in 2:6
+        @test length(world._tables[t].entities) == 0
+    end
+
+    for s in 2:4
+        for t in 2:6
+            @test length(world._storages[offset_ID+s].data[t]) == 0
+        end
+    end
+
+    @test length(world._archetypes[1].tables) == 1
+    @test length(world._archetypes[2].tables) == 1
+    @test length(world._archetypes[3].tables) == 1
+    @test length(world._archetypes[4].tables) == 1
+    @test length(world._archetypes[5].tables) == 0
+    @test length(world._archetypes[5].free_tables) == 2
 
     @test obs._id.id == 0
     @test !_has_observers(world._event_manager, OnAddComponents)

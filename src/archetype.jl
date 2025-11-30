@@ -36,6 +36,12 @@ function _remove_table!(ids::_TableIDs, table::_Table)
     return true
 end
 
+function _clear!(ids::_TableIDs)
+    resize!(ids.tables, 0)
+    empty!(ids.indices)
+    return nothing
+end
+
 Base.length(t::_TableIDs) = length(t.tables)
 Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
@@ -148,6 +154,24 @@ function _remove_target!(a::_Archetype, target::Entity)
         delete!(dict, target._id)
     end
     delete!(a.target_tables, target._id)
+end
+
+function _reset!(a::_Archetype)
+    if !_has_relations(a)
+        return
+    end
+
+    for table in a.tables.tables
+        push!(a.free_tables, table.id)
+    end
+    _clear!(a.tables)
+
+    for dict in a.index
+        empty!(dict)
+    end
+    empty!(a.target_tables)
+
+    return
 end
 
 struct _BatchTable{M}

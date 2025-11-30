@@ -2089,6 +2089,10 @@ function reset!(world::W) where {W<:World}
         end
     end
 
+    for archetype in world._archetypes
+        _reset!(archetype)
+    end
+
     empty!(world._resources)
     return nothing
 end
