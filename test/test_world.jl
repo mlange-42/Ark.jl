@@ -829,14 +829,30 @@ end
         Dummy,
         Position,
         ChildOf,
+        ChildOf2,
     )
 
-    parent = new_entity!(world, ())
-    e1 = new_entity!(world, ())
-    add_components!(world, e1, (Position(1, 2), ChildOf()); relations=(ChildOf => parent,))
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
 
-    parents = get_relations(world, e1, (ChildOf,))
-    @test parents == (parent,)
+    e1 = new_entity!(world, ())
+
+    add_components!(world, e1, (Position(1, 2), ChildOf()); relations=(ChildOf => parent1,))
+    @test get_relations(world, e1, (ChildOf,)) == (parent1,)
+
+    add_components!(world, e1, (ChildOf2(),); relations=(ChildOf2 => parent2,))
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (parent1, parent2)
+    @test get_relations(world, e1, (ChildOf2, ChildOf)) == (parent2, parent1)
+
+    remove_components!(world, e1, (Position,))
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (parent1, parent2)
+
+    remove_components!(world, e1, (ChildOf,))
+    @test has_components(world, e1, (ChildOf,)) == false
+    @test get_relations(world, e1, (ChildOf2,)) == (parent2,)
+
+    add_components!(world, e1, (Position(0, 0),))
+    @test get_relations(world, e1, (ChildOf2,)) == (parent2,)
 end
 
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
