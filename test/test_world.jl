@@ -456,24 +456,21 @@ end
         relations=(ChildOf => parent2, ChildOf2 => parent1),
     )
 
-    parents = get_relations(world, entity1, (ChildOf,))
-    @test parents == (parent1,)
+    @test get_relations(world, entity1, (ChildOf,)) == (parent1,)
+    @test get_relations(world, entity3, (ChildOf,)) == (parent2,)
 
-    parents = get_relations(world, entity3, (ChildOf,))
-    @test parents == (parent2,)
+    @test get_relations(world, entity3, (ChildOf2,)) == (parent1,)
 
-    parents = get_relations(world, entity3, (ChildOf2,))
-    @test parents == (parent1,)
-
-    parents = get_relations(world, entity3, (ChildOf, ChildOf2))
-    @test parents == (parent2, parent1)
+    @test get_relations(world, entity3, (ChildOf, ChildOf2)) == (parent2, parent1)
 
     set_relations!(world, entity1, (ChildOf => parent2,))
-    parents = get_relations(world, entity1, (ChildOf,))
-    @test parents == (parent2,)
+    @test get_relations(world, entity1, (ChildOf,)) == (parent2,)
+    @test get_relations(world, entity2, (ChildOf,)) == (parent1,)
 
-    parents = get_relations(world, entity2, (ChildOf,))
-    @test parents == (parent1,)
+    @test get_relations(world, entity2, ()) == ()
+
+    set_relations!(world, entity1, (ChildOf => parent2,))
+    @test get_relations(world, entity1, (ChildOf,)) == (parent2,)
 
     @test_throws(
         "ArgumentError: duplicate component types: ChildOf",
