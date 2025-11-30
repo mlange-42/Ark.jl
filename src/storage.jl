@@ -102,6 +102,19 @@ end
     end
 end
 
+function _copy_component_data!(
+    s::_ComponentStorage{C,A},
+    old_arch::UInt32,
+    new_arch::UInt32,
+    old_row::UInt32,
+    new_row::UInt32,
+) where {C,A<:AbstractArray}
+    old_vec = s.data[old_arch]
+    new_vec = s.data[new_arch]
+    @inbounds new_vec[new_row] = old_vec[old_row]
+    return nothing
+end
+
 function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     _swap_remove!(col, row)

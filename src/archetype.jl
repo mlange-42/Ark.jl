@@ -46,13 +46,25 @@ struct _Archetype{M}
     relations::Vector{Int}
     tables::_TableIDs
     index::Vector{Dict{UInt32,_TableIDs}}
+    target_tables::Dict{UInt32,_TableIDs}
+    free_tables::Vector{UInt32}
     mask::_Mask{M}
     node::_GraphNode{M}
     id::UInt32
 end
 
 function _Archetype(id::UInt32, node::_GraphNode, tables::_TableIDs)
-    _Archetype(Vector{Int}(), Vector{Int}(), tables, Vector{Dict{UInt32,_TableIDs}}(), node.mask, node, id)
+    _Archetype(
+        Vector{Int}(),
+        Vector{Int}(),
+        tables,
+        Vector{Dict{UInt32,_TableIDs}}(),
+        Dict{UInt32,_TableIDs}(),
+        Vector{UInt32}(),
+        node.mask,
+        node,
+        id,
+    )
 end
 
 function _Archetype(
@@ -67,6 +79,8 @@ function _Archetype(
         relations,
         tables,
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
+        Dict{UInt32,_TableIDs}(),
+        Vector{UInt32}(),
         node.mask,
         node, id,
     )
@@ -84,13 +98,55 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
         dict = arch.index[idx]
         if haskey(dict, target._id)
             _add_table!(dict[target._id], t)
-            continue
+        else
+            dict[target._id] = _TableIDs(t)
         end
-        dict[target._id] = _TableIDs(t)
+
+        if haskey(arch.target_tables, target._id)
+            tables = arch.target_tables[target._id]
+            if !haskey(tables.indices, t.id)
+                _add_table!(tables, t)
+            end
+        else
+            arch.target_tables[target._id] = _TableIDs(t)
+        end
     end
 end
 
 _has_relations(a::_Archetype) = !isempty(a.relations)
+
+function _free_table!(a::_Archetype, table::_Table)
+    _remove_table!(a.tables, table)
+    push!(a.free_tables, table.id)
+
+    # If there is only one relation, the resp. relation_tables
+    # entry is removed anyway.
+    if length(a.relations) <= 1
+        return
+    end
+
+    # TODO: can/should we be more selective here?
+    for dict in a.index
+        for (_, tables) in dict
+            _remove_table!(tables, table)
+        end
+    end
+    _remove_table!(a.target_tables, table)
+end
+
+function _get_free_table!(a::_Archetype)::Tuple{UInt32,Bool}
+    if isempty(a.free_tables)
+        return 0, false
+    end
+    return pop!(a.free_tables), true
+end
+
+function _remove_target!(a::_Archetype, target::Entity)
+    for dict in a.index
+        delete!(dict, target._id)
+    end
+    delete!(a.target_tables, target._id)
+end
 
 struct _BatchTable{M}
     table::_Table

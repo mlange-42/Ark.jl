@@ -25,7 +25,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _storages::CS
     const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
-    const _relation_archetypes::Vector{_Archetype{M}}
+    const _relation_archetypes::Vector{UInt32}
     const _tables::Vector{_Table}
     const _index::_ComponentIndex{M}
     const _registry::_ComponentRegistry
@@ -176,7 +176,7 @@ function _find_or_create_table!(
 )::UInt32
     # Find existing relations that were not removed, and add new relations.
     all_relations = world._temp_relations
-    requires_copy = true
+    requires_free = true
     if _has_relations(old_table) || !isempty(relations)
         if has_remove > 0
             for rel in old_table.relations
@@ -195,7 +195,7 @@ function _find_or_create_table!(
                 end
             else
                 all_relations = old_table.relations
-                requires_copy = false
+                requires_free = false
             end
         end
     end
@@ -203,26 +203,48 @@ function _find_or_create_table!(
     new_table, found = _get_table(world, new_arch, all_relations)
 
     if found
-        if requires_copy
+        if requires_free
             resize!(all_relations, 0)
         end
         return new_table.id
     end
 
-    # TODO: ensure that relations are the same and in the same order as in the archetype
     if length(all_relations) > 0
-        # TODO: we may need to copy here when we start to recycle tables
-        # and want to keep them immutable.
         sort!(all_relations; by=first)
     end
-    # TODO: recycle table
-    if requires_copy
-        new_table_id = _create_table!(world, new_arch, copy(all_relations))
-        resize!(all_relations, 0)
-        return new_table_id
+
+    # TODO: ensure that relations are the same and in the same order as in the archetype.
+    # TODO: remove these checks if we are sure this works correctly.
+    @check length(new_arch.relations) == length(all_relations)
+    @check for (i, comp) in enumerate(new_arch.relations)
+        if all_relations[i].first != comp
+            error("mismatch of relations for table creation")
+        end
     end
 
-    return _create_table!(world, new_arch, all_relations)
+    new_table_id, found = _get_free_table!(new_arch)
+    if found
+        _recycle_table!(world, new_arch, new_table_id, all_relations)
+    else
+        new_table_id = _create_table!(world, new_arch, copy(all_relations))
+    end
+    if requires_free
+        resize!(all_relations, 0)
+    end
+
+    return new_table_id
+end
+
+function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relations::Vector{Pair{Int,Entity}})
+    _check_relation_targets(world, relations)
+    table = world._tables[table_id]
+
+    for (i, comp) in enumerate(relations)
+        entity = comp.second
+        _activate_table_relation_for_comp!(world, comp.first, Int(table_id), entity)
+        table.relations[i] = comp
+        world._targets[entity._id] = true
+    end
 end
 
 function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::UInt32
@@ -271,7 +293,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
         _Archetype(UInt32(length(world._archetypes) + 1), node, _TableIDs(), relations, components...)
     push!(world._archetypes, arch)
     if _has_relations(arch)
-        push!(world._relation_archetypes, arch)
+        push!(world._relation_archetypes, arch.id)
     end
 
     index = length(world._archetypes)
@@ -301,6 +323,32 @@ function _get_exchange_targets(
 
     changed = false
     for (rel, trg) in zip(relations, targets)
+        @inbounds target = world._relations[rel].targets[old_table.id]
+        if target._id == 0
+            throw(ArgumentError("entity does not have the requested relationship component"))
+        end
+
+        if target._id == trg._id
+            continue
+        end
+        @inbounds index = world._relations[rel].archetypes[old_table.archetype]
+        @inbounds new_relations[index] = Pair(rel, trg)
+        changed = true
+    end
+
+    return new_relations, changed
+end
+
+function _get_exchange_targets(
+    world::World,
+    old_table::_Table,
+    relations::Vector{Pair{Int,Entity}},
+)
+    new_relations = world._temp_relations
+    append!(new_relations, old_table.relations)
+
+    changed = false
+    for (rel, trg) in relations
         @inbounds target = world._relations[rel].targets[old_table.id]
         if target._id == 0
             throw(ArgumentError("entity does not have the requested relationship component"))
@@ -471,6 +519,40 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
 
     world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
     return new_row
+end
+
+function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32)
+    _check_locked(world)
+
+    old_table = world._tables[old_table_index]
+    new_table = world._tables[table_index]
+    archetype = world._archetypes[old_table.archetype]
+
+    old_entities = length(new_table.entities)
+    num_entities = length(old_table.entities)
+    total_entities = old_entities + num_entities
+
+    resize!(new_table, total_entities)
+    for comp in archetype.components
+        _ensure_column_size_for_comp!(world, comp, table_index, total_entities)
+    end
+
+    for from in 1:num_entities
+        to = old_entities + from
+        entity = old_table.entities[from]
+        new_table.entities._data[to] = entity
+        world._entities[entity._id] = _EntityIndex(new_table.id, to)
+        for comp in archetype.components
+            _copy_component_data!(world, comp, old_table_index, table_index, UInt32(from), UInt32(to))
+        end
+    end
+
+    for comp in archetype.components
+        _clear_component_data!(world, comp, old_table_index)
+    end
+
+    resize!(old_table, 0)
+    return nothing
 end
 
 function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
@@ -1807,6 +1889,26 @@ end
     return Expr(:block, exprs...)
 end
 
+@generated function _copy_component_data!(
+    world::World{CS},
+    comp::Int,
+    old_arch::UInt32,
+    new_arch::UInt32,
+    old_row::UInt32,
+    new_row::UInt32,
+) where {CS<:Tuple}
+    n = length(CS.parameters)
+    exprs = Expr[]
+    for i in 1:n
+        push!(exprs, :(
+            if comp == $i
+                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)
+            end
+        ))
+    end
+    return Expr(:block, exprs...)
+end
+
 @generated function _clear_component_data!(
     world::World{CS},
     comp::Int,
@@ -2003,5 +2105,39 @@ function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
 end
 
 function _cleanup_archetypes(world::World, entity::Entity)
-    # TODO: cleanup
+    relations = Pair{Int,Entity}[]
+    for arch in world._relation_archetypes
+        archetype = world._archetypes[arch]
+        if !haskey(archetype.target_tables, entity._id)
+            continue
+        end
+        tables = archetype.target_tables[entity._id]
+
+        for t in length(tables.tables):-1:1
+            table = tables.tables[t]
+            has_target = false
+            for rel in table.relations
+                if rel.second._id == entity._id
+                    push!(relations, Pair(rel.first, zero_entity))
+                    has_target = true
+                end
+            end
+            @check has_target == true
+
+            if !isempty(table.entities)
+                new_relations, _ = _get_exchange_targets(world, table, relations)
+                new_table, found = _get_table(world, archetype, new_relations)
+                if !found
+                    new_table_id = _create_table!(world, archetype, copy(new_relations))
+                    new_table = world._tables[new_table_id]
+                end
+                resize!(new_relations, 0)
+
+                _move_entities!(world, table.id, new_table.id)
+            end
+            _free_table!(archetype, table)
+            resize!(relations, 0)
+        end
+        _remove_target!(archetype, entity)
+    end
 end
