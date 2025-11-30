@@ -121,8 +121,20 @@ function _active_bit_indices(mask::_Mask{M})::Vector{Int} where M
     return indices
 end
 
-Base.hash(m::_Mask) = hash(m.bits)
-Base.hash(m::_Mask, h::UInt) = hash(m.bits, h)
+# TODO: simplify this when Julia 1.13 is released
+# from new hashing methodology in Base on Julia nightly
+const HASH_SEED = UInt == UInt64 ? 0xbdd89aa982704029 : 0xeabe9406
+const tuplehash_seed = UInt === UInt64 ? 0x77cfa1eef01bca90 : 0xf01bca90
+hash_mix_linear(x::Union{UInt64, UInt32}, h::UInt) = 3h - x
+function hash_finalizer(x::UInt64)
+    x ⊻= (x >> 32)
+    x *= 0x63652a4cd374b267
+    x ⊻= (x >> 33)
+    return x
+end
+_hash(x::UInt64, h::UInt) = hash_finalizer(hash_mix_linear(x, h))
+_hash(::Tuple{}, h::UInt) = h ⊻ tuplehash_seed
+Base.hash(m::_Mask, h::UInt) = _hash(m.bits[1], _hash(Base.tail(m.bits), h))
 
 struct _MutableMask{M}
     bits::MVector{M,UInt64}
