@@ -1,5 +1,11 @@
 # Changelog
 
+## [[unpublished]](https://github.com/mlange-42/Ark.jl/compare/v0.2.0...main)
+
+### Features
+
+- Adds entity relationships (#340)
+
 ## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 
 ### Breaking changes
