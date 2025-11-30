@@ -236,6 +236,10 @@ function _find_or_create_table!(
 end
 
 function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relations::Vector{Pair{Int,Entity}})
+    if length(relations) < length(arch.relations)
+        throw(ArgumentError("relation targets must be fully specified"))
+    end
+
     _check_relation_targets(world, relations)
     table = world._tables[table_id]
 

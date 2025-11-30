@@ -828,6 +828,7 @@ end
     world = World(
         Dummy,
         Position,
+        Velocity,
         ChildOf,
         ChildOf2,
     )
@@ -853,6 +854,22 @@ end
 
     add_components!(world, e1, (Position(0, 0),))
     @test get_relations(world, e1, (ChildOf2,)) == (parent2,)
+
+    @test_throws(
+        "ArgumentError: relation targets must be fully specified",
+        add_components!(world, e1, (ChildOf(),)),
+    )
+    @test_throws(
+        "ArgumentError: relation targets must be fully specified",
+        add_components!(world, e1, (Velocity(0, 0), ChildOf())),
+    )
+
+    # test with recycled table
+    remove_entity!(world, parent1)
+    @test_throws(
+        "ArgumentError: relation targets must be fully specified",
+        add_components!(world, e1, (ChildOf(),)),
+    )
 end
 
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
