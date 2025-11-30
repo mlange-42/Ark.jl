@@ -10,12 +10,13 @@ end
 
 struct _Graph{M}
     mask::_MutableMask{M}
-    nodes::Dictionary{_Mask{M},_GraphNode{M}}
+    nodes::_Mask_Map{M,_GraphNode{M}}
 end
 
 function _Graph{M}() where M
-    g = _Graph{M}(_MutableMask{M}(), Dictionary{_Mask{M},_GraphNode{M}}())
-    set!(g.nodes, _Mask{M}(), _GraphNode(_Mask{M}(), UInt32(1)))
+    g = _Graph{M}(_MutableMask{M}(), _Mask_Map{M,_GraphNode{M}}())
+    m = _Mask{M}()
+    get!(() -> _GraphNode(m, UInt32(1)), g.nodes, m)
     return g
 end
 
@@ -28,7 +29,7 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
         add_mask::_Mask, rem_mask::_Mask)
     if _is_not_zero(_clear_bits(rem_mask, start.mask))
         throw(ArgumentError("entity does not have component to remove"))
-    elseif add_mask.bits != _clear_bits(add_mask, start.mask).bits
+    elseif add_mask != _clear_bits(add_mask, start.mask)
         throw(ArgumentError("entity already has component to add, or it was added twice"))
     end
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)

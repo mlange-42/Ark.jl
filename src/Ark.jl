@@ -1,6 +1,5 @@
 module Ark
 
-using Dictionaries
 using FieldViews
 using StaticArrays
 using FunctionWrappers: FunctionWrapper
@@ -13,6 +12,7 @@ include("entity.jl")
 include("mask.jl")
 include("vec_map.jl")
 include("storage.jl")
+include("mask_map.jl")
 include("graph.jl")
 include("archetype.jl")
 include("event.jl")
