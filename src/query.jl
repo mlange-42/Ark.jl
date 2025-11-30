@@ -51,7 +51,7 @@ See the user manual chapter on [Queries](@ref) for more details and examples.
   - `without::Tuple`: Components the entities must not have.
   - `optional::Tuple`: Additional components that are optional in the query.
   - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
-  - `relations::Tuple`: Relationship component type => target entity pairs.
+  - `relations::Tuple`: Relationship component type => target entity pairs. These relation components must be in the query's components or `with`.
 
 # Example
 
@@ -116,6 +116,8 @@ end
 
     comp_types = union(required_types, optional_types)
     non_exclude_types = union(comp_types, with_types)
+
+    _check_is_subset(rel_types, union(required_types, with_types))
 
     if EX === Val{true} && !isempty(without_types)
         throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
