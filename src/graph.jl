@@ -1,3 +1,7 @@
+
+struct _UseMap end
+struct _NoUseMap end
+
 mutable struct _GraphNode{M}
     const mask::_Mask{M}
     const neighbors::_VecMap{_GraphNode{M},M}
@@ -26,17 +30,27 @@ function _find_or_create(g::_Graph, mask::_MutableMask)
 end
 
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
-    add_mask::_Mask, rem_mask::_Mask)
+    add_mask::_Mask, rem_mask::_Mask, use_map::Union{_NoUseMap, _UseMap})
     if _is_not_zero(_clear_bits(rem_mask, start.mask))
         throw(ArgumentError("entity does not have component to remove"))
     elseif add_mask != _clear_bits(add_mask, start.mask)
         throw(ArgumentError("entity already has component to add"))
     end
-    new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    get(() -> _create_path(g, start, add, remove), g.nodes, new_mask)
+    _search_node(g, start, add, remove, add_mask, rem_mask, use_map)
 end
 
-function _create_path(g, start, add, remove)
+function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
+    add_mask::_Mask, rem_mask::_Mask, use_map::_UseMap)
+    new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
+    get(() -> _find_or_create_path(g, start, add, remove), g.nodes, new_mask)
+end
+
+function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
+    add_mask::_Mask, rem_mask::_Mask, use_map::_NoUseMap)
+    _find_or_create_path(g, start, add, remove)
+end
+
+function _find_or_create_path(g, start, add, remove)
     curr = start
     _set_mask!(g.mask, start.mask)
     for b in remove

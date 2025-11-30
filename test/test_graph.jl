@@ -24,23 +24,23 @@
     add = (5,)
     remove = ()
 
-    node3 = _find_node(graph, start, add, remove, _Mask{1}(add...), _Mask{1}(remove...))
+    node3 = _find_node(graph, start, add, remove, _Mask{1}(add...), _Mask{1}(remove...), _NoUseMap())
     @test node3 !== start
     @test _get_bit(node3.mask, 5)
 
-    node4 = _find_node(graph, node3, (), (5,), _Mask{1}(), _Mask{1}(5))
+    node4 = _find_node(graph, node3, (), (5,), _Mask{1}(), _Mask{1}(5), _UseMap())
     @test node4 === start
 
     # Test error on removing nonexistent component
     @test_throws(
         "ArgumentError: entity does not have component to remove",
-        _find_node(graph, start, (), (7,), _Mask{1}(), _Mask{1}(7))
+        _find_node(graph, start, (), (7,), _Mask{1}(), _Mask{1}(7), _UseMap())
     )
 
     # Test error on adding duplicate component
     @test_throws(
         "ArgumentError: entity already has component to add",
-        _find_node(graph, node3, (5,), (), _Mask{1}(5), _Mask{1}())
+        _find_node(graph, node3, (5,), (), _Mask{1}(5), _Mask{1}(), _UseMap())
     )
 
     world = World(Position, Velocity)

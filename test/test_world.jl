@@ -111,13 +111,13 @@ end
     world = World(Position, Velocity)
     node = world._graph.nodes[_Mask{M_mask}()]
 
-    arch1 = _find_or_create_archetype!(world, node, (1,), (), _Mask{M_mask}(1), _Mask{M_mask}())
+    arch1 = _find_or_create_archetype!(world, node, (1,), (), _Mask{M_mask}(1), _Mask{M_mask}(), _NoUseMap())
     @test arch1 == 2
 
-    arch2 = _find_or_create_archetype!(world, node, (1, 2), (), _Mask{M_mask}(1, 2), _Mask{M_mask}())
+    arch2 = _find_or_create_archetype!(world, node, (1, 2), (), _Mask{M_mask}(1, 2), _Mask{M_mask}(), _UseMap())
     @test arch2 == 3
 
-    arch3 = _find_or_create_archetype!(world, node, (1,), (), _Mask{M_mask}(1), _Mask{M_mask}())
+    arch3 = _find_or_create_archetype!(world, node, (1,), (), _Mask{M_mask}(1), _Mask{M_mask}(), _NoUseMap())
     @test arch3 == arch1
 
     entity, _ = _create_entity!(world, arch1)
@@ -187,7 +187,7 @@ end
     pos_id = _component_id(params, Position)
     @test pos_id == offset_ID + UInt8(1)
 
-    index = _find_or_create_archetype!(world, node, (pos_id,), (), _Mask{M_mask}(pos_id), _Mask{M_mask}())
+    index = _find_or_create_archetype!(world, node, (pos_id,), (), _Mask{M_mask}(pos_id), _Mask{M_mask}(), _NoUseMap())
     @test index == 2
     @test length(world._archetypes) == 2
 
@@ -195,12 +195,12 @@ end
     @test vel_id == offset_ID + UInt8(2)
 
     index =
-        _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}())
+        _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}(), _NoUseMap())
     @test index == 3
     @test length(world._archetypes) == 3
 
     index =
-        _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}())
+        _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}(), _UseMap())
     @test index == 3
 
     @test world._archetypes[2].components == [pos_id]
@@ -226,7 +226,7 @@ end
     node = world._graph.nodes[_Mask{M_mask}()]
 
     arch_index =
-        _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}())
+        _find_or_create_archetype!(world, node, (pos_id, vel_id), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}(), _NoUseMap())
     @test arch_index == 2
 
     entity, index = _create_entity!(world, arch_index)

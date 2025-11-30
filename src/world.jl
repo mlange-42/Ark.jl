@@ -115,8 +115,9 @@ function _find_or_create_archetype!(
     remove::Tuple{Vararg{Int}},
     add_mask::_Mask,
     rem_mask::_Mask,
+    use_map::Union{_NoUseMap, _UseMap}
 )::UInt32
-    node = _find_node(world._graph, start, add, remove, add_mask, rem_mask)
+    node = _find_node(world._graph, start, add, remove, add_mask, rem_mask, use_map)
 
     archetype = (node.archetype == typemax(UInt32)) ?
                 _create_archetype!(world, node) :
@@ -257,6 +258,8 @@ end
     rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
     throw_if_add_remove_same_operation(add_ids, rem_ids)
     throw_if_id_twice(add_ids, rem_ids)
+    num_ids = length(add_ids) + length(rem_ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(add_ids...)
@@ -269,7 +272,7 @@ end
         :(
             new_arch_index =
                 _find_or_create_archetype!(
-                    world, old_archetype.node, $add_ids, $rem_ids, $add_mask, $rem_mask,
+                    world, old_archetype.node, $add_ids, $rem_ids, $add_mask, $rem_mask, $use_map,
                 )
         ),
     )
@@ -569,6 +572,8 @@ end
     CS = W.parameters[1]
     ids = tuple([_component_id(CS, T) for T in types]...)
     throw_if_id_twice(ids, ())
+    num_ids = length(ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(ids...)
@@ -576,7 +581,7 @@ end
 
     push!(
         exprs,
-        :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)),
+        :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)),
     )
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
@@ -729,6 +734,8 @@ end
     CS = W.parameters[1]
     ids = tuple([_component_id(CS, T) for T in types]...)
     throw_if_id_twice(ids, ())
+    num_ids = length(ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(ids...)
@@ -736,7 +743,7 @@ end
 
     push!(
         exprs,
-        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)),
+        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)),
     )
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
@@ -836,6 +843,8 @@ end
     CS = W.parameters[1]
     ids = tuple([_component_id(CS, T) for T in types]...)
     throw_if_id_twice(ids, ())
+    num_ids = length(ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(ids...)
@@ -843,7 +852,7 @@ end
 
     push!(
         exprs,
-        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)),
+        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)),
     )
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
@@ -971,6 +980,8 @@ end
     rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
     throw_if_add_remove_same_operation(add_ids, rem_ids)
     throw_if_id_twice(add_ids, rem_ids)
+    num_ids = length(add_ids) + length(rem_ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(add_ids...)
@@ -983,7 +994,7 @@ end
         :(
             new_arch_index =
                 _find_or_create_archetype!(
-                    world, old_arch.node, $add_ids, $rem_ids, $add_mask, $rem_mask,
+                    world, old_arch.node, $add_ids, $rem_ids, $add_mask, $rem_mask, $use_map,
                 )
         ),
     )
