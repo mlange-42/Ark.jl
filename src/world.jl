@@ -339,7 +339,8 @@ function _get_exchange_targets(
     return new_relations, changed
 end
 
-function _get_exchange_targets(
+# only for internal use in _cleanup_archetypes
+function _get_exchange_targets_unchecked(
     world::World,
     old_table::_Table,
     relations::Vector{Pair{Int,Entity}},
@@ -347,31 +348,25 @@ function _get_exchange_targets(
     new_relations = world._temp_relations
     append!(new_relations, old_table.relations)
 
-    changed = false
     for (rel, trg) in relations
-        @inbounds target = world._relations[rel].targets[old_table.id]
-        if target._id == 0
-            throw(ArgumentError("entity does not have the requested relationship component"))
-        end
-
-        if target._id == trg._id
-            continue
-        end
         @inbounds index = world._relations[rel].archetypes[old_table.archetype]
         @inbounds new_relations[index] = Pair(rel, trg)
-        changed = true
     end
 
-    return new_relations, changed
+    return new_relations
 end
 
 @inline function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
     if length(arch.tables) == 0
         return @inbounds world._tables[1], false
     end
-    if !_has_relations(arch)
-        return @inbounds arch.tables[1], true
-    end
+
+    # TODO: this should not be possible to happen. Check!
+    #if !_has_relations(arch)
+    #    return @inbounds arch.tables[1], true
+    #end
+    @check _has_relations(arch)
+
     return _get_table_slow_path(world, arch, relations)
 end
 
@@ -2129,7 +2124,7 @@ function _cleanup_archetypes(world::World, entity::Entity)
             @check has_target == true
 
             if !isempty(table.entities)
-                new_relations, _ = _get_exchange_targets(world, table, relations)
+                new_relations = _get_exchange_targets_unchecked(world, table, relations)
                 new_table, found = _get_table(world, archetype, new_relations)
                 if !found
                     new_table_id = _create_table!(world, archetype, copy(new_relations))
