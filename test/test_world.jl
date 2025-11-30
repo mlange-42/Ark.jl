@@ -946,31 +946,48 @@ end
 
 @testset "World relations index" begin
     world = World(Dummy, ChildOf, Position, Velocity, ChildOf2)
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
 
-    # TODO: re-activate
-    """
-    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()))
-    new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()))
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+    new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()); relations=(ChildOf => parent1, ChildOf2 => parent2))
+    new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()); relations=(ChildOf => parent2, ChildOf2 => parent1))
 
     pos_relations = _get_relations(world, Position)
     child_relations = _get_relations(world, ChildOf)
     child2_relations = _get_relations(world, ChildOf2)
 
-    @test length(pos_relations.indices) == 0
-    @test length(child_relations.indices) == 3
-    @test child_relations.indices[1] == 0
-    @test child_relations.indices[2] == 1
-    @test child_relations.indices[3] == 1
+    @test length(pos_relations.archetypes) == 0
+    @test length(pos_relations.targets) == 0
 
-    @test length(child2_relations.indices) == 3
-    @test child2_relations.indices[1] == 0
-    @test child2_relations.indices[2] == 0
-    @test child2_relations.indices[3] == 2
+    @test length(child_relations.archetypes) == 3
+    @test length(child_relations.targets) == 5
+    @test child_relations.archetypes[1] == 0
+    @test child_relations.archetypes[2] == 1
+    @test child_relations.archetypes[3] == 1
+
+    @test child_relations.targets[1] == _no_entity
+    @test child_relations.targets[2] == parent1
+    @test child_relations.targets[3] == parent2
+    @test child_relations.targets[4] == parent1
+    @test child_relations.targets[5] == parent2
+
+    @test length(child2_relations.archetypes) == 3
+    @test length(child2_relations.targets) == 5
+    @test child2_relations.archetypes[1] == 0
+    @test child2_relations.archetypes[2] == 0
+    @test child2_relations.archetypes[3] == 2
+
+    @test child2_relations.targets[1] == _no_entity
+    @test child2_relations.targets[2] == _no_entity
+    @test child2_relations.targets[3] == _no_entity
+    @test child2_relations.targets[4] == parent2
+    @test child2_relations.targets[5] == parent1
 
     @test world._archetypes[1].relations == []
     @test world._archetypes[2].relations == [2 + offset_ID]
     @test world._archetypes[3].relations == [2 + offset_ID, 5 + offset_ID]
-    """
 end
 
 @testset "World add/remove resources Tests" begin
