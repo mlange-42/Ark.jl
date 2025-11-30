@@ -59,35 +59,30 @@ function _grow!(d::_Mask_Map{N,V}) where {N,V}
     return nothing
 end
 
-function Base.getindex(d::_Mask_Map, key::_Mask)
-    mask = d.mask
-    h = hash(key)
-    idx = (h & mask) + 1
-    h2 = (h % UInt8) | 0x01
-    @inbounds h2_idx = d.occupied[idx]
-    @inbounds while h2_idx != 0x00
-        if h2 == h2_idx && d.keys[idx] == key
-            return d.vals[idx]
+macro _get_value_loop()
+    return esc(quote
+        mask = d.mask
+        h = hash(key)
+        idx = (h & mask) + 1
+        h2 = (h % UInt8) | 0x01
+        @inbounds h2_idx = d.occupied[idx]
+        @inbounds while h2_idx != 0x00
+            if h2 == h2_idx && d.keys[idx] == key
+                return d.vals[idx]
+            end
+            idx = (idx & mask) + 1
+            h2_idx = d.occupied[idx]
         end
-        idx = (idx & mask) + 1
-        h2_idx = d.occupied[idx]
-    end
+    end)
+end
+
+function Base.getindex(d::_Mask_Map, key::_Mask)
+    @_get_value_loop()
     throw(KeyError(key))
 end
 
 function Base.get(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
-    mask = d.mask
-    h = hash(key)
-    idx = (h & mask) + 1
-    h2 = (h % UInt8) | 0x01
-    @inbounds h2_idx = d.occupied[idx]
-    @inbounds while h2_idx != 0x00
-        if h2 == h2_idx && d.keys[idx] == key
-            return d.vals[idx]
-        end
-        idx = (idx & mask) + 1
-        h2_idx = d.occupied[idx]
-    end
+    @_get_value_loop()
     return f()
 end
 
@@ -95,20 +90,7 @@ function Base.get!(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
     if d.count >= d.max_load
         _grow!(d)
     end
-
-    mask = d.mask
-    h = hash(key)
-    idx = (h & mask) + 1
-    h2 = (h % UInt8) | 0x01
-    @inbounds h2_idx = d.occupied[idx]
-    @inbounds while h2_idx != 0x00
-        if h2 == h2_idx && d.keys[idx] == key
-            return d.vals[idx]
-        end
-        idx = (idx & mask) + 1
-        h2_idx = d.occupied[idx]
-    end
-
+    @_get_value_loop()
     val = f()
     @inbounds begin
         d.keys[idx] = key
