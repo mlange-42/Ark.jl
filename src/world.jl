@@ -255,6 +255,9 @@ end
     CS = W.parameters[1]
     add_ids = tuple([_component_id(CS, T) for T in add_types]...)
     rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
+    throw_if_add_remove_same_operation(add_ids, rem_ids)
+    throw_if_id_twice(add_ids, rem_ids)
+
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(add_ids...)
     rem_mask = _Mask{M}(rem_ids...)
@@ -565,6 +568,8 @@ end
 
     CS = W.parameters[1]
     ids = tuple([_component_id(CS, T) for T in types]...)
+    throw_if_id_twice(ids, ())
+
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
@@ -723,6 +728,8 @@ end
 
     CS = W.parameters[1]
     ids = tuple([_component_id(CS, T) for T in types]...)
+    throw_if_id_twice(ids, ())
+
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
@@ -828,6 +835,8 @@ end
 
     CS = W.parameters[1]
     ids = tuple([_component_id(CS, T) for T in types]...)
+    throw_if_id_twice(ids, ())
+
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
@@ -960,6 +969,9 @@ end
     CS = W.parameters[1]
     add_ids = tuple([_component_id(CS, T) for T in add_types]...)
     rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
+    throw_if_add_remove_same_operation(add_ids, rem_ids)
+    throw_if_id_twice(add_ids, rem_ids)
+
     M = max(1, cld(length(CS.parameters), 64))
     add_mask = _Mask{M}(add_ids...)
     rem_mask = _Mask{M}(rem_ids...)

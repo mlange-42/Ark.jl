@@ -39,7 +39,28 @@
 
     # Test error on adding duplicate component
     @test_throws(
-        "ArgumentError: entity already has component to add, or it was added twice",
+        "ArgumentError: entity already has component to add",
         _find_node(graph, node3, (5,), (), _Mask{1}(5), _Mask{1}())
+    )
+
+    world = World(Position, Velocity)
+    e = new_entity!(world, (Position(0.0, 0.0), ))
+
+    # Test error on adding and removing the same components
+    @test_throws(
+        "ArgumentError: component added and removed in the same exchange operation",
+        exchange_components!(world, e; add=(Velocity(0.0, 0.0),), remove=(Velocity,))
+    )
+
+    # Test error on duplicates in adding componets
+    @test_throws(
+        "ArgumentError: component added twice",
+        add_components!(world, e, (Velocity(0.0, 0.0), Velocity(0.0, 0.0)))
+    )
+
+    # Test error on duplicates on removing components
+    @test_throws(
+        "ArgumentError: component removed twice",
+        remove_components!(world, e, (Position, Position))
     )
 end

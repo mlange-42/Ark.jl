@@ -30,7 +30,7 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
     if _is_not_zero(_clear_bits(rem_mask, start.mask))
         throw(ArgumentError("entity does not have component to remove"))
     elseif add_mask != _clear_bits(add_mask, start.mask)
-        throw(ArgumentError("entity already has component to add, or it was added twice"))
+        throw(ArgumentError("entity already has component to add"))
     end
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
     get(() -> _create_path(g, start, add, remove), g.nodes, new_mask)
