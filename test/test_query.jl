@@ -181,6 +181,7 @@ end
     parent1 = new_entity!(world, ())
     parent2 = new_entity!(world, ())
     parent3 = new_entity!(world, ())
+    parent4 = new_entity!(world, ())
 
     new_entities!(world, 10, (Position(0, 0), ChildOf(), ChildOf2());
         relations=(ChildOf => parent1, ChildOf2 => parent1),
@@ -218,6 +219,15 @@ end
         count += length(entities)
     end
     @test count == 11
+
+    query = Query(world, (ChildOf,); relations=(ChildOf => parent4,))
+    @test length(query) == 0
+    @test count_entities(query) == 0
+    count = 0
+    for (entities, _) in query
+        count += length(entities)
+    end
+    @test count == 0
 end
 
 @testset "Query empty" begin
