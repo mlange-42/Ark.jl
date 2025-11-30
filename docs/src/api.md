@@ -19,6 +19,7 @@ reset!
 is_locked
 StructArrayStorage
 VectorStorage
+Relationship
 ```
 
 ## [Entities](@id entities-api)
@@ -49,6 +50,8 @@ set_components!
 add_components!
 remove_components!
 exchange_components!
+get_relations
+set_relations!
 ```
 
 ## [Queries](@id queries-api)

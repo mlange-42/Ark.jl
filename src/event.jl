@@ -275,10 +275,10 @@ function _fire_create_or_remove_entity(
     return found
 end
 
-function _fire_create_entities(m::_EventManager, arch::_BatchArchetype)
+function _fire_create_entities(m::_EventManager, table::_BatchTable)
     evt = OnCreateEntity._id
     observers = m.observers[evt]
-    mask = arch.archetype.mask
+    mask = table.archetype.mask
     with, any_no_with = m.with[evt]
     if length(observers) > 1 && !any_no_with && !_contains_any(with, mask)
         return
@@ -290,8 +290,8 @@ function _fire_create_entities(m::_EventManager, arch::_BatchArchetype)
         if o._has_without && _contains_any(mask, o._without)
             continue
         end
-        entities = arch.archetype.entities._data
-        for i in arch.start_idx:arch.end_idx
+        entities = table.table.entities._data
+        for i in table.start_idx:table.end_idx
             o._fn(entities[i])
         end
     end

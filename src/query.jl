@@ -1,5 +1,6 @@
 
-mutable struct _QueryLock
+mutable struct _QueryCursor
+    tables::Vector{_Table}
     closed::Bool
 end
 
@@ -14,7 +15,8 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _exclude_mask::_Mask{M}
     _world::W
     _archetypes::Vector{_Archetype{M}}
-    _q_lock::_QueryLock
+    _relations::Vector{Pair{Int,Entity}}
+    _q_lock::_QueryCursor
     _lock::Int
     _has_excluded::Bool
 end
@@ -26,7 +28,8 @@ end
         with::Tuple=(),
         without::Tuple=(),
         optional::Tuple=(),
-        exclusive::Bool=false
+        exclusive::Bool=false,
+        relations::Tuple=(),
     )
 
 Creates a query.
@@ -48,6 +51,7 @@ See the user manual chapter on [Queries](@ref) for more details and examples.
   - `without::Tuple`: Components the entities must not have.
   - `optional::Tuple`: Additional components that are optional in the query.
   - `exclusive::Bool`: Makes the query exclusive in base and `with` components, can't be combined with `without`.
+  - `relations::Tuple`: Relationship component type => target entity pairs. These relation components must be in the query's components or `with`.
 
 # Example
 
@@ -71,13 +75,18 @@ Base.@constprop :aggressive function Query(
     without::Tuple=(),
     optional::Tuple=(),
     exclusive::Bool=false,
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
     return _Query_from_types(world,
         ntuple(i -> Val(comp_types[i]), length(comp_types)),
         ntuple(i -> Val(with[i]), length(with)),
         ntuple(i -> Val(without[i]), length(without)),
         ntuple(i -> Val(optional[i]), length(optional)),
-        Val(exclusive))
+        Val(exclusive),
+        rel_types, targets,
+    )
 end
 
 @generated function _Query_from_types(
@@ -87,25 +96,28 @@ end
     ::WO,
     ::OT,
     ::EX,
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val}
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val,TR<:Tuple}
     world_storage_modes = W.parameters[3].parameters
 
     required_types = _to_types(CT)
     with_types = _to_types(WT)
     without_types = _to_types(WO)
     optional_types = _to_types(OT)
+    rel_types = _to_types(TR)
 
     # check for duplicates
     all_comps = vcat(required_types, with_types, without_types, optional_types)
-    unique_comps = unique(all_comps)
-    if length(all_comps) != length(unique_comps)
-        duplicates = [x for x in unique_comps if count(==(x), all_comps) > 1]
-        names = join(map(nameof, duplicates), ", ")
-        throw(ArgumentError("duplicate component types in query: $names"))
-    end
+    _check_no_duplicates(all_comps)
+
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
 
     comp_types = union(required_types, optional_types)
     non_exclude_types = union(comp_types, with_types)
+
+    _check_is_subset(rel_types, union(required_types, with_types))
 
     if EX === Val{true} && !isempty(without_types)
         throw(ArgumentError("cannot use 'exclusive' together with 'without'"))
@@ -116,6 +128,7 @@ end
     with_ids = map(C -> _component_id(CS, C), with_types)
     without_ids = map(C -> _component_id(CS, C), without_types)
     non_exclude_ids = map(C -> _component_id(CS, C), non_exclude_types)
+    rel_ids = map(C -> _component_id(CS, C), rel_types)
 
     M = max(1, cld(length(CS.parameters), 64))
     mask = _Mask{M}(required_ids..., with_ids...)
@@ -140,12 +153,23 @@ end
     archetypes = length(ids_tuple) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
 
     return quote
+        relations = if length(targets) > 0
+            # TODO: can/should we use an ntuple instead?
+            rel = Vector{Pair{Int,Entity}}()
+            for (c, e) in zip($rel_ids, targets)
+                push!(rel, c => e)
+            end
+            rel
+        else
+            _empty_relations
+        end
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$EX,$optional_flags_type,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,
             $(archetypes),
-            _QueryLock(false),
+            relations,
+            _QueryCursor(_empty_tables, false),
             _lock(world._lock),
             $(has_excluded),
         )
@@ -166,16 +190,46 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     return rare_comp
 end
 
-@inline function Base.iterate(q::Query, state::Int)
-    while state <= length(q._archetypes)
-        archetype = q._archetypes[state]
-        if !isempty(archetype.entities) &&
-           _contains_all(archetype.mask, q._mask) &&
-           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            result = _get_columns(q, state)
-            return result, state + 1
+@inline function Base.iterate(q::Query, state::Tuple{Int,Int})
+    arch, tab = state
+    while arch <= length(q._archetypes)
+        if tab == 0
+            @inbounds archetype = q._archetypes[arch]
+
+            if isempty(archetype.tables.tables) ||
+               !_contains_all(archetype.mask, q._mask) ||
+               (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+                arch += 1
+                continue
+            end
+
+            if !_has_relations(archetype)
+                @inbounds table = archetype.tables[1]
+                if isempty(table.entities)
+                    arch += 1
+                    continue
+                end
+                result = _get_columns(q, table)
+                return result, (arch + 1, 0)
+            end
+
+            q._q_lock.tables = _get_tables(q._world, archetype, q._relations)
+            tab = 1
         end
-        state += 1
+
+        while tab <= length(q._q_lock.tables)
+            @inbounds table = q._q_lock.tables[tab]
+            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
+            if isempty(table.entities) || !_matches(q._world._relations, table, q._relations)
+                tab += 1
+                continue
+            end
+            result = _get_columns(q, table)
+            return result, (arch, tab + 1)
+        end
+
+        arch += 1
+        tab = 0
     end
 
     close!(q)
@@ -188,29 +242,44 @@ end
     end
     q._q_lock.closed = true
 
-    return Base.iterate(q, 1)
+    return Base.iterate(q, (1, 0))
 end
 
 """
     length(q::Query)
 
-Returns the number of matching archetypes with at least one entity in the query.
+Returns the number of matching tables with at least one entity in the query.
 
 Does not iterate or [close!](@ref close!(::Query)) the query.
 
 !!! note
 
-    The time complexity is linear with the number of archetypes in the query's pre-selection.
+    The time complexity is linear with the number of tables in the query's pre-selection.
 """
 function Base.length(q::Query)
     count = 0
     for archetype in q._archetypes
-        if isempty(archetype.entities)
+        if isempty(archetype.tables.tables) ||
+           !_contains_all(archetype.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
-        if _contains_all(archetype.mask, q._mask) &&
-           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+
+        if !_has_relations(archetype)
+            @inbounds table = archetype.tables[1]
+            if isempty(table.entities)
+                continue
+            end
             count += 1
+            continue
+        end
+
+        tables = _get_tables(q._world, archetype, q._relations)
+        for table in tables
+            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._relations)
+                count += 1
+            end
         end
     end
     count
@@ -231,12 +300,24 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 function count_entities(q::Query)
     count = 0
     for archetype in q._archetypes
-        if isempty(archetype.entities)
+        if isempty(archetype.tables.tables) ||
+           !_contains_all(archetype.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
-        if _contains_all(archetype.mask, q._mask) &&
-           !(q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
-            count += length(archetype.entities)
+
+        if !_has_relations(archetype)
+            table = archetype.tables[1]
+            count += length(table.entities)
+            continue
+        end
+
+        tables = _get_tables(q._world, archetype, q._relations)
+        for table in tables
+            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._relations)
+                count += length(table.entities)
+            end
         end
     end
     count
@@ -257,21 +338,20 @@ end
 
 @generated function _get_columns(
     q::Query{W,TS,SM,EX,OPT,N,M},
-    idx::Int,
+    table::_Table,
 ) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters
 
     exprs = Expr[]
-    push!(exprs, :(archetype = q._archetypes[idx]))
-    push!(exprs, :(entities = archetype.entities))
+    push!(exprs, :(entities = table.entities))
     for i in 1:N
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
         push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[archetype.id]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table.id]))
 
         if is_optional[i] === Val{true}
             if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0

@@ -13,6 +13,7 @@ include("mask.jl")
 include("vec_map.jl")
 include("storage.jl")
 include("graph.jl")
+include("table.jl")
 include("archetype.jl")
 include("event.jl")
 include("index.jl")
@@ -32,6 +33,7 @@ export remove_entity!, zero_entity, is_locked, reset!
 export get_components, set_components!, has_components
 export add_components!, remove_components!
 export exchange_components!
+export get_relations, set_relations!
 export get_resource, has_resource, add_resource!, set_resource!, remove_resource!
 
 export Entity
@@ -48,6 +50,6 @@ export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
 export Observer, observe!, emit_event!
 export unpack, @unpack
 
-export StructArrayStorage, VectorStorage
+export StructArrayStorage, VectorStorage, Relationship
 
 end
