@@ -28,18 +28,18 @@
     @test node3 !== start
     @test _get_bit(node3.mask, 5)
 
-    node4 = _find_node(graph, node3, (), (5,), _Mask{1}(), _Mask{1}(5,))
+    node4 = _find_node(graph, node3, (), (5,), _Mask{1}(), _Mask{1}(5))
     @test node4 === start
 
     # Test error on removing nonexistent component
     @test_throws(
         "ArgumentError: entity does not have component to remove",
-        _find_node(graph, start, (), (7,), _Mask{1}(), _Mask{1}(7,))
+        _find_node(graph, start, (), (7,), _Mask{1}(), _Mask{1}(7))
     )
 
     # Test error on adding duplicate component
     @test_throws(
         "ArgumentError: entity already has component to add, or it was added twice",
-        _find_node(graph, node3, (5,), (), _Mask{1}(5,), _Mask{1}())
+        _find_node(graph, node3, (5,), (), _Mask{1}(5), _Mask{1}())
     )
 end

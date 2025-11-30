@@ -569,7 +569,10 @@ end
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
 
-    push!(exprs, :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)))
+    push!(
+        exprs,
+        :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)),
+    )
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
@@ -724,7 +727,10 @@ end
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)))
+    push!(
+        exprs,
+        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)),
+    )
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 
@@ -826,7 +832,10 @@ end
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
 
-    push!(exprs, :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)))
+    push!(
+        exprs,
+        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask)),
+    )
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
 

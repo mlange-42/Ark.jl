@@ -25,8 +25,8 @@ function _find_or_create(g::_Graph, mask::_MutableMask)
     get!(() -> _GraphNode(immut_mask, typemax(UInt32)), g.nodes, immut_mask)
 end
 
-function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}}, 
-        add_mask::_Mask, rem_mask::_Mask)
+function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
+    add_mask::_Mask, rem_mask::_Mask)
     if _is_not_zero(_clear_bits(rem_mask, start.mask))
         throw(ArgumentError("entity does not have component to remove"))
     elseif add_mask != _clear_bits(add_mask, start.mask)
