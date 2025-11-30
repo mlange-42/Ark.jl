@@ -107,13 +107,12 @@ end
     optional_types = _to_types(OT)
     rel_types = _to_types(TR)
 
-    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
-
-    # TODO: check relation components are actually relations
-
     # check for duplicates
     all_comps = vcat(required_types, with_types, without_types, optional_types)
     _check_no_duplicates(all_comps)
+
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
 
     comp_types = union(required_types, optional_types)
     non_exclude_types = union(comp_types, with_types)
@@ -127,6 +126,7 @@ end
     with_ids = map(C -> _component_id(CS, C), with_types)
     without_ids = map(C -> _component_id(CS, C), without_types)
     non_exclude_ids = map(C -> _component_id(CS, C), non_exclude_types)
+    rel_ids = map(C -> _component_id(CS, C), rel_types)
 
     M = max(1, cld(length(CS.parameters), 64))
     mask = _Mask{M}(required_ids..., with_ids...)

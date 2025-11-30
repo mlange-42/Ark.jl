@@ -249,15 +249,11 @@ end
 
 function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::UInt32
     if length(relations) < length(arch.relations)
-        # TODO: check duplicates
         throw(ArgumentError("relation targets must be fully specified"))
     end
-    # TODO: check that all components are relations
     # TODO: check that the archetype contains all components
 
     _check_relation_targets(world, relations)
-
-    # TODO: recycle tables if available
 
     new_table_id = length(world._tables) + 1
     table = _new_table(UInt32(new_table_id), arch.id, world._initial_capacity, relations)
