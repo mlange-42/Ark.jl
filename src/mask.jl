@@ -97,12 +97,8 @@ end
     return :(_Mask{$M}(($(expr...),)))
 end
 
-@inline @generated function _is_zero(m::_Mask{M})::Bool where M
-    expr = Expr[]
-    for i in 1:M
-        push!(expr, :((m.bits[$i] == 0)))
-    end
-    return Expr(:call, :*, expr...)
+@inline function _is_zero(m::_Mask{M})::Bool where M
+    return m == _Mask{M}()
 end
 
 _is_not_zero(m::_Mask)::Bool = !_is_zero(m)
