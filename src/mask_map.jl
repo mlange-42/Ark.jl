@@ -6,7 +6,7 @@ const LOAD_FACTOR = 0.75
 mutable struct _Mask_Map{N,V}
     keys::Memory{_Mask{N}}
     vals::Memory{V}
-    occupied::Memory{Bool}
+    occupied::Memory{UInt8}
     count::Int
     mask::Int
     max_load::Int
@@ -15,7 +15,7 @@ mutable struct _Mask_Map{N,V}
         sz = nextpow(2, initial_size)
         keys = Memory{_Mask{N}}(undef, sz)
         vals = Memory{V}(undef, sz)
-        occupied = zeros(Bool, sz)
+        occupied = zeros(UInt8, sz)
         max_load = floor(Int, sz * LOAD_FACTOR)
         new{N,V}(keys, vals, occupied, 0, sz - 1, max_load)
     end
@@ -32,21 +32,22 @@ function _grow!(d::_Mask_Map{N,V}) where {N,V}
 
     new_keys = Memory{_Mask{N}}(undef, new_cap)
     new_vals = Memory{V}(undef, new_cap)
-    new_occupied = zeros(Bool, new_cap)
+    new_occupied = zeros(UInt8, new_cap)
 
     @inbounds for i in 1:old_cap
-        if old_occupied[i] == true
+        h2 = old_occupied[i]
+        if h2 != 0x00
             k = old_keys[i]
             v = old_vals[i]
             idx = (hash(k) & new_mask) + 1
 
-            while new_occupied[idx] == true
+            while new_occupied[idx] != 0x00
                 idx = (idx & new_mask) + 1
             end
 
             new_keys[idx] = k
             new_vals[idx] = v
-            new_occupied[idx] = true
+            new_occupied[idx] = h2
         end
     end
 
@@ -60,24 +61,32 @@ end
 
 function Base.getindex(d::_Mask_Map, key::_Mask)
     mask = d.mask
-    idx = (hash(key) & mask) + 1
-    @inbounds while d.occupied[idx] == true
-        if d.keys[idx] == key
+    h = hash(key)
+    idx = (h & mask) + 1
+    h2 = (h % UInt8) | 0x01
+    @inbounds h2_idx = d.occupied[idx]
+    @inbounds while h2_idx != 0x00
+        if h2 == h2_idx && d.keys[idx] == key
             return d.vals[idx]
         end
         idx = (idx & mask) + 1
+        h2_idx = d.occupied[idx]
     end
     throw(KeyError(key))
 end
 
 function Base.get(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
     mask = d.mask
-    idx = (hash(key) & mask) + 1
-    @inbounds while d.occupied[idx] == true
-        if d.keys[idx] == key
+    h = hash(key)
+    idx = (h & mask) + 1
+    h2 = (h % UInt8) | 0x01
+    @inbounds h2_idx = d.occupied[idx]
+    @inbounds while h2_idx != 0x00
+        if h2 == h2_idx && d.keys[idx] == key
             return d.vals[idx]
         end
         idx = (idx & mask) + 1
+        h2_idx = d.occupied[idx]
     end
     return f()
 end
@@ -88,19 +97,23 @@ function Base.get!(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
     end
 
     mask = d.mask
-    idx = (hash(key) & mask) + 1
-    @inbounds while d.occupied[idx] == true
-        if d.keys[idx] == key
+    h = hash(key)
+    idx = (h & mask) + 1
+    h2 = (h % UInt8) | 0x01
+    @inbounds h2_idx = d.occupied[idx]
+    @inbounds while h2_idx != 0x00
+        if h2 == h2_idx && d.keys[idx] == key
             return d.vals[idx]
         end
         idx = (idx & mask) + 1
+        h2_idx = d.occupied[idx]
     end
 
     val = f()
     @inbounds begin
         d.keys[idx] = key
         d.vals[idx] = val
-        d.occupied[idx] = true
+        d.occupied[idx] = h2
         d.count += 1
     end
     return val
