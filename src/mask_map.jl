@@ -29,7 +29,6 @@ function _grow!(d::_Mask_Map{N,V}) where {N,V}
 
     new_cap = old_cap << 1
     new_mask = new_cap - 1
-
     new_keys = Memory{_Mask{N}}(undef, new_cap)
     new_vals = Memory{V}(undef, new_cap)
     new_occupied = zeros(UInt8, new_cap)
@@ -40,11 +39,9 @@ function _grow!(d::_Mask_Map{N,V}) where {N,V}
             k = old_keys[i]
             v = old_vals[i]
             idx = (hash(k) & new_mask) + 1
-
             while new_occupied[idx] != 0x00
                 idx = (idx & new_mask) + 1
             end
-
             new_keys[idx] = k
             new_vals[idx] = v
             new_occupied[idx] = h2
@@ -56,7 +53,6 @@ function _grow!(d::_Mask_Map{N,V}) where {N,V}
     d.occupied = new_occupied
     d.mask = new_mask
     d.max_load = floor(Int, new_cap * LOAD_FACTOR)
-    return nothing
 end
 
 macro _get_value_loop()
