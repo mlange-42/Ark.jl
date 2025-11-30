@@ -166,14 +166,58 @@ end
     end
     @test cnt == 30
 
-    query = Query(world, (Position,); relations=(ChildOf => parent2,))
+    query = Query(world, (Position, ChildOf); relations=(ChildOf => parent2,))
     @test length(query) == 1
     @test count_entities(query) == 10
     cnt = 0
-    for (entities, positions) in query
+    for (entities, positions, _) in query
         cnt += length(entities)
     end
     @test cnt == 10
+end
+
+@testset "Query multiple relations" begin
+    world = World(Dummy, Position, ChildOf, ChildOf2)
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+    parent3 = new_entity!(world, ())
+
+    new_entities!(world, 10, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent1, ChildOf2 => parent1),
+    )
+    new_entities!(world, 11, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent1, ChildOf2 => parent2),
+    )
+    new_entities!(world, 12, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent1, ChildOf2 => parent3),
+    )
+
+    query = Query(world, (ChildOf,); relations=(ChildOf => parent1,))
+    @test length(query) == 3
+    @test count_entities(query) == 33
+    count = 0
+    for (entities, _) in query
+        count += length(entities)
+    end
+    @test count == 33
+
+    query = Query(world, (ChildOf2,); relations=(ChildOf2 => parent2,))
+    @test length(query) == 1
+    @test count_entities(query) == 11
+    count = 0
+    for (entities, _) in query
+        count += length(entities)
+    end
+    @test count == 11
+
+    query = Query(world, (ChildOf, ChildOf2); relations=(ChildOf => parent1, ChildOf2 => parent2))
+    @test length(query) == 1
+    @test count_entities(query) == 11
+    count = 0
+    for (entities, _, _) in query
+        count += length(entities)
+    end
+    @test count == 11
 end
 
 @testset "Query empty" begin
