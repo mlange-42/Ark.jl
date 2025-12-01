@@ -287,7 +287,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     end
 
     arch =
-        _Archetype(UInt32(length(world._archetypes) + 1), node, _TableIDs(), relations, components...)
+        _Archetype(UInt32(length(world._archetypes) + 1), node, relations, components...)
     push!(world._archetypes, arch)
     if _has_relations(arch)
         push!(world._relation_archetypes, arch.id)
@@ -369,10 +369,10 @@ end
 
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
-    if length(arch.tables) == 0
+    if arch.table === nothing
         return @inbounds world._tables[1], false
     end
-    return @inbounds arch.tables[1], true
+    return @inbounds arch.table::_Table, true
 end
 
 function _get_table_slow_path(
@@ -1811,7 +1811,7 @@ end
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask], _TableIDs(zero_table))],
+            [_Archetype(UInt32(1), graph.nodes[$start_mask], zero_table)],
             Vector{_Archetype{$(M)}}(),
             [zero_table],
             _ComponentIndex{$(M)}($(length(types))),
