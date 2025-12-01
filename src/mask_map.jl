@@ -11,7 +11,7 @@ mutable struct _Mask_Map{N,V}
     count::Int
     mask::Int
     max_load::Int
-    function _Mask_Map{N,V}(initial_size::Int=2) where {N,V}
+    function _Mask_Map{N,V}(initial_size::Int=16) where {N,V}
         # Force power of 2 size
         sz = nextpow(2, initial_size)
         keys = Memory{_Mask{N}}(undef, sz)
