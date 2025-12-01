@@ -2,6 +2,22 @@
 abstract type _AbstractWorld end
 
 """
+    Relationship
+
+Abstract marker type for relationship components.
+
+# Example
+
+```jldoctest; setup = :(using Ark), output = false
+struct ChildOf <: Relationship end
+
+# output
+
+```
+"""
+abstract type Relationship end
+
+"""
     StructArrayStorage
 
 Marks component types for using StructArray-like [storage mode](@ref component-storages) in the world constructor.
