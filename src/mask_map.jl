@@ -1,7 +1,7 @@
 
 isdefined(@__MODULE__, :Memory) || const Memory = Vector # Compat for Julia < 1.11
 
-const _LOAD_FACTOR = 0.75
+const _LOAD_FACTOR = 0.5
 const _RSHIFT = sizeof(UInt) * 7
 
 mutable struct _Mask_Map{N,V}
