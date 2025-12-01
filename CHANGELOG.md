@@ -4,7 +4,7 @@
 
 ### Features
 
-- Adds entity relationships (#340)
+- Adds entity relationships (#340, #349)
 
 ## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 

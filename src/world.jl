@@ -1183,7 +1183,13 @@ Entity(4, 0)
 end
 
 """
-    new_entities!(world::World, n::Int, defaults::Tuple; relations:Tuple=(), iterate::Bool=false)::Union{Batch,Nothing}
+    new_entities!(
+        world::World,
+        n::Int, 
+        defaults::Tuple;
+        relations:Tuple=(),
+        iterate::Bool=false,
+    )::Union{Batch,Nothing}
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 Component types are inferred from the provided default values.
@@ -1328,7 +1334,12 @@ end
 end
 
 """
-    new_entities!(world::World, n::Int, comp_types::Tuple; relations:Tuple=())::Batch
+    new_entities!(
+        world::World,
+        n::Int,
+        comp_types::Tuple;
+        relations:Tuple=(),
+    )::Batch
 
 Creates the given number of [`Entity`](@ref).
 
@@ -1473,7 +1484,13 @@ remove_components!(world, entity, (Position, Velocity))
 end
 
 """
-    exchange_components!(world::World{CS,CT,N}, entity::Entity; add::Tuple, remove::Tuple, relations::Tuple)
+    exchange_components!(
+        world::World,
+        entity::Entity;
+        add::Tuple=(),
+        remove::Tuple=(),
+        relations::Tuple=(),
+    )
 
 Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
 

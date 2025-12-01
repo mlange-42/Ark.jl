@@ -54,6 +54,7 @@ without the need for deep software engineering expertise.
 - [Queries](@ref)
 - [Systems](@ref)
 - [Resources](@ref)
+- [Entity relationships](@ref)
 - [Event system](@ref)
 - [Architecture](@ref)
 
