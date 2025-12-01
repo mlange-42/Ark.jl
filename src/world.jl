@@ -375,10 +375,7 @@ end
 
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{Ref{_Table},Bool}
-    if length(arch.tables) == 0
-        return Ref{_Table}(world._tables[1]), false
-    end
-    return @inbounds arch.tables[1], true
+    return @inbounds arch.table, length(arch.tables) > 0
 end
 
 function _get_table_slow_path(
