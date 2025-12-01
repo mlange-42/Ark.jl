@@ -60,7 +60,7 @@ function setup_makie(world::World, size::WorldSize)
         vsync=true,
         renderloop=GLMakie.renderloop,
         render_on_demand=false,
-        focus_on_show=!IS_CI,
+        focus_on_show=(!IS_CI),
     )
 
     size = (size.width * size.scale, size.height * size.scale)
@@ -68,7 +68,7 @@ function setup_makie(world::World, size::WorldSize)
 
     scene = LScene(
         f[1:3, 1], width=size[1], height=size[2],
-        scenekw=(camera=campixel!, size=size, backgroundcolor=:black),
+        scenekw=(camera=(campixel!), size=size, backgroundcolor=:black),
     )
 
     data = PlotData()

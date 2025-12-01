@@ -41,6 +41,12 @@ end
     end
 end
 
+@inline function _check_if_intersect(types_1::Vector{DataType}, types_2::Vector{DataType})
+    if !isempty(intersect(types_1, types_2))
+        throw(ArgumentError("component added and removed in the same exchange operation"))
+    end
+end
+
 const DEBUG = ("ARK_RUNNING_TESTS" in keys(ENV) && lowercase(ENV["ARK_RUNNING_TESTS"]) == "true")
 
 macro check(arg)

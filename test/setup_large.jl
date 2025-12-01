@@ -15,3 +15,4 @@ const fake_types = [FakeComp{i} for i in 1:300]
 const fake_storage = [VectorStorage for i in 1:300]
 const N_fake = 300
 const offset_ID = 255
+const M_mask = 5

@@ -6,6 +6,10 @@
 
 - Adds entity relationships (#340, #349)
 
+### Performance
+
+- Use an hash table for some component transitions (#348)
+
 ## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 
 ### Breaking changes

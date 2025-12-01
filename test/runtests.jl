@@ -29,6 +29,7 @@ include("test_event.jl")
 include("test_batch.jl")
 include("test_registry.jl")
 include("test_vec_map.jl")
+include("test_mask_map.jl")
 include("test_graph.jl")
 include("test_quality.jl")
 

@@ -56,9 +56,9 @@ function setup_makie(world::World, size::WorldSize)
         vsync=true,
         renderloop=GLMakie.renderloop,
         render_on_demand=false,
-        focus_on_show=!IS_CI,
+        focus_on_show=(!IS_CI),
     )
-    scene = Scene(camera=campixel!, size=(size.width, size.height), backgroundcolor=:black)
+    scene = Scene(camera=(campixel!), size=(size.width, size.height), backgroundcolor=:black)
 
     boid_shape = Polygon(Point2f[(2, 0), (-3, 4), (-1, 0), (-3, -4)])
     data = PlotData()

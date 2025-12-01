@@ -47,7 +47,7 @@ function setup_makie(world::World, size::WorldSize)
         vsync=true,
         renderloop=GLMakie.renderloop,
         render_on_demand=false,
-        focus_on_show=!IS_CI,
+        focus_on_show=(!IS_CI),
     )
 
     data = PlotData()
