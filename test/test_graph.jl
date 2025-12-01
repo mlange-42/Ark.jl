@@ -54,13 +54,13 @@
 
     # Test error on duplicates in adding componets
     @test_throws(
-        "ArgumentError: component added twice",
+        "ArgumentError: duplicate component types: Velocity",
         add_components!(world, e, (Velocity(0.0, 0.0), Velocity(0.0, 0.0)))
     )
 
     # Test error on duplicates on removing components
     @test_throws(
-        "ArgumentError: component removed twice",
+        "ArgumentError: duplicate component types: Position",
         remove_components!(world, e, (Position, Position))
     )
 end

@@ -152,9 +152,12 @@ end
     remove::Tuple{Vararg{Int}},
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
+    add_mask::_Mask,
+    rem_mask::_Mask,
+    use_map::Union{_NoUseMap,_UseMap},
 )::UInt32
     @inbounds old_arch = world._archetypes[old_table.archetype]
-    new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove)
+    new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove, add_mask, rem_mask, use_map)
     @inbounds new_arch = world._archetypes[new_arch_index]
 
     if !_has_relations(new_arch) && isempty(relations)
@@ -581,6 +584,7 @@ end
 
     _check_no_duplicates(add_types)
     _check_no_duplicates(rem_types)
+    _check_if_intersect(add_types, rem_types)
     _check_no_duplicates(rel_types)
     _check_relations(rel_types)
     _check_is_subset(rel_types, add_types)
@@ -589,7 +593,7 @@ end
     add_ids = tuple([_component_id(CS, T) for T in add_types]...)
     rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
     rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
-    throw_if_add_remove_same_operation(add_ids, rem_ids)
+
     num_ids = length(add_ids) + length(rem_ids)
     use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
@@ -1101,7 +1105,22 @@ end
     rem_mask = _Mask{M}()
 
     exprs = []
-    push!(exprs, :(table = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets, $add_mask, $rem_mask, $use_map)))
+    push!(
+        exprs,
+        :(
+            table = _find_or_create_table!(
+                world,
+                world._tables[1],
+                $ids,
+                (),
+                $rel_ids,
+                targets,
+                $add_mask,
+                $rem_mask,
+                $use_map,
+            )
+        ),
+    )
     push!(exprs, :(tmp = _create_entity!(world, table)))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
@@ -1302,7 +1321,22 @@ end
     rem_mask = _Mask{M}()
 
     exprs = []
-    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets, $add_mask, $rem_mask, $use_map)))
+    push!(
+        exprs,
+        :(
+            table_idx = _find_or_create_table!(
+                world,
+                world._tables[1],
+                $ids,
+                (),
+                $rel_ids,
+                targets,
+                $add_mask,
+                $rem_mask,
+                $use_map,
+            )
+        ),
+    )
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
     push!(exprs, :(table = world._tables[table_idx]))
 
@@ -1428,7 +1462,6 @@ end
     ids = tuple([_component_id(CS, T) for T in types]...)
     rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
 
-    throw_if_id_twice(ids, ())
     num_ids = length(ids)
     use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
@@ -1437,7 +1470,22 @@ end
     rem_mask = _Mask{M}()
 
     exprs = []
-    push!(exprs, :(table_idx = _find_or_create_table!(world, world._tables[1], $ids, (), $rel_ids, targets, $add_mask, $rem_mask, $use_map)))
+    push!(
+        exprs,
+        :(
+            table_idx = _find_or_create_table!(
+                world,
+                world._tables[1],
+                $ids,
+                (),
+                $rel_ids,
+                targets,
+                $add_mask,
+                $rem_mask,
+                $use_map,
+            )
+        ),
+    )
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
     push!(exprs, :(table = world._tables[table_idx]))
 
@@ -1581,6 +1629,7 @@ end
 
     _check_no_duplicates(add_types)
     _check_no_duplicates(rem_types)
+    _check_if_intersect(add_types, rem_types)
     _check_no_duplicates(rel_types)
     _check_relations(rel_types)
     _check_is_subset(rel_types, add_types)
@@ -1591,7 +1640,7 @@ end
     add_ids = tuple([_component_id(CS, T) for T in add_types]...)
     rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
     rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
-    throw_if_add_remove_same_operation(add_ids, rem_ids)
+
     num_ids = length(add_ids) + length(rem_ids)
     use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
 
@@ -1606,7 +1655,7 @@ end
         :(
             new_table_index =
                 _find_or_create_table!(
-                    world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map
+                    world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
                 )
         ),
     )
@@ -1762,7 +1811,7 @@ end
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask]), _TableIDs(zero_table))],
+            [_Archetype(UInt32(1), graph.nodes[$start_mask], _TableIDs(zero_table))],
             Vector{_Archetype{$(M)}}(),
             [zero_table],
             _ComponentIndex{$(M)}($(length(types))),

@@ -118,17 +118,47 @@ end
 @testset "World create table" begin
     world = World(Position, Velocity)
 
-    table1 = _find_or_create_table!(world, world._tables[1], (1,), (), (), (), _Mask{M_mask}(1), _Mask{M_mask}(), _NoUseMap())
+    table1 = _find_or_create_table!(
+        world,
+        world._tables[1],
+        (1,),
+        (),
+        (),
+        (),
+        _Mask{M_mask}(1),
+        _Mask{M_mask}(),
+        _NoUseMap(),
+    )
     @test table1 == 2
     @test world._tables[table1].archetype == 2
     @test length(world._tables) == 2
 
-    table2 = _find_or_create_table!(world, world._tables[1], (1, 2), (), (), (), _Mask{M_mask}(1), _Mask{M_mask}(), _NoUseMap())
+    table2 = _find_or_create_table!(
+        world,
+        world._tables[1],
+        (1, 2),
+        (),
+        (),
+        (),
+        _Mask{M_mask}(1),
+        _Mask{M_mask}(),
+        _NoUseMap(),
+    )
     @test table2 == 3
     @test world._tables[table2].archetype == 3
     @test length(world._tables) == 3
 
-    table3 = _find_or_create_table!(world, world._tables[1], (1,), (), (), (), _Mask{M_mask}(1), _Mask{M_mask}(), _NoUseMap())
+    table3 = _find_or_create_table!(
+        world,
+        world._tables[1],
+        (1,),
+        (),
+        (),
+        (),
+        _Mask{M_mask}(1),
+        _Mask{M_mask}(),
+        _NoUseMap(),
+    )
     @test table3 == table1
     @test length(world._tables) == 3
 
@@ -201,7 +231,17 @@ end
     pos_id = _component_id(params, Position)
     @test pos_id == offset_ID + UInt8(1)
 
-    index = _find_or_create_table!(world, world._tables[1], (pos_id,), (), (), (), _Mask{M_mask}(pos_id), _Mask{M_mask}(), _NoUseMap())
+    index = _find_or_create_table!(
+        world,
+        world._tables[1],
+        (pos_id,),
+        (),
+        (),
+        (),
+        _Mask{M_mask}(pos_id),
+        _Mask{M_mask}(),
+        _NoUseMap(),
+    )
     @test index == 2
     @test length(world._tables) == 2
     @test length(world._archetypes) == 2
@@ -209,12 +249,32 @@ end
     vel_id = _component_id(params, Velocity)
     @test vel_id == offset_ID + UInt8(2)
 
-    index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), (), (), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}(), _NoUseMap(),)
+    index = _find_or_create_table!(
+        world,
+        world._tables[1],
+        (pos_id, vel_id),
+        (),
+        (),
+        (),
+        _Mask{M_mask}(pos_id, vel_id),
+        _Mask{M_mask}(),
+        _NoUseMap(),
+    )
     @test index == 3
     @test length(world._tables) == 3
     @test length(world._archetypes) == 3
 
-    index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), (), (), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}(), _UseMap(),)
+    index = _find_or_create_table!(
+        world,
+        world._tables[1],
+        (pos_id, vel_id),
+        (),
+        (),
+        (),
+        _Mask{M_mask}(pos_id, vel_id),
+        _Mask{M_mask}(),
+        _UseMap(),
+    )
     @test index == 3
     @test length(world._tables) == 3
     @test length(world._archetypes) == 3
@@ -239,7 +299,17 @@ end
     params = typeof(world).parameters[1]
     pos_id = _component_id(params, Position)
     vel_id = _component_id(params, Velocity)
-    table_index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), (), (), (), _Mask{M_mask}(pos_id, vel_id), _Mask{M_mask}(), _NoUseMap(),)
+    table_index = _find_or_create_table!(
+        world,
+        world._tables[1],
+        (pos_id, vel_id),
+        (),
+        (),
+        (),
+        _Mask{M_mask}(pos_id, vel_id),
+        _Mask{M_mask}(),
+        _NoUseMap(),
+    )
     @test table_index == 2
 
     entity, index = _create_entity!(world, table_index)

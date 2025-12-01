@@ -41,6 +41,12 @@ end
     end
 end
 
+@inline function _check_if_intersect(types_1::Vector{DataType}, types_2::Vector{DataType})
+    if !isempty(intersect(types_1, types_2))
+        throw(ArgumentError("component added and removed in the same exchange operation"))
+    end
+end
+
 const DEBUG = ("ARK_RUNNING_TESTS" in keys(ENV) && lowercase(ENV["ARK_RUNNING_TESTS"]) == "true")
 
 macro check(arg)
@@ -56,21 +62,6 @@ function _format_type(T)
         return string(nameof(T), "{", join(map(_format_type, T.parameters), ", "), "}")
     else
         return string(T)
-    end
-end
-
-function throw_if_add_remove_same_operation(add, remove)
-    if !isempty(intersect(add, remove))
-        throw(ArgumentError("component added and removed in the same exchange operation"))
-    end
-end
-
-function throw_if_id_twice(add, remove)
-    if length(add) != length(unique(add))
-        throw(ArgumentError("component added twice"))
-    end
-    if length(remove) != length(unique(remove))
-        throw(ArgumentError("component removed twice"))
     end
 end
 
