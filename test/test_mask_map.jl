@@ -52,11 +52,11 @@ end
 
     # capacity is 4, max_load is 3 (4 * _LOAD_FACTOR=0.75)
     # reach max_load
-    k1 = _Mask{1}((UInt64(1),));
+    k1 = _Mask{1}((UInt64(1),))
     Base.get!(() -> 1, d, k1)
-    k2 = _Mask{1}((UInt64(2),));
+    k2 = _Mask{1}((UInt64(2),))
     Base.get!(() -> 2, d, k2)
-    k3 = _Mask{1}((UInt64(3),));
+    k3 = _Mask{1}((UInt64(3),))
     Base.get!(() -> 3, d, k3)
 
     @test length(d.keys) == 4
