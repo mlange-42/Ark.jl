@@ -73,6 +73,18 @@ macro _get_value_loop()
     end)
 end
 
+macro _get_zero_index_loop()
+    return esc(quote
+        mask = d.mask
+        idx = (h & mask) + 1
+        @inbounds h2_idx = d.occupied[idx]
+        @inbounds while h2_idx != 0x00
+            idx = (idx & mask) + 1
+            h2_idx = d.occupied[idx]
+        end
+    end)
+end
+
 function Base.getindex(d::_Mask_Map, key::_Mask)
     @_get_value_loop()
     throw(KeyError(key))
@@ -84,10 +96,11 @@ function Base.get(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
 end
 
 function Base.get!(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
+    @_get_value_loop()
     if d.count >= d.max_load
         _grow!(d)
+        @_get_zero_index_loop()
     end
-    @_get_value_loop()
     val = f()
     @inbounds begin
         d.keys[idx] = key
