@@ -155,7 +155,7 @@ end
     add_mask::_Mask,
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
-)::UInt32
+)::Ref{_Table}
     @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove, add_mask, rem_mask, use_map)
     @inbounds new_arch = world._archetypes[new_arch_index]
@@ -163,7 +163,7 @@ end
     if !_has_relations(new_arch) && isempty(relations)
         new_table, found = _get_table(world, new_arch)
         if found
-            return new_table.id
+            return new_table
         end
         return _create_table!(world, new_arch, _empty_relations)
     end
@@ -179,7 +179,7 @@ function _find_or_create_table!(
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
     has_remove::Bool,
-)::UInt32
+)::Ref{_Table}
     # Find existing relations that were not removed, and add new relations.
     all_relations = world._temp_relations
     requires_free = true
@@ -212,43 +212,44 @@ function _find_or_create_table!(
         if requires_free
             resize!(all_relations, 0)
         end
-        return new_table.id
+        return new_table
     end
 
     if length(all_relations) > 0
         sort!(all_relations; by=first)
     end
 
-    new_table_id, found = _get_free_table!(new_arch)
+    new_table, found = _get_free_table!(new_arch)
     if found
-        _recycle_table!(world, new_arch, new_table_id, all_relations)
+        new_table = _recycle_table!(world, new_arch, new_table, all_relations)
     else
-        new_table_id = _create_table!(world, new_arch, copy(all_relations))
+        new_table = _create_table!(world, new_arch, copy(all_relations))
     end
     if requires_free
         resize!(all_relations, 0)
     end
 
-    return new_table_id
+    return new_table
 end
 
-function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relations::Vector{Pair{Int,Entity}})
+function _recycle_table!(world::World, arch::_Archetype, table_ref::Ref{_Table}, relations::Vector{Pair{Int,Entity}})
     if length(relations) < length(arch.relations)
         throw(ArgumentError("relation targets must be fully specified"))
     end
 
     _check_relation_targets(world, relations)
-    table = world._tables[table_id]
+    table = table_ref[]
 
     for (i, comp) in enumerate(relations)
         entity = comp.second
-        _activate_table_relation_for_comp!(world, comp.first, Int(table_id), entity)
+        _activate_table_relation_for_comp!(world, comp.first, Int(table.id), entity)
         table.relations[i] = comp
         world._targets[entity._id] = true
     end
+    return table_ref
 end
 
-function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::UInt32
+function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Ref{_Table}
     if length(relations) < length(arch.relations)
         throw(ArgumentError("relation targets must be fully specified"))
     end
@@ -272,9 +273,10 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
         world._targets[entity._id] = true
     end
 
-    _add_table!(world._relations, arch, table)
+    ref = Ref{_Table}(world._tables[end])
+    _add_table!(world._relations, arch, ref)
 
-    return UInt32(new_table_id)
+    return ref
 end
 
 function _create_archetype!(world::World, node::_GraphNode)::UInt32
@@ -287,7 +289,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     end
 
     arch =
-        _Archetype(UInt32(length(world._archetypes) + 1), node, _TableIDs(), relations, components...)
+        _Archetype(UInt32(length(world._archetypes) + 1), node, relations, components...)
     push!(world._archetypes, arch)
     if _has_relations(arch)
         push!(world._relation_archetypes, arch.id)
@@ -353,9 +355,13 @@ function _get_exchange_targets_unchecked(
     return new_relations
 end
 
-@inline function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
+@inline function _get_table(
+    world::World,
+    arch::_Archetype,
+    relations::Vector{Pair{Int,Entity}},
+)::Tuple{Ref{_Table},Bool}
     if length(arch.tables) == 0
-        return @inbounds world._tables[1], false
+        return Ref{_Table}(world._tables[1]), false
     end
 
     # TODO: this should not be possible to happen. Check!
@@ -368,9 +374,9 @@ end
 end
 
 # only if no relations in archetype and operation
-@inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
+@inline function _get_table(world::World, arch::_Archetype)::Tuple{Ref{_Table},Bool}
     if length(arch.tables) == 0
-        return @inbounds world._tables[1], false
+        return Ref{_Table}(world._tables[1]), false
     end
     return @inbounds arch.tables[1], true
 end
@@ -379,7 +385,7 @@ function _get_table_slow_path(
     world::World,
     arch::_Archetype,
     relations::Vector{Pair{Int,Entity}},
-)::Tuple{_Table,Bool}
+)::Tuple{Ref{_Table},Bool}
     if length(relations) < length(arch.relations)
         # TODO: check duplicates
         throw(ArgumentError("relation targets must be fully specified"))
@@ -392,7 +398,7 @@ function _get_table_slow_path(
     @inbounds rel_idx = world._relations[rel_comp].archetypes[arch.id]
     index = arch.index[rel_idx]
     if !haskey(index, target_id)
-        return @inbounds world._tables[1], false
+        return Ref{_Table}(world._tables[1]), false
     end
 
     @inbounds tables = index[target_id]
@@ -401,15 +407,15 @@ function _get_table_slow_path(
     end
 
     for table in tables.tables
-        if _matches_exact(world._relations, table, relations)
+        if _matches_exact(world._relations, table[], relations)
             return table, true
         end
     end
 
-    return @inbounds world._tables[1], false
+    return Ref{_Table}(world._tables[1]), false
 end
 
-function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{_Table}
+function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{Ref{_Table}}
     if !_has_relations(arch) || isempty(relations)
         return arch.tables.tables
     end
@@ -427,33 +433,31 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
     return @inbounds index[target_id].tables
 end
 
-@inline function _create_entity!(world::World, table_index::UInt32)::Tuple{Entity,Int}
+@inline function _create_entity!(world::World, table::_Table)::Tuple{Entity,Int}
     _check_locked(world)
 
     entity = _get_entity(world._entity_pool)
-    table = world._tables[table_index]
     archetype = world._archetypes[table.archetype]
 
     index = _add_entity!(table, entity)
 
     for comp in archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, index)
+        _ensure_column_size_for_comp!(world, comp, table.id, index)
     end
 
     if entity._id > length(world._entities)
-        push!(world._entities, _EntityIndex(table_index, UInt32(index)))
+        push!(world._entities, _EntityIndex(table.id, UInt32(index)))
         push!(world._targets, false)
     else
-        @inbounds world._entities[entity._id] = _EntityIndex(table_index, UInt32(index))
+        @inbounds world._entities[entity._id] = _EntityIndex(table.id, UInt32(index))
         @inbounds world._targets[entity._id] = false
     end
     return entity, index
 end
 
-function _create_entities!(world::World, table_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32}
+function _create_entities!(world::World, table::_Table, n::UInt32)::Tuple{UInt32,UInt32}
     _check_locked(world)
 
-    table = world._tables[Int(table_index)]
     archetype = world._archetypes[table.archetype]
     old_length = length(table.entities)
     new_length = old_length + n
@@ -464,27 +468,26 @@ function _create_entities!(world::World, table_index::UInt32, n::UInt32)::Tuple{
         @inbounds table.entities._data[i] = entity
 
         if entity._id > length(world._entities)
-            push!(world._entities, _EntityIndex(table_index, i))
+            push!(world._entities, _EntityIndex(table.id, i))
             push!(world._targets, false)
         else
-            @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, i)
+            @inbounds world._entities[Int(entity._id)] = _EntityIndex(table.id, i)
             @inbounds world._targets[entity._id] = false
         end
     end
 
     for comp in archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, new_length)
+        _ensure_column_size_for_comp!(world, comp, table.id, new_length)
     end
 
     return old_length + 1, new_length
 end
 
-function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
+function _move_entity!(world::World, entity::Entity, new_table::_Table)::Int
     _check_locked(world)
 
     index = world._entities[entity._id]
     old_table = world._tables[index.table]
-    new_table = world._tables[table_index]
     old_archetype = world._archetypes[old_table.archetype]
     new_archetype = world._archetypes[new_table.archetype]
 
@@ -496,12 +499,12 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
-        _move_component_data!(world, comp, index.table, table_index, index.row)
+        _move_component_data!(world, comp, index.table, new_table.id, index.row)
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
     for comp in new_archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, new_row)
+        _ensure_column_size_for_comp!(world, comp, new_table.id, new_row)
     end
 
     if swapped
@@ -509,7 +512,7 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
         world._entities[swap_entity._id] = index
     end
 
-    world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
+    world._entities[entity._id] = _EntityIndex(new_table.id, UInt32(new_row))
     return new_row
 end
 
@@ -551,8 +554,8 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     _check_locked(world)
 
     index = world._entities[entity._id]
-    new_entity, new_row = _create_entity!(world, index.table)
     table = world._tables[index.table]
+    new_entity, new_row = _create_entity!(world, table)
     archetype = world._archetypes[table.archetype]
 
     for comp in archetype.components
@@ -607,16 +610,16 @@ end
     push!(
         exprs,
         :(
-            new_table_index =
+            new_table_ref =
                 _find_or_create_table!(
                     world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
                 )
         ),
     )
-    push!(exprs, :(new_table = world._tables[new_table_index]))
+    push!(exprs, :(new_table = new_table_ref[]))
     push!(exprs, :(new_archetype = world._archetypes[new_table.archetype]))
 
-    push!(exprs, :(entity_and_row = _create_entity!(world, new_table_index)))
+    push!(exprs, :(entity_and_row = _create_entity!(world, new_table)))
     push!(exprs, :(new_entity = entity_and_row[1]))
     push!(exprs, :(new_row = entity_and_row[2]))
 
@@ -627,7 +630,7 @@ end
                 if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
-                _copy_component_data!(world, comp, index.table, new_table_index, index.row, UInt32(new_row), mode)
+                _copy_component_data!(world, comp, index.table, new_table.id, index.row, UInt32(new_row), mode)
             end
         ),
     )
@@ -639,7 +642,7 @@ end
         val_expr = :(add.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table.id]))
         push!(exprs, :(@inbounds $col_sym[new_row] = $val_expr))
     end
 
@@ -1019,12 +1022,11 @@ end
 
     new_table, found = _get_table(world, archetype, new_relations)
     if !found
-        new_table_id = _create_table!(world, archetype, copy(new_relations))
-        new_table = world._tables[new_table_id]
+        new_table = _create_table!(world, archetype, copy(new_relations))
     end
     resize!(new_relations, 0)
 
-    _ = _move_entity!(world, entity, new_table.id)
+    _ = _move_entity!(world, entity, new_table[])
 
     return nothing
 end
@@ -1071,10 +1073,9 @@ Base.@constprop :aggressive function new_entity!(
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
 
-    entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
+    entity, table = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
     if _has_observers(world._event_manager, OnCreateEntity)
-        table = world._tables[table_id]
-        _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].mask)
+        _fire_create_entity(world._event_manager, entity, world._archetypes[table[].archetype].mask)
     end
     return entity
 end
@@ -1121,7 +1122,8 @@ end
             )
         ),
     )
-    push!(exprs, :(tmp = _create_entity!(world, table)))
+    push!(exprs, :(table_id = table[].id))
+    push!(exprs, :(tmp = _create_entity!(world, table[])))
     push!(exprs, :(entity = tmp[1]))
     push!(exprs, :(index = tmp[2]))
 
@@ -1133,7 +1135,7 @@ end
         val_expr = :(values.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table_id]))
         push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
     end
 
@@ -1324,7 +1326,7 @@ end
     push!(
         exprs,
         :(
-            table_idx = _find_or_create_table!(
+            table_ref = _find_or_create_table!(
                 world,
                 world._tables[1],
                 $ids,
@@ -1337,8 +1339,8 @@ end
             )
         ),
     )
-    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
-    push!(exprs, :(table = world._tables[table_idx]))
+    push!(exprs, :(table = table_ref[]))
+    push!(exprs, :(indices = _create_entities!(world, table, n)))
 
     if length(types) > 0
         body_exprs = Expr(:block)
@@ -1349,7 +1351,7 @@ end
             val_expr = :(values.$i)
 
             push!(body_exprs.args, :($stor_sym = _get_storage(world, $T)))
-            push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[table_idx]))
+            push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[table.id]))
             push!(body_exprs.args, :(fill!(view($col_sym, Int(indices[1]):Int(indices[2])), $val_expr)))
         end
         push!(exprs, :(
@@ -1473,7 +1475,7 @@ end
     push!(
         exprs,
         :(
-            table_idx = _find_or_create_table!(
+            table_ref = _find_or_create_table!(
                 world,
                 world._tables[1],
                 $ids,
@@ -1486,8 +1488,8 @@ end
             )
         ),
     )
-    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
-    push!(exprs, :(table = world._tables[table_idx]))
+    push!(exprs, :(table = table_ref[]))
+    push!(exprs, :(indices = _create_entities!(world, table, n)))
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
@@ -1653,13 +1655,13 @@ end
     push!(
         exprs,
         :(
-            new_table_index =
+            new_table_ref =
                 _find_or_create_table!(
                     world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
                 )
         ),
     )
-    push!(exprs, :(new_table = world._tables[new_table_index]))
+    push!(exprs, :(new_table = new_table_ref[]))
 
     if length(rem_types) > 0
         push!(
@@ -1679,7 +1681,7 @@ end
         )
     end
 
-    push!(exprs, :(row = _move_entity!(world, entity, new_table_index)))
+    push!(exprs, :(row = _move_entity!(world, entity, new_table)))
 
     for i in 1:length(add_types)
         T = add_types[i]
@@ -1688,7 +1690,7 @@ end
         val_expr = :(add.$i)
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table.id]))
         push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
     end
 
@@ -1811,7 +1813,7 @@ end
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask], _TableIDs(zero_table))],
+            [_Archetype(UInt32(1), graph.nodes[$start_mask], zero_table)],
             Vector{_Archetype{$(M)}}(),
             [zero_table],
             _ComponentIndex{$(M)}($(length(types))),
@@ -2213,7 +2215,7 @@ function _cleanup_archetypes(world::World, entity::Entity)
         tables = archetype.target_tables[entity._id]
 
         for t in length(tables.tables):-1:1
-            table = tables.tables[t]
+            table = tables.tables[t][]
             has_target = false
             for rel in table.relations
                 if rel.second._id == entity._id
@@ -2227,12 +2229,11 @@ function _cleanup_archetypes(world::World, entity::Entity)
                 new_relations = _get_exchange_targets_unchecked(world, table, relations)
                 new_table, found = _get_table(world, archetype, new_relations)
                 if !found
-                    new_table_id = _create_table!(world, archetype, copy(new_relations))
-                    new_table = world._tables[new_table_id]
+                    new_table = _create_table!(world, archetype, copy(new_relations))
                 end
                 resize!(new_relations, 0)
 
-                _move_entities!(world, table.id, new_table.id)
+                _move_entities!(world, table.id, new_table[].id)
             end
             _free_table!(archetype, table)
             resize!(relations, 0)

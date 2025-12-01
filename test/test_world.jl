@@ -129,8 +129,8 @@ end
         _Mask{M_mask}(),
         _NoUseMap(),
     )
-    @test table1 == 2
-    @test world._tables[table1].archetype == 2
+    @test table1[].id == 2
+    @test table1[].archetype == 2
     @test length(world._tables) == 2
 
     table2 = _find_or_create_table!(
@@ -144,8 +144,8 @@ end
         _Mask{M_mask}(),
         _NoUseMap(),
     )
-    @test table2 == 3
-    @test world._tables[table2].archetype == 3
+    @test table2[].id == 3
+    @test table2[].archetype == 3
     @test length(world._tables) == 3
 
     table3 = _find_or_create_table!(
@@ -159,11 +159,11 @@ end
         _Mask{M_mask}(),
         _NoUseMap(),
     )
-    @test table3 == table1
+    @test table3[] == table1[]
     @test length(world._tables) == 3
 
-    entity, _ = _create_entity!(world, table1)
-    _move_entity!(world, entity, table2)
+    entity, _ = _create_entity!(world, table1[])
+    _move_entity!(world, entity, table2[])
     remove_entity!(world, entity)
 end
 
@@ -242,7 +242,7 @@ end
         _Mask{M_mask}(),
         _NoUseMap(),
     )
-    @test index == 2
+    @test index[].id == 2
     @test length(world._tables) == 2
     @test length(world._archetypes) == 2
 
@@ -260,7 +260,7 @@ end
         _Mask{M_mask}(),
         _NoUseMap(),
     )
-    @test index == 3
+    @test index[].id == 3
     @test length(world._tables) == 3
     @test length(world._archetypes) == 3
 
@@ -275,7 +275,7 @@ end
         _Mask{M_mask}(),
         _UseMap(),
     )
-    @test index == 3
+    @test index[].id == 3
     @test length(world._tables) == 3
     @test length(world._archetypes) == 3
 
@@ -310,22 +310,22 @@ end
         _Mask{M_mask}(),
         _NoUseMap(),
     )
-    @test table_index == 2
+    @test table_index[].id == 2
 
-    entity, index = _create_entity!(world, table_index)
+    entity, index = _create_entity!(world, table_index[])
     @test entity == _new_entity(2, 0)
     @test index == 1
-    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(table_index, UInt32(1))]
+    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(table_index[].id, UInt32(1))]
 
     remove_entity!(world, entity)
-    entity, index = _create_entity!(world, table_index)
+    entity, index = _create_entity!(world, table_index[])
     @test entity == _new_entity(2, 1)
 
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
 
-    @test length(pos_storage.data[table_index]) == 1
-    @test length(vel_storage.data[table_index]) == 1
+    @test length(pos_storage.data[table_index[].id]) == 1
+    @test length(vel_storage.data[table_index[].id]) == 1
 end
 
 @testset "World get/set components" begin
@@ -447,8 +447,8 @@ end
 
     arch = world._archetypes[2]
     @test length(arch.index[1]) == 2
-    @test arch.index[1][parent1._id].tables == [world._tables[2]]
-    @test arch.index[1][parent2._id].tables == [world._tables[3]]
+    @test arch.index[1][parent1._id].tables[1][] == world._tables[2]
+    @test arch.index[1][parent2._id].tables[1][] == world._tables[3]
 
     e4 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
     @test get_relations(world, e4, (ChildOf,)) == get_relations(world, e2, (ChildOf,))
