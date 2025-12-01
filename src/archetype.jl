@@ -47,24 +47,24 @@ Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
 const _empty_tables = Vector{_Table}()
 
-mutable struct _Archetype{M}
-    const components::Vector{Int}  # Indices into the global ComponentStorage list
-    const relations::Vector{Int}
-    table::Union{Nothing,_Table}
-    const tables::_TableIDs
-    const index::Vector{Dict{UInt32,_TableIDs}}
-    const target_tables::Dict{UInt32,_TableIDs}
-    const free_tables::Vector{UInt32}
-    const mask::_Mask{M}
-    const node::_GraphNode{M}
-    const id::UInt32
+struct _Archetype{M}
+    components::Vector{Int}  # Indices into the global ComponentStorage list
+    relations::Vector{Int}
+    table::Ref{_Table}
+    tables::_TableIDs
+    index::Vector{Dict{UInt32,_TableIDs}}
+    target_tables::Dict{UInt32,_TableIDs}
+    free_tables::Vector{UInt32}
+    mask::_Mask{M}
+    node::_GraphNode{M}
+    id::UInt32
 end
 
 function _Archetype(id::UInt32, node::_GraphNode, table::_Table)
     _Archetype(
         Vector{Int}(),
         Vector{Int}(),
-        table,
+        Ref{_Table}(table),
         _TableIDs(table),
         Vector{Dict{UInt32,_TableIDs}}(),
         Dict{UInt32,_TableIDs}(),
@@ -84,7 +84,7 @@ function _Archetype(
     _Archetype(
         collect(Int, components),
         relations,
-        nothing,
+        Ref{_Table}(),
         _TableIDs(),
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
         Dict{UInt32,_TableIDs}(),
@@ -98,7 +98,7 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
     _add_table!(arch.tables, t)
 
     if !_has_relations(arch)
-        arch.table = t
+        arch.table[] = t
         return
     end
 

@@ -369,10 +369,10 @@ end
 
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
-    if arch.table === nothing
+    if length(arch.tables) == 0
         return @inbounds world._tables[1], false
     end
-    return @inbounds arch.table::_Table, true
+    return @inbounds arch.table[], true
 end
 
 function _get_table_slow_path(
