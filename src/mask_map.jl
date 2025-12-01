@@ -1,8 +1,8 @@
 
 isdefined(@__MODULE__, :Memory) || const Memory = Vector # Compat for Julia < 1.11
 
-const LOAD_FACTOR = 0.75
-const RSHIFT = sizeof(UInt) * 7
+const _LOAD_FACTOR = 0.75
+const _RSHIFT = sizeof(UInt) * 7
 
 mutable struct _Mask_Map{N,V}
     keys::Memory{_Mask{N}}
@@ -17,7 +17,7 @@ mutable struct _Mask_Map{N,V}
         keys = Memory{_Mask{N}}(undef, sz)
         vals = Memory{V}(undef, sz)
         occupied = zeros(UInt8, sz)
-        max_load = floor(Int, sz * LOAD_FACTOR)
+        max_load = floor(Int, sz * _LOAD_FACTOR)
         new{N,V}(keys, vals, occupied, 0, sz - 1, max_load)
     end
 end
@@ -53,7 +53,7 @@ function _grow!(d::_Mask_Map{N,V}) where {N,V}
     d.vals = new_vals
     d.occupied = new_occupied
     d.mask = new_mask
-    d.max_load = floor(Int, new_cap * LOAD_FACTOR)
+    d.max_load = floor(Int, new_cap * _LOAD_FACTOR)
 end
 
 macro _get_value_loop()
@@ -61,7 +61,7 @@ macro _get_value_loop()
         mask = d.mask
         h = hash(key)
         idx = (h & mask) + 1
-        h2 = (h >> RSHIFT) % UInt8 | 0x01
+        h2 = (h >> _RSHIFT) % UInt8 | 0x01
         @inbounds h2_idx = d.occupied[idx]
         @inbounds while h2_idx != 0x00
             if h2 == h2_idx && d.keys[idx] == key

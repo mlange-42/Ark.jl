@@ -150,3 +150,12 @@ end
     _clear_bit!(m2, 100)
     @test _equals(m2, m) == false
 end
+
+@testset "hash" begin
+    m = _Mask{4}(1, 2, 100)
+    h = hash(m)
+    m2 = _Mask{4}(1, 2, 100)
+    h2 = hash(m2)
+    @test h isa UInt
+    @test h == h2
+end
