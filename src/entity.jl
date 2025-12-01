@@ -36,7 +36,7 @@ function Base.show(io::IO, entity::Entity)
 end
 
 struct _EntityIndex
-    archetype::UInt32
+    table::UInt32
     row::UInt32
 end
 

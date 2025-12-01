@@ -39,8 +39,8 @@ end
     end
 end
 
-function _activate_column!(storage::_ComponentStorage{C,A}, index::Int, cap::Int) where {C,A<:AbstractArray}
-    sizehint!(storage.data[index], cap)
+function _activate_column!(storage::_ComponentStorage{C,A}, arch::Int, cap::Int) where {C,A<:AbstractArray}
+    sizehint!(storage.data[arch], cap)
 end
 
 function _clear_column!(storage::_ComponentStorage{C,A}, arch::UInt32) where {C,A<:AbstractArray}
@@ -48,7 +48,7 @@ function _clear_column!(storage::_ComponentStorage{C,A}, arch::UInt32) where {C,
 end
 
 function _ensure_column_size!(storage::_ComponentStorage{C,A}, arch::UInt32, needed::Int) where {C,A<:AbstractArray}
-    col = storage.data[arch]
+    @inbounds col = storage.data[arch]
     if length(col) < needed
         resize!(col, needed)
     end
@@ -62,9 +62,9 @@ function _move_component_data!(
 ) where {C,A<:AbstractArray}
     # TODO: this can probably be optimized for StructArray storage
     # by moving per component instead of unpacking/packing.
-    old_vec = s.data[old_arch]
-    new_vec = s.data[new_arch]
-    push!(new_vec, old_vec[row])
+    @inbounds old_vec = s.data[old_arch]
+    @inbounds new_vec = s.data[new_arch]
+    @inbounds push!(new_vec, old_vec[row])
     _swap_remove!(old_vec, row)
 end
 
@@ -84,13 +84,13 @@ end
 
     if CP === Val{:ref} || (isbitstype(C) && !ismutabletype(C))
         # no copy required for immutable isbits
-        push!(exprs, :(new_vec[new_row] = old_vec[old_row]))
+        push!(exprs, :(@inbounds new_vec[new_row] = old_vec[old_row]))
     elseif CP === Val{:copy} || isbitstype(C)
         # no deep copy required for (mutable) isbits
-        push!(exprs, :(new_vec[new_row] = _shallow_copy(old_vec[old_row])))
+        push!(exprs, :(@inbounds new_vec[new_row] = _shallow_copy(old_vec[old_row])))
     else # CP === Val{:deepcopy}
         # validity if checked before the call.
-        push!(exprs, :(new_vec[new_row] = deepcopy(old_vec[old_row])))
+        push!(exprs, :(@inbounds new_vec[new_row] = deepcopy(old_vec[old_row])))
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -102,16 +102,49 @@ end
     end
 end
 
+function _copy_component_data!(
+    s::_ComponentStorage{C,A},
+    old_arch::UInt32,
+    new_arch::UInt32,
+    old_row::UInt32,
+    new_row::UInt32,
+) where {C,A<:AbstractArray}
+    old_vec = s.data[old_arch]
+    new_vec = s.data[new_arch]
+    @inbounds new_vec[new_row] = old_vec[old_row]
+    return nothing
+end
+
 function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
-    col = s.data[arch]
+    @inbounds col = s.data[arch]
     _swap_remove!(col, row)
 end
 
-@generated function _shallow_copy(x::T) where T
-    names = fieldnames(T)
-    field_exprs = [:($(name) = x.$name) for name in names]
+struct _ComponentRelations
+    archetypes::Vector{Int} # Relation index per archetype
+    targets::Vector{Entity} # Target entity ID per table
+end
 
-    return quote
-        return $(Expr(:new, T, field_exprs...))
+function _new_component_relations(is_relation::Bool)
+    if is_relation
+        return _ComponentRelations(Int[0], Entity[_no_entity])
+    else
+        return _ComponentRelations(Int[], Entity[])
     end
+end
+
+function _add_archetype_column!(rel::_ComponentRelations)
+    push!(rel.archetypes, 0)
+end
+
+function _add_table_column!(rel::_ComponentRelations)
+    push!(rel.targets, _no_entity)
+end
+
+function _activate_archetype_column!(rel::_ComponentRelations, arch::Int, index::Int)
+    @inbounds rel.archetypes[arch] = index
+end
+
+function _activate_table_column!(rel::_ComponentRelations, table::Int, entity::Entity)
+    @inbounds rel.targets[table] = entity
 end

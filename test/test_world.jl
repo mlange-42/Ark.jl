@@ -13,6 +13,7 @@ end
         Position,
         Velocity => StructArrayStorage,
         Altitude,
+        ChildOf,
     )
     @test isa(world, World)
     params = typeof(world).parameters[1]
@@ -29,6 +30,13 @@ end
     @test isa(_get_storage(world, Velocity).data[1], _StructArray{Velocity})
     @test isa(_get_storage(world, Altitude), _ComponentStorage{Altitude,Vector{Altitude}})
     @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
+
+    @test length(_get_relations(world, Position).archetypes) == 0
+    @test length(_get_relations(world, Position).targets) == 0
+    @test length(_get_relations(world, ChildOf).archetypes) == 1
+    @test length(_get_relations(world, ChildOf).targets) == 1
+    @test _get_relations(world, ChildOf).archetypes[1] == 0
+    @test _get_relations(world, ChildOf).targets[1] == _no_entity
 end
 
 @testset "World show" begin
@@ -107,21 +115,25 @@ end
     @test length(world._storages) == N_fake + 32
 end
 
-@testset "World create archetype" begin
+@testset "World create table" begin
     world = World(Position, Velocity)
-    node = first(world._graph.nodes)[2]
 
-    arch1 = _find_or_create_archetype!(world, node, (1,), ())
-    @test arch1 == 2
+    table1 = _find_or_create_table!(world, world._tables[1], (1,), (), (), ())
+    @test table1 == 2
+    @test world._tables[table1].archetype == 2
+    @test length(world._tables) == 2
 
-    arch2 = _find_or_create_archetype!(world, node, (1, 2), ())
-    @test arch2 == 3
+    table2 = _find_or_create_table!(world, world._tables[1], (1, 2), (), (), ())
+    @test table2 == 3
+    @test world._tables[table2].archetype == 3
+    @test length(world._tables) == 3
 
-    arch3 = _find_or_create_archetype!(world, node, (1,), ())
-    @test arch3 == arch1
+    table3 = _find_or_create_table!(world, world._tables[1], (1,), (), (), ())
+    @test table3 == table1
+    @test length(world._tables) == 3
 
-    entity, _ = _create_entity!(world, arch1)
-    _move_entity!(world, entity, arch2)
+    entity, _ = _create_entity!(world, table1)
+    _move_entity!(world, entity, table2)
     remove_entity!(world, entity)
 end
 
@@ -177,29 +189,35 @@ end
 
     @test_throws("ArgumentError: Component type Float64 not found in the World",
         _get_storage(world, Float64))
+
+    @test_throws("ArgumentError: Component type Float64 not found in the World",
+        _get_relations(world, Float64))
 end
 
-@testset "_find_or_create_archetype! Tests" begin
+@testset "_find_or_create_table! Tests" begin
     world = World(Position, Velocity)
     params = typeof(world).parameters[1]
-    node = first(world._graph.nodes)[2]
 
     pos_id = _component_id(params, Position)
     @test pos_id == offset_ID + UInt8(1)
 
-    index = _find_or_create_archetype!(world, node, (pos_id,), ())
+    index = _find_or_create_table!(world, world._tables[1], (pos_id,), (), (), ())
     @test index == 2
+    @test length(world._tables) == 2
     @test length(world._archetypes) == 2
 
     vel_id = _component_id(params, Velocity)
     @test vel_id == offset_ID + UInt8(2)
 
-    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
+    index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), (), (), ())
     @test index == 3
+    @test length(world._tables) == 3
     @test length(world._archetypes) == 3
 
-    index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
+    index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), (), (), ())
     @test index == 3
+    @test length(world._tables) == 3
+    @test length(world._archetypes) == 3
 
     @test world._archetypes[2].components == [pos_id]
     @test world._archetypes[3].components == [pos_id, vel_id]
@@ -223,23 +241,23 @@ end
     vel_id = _component_id(params, Velocity)
     node = first(world._graph.nodes)[2]
 
-    arch_index = _find_or_create_archetype!(world, node, (pos_id, vel_id), ())
-    @test arch_index == 2
+    table_index = _find_or_create_table!(world, world._tables[1], (pos_id, vel_id), (), (), ())
+    @test table_index == 2
 
-    entity, index = _create_entity!(world, arch_index)
+    entity, index = _create_entity!(world, table_index)
     @test entity == _new_entity(2, 0)
     @test index == 1
-    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(arch_index, UInt32(1))]
+    @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(table_index, UInt32(1))]
 
     remove_entity!(world, entity)
-    entity, index = _create_entity!(world, arch_index)
+    entity, index = _create_entity!(world, table_index)
     @test entity == _new_entity(2, 1)
 
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
 
-    @test length(pos_storage.data[arch_index]) == 1
-    @test length(vel_storage.data[arch_index]) == 1
+    @test length(pos_storage.data[table_index]) == 1
+    @test length(vel_storage.data[table_index]) == 1
 end
 
 @testset "World get/set components" begin
@@ -306,6 +324,14 @@ end
     pos, vel = get_components(world, entity, (Position, Velocity))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
+
+    @test_throws(
+        "ArgumentError: duplicate component types: Position",
+        new_entity!(world, (Position(1, 2), Position(3, 4)))
+    )
+
+    remove_entity!(world, entity)
+    @test is_alive(world, entity) == false
 end
 
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
@@ -327,6 +353,164 @@ end
     end
 end
 
+@testset "World new_entity! relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+        Velocity => StructArrayStorage,
+    )
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+    dead_parent = new_entity!(world, ())
+    remove_entity!(world, dead_parent)
+
+    @test world._targets[parent1._id] == false
+
+    e1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    e2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+    e3 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+
+    @test world._targets[parent1._id] == true
+
+    @test length(world._archetypes) == 2
+    @test length(world._tables) == 3
+
+    arch = world._archetypes[2]
+    @test length(arch.index[1]) == 2
+    @test arch.index[1][parent1._id].tables == [world._tables[2]]
+    @test arch.index[1][parent2._id].tables == [world._tables[3]]
+
+    e4 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+    @test get_relations(world, e4, (ChildOf,)) == get_relations(world, e2, (ChildOf,))
+
+    @test_throws(
+        "ArgumentError: all relations must be in the set of component types",
+        new_entity!(world, (Position(0, 0),); relations=(ChildOf => parent1,))
+    )
+    @test_throws(
+        "ArgumentError: component Position is not a relationship",
+        new_entity!(world, (Position(0, 0),); relations=(Position => parent1,))
+    )
+    @test_throws(
+        "ArgumentError: duplicate component types: ChildOf",
+        new_entity!(world, (ChildOf(),); relations=(ChildOf => parent1, ChildOf => parent2))
+    )
+    @test_throws(
+        "ArgumentError: can't use a dead entity as relation target, except for the zero entity",
+        new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => dead_parent,)),
+    )
+end
+
+@testset "World new_entity! multiple relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+        ChildOf2,
+    )
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    e1 = new_entity!(world, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent1, ChildOf2 => parent2))
+    e2 = new_entity!(world, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent2, ChildOf2 => parent1))
+    e3 = new_entity!(world, (Position(0, 0), ChildOf(), ChildOf2());
+        relations=(ChildOf => parent1, ChildOf2 => parent2))
+
+    @test length(world._archetypes[2].tables) == 2
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (parent1, parent2)
+    @test get_relations(world, e2, (ChildOf, ChildOf2)) == (parent2, parent1)
+    @test get_relations(world, e3, (ChildOf, ChildOf2)) == (parent1, parent2)
+
+    remove_entity!(world, parent1)
+    remove_entity!(world, parent2)
+
+    @test length(world._archetypes[2].tables) == 1
+
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
+    @test get_relations(world, e2, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
+    @test get_relations(world, e3, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
+end
+
+@testset "World get/set relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+        ChildOf2,
+    )
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+    dead_parent = new_entity!(world, ())
+    remove_entity!(world, dead_parent)
+
+    entity1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    entity2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    entity3 = new_entity!(world,
+        (Position(0, 0), ChildOf2(), ChildOf());
+        relations=(ChildOf => parent2, ChildOf2 => parent1),
+    )
+
+    @test get_relations(world, entity1, (ChildOf,)) == (parent1,)
+    @test get_relations(world, entity3, (ChildOf,)) == (parent2,)
+
+    @test get_relations(world, entity3, (ChildOf2,)) == (parent1,)
+
+    @test get_relations(world, entity3, (ChildOf, ChildOf2)) == (parent2, parent1)
+
+    set_relations!(world, entity1, (ChildOf => parent2,))
+    @test get_relations(world, entity1, (ChildOf,)) == (parent2,)
+    @test get_relations(world, entity2, (ChildOf,)) == (parent1,)
+
+    @test get_relations(world, entity2, ()) == ()
+
+    set_relations!(world, entity1, (ChildOf => parent2,))
+    @test get_relations(world, entity1, (ChildOf,)) == (parent2,)
+
+    @test_throws(
+        "ArgumentError: duplicate component types: ChildOf",
+        get_relations(world, entity1, (ChildOf, ChildOf)),
+    )
+    @test_throws(
+        "ArgumentError: component Position is not a relationship",
+        get_relations(world, entity1, (Position,)),
+    )
+    @test_throws(
+        "ArgumentError: entity does not have the requested relationship component",
+        get_relations(world, entity1, (ChildOf2,)),
+    )
+    @test_throws(
+        "ArgumentError: can't get relations of a dead entity",
+        get_relations(world, zero_entity, (ChildOf,)),
+    )
+
+    @test_throws(
+        "ArgumentError: duplicate component types: ChildOf",
+        set_relations!(world, entity1, (ChildOf => parent1, ChildOf => parent1)),
+    )
+    @test_throws(
+        "ArgumentError: component Position is not a relationship",
+        set_relations!(world, entity1, (Position => parent1,)),
+    )
+    @test_throws(
+        "ArgumentError: entity does not have the requested relationship component",
+        set_relations!(world, entity1, (ChildOf2 => parent1,)),
+    )
+    @test_throws(
+        "ArgumentError: can't set relation targets of a dead entity",
+        set_relations!(world, zero_entity, (ChildOf => parent1,)),
+    )
+    @test_throws(
+        "ArgumentError: can't use a dead entity as relation target, except for the zero entity",
+        set_relations!(world, entity1, (ChildOf => dead_parent,)),
+    )
+end
+
 @testset "World copy_entity!" begin
     world = World(
         Dummy,
@@ -346,7 +530,7 @@ end
 
     @test entity2._id == entity._id + 1
     @test entity2._id == 3
-    @test world._archetypes[2].entities == [entity, entity2]
+    @test world._tables[2].entities == [entity, entity2]
     @test length(world._storages[offset_ID+2].data[2]) == 2
     @test length(world._storages[offset_ID+3].data[2]) == 2
 
@@ -466,7 +650,7 @@ end
     end
     @test cnt == 100
     @test is_locked(world) == false
-    @test length(world._archetypes[2].entities) == 101
+    @test length(world._tables[2].entities) == 101
     @test length(world._storages[offset_ID+2].data[2]) == 101
     @test length(world._storages[offset_ID+3].data[2]) == 101
 
@@ -512,7 +696,7 @@ end
     end
     @test count == 100
     @test is_locked(world) == false
-    @test length(world._archetypes[2].entities) == 101
+    @test length(world._tables[2].entities) == 101
     @test length(world._storages[offset_ID+2].data[2]) == 101
     @test length(world._storages[offset_ID+3].data[2]) == 101
 
@@ -546,6 +730,31 @@ end
 
     for (ent,) in new_entities!(world, 100, (); iterate=true)
         @test length(ent) == 100
+    end
+end
+
+@testset "World new_entities! with relations" begin
+    world = World(
+        Dummy,
+        Position,
+        ChildOf,
+    )
+    parent = new_entity!(world, ())
+
+    for (_, positions, children) in new_entities!(world, 100, (Position, ChildOf); relations=(ChildOf => parent,))
+        for i in eachindex(positions, children)
+            positions[i] = Position(1, 1)
+            children[i] = ChildOf()
+        end
+    end
+
+    new_entities!(world, 100, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,), iterate=false)
+
+    for (entities, children) in Query(world, (ChildOf,))
+        for i in eachindex(entities)
+            parents = get_relations(world, entities[i], (ChildOf,))
+            @test parents == (parent,)
+        end
     end
 end
 
@@ -612,6 +821,54 @@ end
         has_components(world, zero_entity, (Position, Velocity)))
 end
 
+@testset "World add/remove components with relations" begin
+    world = World(
+        Dummy,
+        Position,
+        Velocity,
+        ChildOf,
+        ChildOf2,
+    )
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    e1 = new_entity!(world, ())
+
+    add_components!(world, e1, (Position(1, 2), ChildOf()); relations=(ChildOf => parent1,))
+    @test get_relations(world, e1, (ChildOf,)) == (parent1,)
+
+    add_components!(world, e1, (ChildOf2(),); relations=(ChildOf2 => parent2,))
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (parent1, parent2)
+    @test get_relations(world, e1, (ChildOf2, ChildOf)) == (parent2, parent1)
+
+    remove_components!(world, e1, (Position,))
+    @test get_relations(world, e1, (ChildOf, ChildOf2)) == (parent1, parent2)
+
+    remove_components!(world, e1, (ChildOf,))
+    @test has_components(world, e1, (ChildOf,)) == false
+    @test get_relations(world, e1, (ChildOf2,)) == (parent2,)
+
+    add_components!(world, e1, (Position(0, 0),))
+    @test get_relations(world, e1, (ChildOf2,)) == (parent2,)
+
+    @test_throws(
+        "ArgumentError: relation targets must be fully specified",
+        add_components!(world, e1, (ChildOf(),)),
+    )
+    @test_throws(
+        "ArgumentError: relation targets must be fully specified",
+        add_components!(world, e1, (Velocity(0, 0), ChildOf())),
+    )
+
+    # test with recycled table
+    remove_entity!(world, parent1)
+    @test_throws(
+        "ArgumentError: relation targets must be fully specified",
+        add_components!(world, e1, (ChildOf(),)),
+    )
+end
+
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World add/remove component JET" begin
         world = World(
@@ -658,6 +915,17 @@ end
         exchange_components!(world, e1))
 end
 
+@testset "World exchange components with relations" begin
+    world = World(Dummy, ChildOf, Position, Velocity)
+
+    parent = new_entity!(world, ())
+    e1 = new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+    exchange_components!(world, e1; remove=(Velocity,), add=(ChildOf(),), relations=(ChildOf => parent,))
+
+    parents = get_relations(world, e1, (ChildOf,))
+    @test parents == (parent,)
+end
+
 """
 @static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
     @testset "World exchange component JET" begin
@@ -702,28 +970,40 @@ end
 end
 
 @testset "World reset!" begin
-    world = World(Dummy, Position, Velocity)
+    world = World(Dummy, Position, Velocity, ChildOf)
 
     obs = observe!(world, OnAddComponents, (Position,)) do _
     end
 
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
     new_entity!(world, (Position(1, 1),))
     new_entity!(world, (Velocity(1, 1),))
     new_entity!(world, (Position(1, 1), Velocity(1, 1)))
+    new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent1,))
+    new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent2,))
 
     reset!(world)
 
     @test length(world._entities) == 1
     @test length(world._entity_pool.entities) == 1
-    @test length(world._archetypes[2].entities) == 0
-    @test length(world._archetypes[3].entities) == 0
-    @test length(world._archetypes[4].entities) == 0
-    @test length(world._storages[offset_ID+2].data[2]) == 0
-    @test length(world._storages[offset_ID+2].data[3]) == 0
-    @test length(world._storages[offset_ID+2].data[4]) == 0
-    @test length(world._storages[offset_ID+3].data[2]) == 0
-    @test length(world._storages[offset_ID+3].data[3]) == 0
-    @test length(world._storages[offset_ID+3].data[4]) == 0
+
+    for t in 2:6
+        @test length(world._tables[t].entities) == 0
+    end
+
+    for s in 2:4
+        for t in 2:6
+            @test length(world._storages[offset_ID+s].data[t]) == 0
+        end
+    end
+
+    @test length(world._archetypes[1].tables) == 1
+    @test length(world._archetypes[2].tables) == 1
+    @test length(world._archetypes[3].tables) == 1
+    @test length(world._archetypes[4].tables) == 1
+    @test length(world._archetypes[5].tables) == 0
+    @test length(world._archetypes[5].free_tables) == 2
 
     @test obs._id.id == 0
     @test !_has_observers(world._event_manager, OnAddComponents)
@@ -740,6 +1020,52 @@ end
 
     close!(q)
     reset!(world)
+end
+
+@testset "World relations index" begin
+    world = World(Dummy, ChildOf, Position, Velocity, ChildOf2)
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent2,))
+    new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()); relations=(ChildOf => parent1, ChildOf2 => parent2))
+    new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()); relations=(ChildOf => parent2, ChildOf2 => parent1))
+
+    pos_relations = _get_relations(world, Position)
+    child_relations = _get_relations(world, ChildOf)
+    child2_relations = _get_relations(world, ChildOf2)
+
+    @test length(pos_relations.archetypes) == 0
+    @test length(pos_relations.targets) == 0
+
+    @test length(child_relations.archetypes) == 3
+    @test length(child_relations.targets) == 5
+    @test child_relations.archetypes[1] == 0
+    @test child_relations.archetypes[2] == 1
+    @test child_relations.archetypes[3] == 1
+
+    @test child_relations.targets[1] == _no_entity
+    @test child_relations.targets[2] == parent1
+    @test child_relations.targets[3] == parent2
+    @test child_relations.targets[4] == parent1
+    @test child_relations.targets[5] == parent2
+
+    @test length(child2_relations.archetypes) == 3
+    @test length(child2_relations.targets) == 5
+    @test child2_relations.archetypes[1] == 0
+    @test child2_relations.archetypes[2] == 0
+    @test child2_relations.archetypes[3] == 2
+
+    @test child2_relations.targets[1] == _no_entity
+    @test child2_relations.targets[2] == _no_entity
+    @test child2_relations.targets[3] == _no_entity
+    @test child2_relations.targets[4] == parent2
+    @test child2_relations.targets[5] == parent1
+
+    @test world._archetypes[1].relations == []
+    @test world._archetypes[2].relations == [2 + offset_ID]
+    @test world._archetypes[3].relations == [2 + offset_ID, 5 + offset_ID]
 end
 
 @testset "World add/remove resources Tests" begin
