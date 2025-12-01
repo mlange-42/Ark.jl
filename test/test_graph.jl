@@ -44,7 +44,7 @@
     )
 
     world = World(Position, Velocity)
-    e = new_entity!(world, (Position(0.0, 0.0), ))
+    e = new_entity!(world, (Position(0.0, 0.0),))
 
     # Test error on adding and removing the same components
     @test_throws(

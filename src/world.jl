@@ -115,7 +115,7 @@ function _find_or_create_archetype!(
     remove::Tuple{Vararg{Int}},
     add_mask::_Mask,
     rem_mask::_Mask,
-    use_map::Union{_NoUseMap, _UseMap}
+    use_map::Union{_NoUseMap,_UseMap},
 )::UInt32
     node = _find_node(world._graph, start, add, remove, add_mask, rem_mask, use_map)
 
@@ -581,7 +581,10 @@ end
 
     push!(
         exprs,
-        :(archetype = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)),
+        :(
+            archetype =
+                _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)
+        ),
     )
     push!(exprs, :(tmp = _create_entity!(world, archetype)))
     push!(exprs, :(entity = tmp[1]))
@@ -743,7 +746,10 @@ end
 
     push!(
         exprs,
-        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)),
+        :(
+            archetype_idx =
+                _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)
+        ),
     )
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
@@ -852,7 +858,10 @@ end
 
     push!(
         exprs,
-        :(archetype_idx = _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)),
+        :(
+            archetype_idx =
+                _find_or_create_archetype!(world, world._archetypes[1].node, $ids, (), $add_mask, $rem_mask, $use_map)
+        ),
     )
     push!(exprs, :(indices = _create_entities!(world, archetype_idx, n)))
     push!(exprs, :(archetype = world._archetypes[archetype_idx]))
