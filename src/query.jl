@@ -1,6 +1,6 @@
 
 mutable struct _QueryCursor
-    tables::Vector{Ref{_Table}}
+    tables::Vector{Base.RefValue{_Table}}
     closed::Bool
 end
 

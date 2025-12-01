@@ -1,11 +1,11 @@
 
 @testset "_TableIDs" begin
-    t1 = Ref(_new_table(UInt32(1), UInt32(1)))
-    t2 = Ref(_new_table(UInt32(2), UInt32(1)))
-    t3 = Ref(_new_table(UInt32(3), UInt32(1)))
-    t4 = Ref(_new_table(UInt32(4), UInt32(1)))
-    t5 = Ref(_new_table(UInt32(5), UInt32(1)))
-    t6 = Ref(_new_table(UInt32(6), UInt32(1)))
+    t1 = Base.RefValue(_new_table(UInt32(1), UInt32(1)))
+    t2 = Base.RefValue(_new_table(UInt32(2), UInt32(1)))
+    t3 = Base.RefValue(_new_table(UInt32(3), UInt32(1)))
+    t4 = Base.RefValue(_new_table(UInt32(4), UInt32(1)))
+    t5 = Base.RefValue(_new_table(UInt32(5), UInt32(1)))
+    t6 = Base.RefValue(_new_table(UInt32(6), UInt32(1)))
 
     ids = _TableIDs(t5, t4, t3, t2, t1)
 

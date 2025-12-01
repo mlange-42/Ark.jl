@@ -1,10 +1,10 @@
 
 struct _TableIDs
-    tables::Vector{Ref{_Table}}
+    tables::Vector{Base.RefValue{_Table}}
     indices::Dict{UInt32,Int}
 end
 
-function _TableIDs(tables::Ref{_Table}...)
+function _TableIDs(tables::Base.RefValue{_Table}...)
     vec = collect(tables)
     indices = Dict{UInt32,Int}()
 
@@ -15,7 +15,7 @@ function _TableIDs(tables::Ref{_Table}...)
     return _TableIDs(vec, indices)
 end
 
-function _add_table!(ids::_TableIDs, table::Ref{_Table})
+function _add_table!(ids::_TableIDs, table::Base.RefValue{_Table})
     push!(ids.tables, table)
     ids.indices[table[].id] = length(ids.tables)
     return nothing
@@ -45,7 +45,7 @@ end
 Base.length(t::_TableIDs) = length(t.tables)
 Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
-const _empty_tables = Vector{Ref{_Table}}()
+const _empty_tables = Vector{Base.RefValue{_Table}}()
 
 struct _Archetype{M}
     components::Vector{Int}  # Indices into the global ComponentStorage list
@@ -53,7 +53,7 @@ struct _Archetype{M}
     tables::_TableIDs
     index::Vector{Dict{UInt32,_TableIDs}}
     target_tables::Dict{UInt32,_TableIDs}
-    free_tables::Vector{Ref{_Table}}
+    free_tables::Vector{Base.RefValue{_Table}}
     mask::_Mask{M}
     node::_GraphNode{M}
     id::UInt32
@@ -63,10 +63,10 @@ function _Archetype(id::UInt32, node::_GraphNode, table::_Table)
     _Archetype(
         Vector{Int}(),
         Vector{Int}(),
-        _TableIDs(Ref{_Table}(table)),
+        _TableIDs(Base.RefValue{_Table}(table)),
         Vector{Dict{UInt32,_TableIDs}}(),
         Dict{UInt32,_TableIDs}(),
-        Vector{Ref{_Table}}(),
+        Vector{Base.RefValue{_Table}}(),
         node.mask,
         node,
         id,
@@ -85,13 +85,13 @@ function _Archetype(
         _TableIDs(),
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
         Dict{UInt32,_TableIDs}(),
-        Vector{Ref{_Table}}(),
+        Vector{Base.RefValue{_Table}}(),
         node.mask,
         node, id,
     )
 end
 
-function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::Ref{_Table})
+function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::Base.RefValue{_Table})
     _add_table!(arch.tables, t)
 
     if !_has_relations(arch)
@@ -122,7 +122,7 @@ _has_relations(a::_Archetype) = !isempty(a.relations)
 
 function _free_table!(a::_Archetype, table::_Table)
     _remove_table!(a.tables, table)
-    push!(a.free_tables, Ref{_Table}(table))
+    push!(a.free_tables, Base.RefValue{_Table}(table))
 
     # If there is only one relation, the resp. relation_tables
     # entry is removed anyway.
@@ -141,9 +141,9 @@ function _free_table!(a::_Archetype, table::_Table)
     end
 end
 
-function _get_free_table!(a::_Archetype)::Tuple{Ref{_Table},Bool}
+function _get_free_table!(a::_Archetype)::Tuple{Base.RefValue{_Table},Bool}
     if isempty(a.free_tables)
-        return Ref{_Table}(), false
+        return Base.RefValue{_Table}(), false
     end
     return pop!(a.free_tables), true
 end
