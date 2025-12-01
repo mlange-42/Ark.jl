@@ -355,7 +355,7 @@ end
 
 @inline function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
     if length(arch.tables) == 0
-        return @inbounds world._tables[1], false
+        return @inbounds _zero_table, false
     end
 
     # TODO: this should not be possible to happen. Check!
@@ -370,7 +370,7 @@ end
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
     if length(arch.tables) == 0
-        return @inbounds world._tables[1], false
+        return @inbounds _zero_table, false
     end
     return @inbounds arch.table[], true
 end
@@ -392,7 +392,7 @@ function _get_table_slow_path(
     @inbounds rel_idx = world._relations[rel_comp].archetypes[arch.id]
     index = arch.index[rel_idx]
     if !haskey(index, target_id)
-        return @inbounds world._tables[1], false
+        return @inbounds _zero_table, false
     end
 
     @inbounds tables = index[target_id]
@@ -406,7 +406,7 @@ function _get_table_slow_path(
         end
     end
 
-    return @inbounds world._tables[1], false
+    return @inbounds _zero_table, false
 end
 
 function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{_Table}

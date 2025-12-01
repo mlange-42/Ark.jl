@@ -14,6 +14,8 @@ function _new_table(id::UInt32, archetype::UInt32, cap::Int, relations::Vector{P
     return _Table(Entities(cap), relations, id, archetype)
 end
 
+const _zero_table = _new_table(UInt32(0), UInt32(0))
+
 _has_relations(t::_Table) = !isempty(t.relations)
 
 function _matches(indices::Vector{_ComponentRelations}, t::_Table, relations::Vector{Pair{Int,Entity}})
