@@ -135,11 +135,12 @@ end
     add_mask::_Mask,
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
+    table::UInt32,
 )::UInt32
     node = _find_node(world._graph, start, add, remove, add_mask, rem_mask, use_map)
 
     archetype = (node.archetype == typemax(UInt32)) ?
-                _create_archetype!(world, node) :
+                _create_archetype!(world, node, table) :
                 node.archetype
 
     return archetype
@@ -157,7 +158,10 @@ end
     use_map::Union{_NoUseMap,_UseMap},
 )::UInt32
     @inbounds old_arch = world._archetypes[old_table.archetype]
-    new_arch_index = _find_or_create_archetype!(world, old_arch.node, add, remove, add_mask, rem_mask, use_map)
+    new_arch_index = _find_or_create_archetype!(
+        world, old_arch.node, add, remove, add_mask, rem_mask, use_map,
+        isempty(relations) ? UInt32(length(world._tables) + 1) : UInt32(0),
+    )
     @inbounds new_arch = world._archetypes[new_arch_index]
 
     if !_has_relations(new_arch) && isempty(relations)
@@ -277,7 +281,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     return UInt32(new_table_id)
 end
 
-function _create_archetype!(world::World, node::_GraphNode)::UInt32
+function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt32
     components = _active_bit_indices(node.mask)
     relations = Int[]
     for id in components
@@ -287,7 +291,7 @@ function _create_archetype!(world::World, node::_GraphNode)::UInt32
     end
 
     arch =
-        _Archetype(UInt32(length(world._archetypes) + 1), node, _TableIDs(), relations, components...)
+        _Archetype(UInt32(length(world._archetypes) + 1), node, table, relations, components...)
     push!(world._archetypes, arch)
     if _has_relations(arch)
         push!(world._relation_archetypes, arch.id)
@@ -372,7 +376,7 @@ end
     if length(arch.tables) == 0
         return @inbounds world._tables[1], false
     end
-    return @inbounds world._tables[arch.tables[1]], true
+    return @inbounds world._tables[arch.table], true
 end
 
 function _get_table_slow_path(
@@ -1810,7 +1814,7 @@ end
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask], _TableIDs(UInt32(1)))],
+            [_Archetype(UInt32(1), graph.nodes[$start_mask], UInt32(1))],
             Vector{UInt32}(),
             [_new_table(UInt32(1), UInt32(1))],
             _ComponentIndex{$(M)}($(length(types))),

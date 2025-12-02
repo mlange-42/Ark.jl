@@ -50,6 +50,7 @@ const _empty_tables = Vector{UInt32}()
 struct _Archetype{M}
     components::Vector{Int}  # Indices into the global ComponentStorage list
     relations::Vector{Int}
+    table::UInt32
     tables::_TableIDs
     index::Vector{Dict{UInt32,_TableIDs}}
     target_tables::Dict{UInt32,_TableIDs}
@@ -59,11 +60,12 @@ struct _Archetype{M}
     id::UInt32
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, tables::_TableIDs)
+function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
     _Archetype(
         Vector{Int}(),
         Vector{Int}(),
-        tables,
+        table,
+        _TableIDs(table),
         Vector{Dict{UInt32,_TableIDs}}(),
         Dict{UInt32,_TableIDs}(),
         Vector{UInt32}(),
@@ -76,14 +78,15 @@ end
 function _Archetype(
     id::UInt32,
     node::_GraphNode,
-    tables::_TableIDs,
+    table::UInt32,
     relations::Vector{Int},
     components::Int...,
 )
     _Archetype(
         collect(Int, components),
         relations,
-        tables,
+        table,
+        _TableIDs(),
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
         Dict{UInt32,_TableIDs}(),
         Vector{UInt32}(),

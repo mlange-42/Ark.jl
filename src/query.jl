@@ -204,7 +204,7 @@ end
             end
 
             if !_has_relations(archetype)
-                table = @inbounds q._world._tables[Int(archetype.tables[1])]
+                table = @inbounds q._world._tables[Int(archetype.table)]
                 if isempty(table.entities)
                     arch += 1
                     continue
@@ -266,7 +266,7 @@ function Base.length(q::Query)
         end
 
         if !_has_relations(archetype)
-            table = @inbounds q._world._tables[Int(archetype.tables[1])]
+            table = @inbounds q._world._tables[Int(archetype.table)]
             if isempty(table.entities)
                 continue
             end
@@ -308,7 +308,7 @@ function count_entities(q::Query)
         end
 
         if !_has_relations(archetype)
-            table = @inbounds q._world._tables[Int(archetype.tables[1])]
+            table = @inbounds q._world._tables[Int(archetype.table)]
             count += length(table.entities)
             continue
         end
