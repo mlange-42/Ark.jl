@@ -68,7 +68,7 @@ end
 end
 
 """
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
     @testset "World creation JET" begin
         # TODO: type instability here. Add benchmarks for world creation.
         @test_opt World(
@@ -359,7 +359,7 @@ end
     @test vel == Velocity(7, 8)
 end
 
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
     @testset "World get/set components JET" begin
         world = World(
             Position,
@@ -402,7 +402,7 @@ end
     @test is_alive(world, entity) == false
 end
 
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
     @testset "World new_entity! JET" begin
         world = World(
             Position,
@@ -826,7 +826,7 @@ end
     end
 end
 
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
     @testset "World new_entities! JET" begin
         world = World(
             Position,
@@ -937,7 +937,7 @@ end
     )
 end
 
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
     @testset "World add/remove component JET" begin
         world = World(
             Dummy,
@@ -995,7 +995,7 @@ end
 end
 
 """
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
     @testset "World exchange component JET" begin
         world = World(Dummy, Position, Velocity, Altitude, Health)
 
@@ -1159,7 +1159,7 @@ end
     @test_throws "ArgumentError: World does not contain a resource of type Tick" set_resource!(world, Tick(2))
 end
 
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
     @testset "Resources JET" begin
         world = World()
 
