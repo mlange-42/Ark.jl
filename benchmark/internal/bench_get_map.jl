@@ -44,4 +44,3 @@ end
 for n in (100, 10000)
     SUITE["benchmark_get_map n=$n"] = @be setup_get_map(n) benchmark_get_map(_) seconds = SECONDS
 end
-
