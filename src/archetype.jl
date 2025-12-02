@@ -47,17 +47,17 @@ Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
 const _empty_tables = Vector{UInt32}()
 
-struct _Archetype{M}
-    mask::_Mask{M}
-    components::Vector{Int}
-    tables::_TableIDs
-    index::Vector{Dict{UInt32,_TableIDs}}
-    target_tables::Dict{UInt32,_TableIDs}
-    free_tables::Vector{UInt32}
-    node::_GraphNode{M}
-    num_relations::UInt32
-    table::UInt32
-    id::UInt32
+mutable struct _Archetype{M}
+    const mask::_Mask{M}
+    const components::Vector{Int}
+    const tables::_TableIDs
+    const index::Vector{Dict{UInt32,_TableIDs}}
+    const target_tables::Dict{UInt32,_TableIDs}
+    const free_tables::Vector{UInt32}
+    const node::_GraphNode{M}
+    const num_relations::UInt32
+    const table::UInt32
+    const id::UInt32
 end
 
 function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
