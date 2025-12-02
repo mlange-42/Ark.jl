@@ -48,29 +48,29 @@ Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 const _empty_tables = Vector{UInt32}()
 
 struct _Archetype{M}
-    components::Vector{Int}  # Indices into the global ComponentStorage list
+    mask::_Mask{M}
+    components::Vector{Int}
     relations::Vector{Int}
-    table::UInt32
     tables::_TableIDs
     index::Vector{Dict{UInt32,_TableIDs}}
     target_tables::Dict{UInt32,_TableIDs}
     free_tables::Vector{UInt32}
-    mask::_Mask{M}
     node::_GraphNode{M}
+    table::UInt32
     id::UInt32
 end
 
 function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
     _Archetype(
+        node.mask,
         Vector{Int}(),
         Vector{Int}(),
-        table,
         _TableIDs(table),
         Vector{Dict{UInt32,_TableIDs}}(),
         Dict{UInt32,_TableIDs}(),
         Vector{UInt32}(),
-        node.mask,
         node,
+        table,
         id,
     )
 end
@@ -83,15 +83,16 @@ function _Archetype(
     components::Int...,
 )
     _Archetype(
+        node.mask,
         collect(Int, components),
         relations,
-        table,
         _TableIDs(),
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
         Dict{UInt32,_TableIDs}(),
         Vector{UInt32}(),
-        node.mask,
-        node, id,
+        node,
+        table,
+        id,
     )
 end
 
