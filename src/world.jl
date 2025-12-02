@@ -136,14 +136,15 @@ end
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
     table::UInt32,
-)::UInt32
+)::Tuple{UInt32,Bool}
     node = _find_node(world._graph, start, add, remove, add_mask, rem_mask, use_map)
 
-    archetype = (node.archetype[] == typemax(UInt32)) ?
-                _create_archetype!(world, node, table) :
-                (node.archetype[])
+    archetype_new =
+        (node.archetype[] == typemax(UInt32)) ?
+        (_create_archetype!(world, node, table), true) :
+        (node.archetype[], false)
 
-    return archetype
+    return archetype_new
 end
 
 @inline function _find_or_create_table!(
@@ -158,18 +159,18 @@ end
     use_map::Union{_NoUseMap,_UseMap},
 )::UInt32
     @inbounds old_arch = world._archetypes[old_table.archetype]
-    new_arch_index = _find_or_create_archetype!(
+    new_arch_index, is_new = _find_or_create_archetype!(
         world, old_arch.node, add, remove, add_mask, rem_mask, use_map,
         isempty(relations) ? UInt32(length(world._tables) + 1) : UInt32(0),
     )
     @inbounds new_arch = world._archetypes[new_arch_index]
 
     if !_has_relations(new_arch) && isempty(relations)
-        new_table, found = _get_table(world, new_arch)
-        if found
-            return new_table.id
+        if is_new
+            return _create_table!(world, new_arch, _empty_relations)
         end
-        return _create_table!(world, new_arch, _empty_relations)
+        new_table, _ = _get_table(world, new_arch)
+        return new_table.id
     end
 
     return _find_or_create_table!(world, old_table, new_arch, relations, targets, !isempty(remove))
@@ -373,9 +374,7 @@ end
 
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
-    if length(arch.tables) == 0
-        return @inbounds world._tables[1], false
-    end
+    @check length(arch.tables) > 0
     return @inbounds world._tables[arch.table], true
 end
 
