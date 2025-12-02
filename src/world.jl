@@ -139,9 +139,9 @@ end
 )::UInt32
     node = _find_node(world._graph, start, add, remove, add_mask, rem_mask, use_map)
 
-    archetype = (node.archetype == typemax(UInt32)) ?
+    archetype = (node.archetype[] == typemax(UInt32)) ?
                 _create_archetype!(world, node, table) :
-                node.archetype
+                (node.archetype[])
 
     return archetype
 end
@@ -298,7 +298,7 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
     end
 
     index = length(world._archetypes)
-    node.archetype = UInt32(index)
+    node.archetype[] = UInt32(index)
 
     _push_zero_to_all_archetype_relations!(world)
 

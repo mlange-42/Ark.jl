@@ -2,14 +2,14 @@
 struct _UseMap end
 struct _NoUseMap end
 
-mutable struct _GraphNode{M}
-    const mask::_Mask{M}
-    const neighbors::_VecMap{_GraphNode{M},M}
-    archetype::UInt32
+struct _GraphNode{M}
+    mask::_Mask{M}
+    neighbors::_VecMap{_GraphNode{M},M}
+    archetype::Base.RefValue{UInt32}
 end
 
 function _GraphNode(mask::_Mask{M}, archetype::UInt32) where M
-    _GraphNode{M}(mask, _VecMap{_GraphNode{M},M}(), archetype)
+    _GraphNode{M}(mask, _VecMap{_GraphNode{M},M}(), Base.RefValue{UInt32}(archetype))
 end
 
 struct _Graph{M}
