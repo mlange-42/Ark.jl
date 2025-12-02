@@ -27,7 +27,7 @@ function setup_get_map(n)
     rands = [_Mask((UInt64(x),)) for x in 1:n]
     shuffle!(Xoshiro(42), rands)
     for r in rands
-        s += get!(() -> 1, map, r)
+        get!(() -> 1, map, r)
     end
     return map, rands
 end
