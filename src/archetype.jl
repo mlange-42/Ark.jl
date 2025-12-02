@@ -47,26 +47,54 @@ Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
 const _empty_tables = Vector{UInt32}()
 
-mutable struct _Archetype{M}
-    const components::Vector{Int}
-    const tables::_TableIDs
-    const index::Vector{Dict{UInt32,_TableIDs}}
-    const target_tables::Dict{UInt32,_TableIDs}
-    const free_tables::Vector{UInt32}
-    const node::_GraphNode{M}
-    const num_relations::UInt32
-    const table::UInt32
-    const id::UInt32
+struct _ArchetypeData{M}
+    components::Vector{Int}
+    tables::_TableIDs
+    index::Vector{Dict{UInt32,_TableIDs}}
+    target_tables::Dict{UInt32,_TableIDs}
+    free_tables::Vector{UInt32}
+    node::_GraphNode{M}
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
-    _Archetype(
+function _ArchetypeData(node::_GraphNode, table::UInt32)
+    _ArchetypeData(
         Vector{Int}(),
         _TableIDs(table),
         Vector{Dict{UInt32,_TableIDs}}(),
         Dict{UInt32,_TableIDs}(),
         Vector{UInt32}(),
         node,
+    )
+end
+
+function _ArchetypeData(
+    node::_GraphNode,
+    table::UInt32,
+    relations::Vector{Int},
+    components::Int...,
+)
+    _ArchetypeData(
+        collect(Int, components),
+        _TableIDs(),
+        [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
+        Dict{UInt32,_TableIDs}(),
+        Vector{UInt32}(),
+        node,
+    )
+end
+
+struct _Archetype{M}
+    mask::_Mask{M}
+    data::Base.RefValue{_ArchetypeData}
+    num_relations::UInt32
+    table::UInt32
+    id::UInt32
+end
+
+function _Archetype(id::UInt32, node::_GraphNode, table::UInt32, data::Base.RefValue{_ArchetypeData})
+    _Archetype(
+        node.mask,
+        data,
         UInt32(0),
         table,
         id,
@@ -77,16 +105,12 @@ function _Archetype(
     id::UInt32,
     node::_GraphNode,
     table::UInt32,
+    data::Base.RefValue{_ArchetypeData},
     relations::Vector{Int},
-    components::Int...,
 )
     _Archetype(
-        collect(Int, components),
-        _TableIDs(),
-        [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
-        Dict{UInt32,_TableIDs}(),
-        Vector{UInt32}(),
-        node,
+        node.mask,
+        data,
         UInt32(length(relations)),
         table,
         id,
@@ -94,7 +118,7 @@ function _Archetype(
 end
 
 function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::_Table)
-    _add_table!(arch.tables, t.id)
+    _add_table!(arch.data[].tables, t.id)
 
     if !_has_relations(arch)
         return
@@ -102,20 +126,21 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
 
     for (comp, target) in t.relations
         idx = indices[comp].archetypes[arch.id]
-        dict = arch.index[idx]
+        dict = arch.data[].index[idx]
         if haskey(dict, target._id)
             _add_table!(dict[target._id], t.id)
         else
             dict[target._id] = _TableIDs(t.id)
         end
 
-        if haskey(arch.target_tables, target._id)
-            tables = arch.target_tables[target._id]
+        target_tables = arch.data[].target_tables
+        if haskey(target_tables, target._id)
+            tables = target_tables[target._id]
             if !haskey(tables.indices, t.id)
                 _add_table!(tables, t.id)
             end
         else
-            arch.target_tables[target._id] = _TableIDs(t.id)
+            target_tables[target._id] = _TableIDs(t.id)
         end
     end
 end
@@ -123,8 +148,8 @@ end
 _has_relations(a::_Archetype) = a.num_relations > 0
 
 function _free_table!(a::_Archetype, table::_Table)
-    _remove_table!(a.tables, table.id)
-    push!(a.free_tables, table.id)
+    _remove_table!(a.data[].tables, table.id)
+    push!(a.data[].free_tables, table.id)
 
     # If there is only one relation, the resp. relation_tables
     # entry is removed anyway.
@@ -133,28 +158,28 @@ function _free_table!(a::_Archetype, table::_Table)
     end
 
     # TODO: can/should we be more selective here?
-    for dict in a.index
+    for dict in a.data[].index
         for (_, tables) in dict
             _remove_table!(tables, table.id)
         end
     end
-    for (_, tables) in a.target_tables
+    for (_, tables) in a.data[].target_tables
         _remove_table!(tables, table.id)
     end
 end
 
 function _get_free_table!(a::_Archetype)::Tuple{UInt32,Bool}
-    if isempty(a.free_tables)
+    if isempty(a.data[].free_tables)
         return 0, false
     end
-    return pop!(a.free_tables), true
+    return pop!(a.data[].free_tables), true
 end
 
 function _remove_target!(a::_Archetype, target::Entity)
-    for dict in a.index
+    for dict in a.data[].index
         delete!(dict, target._id)
     end
-    delete!(a.target_tables, target._id)
+    delete!(a.data[].target_tables, target._id)
 end
 
 function _reset!(a::_Archetype)
@@ -162,15 +187,15 @@ function _reset!(a::_Archetype)
         return
     end
 
-    for table in a.tables.tables
-        push!(a.free_tables, table)
+    for table in a.data[].tables.tables
+        push!(a.data[].free_tables, table)
     end
-    _clear!(a.tables)
+    _clear!(a.data[].tables)
 
-    for dict in a.index
+    for dict in a.data[].index
         empty!(dict)
     end
-    empty!(a.target_tables)
+    empty!(a.data[].target_tables)
 
     return
 end

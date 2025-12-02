@@ -278,7 +278,7 @@ end
 function _fire_create_entities(m::_EventManager, table::_BatchTable)
     evt = OnCreateEntity._id
     observers = m.observers[evt]
-    mask = table.archetype.node.mask
+    mask = table.archetype.mask
     with, any_no_with = m.with[evt]
     if length(observers) > 1 && !any_no_with && !_contains_any(with, mask)
         return
