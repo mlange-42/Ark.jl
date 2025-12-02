@@ -50,12 +50,12 @@ const _empty_tables = Vector{UInt32}()
 struct _Archetype{M}
     mask::_Mask{M}
     components::Vector{Int}
-    relations::Vector{Int}
     tables::_TableIDs
     index::Vector{Dict{UInt32,_TableIDs}}
     target_tables::Dict{UInt32,_TableIDs}
     free_tables::Vector{UInt32}
     node::_GraphNode{M}
+    num_relations::UInt32
     table::UInt32
     id::UInt32
 end
@@ -64,12 +64,12 @@ function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
     _Archetype(
         node.mask,
         Vector{Int}(),
-        Vector{Int}(),
         _TableIDs(table),
         Vector{Dict{UInt32,_TableIDs}}(),
         Dict{UInt32,_TableIDs}(),
         Vector{UInt32}(),
         node,
+        UInt32(0),
         table,
         id,
     )
@@ -85,12 +85,12 @@ function _Archetype(
     _Archetype(
         node.mask,
         collect(Int, components),
-        relations,
         _TableIDs(),
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
         Dict{UInt32,_TableIDs}(),
         Vector{UInt32}(),
         node,
+        UInt32(length(relations)),
         table,
         id,
     )
@@ -123,7 +123,7 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
     end
 end
 
-_has_relations(a::_Archetype) = !isempty(a.relations)
+_has_relations(a::_Archetype) = a.num_relations > 0
 
 function _free_table!(a::_Archetype, table::_Table)
     _remove_table!(a.tables, table.id)
@@ -131,7 +131,7 @@ function _free_table!(a::_Archetype, table::_Table)
 
     # If there is only one relation, the resp. relation_tables
     # entry is removed anyway.
-    if length(a.relations) <= 1
+    if a.num_relations <= 1
         return
     end
 

@@ -237,7 +237,7 @@ function _find_or_create_table!(
 end
 
 function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relations::Vector{Pair{Int,Entity}})
-    if length(relations) < length(arch.relations)
+    if length(relations) < arch.num_relations
         throw(ArgumentError("relation targets must be fully specified"))
     end
 
@@ -253,7 +253,7 @@ function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relat
 end
 
 function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::UInt32
-    if length(relations) < length(arch.relations)
+    if length(relations) < arch.num_relations
         throw(ArgumentError("relation targets must be fully specified"))
     end
     # TODO: check that the archetype contains all components
@@ -384,7 +384,7 @@ function _get_table_slow_path(
     arch::_Archetype,
     relations::Vector{Pair{Int,Entity}},
 )::Tuple{_Table,Bool}
-    if length(relations) < length(arch.relations)
+    if length(relations) < arch.num_relations
         # TODO: check duplicates
         throw(ArgumentError("relation targets must be fully specified"))
     end
@@ -400,7 +400,7 @@ function _get_table_slow_path(
     end
 
     @inbounds tables = index[target_id]
-    if length(arch.relations) == 1
+    if arch.num_relations == 1
         return @inbounds world._tables[tables.tables[1]], true
     end
 
