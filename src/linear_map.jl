@@ -4,25 +4,25 @@ isdefined(@__MODULE__, :Memory) || const Memory = Vector # Compat for Julia < 1.
 const _LOAD_FACTOR = 0.75
 const _RSHIFT = sizeof(UInt) * 7
 
-mutable struct _Mask_Map{N,V}
-    keys::Memory{_Mask{N}}
+mutable struct _Linear_Map{K,V}
+    keys::Memory{K}
     vals::Memory{V}
     occupied::Memory{UInt8}
     count::Int
     mask::Int
     max_load::Int
-    function _Mask_Map{N,V}(initial_size::Int=2) where {N,V}
+    function _Linear_Map{K,V}(initial_size::Int=2) where {K,V}
         # Force power of 2 size
         sz = nextpow(2, initial_size)
-        keys = Memory{_Mask{N}}(undef, sz)
+        keys = Memory{K}(undef, sz)
         vals = Memory{V}(undef, sz)
         occupied = zeros(UInt8, sz)
         max_load = floor(Int, sz * _LOAD_FACTOR)
-        new{N,V}(keys, vals, occupied, 0, sz - 1, max_load)
+        new{K,V}(keys, vals, occupied, 0, sz - 1, max_load)
     end
 end
 
-function _grow!(d::_Mask_Map{N,V}) where {N,V}
+function _grow!(d::_Linear_Map{K,V}) where {K,V}
     old_keys = d.keys
     old_vals = d.vals
     old_occupied = d.occupied
@@ -30,7 +30,7 @@ function _grow!(d::_Mask_Map{N,V}) where {N,V}
 
     new_cap = old_cap << 1
     new_mask = new_cap - 1
-    new_keys = Memory{_Mask{N}}(undef, new_cap)
+    new_keys = Memory{K}(undef, new_cap)
     new_vals = Memory{V}(undef, new_cap)
     new_occupied = zeros(UInt8, new_cap)
 
@@ -85,17 +85,17 @@ macro _get_zero_index_loop()
     end)
 end
 
-function Base.getindex(d::_Mask_Map, key::_Mask)
+function Base.getindex(d::_Linear_Map, key)
     @_get_value_loop()
     throw(KeyError(key))
 end
 
-function Base.get(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
+function Base.get(f::Union{Function,Type}, d::_Linear_Map, key)
     @_get_value_loop()
     return f()
 end
 
-function Base.get!(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
+function Base.get!(f::Union{Function,Type}, d::_Linear_Map, key)
     @_get_value_loop()
     if d.count >= d.max_load
         _grow!(d)
@@ -111,4 +111,4 @@ function Base.get!(f::Union{Function,Type}, d::_Mask_Map, key::_Mask)
     return val
 end
 
-Base.length(d::_Mask_Map) = d.count
+Base.length(d::_Linear_Map) = d.count

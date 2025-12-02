@@ -14,7 +14,7 @@ using Ark: _EntityPool, _get_entity, _recycle, _is_alive
 using Ark: _BitPool, _get_bit
 using Ark: _Lock, _lock, _unlock, _is_locked
 using Ark: _VecMap, _get_map, _set_map!
-using Ark: _Mask_Map, _LOAD_FACTOR
+using Ark: _Linear_Map, _LOAD_FACTOR
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create, _UseMap, _NoUseMap
 using Ark: _BatchTable, _BatchLock
 using Ark: _has_observers
