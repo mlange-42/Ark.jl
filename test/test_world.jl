@@ -447,8 +447,8 @@ end
 
     arch = world._archetypes[2]
     @test length(arch.index[1]) == 2
-    @test arch.index[1][parent1._id].tables == [world._tables[2]]
-    @test arch.index[1][parent2._id].tables == [world._tables[3]]
+    @test arch.index[1][parent1._id].tables == [2]
+    @test arch.index[1][parent2._id].tables == [3]
 
     e4 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
     @test get_relations(world, e4, (ChildOf,)) == get_relations(world, e2, (ChildOf,))

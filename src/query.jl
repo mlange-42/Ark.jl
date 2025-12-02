@@ -1,6 +1,6 @@
 
 mutable struct _QueryCursor
-    tables::Vector{_Table}
+    tables::Vector{UInt32}
     closed::Bool
 end
 
@@ -204,7 +204,7 @@ end
             end
 
             if !_has_relations(archetype)
-                @inbounds table = archetype.tables[1]
+                table = @inbounds q._world._tables[Int(archetype.tables[1])]
                 if isempty(table.entities)
                     arch += 1
                     continue
@@ -218,7 +218,7 @@ end
         end
 
         while tab <= length(q._q_lock.tables)
-            @inbounds table = q._q_lock.tables[tab]
+            table = @inbounds q._world._tables[Int(q._q_lock.tables[tab])]
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
             if isempty(table.entities) || !_matches(q._world._relations, table, q._relations)
                 tab += 1
@@ -266,7 +266,7 @@ function Base.length(q::Query)
         end
 
         if !_has_relations(archetype)
-            @inbounds table = archetype.tables[1]
+            table = @inbounds q._world._tables[Int(archetype.tables[1])]
             if isempty(table.entities)
                 continue
             end
@@ -275,8 +275,9 @@ function Base.length(q::Query)
         end
 
         tables = _get_tables(q._world, archetype, q._relations)
-        for table in tables
+        for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
+            table = @inbounds q._world._tables[Int(table_id)]
             if !isempty(table.entities) && _matches(q._world._relations, table, q._relations)
                 count += 1
             end
@@ -307,14 +308,15 @@ function count_entities(q::Query)
         end
 
         if !_has_relations(archetype)
-            table = archetype.tables[1]
+            table = @inbounds q._world._tables[Int(archetype.tables[1])]
             count += length(table.entities)
             continue
         end
 
         tables = _get_tables(q._world, archetype, q._relations)
-        for table in tables
+        for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
+            table = @inbounds q._world._tables[Int(table_id)]
             if !isempty(table.entities) && _matches(q._world._relations, table, q._relations)
                 count += length(table.entities)
             end

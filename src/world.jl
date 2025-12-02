@@ -372,7 +372,7 @@ end
     if length(arch.tables) == 0
         return @inbounds world._tables[1], false
     end
-    return @inbounds arch.tables[1], true
+    return @inbounds world._tables[arch.tables[1]], true
 end
 
 function _get_table_slow_path(
@@ -397,10 +397,11 @@ function _get_table_slow_path(
 
     @inbounds tables = index[target_id]
     if length(arch.relations) == 1
-        return @inbounds tables.tables[1], true
+        return @inbounds world._tables[tables.tables[1]], true
     end
 
-    for table in tables.tables
+    for table_id in tables.tables
+        table = world._tables[table_id]
         if _matches_exact(world._relations, table, relations)
             return table, true
         end
@@ -409,7 +410,7 @@ function _get_table_slow_path(
     return @inbounds world._tables[1], false
 end
 
-function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{_Table}
+function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{UInt32}
     if !_has_relations(arch) || isempty(relations)
         return arch.tables.tables
     end
@@ -1804,16 +1805,14 @@ end
         targets = BitVector((false,))
         sizehint!(targets, initial_capacity)
 
-        zero_table = _new_table(UInt32(1), UInt32(1))
-
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask], _TableIDs(zero_table))],
+            [_Archetype(UInt32(1), graph.nodes[$start_mask], _TableIDs(UInt32(1)))],
             Vector{UInt32}(),
-            [zero_table],
+            [_new_table(UInt32(1), UInt32(1))],
             _ComponentIndex{$(M)}($(length(types))),
             registry,
             _EntityPool(UInt32(1024)),
@@ -2213,7 +2212,8 @@ function _cleanup_archetypes(world::World, entity::Entity)
         tables = archetype.target_tables[entity._id]
 
         for t in length(tables.tables):-1:1
-            table = tables.tables[t]
+            table_id = tables.tables[t]
+            table = world._tables[table_id]
             has_target = false
             for rel in table.relations
                 if rel.second._id == entity._id

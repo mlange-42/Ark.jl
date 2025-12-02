@@ -1,38 +1,38 @@
 
 struct _TableIDs
-    tables::Vector{_Table}
+    tables::Vector{UInt32}
     indices::Dict{UInt32,Int}
 end
 
-function _TableIDs(tables::_Table...)
+function _TableIDs(tables::UInt32...)
     vec = collect(tables)
     indices = Dict{UInt32,Int}()
 
     for (i, table) in enumerate(tables)
-        indices[table.id] = i
+        indices[table] = i
     end
 
     return _TableIDs(vec, indices)
 end
 
-function _add_table!(ids::_TableIDs, table::_Table)
+function _add_table!(ids::_TableIDs, table::UInt32)
     push!(ids.tables, table)
-    ids.indices[table.id] = length(ids.tables)
+    ids.indices[table] = length(ids.tables)
     return nothing
 end
 
-function _remove_table!(ids::_TableIDs, table::_Table)
-    if !haskey(ids.indices, table.id)
+function _remove_table!(ids::_TableIDs, table::UInt32)
+    if !haskey(ids.indices, table)
         return false
     end
-    idx = ids.indices[table.id]
+    idx = ids.indices[table]
     last = length(ids.tables)
     if idx != last
         ids.tables[idx], ids.tables[last] = ids.tables[last], ids.tables[idx]
-        ids.indices[ids.tables[idx].id] = idx
+        ids.indices[ids.tables[idx]] = idx
     end
     pop!(ids.tables)
-    delete!(ids.indices, table.id)
+    delete!(ids.indices, table)
     return true
 end
 
@@ -45,7 +45,7 @@ end
 Base.length(t::_TableIDs) = length(t.tables)
 Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
-const _empty_tables = Vector{_Table}()
+const _empty_tables = Vector{UInt32}()
 
 struct _Archetype{M}
     components::Vector{Int}  # Indices into the global ComponentStorage list
@@ -93,7 +93,7 @@ function _Archetype(
 end
 
 function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::_Table)
-    _add_table!(arch.tables, t)
+    _add_table!(arch.tables, t.id)
 
     if !_has_relations(arch)
         return
@@ -103,18 +103,18 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
         idx = indices[comp].archetypes[arch.id]
         dict = arch.index[idx]
         if haskey(dict, target._id)
-            _add_table!(dict[target._id], t)
+            _add_table!(dict[target._id], t.id)
         else
-            dict[target._id] = _TableIDs(t)
+            dict[target._id] = _TableIDs(t.id)
         end
 
         if haskey(arch.target_tables, target._id)
             tables = arch.target_tables[target._id]
             if !haskey(tables.indices, t.id)
-                _add_table!(tables, t)
+                _add_table!(tables, t.id)
             end
         else
-            arch.target_tables[target._id] = _TableIDs(t)
+            arch.target_tables[target._id] = _TableIDs(t.id)
         end
     end
 end
@@ -122,7 +122,7 @@ end
 _has_relations(a::_Archetype) = !isempty(a.relations)
 
 function _free_table!(a::_Archetype, table::_Table)
-    _remove_table!(a.tables, table)
+    _remove_table!(a.tables, table.id)
     push!(a.free_tables, table.id)
 
     # If there is only one relation, the resp. relation_tables
@@ -134,11 +134,11 @@ function _free_table!(a::_Archetype, table::_Table)
     # TODO: can/should we be more selective here?
     for dict in a.index
         for (_, tables) in dict
-            _remove_table!(tables, table)
+            _remove_table!(tables, table.id)
         end
     end
     for (_, tables) in a.target_tables
-        _remove_table!(tables, table)
+        _remove_table!(tables, table.id)
     end
 end
 
@@ -162,7 +162,7 @@ function _reset!(a::_Archetype)
     end
 
     for table in a.tables.tables
-        push!(a.free_tables, table.id)
+        push!(a.free_tables, table)
     end
     _clear!(a.tables)
 
