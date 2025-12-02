@@ -1,9 +1,9 @@
 
 using Random
-using Ark: _Mask_Map, _Mask
+using Ark: _Linear_Map, _Mask
 
 function setup_get!_map(n)
-    map = _Mask_Map{1,Int}(ceil(Int, 1.36 * n))
+    map = _Linear_Map{_Mask{1},Int}(ceil(Int, 1.36 * n))
     rands = [_Mask((UInt64(x),)) for x in 1:n]
     shuffle!(Xoshiro(42), rands)
     return map, rands
@@ -23,7 +23,7 @@ for n in (100, 10000)
 end
 
 function setup_get_map(n)
-    map = _Mask_Map{1,Int}(n)
+    map = _Linear_Map{_Mask{1},Int}(n)
     rands = [_Mask((UInt64(x),)) for x in 1:n]
     shuffle!(Xoshiro(42), rands)
     for r in rands
