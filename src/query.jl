@@ -212,7 +212,7 @@ end
                 return result, (arch + 1, 0)
             end
 
-            if isempty(archetype.data[].tables.tables)
+            if isempty(archetype.data.tables.tables)
                 arch += 1
                 continue
             end
@@ -277,7 +277,7 @@ function Base.length(q::Query)
             continue
         end
 
-        if isempty(archetype.data[].tables.tables)
+        if isempty(archetype.data.tables.tables)
             continue
         end
 
@@ -319,7 +319,7 @@ function count_entities(q::Query)
             continue
         end
 
-        if isempty(archetype.data[].tables.tables)
+        if isempty(archetype.data.tables.tables)
             continue
         end
 

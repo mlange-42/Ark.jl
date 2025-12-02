@@ -25,7 +25,6 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _storages::CS
     const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
-    const _archetype_data::Vector{_ArchetypeData{M}}
     const _relation_archetypes::Vector{UInt32}
     const _tables::Vector{_Table}
     const _index::_ComponentIndex{M}
@@ -161,7 +160,7 @@ end
 )::UInt32
     @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index, is_new = _find_or_create_archetype!(
-        world, old_arch.data[].node, add, remove, add_mask, rem_mask, use_map,
+        world, old_arch.data.node, add, remove, add_mask, rem_mask, use_map,
         isempty(relations) ? UInt32(length(world._tables) + 1) : UInt32(0),
     )
     @inbounds new_arch = world._archetypes[new_arch_index]
@@ -267,7 +266,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     push!(world._tables, table)
 
     _push_empty_to_all_storages!(world)
-    for comp in arch.data[].components
+    for comp in arch.data.components
         _activate_new_column_for_comp!(world, comp, new_table_id)
     end
 
@@ -293,15 +292,7 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
     end
 
     data = _ArchetypeData(node, table, relations, components...)
-    push!(world._archetype_data, data)
-    arch =
-        _Archetype(
-            UInt32(length(world._archetypes) + 1),
-            node,
-            table,
-            Base.RefValue(world._archetype_data[end]),
-            relations,
-        )
+    arch = _Archetype(UInt32(length(world._archetypes) + 1), node, table, data, relations)
     push!(world._archetypes, arch)
 
     if _has_relations(arch)
@@ -313,7 +304,7 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
 
     _push_zero_to_all_archetype_relations!(world)
 
-    for comp in arch.data[].components
+    for comp in arch.data.components
         push!(world._index.components[comp], arch)
     end
 
@@ -369,7 +360,7 @@ function _get_exchange_targets_unchecked(
 end
 
 @inline function _get_table(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Tuple{_Table,Bool}
-    if length(arch.data[].tables) == 0
+    if length(arch.data.tables) == 0
         return @inbounds world._tables[1], false
     end
 
@@ -384,7 +375,7 @@ end
 
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
-    @check length(arch.data[].tables) > 0
+    @check length(arch.data.tables) > 0
     return @inbounds world._tables[arch.table], true
 end
 
@@ -403,7 +394,7 @@ function _get_table_slow_path(
     target_id = first_rel.second._id
 
     @inbounds rel_idx = world._relations[rel_comp].archetypes[arch.id]
-    index = arch.data[].index[rel_idx]
+    index = arch.data.index[rel_idx]
     if !haskey(index, target_id)
         return @inbounds world._tables[1], false
     end
@@ -425,7 +416,7 @@ end
 
 function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{UInt32}
     if !_has_relations(arch) || isempty(relations)
-        return arch.data[].tables.tables
+        return arch.data.tables.tables
     end
 
     @inbounds first_rel = relations[1]
@@ -433,7 +424,7 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
     target_id = first_rel.second._id
 
     @inbounds rel_idx = world._relations[rel_comp].archetypes[arch.id]
-    @inbounds index = arch.data[].index[rel_idx]
+    @inbounds index = arch.data.index[rel_idx]
     if !haskey(index, target_id)
         return _empty_tables
     end
@@ -450,7 +441,7 @@ end
 
     index = _add_entity!(table, entity)
 
-    for comp in archetype.data[].components
+    for comp in archetype.data.components
         _ensure_column_size_for_comp!(world, comp, table_index, index)
     end
 
@@ -486,7 +477,7 @@ function _create_entities!(world::World, table_index::UInt32, n::UInt32)::Tuple{
         end
     end
 
-    for comp in archetype.data[].components
+    for comp in archetype.data.components
         _ensure_column_size_for_comp!(world, comp, table_index, new_length)
     end
 
@@ -506,7 +497,7 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
     swapped = _swap_remove!(old_table.entities._data, index.row)
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
-    for comp in old_archetype.data[].components
+    for comp in old_archetype.data.components
         if !_get_bit(new_archetype.mask, comp)
             continue
         end
@@ -514,7 +505,7 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
-    for comp in new_archetype.data[].components
+    for comp in new_archetype.data.components
         _ensure_column_size_for_comp!(world, comp, table_index, new_row)
     end
 
@@ -539,7 +530,7 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
     total_entities = old_entities + num_entities
 
     resize!(new_table, total_entities)
-    for comp in archetype.data[].components
+    for comp in archetype.data.components
         _ensure_column_size_for_comp!(world, comp, table_index, total_entities)
     end
 
@@ -548,12 +539,12 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         entity = old_table.entities[from]
         new_table.entities._data[to] = entity
         world._entities[entity._id] = _EntityIndex(new_table.id, to)
-        for comp in archetype.data[].components
+        for comp in archetype.data.components
             _copy_component_data!(world, comp, old_table_index, table_index, UInt32(from), UInt32(to))
         end
     end
 
-    for comp in archetype.data[].components
+    for comp in archetype.data.components
         _clear_component_data!(world, comp, old_table_index)
     end
 
@@ -569,7 +560,7 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     table = world._tables[index.table]
     archetype = world._archetypes[table.archetype]
 
-    for comp in archetype.data[].components
+    for comp in archetype.data.components
         _copy_component_data!(world, comp, index.table, index.table, index.row, UInt32(new_row), mode)
     end
 
@@ -637,7 +628,7 @@ end
     push!(
         exprs,
         :(
-            for comp in old_archetype.data[].components
+            for comp in old_archetype.data.components
                 if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
@@ -708,7 +699,7 @@ function remove_entity!(world::World, entity::Entity)
     swapped = _swap_remove!(table.entities._data, index.row)
 
     # Only operate on storages for components present in this archetype
-    for comp in archetype.data[].components
+    for comp in archetype.data.components
         _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
     end
 
@@ -1818,15 +1809,14 @@ end
         targets = BitVector((false,))
         sizehint!(targets, initial_capacity)
 
-        data = _ArchetypeData{$M}[_ArchetypeData(graph.nodes[$start_mask], UInt32(1))]
+        data = _ArchetypeData(graph.nodes[$start_mask], UInt32(1))
 
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask], UInt32(1), Base.RefValue{_ArchetypeData{$M}}(data[1]))],
-            data,
+            [_Archetype(UInt32(1), graph.nodes[$start_mask], UInt32(1), data)],
             Vector{UInt32}(),
             [_new_table(UInt32(1), UInt32(1))],
             _ComponentIndex{$(M)}($(length(types))),
@@ -2198,7 +2188,7 @@ function reset!(world::W) where {W<:World}
     for table in world._tables
         resize!(table, 0)
         archetype = world._archetypes[table.archetype]
-        for comp in archetype.data[].components
+        for comp in archetype.data.components
             _clear_component_data!(world, comp, table.id)
         end
     end
@@ -2222,7 +2212,7 @@ function _cleanup_archetypes(world::World, entity::Entity)
     relations = Pair{Int,Entity}[]
     for arch in world._relation_archetypes
         archetype = world._archetypes[arch]
-        target_tables = archetype.data[].target_tables
+        target_tables = archetype.data.target_tables
         if !haskey(target_tables, entity._id)
             continue
         end

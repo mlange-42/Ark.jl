@@ -47,13 +47,13 @@ Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
 const _empty_tables = Vector{UInt32}()
 
-struct _ArchetypeData{M}
-    components::Vector{Int}
-    tables::_TableIDs
-    index::Vector{Dict{UInt32,_TableIDs}}
-    target_tables::Dict{UInt32,_TableIDs}
-    free_tables::Vector{UInt32}
-    node::_GraphNode{M}
+mutable struct _ArchetypeData{M}
+    const components::Vector{Int}
+    const tables::_TableIDs
+    const index::Vector{Dict{UInt32,_TableIDs}}
+    const target_tables::Dict{UInt32,_TableIDs}
+    const free_tables::Vector{UInt32}
+    const node::_GraphNode{M}
 end
 
 function _ArchetypeData(node::_GraphNode, table::UInt32)
@@ -85,13 +85,13 @@ end
 
 struct _Archetype{M}
     mask::_Mask{M}
-    data::Base.RefValue{_ArchetypeData{M}}
+    data::_ArchetypeData{M}
     num_relations::UInt32
     table::UInt32
     id::UInt32
 end
 
-function _Archetype(id::UInt32, node::_GraphNode{M}, table::UInt32, data::Base.RefValue{_ArchetypeData{M}}) where {M}
+function _Archetype(id::UInt32, node::_GraphNode{M}, table::UInt32, data::_ArchetypeData{M}) where {M}
     _Archetype(
         node.mask,
         data,
@@ -105,7 +105,7 @@ function _Archetype(
     id::UInt32,
     node::_GraphNode{M},
     table::UInt32,
-    data::Base.RefValue{_ArchetypeData{M}},
+    data::_ArchetypeData{M},
     relations::Vector{Int},
 ) where {M}
     _Archetype(
@@ -118,7 +118,7 @@ function _Archetype(
 end
 
 function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::_Table)
-    _add_table!(arch.data[].tables, t.id)
+    _add_table!(arch.data.tables, t.id)
 
     if !_has_relations(arch)
         return
@@ -126,14 +126,14 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
 
     for (comp, target) in t.relations
         idx = indices[comp].archetypes[arch.id]
-        dict = arch.data[].index[idx]
+        dict = arch.data.index[idx]
         if haskey(dict, target._id)
             _add_table!(dict[target._id], t.id)
         else
             dict[target._id] = _TableIDs(t.id)
         end
 
-        target_tables = arch.data[].target_tables
+        target_tables = arch.data.target_tables
         if haskey(target_tables, target._id)
             tables = target_tables[target._id]
             if !haskey(tables.indices, t.id)
@@ -148,8 +148,8 @@ end
 _has_relations(a::_Archetype) = a.num_relations > 0
 
 function _free_table!(a::_Archetype, table::_Table)
-    _remove_table!(a.data[].tables, table.id)
-    push!(a.data[].free_tables, table.id)
+    _remove_table!(a.data.tables, table.id)
+    push!(a.data.free_tables, table.id)
 
     # If there is only one relation, the resp. relation_tables
     # entry is removed anyway.
@@ -158,28 +158,28 @@ function _free_table!(a::_Archetype, table::_Table)
     end
 
     # TODO: can/should we be more selective here?
-    for dict in a.data[].index
+    for dict in a.data.index
         for (_, tables) in dict
             _remove_table!(tables, table.id)
         end
     end
-    for (_, tables) in a.data[].target_tables
+    for (_, tables) in a.data.target_tables
         _remove_table!(tables, table.id)
     end
 end
 
 function _get_free_table!(a::_Archetype)::Tuple{UInt32,Bool}
-    if isempty(a.data[].free_tables)
+    if isempty(a.data.free_tables)
         return 0, false
     end
-    return pop!(a.data[].free_tables), true
+    return pop!(a.data.free_tables), true
 end
 
 function _remove_target!(a::_Archetype, target::Entity)
-    for dict in a.data[].index
+    for dict in a.data.index
         delete!(dict, target._id)
     end
-    delete!(a.data[].target_tables, target._id)
+    delete!(a.data.target_tables, target._id)
 end
 
 function _reset!(a::_Archetype)
@@ -187,15 +187,15 @@ function _reset!(a::_Archetype)
         return
     end
 
-    for table in a.data[].tables.tables
-        push!(a.data[].free_tables, table)
+    for table in a.data.tables.tables
+        push!(a.data.free_tables, table)
     end
-    _clear!(a.data[].tables)
+    _clear!(a.data.tables)
 
-    for dict in a.data[].index
+    for dict in a.data.index
         empty!(dict)
     end
-    empty!(a.data[].target_tables)
+    empty!(a.data.target_tables)
 
     return
 end

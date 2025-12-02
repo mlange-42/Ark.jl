@@ -279,8 +279,8 @@ end
     @test length(world._tables) == 3
     @test length(world._archetypes) == 3
 
-    @test world._archetypes[2].data[].components == [pos_id]
-    @test world._archetypes[3].data[].components == [pos_id, vel_id]
+    @test world._archetypes[2].data.components == [pos_id]
+    @test world._archetypes[3].data.components == [pos_id, vel_id]
 
     @test length(world._storages) == N_fake + 2
     @test length(world._registry.types) == N_fake + 2
@@ -446,9 +446,9 @@ end
     @test length(world._tables) == 3
 
     arch = world._archetypes[2]
-    @test length(arch.data[].index[1]) == 2
-    @test arch.data[].index[1][parent1._id].tables == [2]
-    @test arch.data[].index[1][parent2._id].tables == [3]
+    @test length(arch.data.index[1]) == 2
+    @test arch.data.index[1][parent1._id].tables == [2]
+    @test arch.data.index[1][parent2._id].tables == [3]
 
     e4 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
     @test get_relations(world, e4, (ChildOf,)) == get_relations(world, e2, (ChildOf,))
@@ -489,7 +489,7 @@ end
     e3 = new_entity!(world, (Position(0, 0), ChildOf(), ChildOf2());
         relations=(ChildOf => parent1, ChildOf2 => parent2))
 
-    @test length(world._archetypes[2].data[].tables) == 2
+    @test length(world._archetypes[2].data.tables) == 2
     @test get_relations(world, e1, (ChildOf, ChildOf2)) == (parent1, parent2)
     @test get_relations(world, e2, (ChildOf, ChildOf2)) == (parent2, parent1)
     @test get_relations(world, e3, (ChildOf, ChildOf2)) == (parent1, parent2)
@@ -497,7 +497,7 @@ end
     remove_entity!(world, parent1)
     remove_entity!(world, parent2)
 
-    @test length(world._archetypes[2].data[].tables) == 1
+    @test length(world._archetypes[2].data.tables) == 1
 
     @test get_relations(world, e1, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
     @test get_relations(world, e2, (ChildOf, ChildOf2)) == (zero_entity, zero_entity)
@@ -1066,12 +1066,12 @@ end
         end
     end
 
-    @test length(world._archetypes[1].data[].tables) == 1
-    @test length(world._archetypes[2].data[].tables) == 1
-    @test length(world._archetypes[3].data[].tables) == 1
-    @test length(world._archetypes[4].data[].tables) == 1
-    @test length(world._archetypes[5].data[].tables) == 0
-    @test length(world._archetypes[5].data[].free_tables) == 2
+    @test length(world._archetypes[1].data.tables) == 1
+    @test length(world._archetypes[2].data.tables) == 1
+    @test length(world._archetypes[3].data.tables) == 1
+    @test length(world._archetypes[4].data.tables) == 1
+    @test length(world._archetypes[5].data.tables) == 0
+    @test length(world._archetypes[5].data.free_tables) == 2
 
     @test obs._id.id == 0
     @test !_has_observers(world._event_manager, OnAddComponents)
