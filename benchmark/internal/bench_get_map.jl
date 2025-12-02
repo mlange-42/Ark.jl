@@ -4,8 +4,8 @@ using Ark: _Mask_Map, _Mask
 
 function setup_get!_map(n)
     map = _Mask_Map{1,Int}(n)
-    rands = [_Mask((UInt64(x),)) for x in rand(Xoshiro(42), 1:n, 10n)]
-    rands = unique(rands)[1:n]
+    rands = [_Mask((UInt64(x),)) for x in 1:n]
+    shuffle!(Xoshiro(42), rands)
     return map, rands
 end
 
@@ -24,7 +24,8 @@ end
 
 function setup_get_map(n)
     map = _Mask_Map{1,Int}(n)
-    rands = [_Mask((UInt64(x),)) for x in rand(Xoshiro(42), 1:n, n)]
+    rands = [_Mask((UInt64(x),)) for x in 1:n]
+    shuffle!(Xoshiro(42), rands)
     for r in rands
         s += get!(() -> 1, map, r)
     end
