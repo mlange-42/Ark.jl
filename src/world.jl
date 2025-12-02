@@ -298,7 +298,7 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
             UInt32(length(world._archetypes) + 1),
             node,
             table,
-            Base.RefValue{_ArchetypeData}(world._archetype_data[end]),
+            Base.RefValue(world._archetype_data[end]),
             relations,
         )
     push!(world._archetypes, arch)
@@ -1819,14 +1819,14 @@ end
         targets = BitVector((false,))
         sizehint!(targets, initial_capacity)
 
-        data = [_ArchetypeData(graph.nodes[$start_mask], UInt32(1))]
+        data = _ArchetypeData{$M}[_ArchetypeData(graph.nodes[$start_mask], UInt32(1))]
 
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask], UInt32(1), Base.RefValue{_ArchetypeData}(data[1]))],
+            [_Archetype(UInt32(1), graph.nodes[$start_mask], UInt32(1), Base.RefValue{_ArchetypeData{$M}}(data[1]))],
             data,
             Vector{UInt32}(),
             [_new_table(UInt32(1), UInt32(1))],

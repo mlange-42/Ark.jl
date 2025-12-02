@@ -85,13 +85,13 @@ end
 
 struct _Archetype{M}
     mask::_Mask{M}
-    data::Base.RefValue{_ArchetypeData}
+    data::Base.RefValue{_ArchetypeData{M}}
     num_relations::UInt32
     table::UInt32
     id::UInt32
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, table::UInt32, data::Base.RefValue{_ArchetypeData})
+function _Archetype(id::UInt32, node::_GraphNode{M}, table::UInt32, data::Base.RefValue{_ArchetypeData{M}}) where {M}
     _Archetype(
         node.mask,
         data,
@@ -103,11 +103,11 @@ end
 
 function _Archetype(
     id::UInt32,
-    node::_GraphNode,
+    node::_GraphNode{M},
     table::UInt32,
-    data::Base.RefValue{_ArchetypeData},
+    data::Base.RefValue{_ArchetypeData{M}},
     relations::Vector{Int},
-)
+) where {M}
     _Archetype(
         node.mask,
         data,
