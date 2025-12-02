@@ -3,7 +3,7 @@ using Random
 using Ark: _Mask_Map, _Mask
 
 function setup_get!_map(n)
-    map = _Mask_Map{1,Int}(ceil(Int, 1.3 * n))
+    map = _Mask_Map{1,Int}(ceil(Int, 1.36 * n))
     rands = [_Mask((UInt64(x),)) for x in 1:n]
     shuffle!(Xoshiro(42), rands)
     return map, rands
