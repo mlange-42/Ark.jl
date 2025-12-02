@@ -197,8 +197,8 @@ end
             @inbounds archetype = q._archetypes[arch]
 
             if isempty(archetype.tables.tables) ||
-               !_contains_all(archetype.mask, q._mask) ||
-               (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+               !_contains_all(archetype.node.mask, q._mask) ||
+               (q._has_excluded && _contains_any(archetype.node.mask, q._exclude_mask))
                 arch += 1
                 continue
             end
@@ -260,8 +260,8 @@ function Base.length(q::Query)
     count = 0
     for archetype in q._archetypes
         if isempty(archetype.tables.tables) ||
-           !_contains_all(archetype.mask, q._mask) ||
-           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+           !_contains_all(archetype.node.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.node.mask, q._exclude_mask))
             continue
         end
 
@@ -302,8 +302,8 @@ function count_entities(q::Query)
     count = 0
     for archetype in q._archetypes
         if isempty(archetype.tables.tables) ||
-           !_contains_all(archetype.mask, q._mask) ||
-           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
+           !_contains_all(archetype.node.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.node.mask, q._exclude_mask))
             continue
         end
 

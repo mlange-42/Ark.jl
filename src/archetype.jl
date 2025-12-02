@@ -48,7 +48,6 @@ Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 const _empty_tables = Vector{UInt32}()
 
 mutable struct _Archetype{M}
-    const mask::_Mask{M}
     const components::Vector{Int}
     const tables::_TableIDs
     const index::Vector{Dict{UInt32,_TableIDs}}
@@ -62,7 +61,6 @@ end
 
 function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
     _Archetype(
-        node.mask,
         Vector{Int}(),
         _TableIDs(table),
         Vector{Dict{UInt32,_TableIDs}}(),
@@ -83,7 +81,6 @@ function _Archetype(
     components::Int...,
 )
     _Archetype(
-        node.mask,
         collect(Int, components),
         _TableIDs(),
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
