@@ -13,7 +13,7 @@ else
 end
 
 # TODO: re-enable when fixed on the Julia side.
-const RUN_JET = "CI" in keys(ENV) && VERSION >= v"1.12.0" && VERSION < v"1.13.0"
+const RUN_JET = "CI" in keys(ENV) && VERSION >= v"1.12.0" && isempty(VERSION.prerelease)
 
 include("TestTypes.jl")
 
