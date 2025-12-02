@@ -6,7 +6,7 @@ rng = Xoshiro(42)
 
 function setup_get_map(n)
     map = _Mask_Map{1, Int}()
-    rands = rand(rng, n, 1:n)
+    rands = rand(rng, 1:n, n)
     return map, rands
 end
 
