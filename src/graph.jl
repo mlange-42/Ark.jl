@@ -14,11 +14,11 @@ end
 
 struct _Graph{M}
     mask::_MutableMask{M}
-    nodes::_Mask_Map{M,_GraphNode{M}}
+    nodes::_Linear_Map{_Mask{M},_GraphNode{M}}
 end
 
 function _Graph{M}() where M
-    g = _Graph{M}(_MutableMask{M}(), _Mask_Map{M,_GraphNode{M}}())
+    g = _Graph{M}(_MutableMask{M}(), _Linear_Map{_Mask{M},_GraphNode{M}}())
     m = _Mask{M}()
     get!(() -> _GraphNode(m, UInt32(1)), g.nodes, m)
     return g

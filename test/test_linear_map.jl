@@ -1,15 +1,15 @@
 
-@testset "_Mask_Map init" begin
-    d = _Mask_Map{1,Int}()
+@testset "_Linear_Map init" begin
+    d = _Linear_Map{_Mask{1},Int}()
     @test length(d) == 0
 
-    d2 = _Mask_Map{1,Float64}(5)
+    d2 = _Linear_Map{_Mask{1},Float64}(5)
     @test length(d2.keys) == 8
     @test d2.max_load == floor(Int, 8 * _LOAD_FACTOR)
 end
 
-@testset "_Mask_Map basics" begin
-    d = _Mask_Map{1,Int}(16)
+@testset "_Linear_Map basics" begin
+    d = _Linear_Map{_Mask{1},Int}(16)
     key1 = _Mask{1}((0x123456789ABC,))
     key2 = _Mask{1}((0x987654321FED,))
 
@@ -29,8 +29,8 @@ end
     @test length(d) == 2
 end
 
-@testset "_Mask_Map getindex and get" begin
-    d = _Mask_Map{1,String}(16)
+@testset "_Linear_Map getindex and get" begin
+    d = _Linear_Map{_Mask{1},String}(16)
     k1 = _Mask{1}((UInt64(1),))
     Base.get!(() -> "Value1", d, k1)
 
@@ -46,9 +46,9 @@ end
     @test Base.get(() -> "Default", d, k_missing) == "Default"
 end
 
-@testset "_Mask_Map resizing" begin
+@testset "_Linear_Map resizing" begin
     initial_size = 4
-    d = _Mask_Map{1,Int}(initial_size)
+    d = _Linear_Map{_Mask{1},Int}(initial_size)
 
     # capacity is 4, max_load is 3 (4 * _LOAD_FACTOR=0.75)
     # reach max_load
@@ -77,8 +77,8 @@ end
     @test d[k4] == 4
 end
 
-@testset "_Mask_Map get!" begin
-    d = _Mask_Map{1,Int}(8)
+@testset "_Linear_Map get!" begin
+    d = _Linear_Map{_Mask{1},Int}(8)
 
     keys = [_Mask{1}((UInt64(i),)) for i in 1:6]
 
