@@ -1812,7 +1812,7 @@ end
             $storage_tuple,
             $relations_vec,
             [_Archetype(UInt32(1), graph.nodes[$start_mask], _TableIDs(zero_table))],
-            Vector{_Archetype{$(M)}}(),
+            Vector{UInt32}(),
             [zero_table],
             _ComponentIndex{$(M)}($(length(types))),
             registry,

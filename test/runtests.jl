@@ -12,6 +12,9 @@ else
     include("setup_default.jl")
 end
 
+# TODO: re-enable when fixed on the Julia side.
+const RUN_JET = "CI" in keys(ENV) && VERSION >= v"1.12.0" && isempty(VERSION.prerelease)
+
 include("TestTypes.jl")
 
 include("test_util.jl")

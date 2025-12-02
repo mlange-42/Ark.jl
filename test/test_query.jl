@@ -393,7 +393,7 @@ end
 end
 
 """
-@static if "CI" in keys(ENV) && VERSION >= v"1.12.0"
+@static if RUN_JET
 @testset "Query JET" begin
     world = World(
         Position,
