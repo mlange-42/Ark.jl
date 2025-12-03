@@ -4,6 +4,7 @@
 *.json
 *.json.tmp
 *.mem
+*.pb.gz
 
 *.csv
 *.html

@@ -429,7 +429,7 @@ end
     index = _add_entity!(table, entity)
 
     for comp in archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, index)
+        @inline _ensure_column_size_for_comp!(world, comp, table_index, index)
     end
 
     if entity._id > length(world._entities)
