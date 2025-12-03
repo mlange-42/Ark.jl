@@ -60,6 +60,7 @@ function _ArchetypeData()
 end
 
 mutable struct _Archetype{M}
+    const mask::_Mask{M}
     const components::Vector{Int}
     const tables::_TableIDs
     const index::Vector{Dict{UInt32,_TableIDs}}
@@ -71,6 +72,7 @@ end
 
 function _Archetype(id::UInt32, node::Base.RefValue{_GraphNode{M}}, table::UInt32) where {M}
     _Archetype(
+        node[].mask,
         Vector{Int}(),
         _TableIDs(table),
         Vector{Dict{UInt32,_TableIDs}}(),
@@ -89,6 +91,7 @@ function _Archetype(
     components::Int...,
 ) where {M}
     _Archetype(
+        node[].mask,
         collect(Int, components),
         _TableIDs(),
         [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],

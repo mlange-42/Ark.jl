@@ -196,8 +196,8 @@ end
         if tab == 0
             @inbounds archetype = q._archetypes[arch]
 
-            if !_contains_all(archetype.node[].mask, q._mask) ||
-               (q._has_excluded && _contains_any(archetype.node[].mask, q._exclude_mask))
+            if !_contains_all(archetype.mask, q._mask) ||
+               (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
                 arch += 1
                 continue
             end
@@ -263,8 +263,8 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 function Base.length(q::Query)
     count = 0
     for archetype in q._archetypes
-        if !_contains_all(archetype.node[].mask, q._mask) ||
-           (q._has_excluded && _contains_any(archetype.node[].mask, q._exclude_mask))
+        if !_contains_all(archetype.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
 
@@ -308,8 +308,8 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 function count_entities(q::Query)
     count = 0
     for archetype in q._archetypes
-        if !_contains_all(archetype.node[].mask, q._mask) ||
-           (q._has_excluded && _contains_any(archetype.node[].mask, q._exclude_mask))
+        if !_contains_all(archetype.mask, q._mask) ||
+           (q._has_excluded && _contains_any(archetype.mask, q._exclude_mask))
             continue
         end
 

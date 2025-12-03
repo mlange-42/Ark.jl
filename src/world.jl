@@ -192,7 +192,7 @@ function _find_or_create_table!(
     if _has_relations(old_table) || !isempty(relations)
         if has_remove > 0
             for rel in old_table.relations
-                if _get_bit(new_arch.node[].mask, rel[1])
+                if _get_bit(new_arch.mask, rel[1])
                     push!(all_relations, rel)
                 end
             end
@@ -500,7 +500,7 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
     for comp in old_archetype.components
-        if !_get_bit(new_archetype.node[].mask, comp)
+        if !_get_bit(new_archetype.mask, comp)
             continue
         end
         _move_component_data!(world, comp, index.table, table_index, index.row)
@@ -569,7 +569,7 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
 
     if _has_observers(world._event_manager, OnCreateEntity)
-        _fire_create_entity(world._event_manager, new_entity, archetype.node[].mask)
+        _fire_create_entity(world._event_manager, new_entity, archetype.mask)
     end
     return new_entity
 end
@@ -631,7 +631,7 @@ end
         exprs,
         :(
             for comp in old_archetype.components
-                if !_get_bit(new_archetype.node[].mask, comp)
+                if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
                 _copy_component_data!(world, comp, index.table, new_table_index, index.row, UInt32(new_row), mode)
@@ -652,7 +652,7 @@ end
 
     push!(exprs, :(
         if _has_observers(world._event_manager, OnCreateEntity)
-            _fire_create_entity(world._event_manager, new_entity, new_archetype.node[].mask)
+            _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
         end
     ))
 
@@ -693,7 +693,7 @@ function remove_entity!(world::World, entity::Entity)
         l = _lock(world._lock)
         _fire_remove_entity(
             world._event_manager, entity,
-            archetype.node[].mask,
+            archetype.mask,
         )
         _unlock(world._lock, l)
     end
@@ -1081,7 +1081,7 @@ Base.@constprop :aggressive function new_entity!(
     entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
     if _has_observers(world._event_manager, OnCreateEntity)
         table = world._tables[table_id]
-        _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].node[].mask)
+        _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].mask)
     end
     return entity
 end
@@ -1676,8 +1676,8 @@ end
                     l = _lock(world._lock)
                     _fire_remove_components(
                         world._event_manager, entity,
-                        world._archetypes[old_table.archetype].node[].mask,
-                        world._archetypes[new_table.archetype].node[].mask,
+                        world._archetypes[old_table.archetype].mask,
+                        world._archetypes[new_table.archetype].mask,
                         true,
                     )
                     _unlock(world._lock, l)
@@ -1706,8 +1706,8 @@ end
                 if _has_observers(world._event_manager, OnAddComponents)
                     _fire_add_components(
                         world._event_manager, entity,
-                        world._archetypes[old_table.archetype].node[].mask,
-                        world._archetypes[new_table.archetype].node[].mask,
+                        world._archetypes[old_table.archetype].mask,
+                        world._archetypes[new_table.archetype].mask,
                         true,
                     )
                 end
@@ -2152,7 +2152,7 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
         if has_comps
             throw(ArgumentError("can't emit event with components for the zero entity"))
         end
-        return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes[1].node[].mask)
+        return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes[1].mask)
     end
 
     if !is_alive(world, entity)
@@ -2160,7 +2160,7 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
     end
     index = world._entities[entity._id]
     table = world._tables[index.table]
-    entity_mask = world._archetypes[table.archetype].node[].mask
+    entity_mask = world._archetypes[table.archetype].mask
 
     if !_contains_all(entity_mask, mask)
         throw(ArgumentError("entity does not have all components of the event emitted for it"))
