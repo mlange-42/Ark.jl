@@ -47,6 +47,32 @@ Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
 const _empty_tables = Vector{UInt32}()
 
+struct _ArchetypeHot{M}
+    mask::_Mask{M}
+    table::UInt32
+    has_relations::Bool
+end
+
+function _ArchetypeHot(node::_GraphNode, table::UInt32)
+    _ArchetypeHot(
+        node.mask,
+        table,
+        false,
+    )
+end
+
+function _ArchetypeHot(
+    node::_GraphNode,
+    table::UInt32,
+    relations::Vector{Int},
+)
+    _ArchetypeHot(
+        node.mask,
+        table,
+        !isempty(relations),
+    )
+end
+
 mutable struct _Archetype{M}
     const components::Vector{Int}
     const tables::_TableIDs
