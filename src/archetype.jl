@@ -63,13 +63,13 @@ mutable struct _Archetype{M}
     const components::Vector{Int}
     const tables::_TableIDs
     const index::Vector{Dict{UInt32,_TableIDs}}
-    const node::_GraphNode{M}
+    const node::Base.RefValue{_GraphNode{M}}
     const num_relations::UInt32
     const table::UInt32
     const id::UInt32
 end
 
-function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
+function _Archetype(id::UInt32, node::Base.RefValue{_GraphNode{M}}, table::UInt32) where {M}
     _Archetype(
         Vector{Int}(),
         _TableIDs(table),
@@ -83,11 +83,11 @@ end
 
 function _Archetype(
     id::UInt32,
-    node::_GraphNode,
+    node::Base.RefValue{_GraphNode{M}},
     table::UInt32,
     relations::Vector{Int},
     components::Int...,
-)
+) where {M}
     _Archetype(
         collect(Int, components),
         _TableIDs(),
