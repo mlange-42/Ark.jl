@@ -164,16 +164,18 @@ end
         world, old_arch.node, add, remove, add_mask, rem_mask, use_map,
         isempty(relations) ? UInt32(length(world._tables) + 1) : UInt32(0),
     )
-    @inbounds new_arch = world._archetypes[new_arch_index]
+    @inbounds new_arch_hot = world._archetypes_hot[new_arch_index]
 
-    if !_has_relations(new_arch) && isempty(relations)
+    if !new_arch_hot.has_relations && isempty(relations)
         if is_new
+            new_arch = world._archetypes[new_arch_index]
             return _create_table!(world, new_arch, _empty_relations)
         end
-        new_table, _ = _get_table(world, new_arch)
+        new_table = @inbounds world._tables[new_arch_hot.table]
         return new_table.id
     end
 
+    new_arch = world._archetypes[new_arch_index]
     return _find_or_create_table!(world, old_table, new_arch, relations, targets, !isempty(remove))
 end
 
@@ -375,12 +377,6 @@ end
     @check _has_relations(arch)
 
     return _get_table_slow_path(world, arch, relations)
-end
-
-# only if no relations in archetype and operation
-@inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
-    @check length(arch.tables) > 0
-    return @inbounds world._tables[arch.table], true
 end
 
 function _get_table_slow_path(
