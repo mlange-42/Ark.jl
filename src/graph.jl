@@ -31,9 +31,9 @@ end
 
 function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::Union{_NoUseMap,_UseMap})
-    if _is_not_zero(_clear_bits(rem_mask, start.mask))
+    if !_contains_all(start.mask, rem_mask)
         throw(ArgumentError("entity does not have component to remove"))
-    elseif add_mask != _clear_bits(add_mask, start.mask)
+    elseif _contains_any(start.mask, add_mask)
         throw(ArgumentError("entity already has component to add"))
     end
     _search_node(g, start, add, remove, add_mask, rem_mask, use_map)
