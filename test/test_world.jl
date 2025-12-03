@@ -1131,9 +1131,9 @@ end
     @test child2_relations.targets[4] == parent2
     @test child2_relations.targets[5] == parent1
 
-    @test world._archetypes[1].relations == []
-    @test world._archetypes[2].relations == [2 + offset_ID]
-    @test world._archetypes[3].relations == [2 + offset_ID, 5 + offset_ID]
+    @test world._archetypes[1].num_relations == 0
+    @test world._archetypes[2].num_relations == 1
+    @test world._archetypes[3].num_relations == 2
 end
 
 @testset "World add/remove resources Tests" begin

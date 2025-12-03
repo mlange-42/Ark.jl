@@ -136,14 +136,15 @@ end
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
     table::UInt32,
-)::UInt32
+)::Tuple{UInt32,Bool}
     node = _find_node(world._graph, start, add, remove, add_mask, rem_mask, use_map)
 
-    archetype = (node.archetype == typemax(UInt32)) ?
-                _create_archetype!(world, node, table) :
-                node.archetype
+    archetype_new =
+        (node.archetype[] == typemax(UInt32)) ?
+        (_create_archetype!(world, node, table), true) :
+        (node.archetype[], false)
 
-    return archetype
+    return archetype_new
 end
 
 @inline function _find_or_create_table!(
@@ -158,18 +159,18 @@ end
     use_map::Union{_NoUseMap,_UseMap},
 )::UInt32
     @inbounds old_arch = world._archetypes[old_table.archetype]
-    new_arch_index = _find_or_create_archetype!(
+    new_arch_index, is_new = _find_or_create_archetype!(
         world, old_arch.node, add, remove, add_mask, rem_mask, use_map,
         isempty(relations) ? UInt32(length(world._tables) + 1) : UInt32(0),
     )
     @inbounds new_arch = world._archetypes[new_arch_index]
 
     if !_has_relations(new_arch) && isempty(relations)
-        new_table, found = _get_table(world, new_arch)
-        if found
-            return new_table.id
+        if is_new
+            return _create_table!(world, new_arch, _empty_relations)
         end
-        return _create_table!(world, new_arch, _empty_relations)
+        new_table, _ = _get_table(world, new_arch)
+        return new_table.id
     end
 
     return _find_or_create_table!(world, old_table, new_arch, relations, targets, !isempty(remove))
@@ -190,7 +191,7 @@ function _find_or_create_table!(
     if _has_relations(old_table) || !isempty(relations)
         if has_remove > 0
             for rel in old_table.relations
-                if _get_bit(new_arch.mask, rel[1])
+                if _get_bit(new_arch.node.mask, rel[1])
                     push!(all_relations, rel)
                 end
             end
@@ -237,7 +238,7 @@ function _find_or_create_table!(
 end
 
 function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relations::Vector{Pair{Int,Entity}})
-    if length(relations) < length(arch.relations)
+    if length(relations) < arch.num_relations
         throw(ArgumentError("relation targets must be fully specified"))
     end
 
@@ -253,7 +254,7 @@ function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relat
 end
 
 function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::UInt32
-    if length(relations) < length(arch.relations)
+    if length(relations) < arch.num_relations
         throw(ArgumentError("relation targets must be fully specified"))
     end
     # TODO: check that the archetype contains all components
@@ -298,7 +299,7 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
     end
 
     index = length(world._archetypes)
-    node.archetype = UInt32(index)
+    node.archetype[] = UInt32(index)
 
     _push_zero_to_all_archetype_relations!(world)
 
@@ -373,9 +374,7 @@ end
 
 # only if no relations in archetype and operation
 @inline function _get_table(world::World, arch::_Archetype)::Tuple{_Table,Bool}
-    if length(arch.tables) == 0
-        return @inbounds world._tables[1], false
-    end
+    @check length(arch.tables) > 0
     return @inbounds world._tables[arch.table], true
 end
 
@@ -384,7 +383,7 @@ function _get_table_slow_path(
     arch::_Archetype,
     relations::Vector{Pair{Int,Entity}},
 )::Tuple{_Table,Bool}
-    if length(relations) < length(arch.relations)
+    if length(relations) < arch.num_relations
         # TODO: check duplicates
         throw(ArgumentError("relation targets must be fully specified"))
     end
@@ -400,7 +399,7 @@ function _get_table_slow_path(
     end
 
     @inbounds tables = index[target_id]
-    if length(arch.relations) == 1
+    if arch.num_relations == 1
         return @inbounds world._tables[tables.tables[1]], true
     end
 
@@ -498,7 +497,7 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
     for comp in old_archetype.components
-        if !_get_bit(new_archetype.mask, comp)
+        if !_get_bit(new_archetype.node.mask, comp)
             continue
         end
         _move_component_data!(world, comp, index.table, table_index, index.row)
@@ -567,7 +566,7 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
 
     if _has_observers(world._event_manager, OnCreateEntity)
-        _fire_create_entity(world._event_manager, new_entity, archetype.mask)
+        _fire_create_entity(world._event_manager, new_entity, archetype.node.mask)
     end
     return new_entity
 end
@@ -629,7 +628,7 @@ end
         exprs,
         :(
             for comp in old_archetype.components
-                if !_get_bit(new_archetype.mask, comp)
+                if !_get_bit(new_archetype.node.mask, comp)
                     continue
                 end
                 _copy_component_data!(world, comp, index.table, new_table_index, index.row, UInt32(new_row), mode)
@@ -650,7 +649,7 @@ end
 
     push!(exprs, :(
         if _has_observers(world._event_manager, OnCreateEntity)
-            _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
+            _fire_create_entity(world._event_manager, new_entity, new_archetype.node.mask)
         end
     ))
 
@@ -691,7 +690,7 @@ function remove_entity!(world::World, entity::Entity)
         l = _lock(world._lock)
         _fire_remove_entity(
             world._event_manager, entity,
-            archetype.mask,
+            archetype.node.mask,
         )
         _unlock(world._lock, l)
     end
@@ -1079,7 +1078,7 @@ Base.@constprop :aggressive function new_entity!(
     entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
     if _has_observers(world._event_manager, OnCreateEntity)
         table = world._tables[table_id]
-        _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].mask)
+        _fire_create_entity(world._event_manager, entity, world._archetypes[table.archetype].node.mask)
     end
     return entity
 end
@@ -1674,8 +1673,8 @@ end
                     l = _lock(world._lock)
                     _fire_remove_components(
                         world._event_manager, entity,
-                        world._archetypes[old_table.archetype].mask,
-                        world._archetypes[new_table.archetype].mask,
+                        world._archetypes[old_table.archetype].node.mask,
+                        world._archetypes[new_table.archetype].node.mask,
                         true,
                     )
                     _unlock(world._lock, l)
@@ -1704,8 +1703,8 @@ end
                 if _has_observers(world._event_manager, OnAddComponents)
                     _fire_add_components(
                         world._event_manager, entity,
-                        world._archetypes[old_table.archetype].mask,
-                        world._archetypes[new_table.archetype].mask,
+                        world._archetypes[old_table.archetype].node.mask,
+                        world._archetypes[new_table.archetype].node.mask,
                         true,
                     )
                 end
@@ -2149,7 +2148,7 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
         if has_comps
             throw(ArgumentError("can't emit event with components for the zero entity"))
         end
-        return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes[1].mask)
+        return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes[1].node.mask)
     end
 
     if !is_alive(world, entity)
@@ -2157,7 +2156,7 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
     end
     index = world._entities[entity._id]
     table = world._tables[index.table]
-    entity_mask = world._archetypes[table.archetype].mask
+    entity_mask = world._archetypes[table.archetype].node.mask
 
     if !_contains_all(entity_mask, mask)
         throw(ArgumentError("entity does not have all components of the event emitted for it"))

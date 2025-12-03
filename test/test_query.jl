@@ -146,16 +146,20 @@ end
 end
 
 @testset "Query relations" begin
-    world = World(Dummy, Position, ChildOf)
+    world = World(Dummy, Position, Velocity, ChildOf)
     parent1 = new_entity!(world, ())
     parent2 = new_entity!(world, ())
     parent3 = new_entity!(world, ())
+    parent4 = new_entity!(world, ())
 
     for i in 1:10
         new_entity!(world, (Position(i, i * 2), ChildOf()); relations=(ChildOf => parent1,))
         new_entity!(world, (Position(i, i * 2), ChildOf()); relations=(ChildOf => parent2,))
         new_entity!(world, (Position(i, i * 2), ChildOf()); relations=(ChildOf => parent3,))
     end
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent4,))
+    remove_entity!(world, e)
+    remove_entity!(world, parent4)
 
     query = Query(world, (Position,))
     @test length(query) == 3

@@ -11,7 +11,7 @@
     # Test _find_or_create: should create a new node
     node = _find_or_create(graph, mask)
     @test node.mask == _Mask(mask)
-    @test node.archetype == typemax(UInt32)
+    @test node.archetype[] == typemax(UInt32)
     @test length(graph.nodes) == 2
 
     # Test _find_or_create again: should return existing node
