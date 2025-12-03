@@ -25,6 +25,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _storages::CS
     const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
+    const _archetype_data::Vector{_ArchetypeData}
     const _relation_archetypes::Vector{UInt32}
     const _tables::Vector{_Table}
     const _index::_ComponentIndex{M}
@@ -224,7 +225,7 @@ function _find_or_create_table!(
         sort!(all_relations; by=first)
     end
 
-    new_table_id, found = _get_free_table!(new_arch)
+    new_table_id, found = _get_free_table!(world._archetype_data[new_arch.id])
     if found
         _recycle_table!(world, new_arch, new_table_id, all_relations)
     else
@@ -271,13 +272,13 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     end
 
     _push_zero_to_all_table_relations!(world)
-    for (i, comp) in enumerate(relations)
+    for comp in relations
         entity = comp.second
         _activate_table_relation_for_comp!(world, comp.first, new_table_id, entity)
         world._targets[entity._id] = true
     end
 
-    _add_table!(world._relations, arch, table)
+    _add_table!(world._relations, arch, world._archetype_data[arch.id], table)
 
     return UInt32(new_table_id)
 end
@@ -294,6 +295,8 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
     arch =
         _Archetype(UInt32(length(world._archetypes) + 1), node, table, relations, components...)
     push!(world._archetypes, arch)
+    push!(world._archetype_data, _ArchetypeData())
+
     if _has_relations(arch)
         push!(world._relation_archetypes, arch.id)
     end
@@ -1814,6 +1817,7 @@ end
             $storage_tuple,
             $relations_vec,
             [_Archetype(UInt32(1), graph.nodes[$start_mask], UInt32(1))],
+            [_ArchetypeData()],
             Vector{UInt32}(),
             [_new_table(UInt32(1), UInt32(1))],
             _ComponentIndex{$(M)}($(length(types))),
@@ -2190,8 +2194,8 @@ function reset!(world::W) where {W<:World}
         end
     end
 
-    for archetype in world._archetypes
-        _reset!(archetype)
+    for arch in eachindex(world._archetypes)
+        _reset!(world._archetypes[arch], world._archetype_data[arch])
     end
 
     empty!(world._resources)
@@ -2201,7 +2205,7 @@ end
 function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
     comp_types = CT.parameters
     type_names = join(map(_format_type, comp_types), ", ")
-    entities = sum(length(arch.entities) for arch in world._tables)
+    entities = sum(length(table.entities) for table in world._tables)
     print(io, "World(entities=$entities, comp_types=($type_names))")
 end
 
@@ -2209,10 +2213,11 @@ function _cleanup_archetypes(world::World, entity::Entity)
     relations = Pair{Int,Entity}[]
     for arch in world._relation_archetypes
         archetype = world._archetypes[arch]
-        if !haskey(archetype.target_tables, entity._id)
+        data = world._archetype_data[arch]
+        if !haskey(data.target_tables, entity._id)
             continue
         end
-        tables = archetype.target_tables[entity._id]
+        tables = data.target_tables[entity._id]
 
         for t in length(tables.tables):-1:1
             table_id = tables.tables[t]
@@ -2237,9 +2242,9 @@ function _cleanup_archetypes(world::World, entity::Entity)
 
                 _move_entities!(world, table.id, new_table.id)
             end
-            _free_table!(archetype, table)
+            _free_table!(archetype, data, table)
             resize!(relations, 0)
         end
-        _remove_target!(archetype, entity)
+        _remove_target!(archetype, data, entity)
     end
 end

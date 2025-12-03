@@ -1071,7 +1071,7 @@ end
     @test length(world._archetypes[3].tables) == 1
     @test length(world._archetypes[4].tables) == 1
     @test length(world._archetypes[5].tables) == 0
-    @test length(world._archetypes[5].free_tables) == 2
+    @test length(world._archetype_data[5].free_tables) == 2
 
     @test obs._id.id == 0
     @test !_has_observers(world._event_manager, OnAddComponents)
