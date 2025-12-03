@@ -15,6 +15,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _exclude_mask::_Mask{M}
     _world::W
     _archetypes::Vector{_Archetype{M}}
+    _archetypes_hot::Vector{_ArchetypeHot{M}}
     _relations::Vector{Pair{Int,Entity}}
     _q_lock::_QueryCursor
     _lock::Int
@@ -150,7 +151,8 @@ end
     ]
     optional_flags_type = Expr(:curly, :Tuple, optional_flag_type_elts...)
 
-    archetypes = length(ids_tuple) == 0 ? :(world._archetypes) : :(_get_archetypes(world, $ids_tuple))
+    archetypes =
+        length(ids_tuple) == 0 ? :((world._archetypes, world._archetypes_hot)) : :(_get_archetypes(world, $ids_tuple))
 
     return quote
         relations = if length(targets) > 0
@@ -163,11 +165,13 @@ end
         else
             _empty_relations
         end
+        arches, hot = $(archetypes)
         Query{$W,$comp_tuple_type,$storage_tuple_mode,$EX,$optional_flags_type,$(length(comp_types)),$M}(
             $(mask),
             $(exclude_mask),
             world,
-            $(archetypes),
+            arches,
+            hot,
             relations,
             _QueryCursor(_empty_tables, false),
             _lock(world._lock),
@@ -177,33 +181,36 @@ end
 end
 
 function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
-    comps = world._index.components
+    comps = world._index.archetypes
+    hot = world._index.archetypes_hot
     rare_comp = @inbounds comps[ids[1]]
+    rare_hot = @inbounds hot[ids[1]]
     min_len = length(rare_comp)
     @inbounds for i in 2:length(ids)
         comp = comps[ids[i]]
         comp_len = length(comp)
         if comp_len < min_len
             rare_comp, min_len = comp, comp_len
+            rare_hot = hot[ids[i]]
         end
     end
-    return rare_comp
+    return rare_comp, rare_hot
 end
 
 @inline function Base.iterate(q::Query, state::Tuple{Int,Int})
     arch, tab = state
     while arch <= length(q._archetypes)
         if tab == 0
-            @inbounds archetype = q._archetypes[arch]
+            @inbounds archetype_hot = q._archetypes_hot[arch]
 
-            if !_contains_all(archetype.node.mask, q._mask) ||
-               (q._has_excluded && _contains_any(archetype.node.mask, q._exclude_mask))
+            if !_contains_all(archetype_hot.mask, q._mask) ||
+               (q._has_excluded && _contains_any(archetype_hot.mask, q._exclude_mask))
                 arch += 1
                 continue
             end
 
-            if !_has_relations(archetype)
-                table = @inbounds q._world._tables[Int(archetype.table)]
+            if !archetype_hot.has_relations
+                table = @inbounds q._world._tables[Int(archetype_hot.table)]
                 if isempty(table.entities)
                     arch += 1
                     continue
@@ -212,6 +219,7 @@ end
                 return result, (arch + 1, 0)
             end
 
+            @inbounds archetype = q._archetypes[arch]
             if isempty(archetype.tables.tables)
                 arch += 1
                 continue

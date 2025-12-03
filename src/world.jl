@@ -25,6 +25,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _storages::CS
     const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
+    const _archetypes_hot::Vector{_ArchetypeHot{M}}
     const _relation_archetypes::Vector{UInt32}
     const _tables::Vector{_Table}
     const _index::_ComponentIndex{M}
@@ -294,6 +295,9 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
     arch =
         _Archetype(UInt32(length(world._archetypes) + 1), node, table, relations, components...)
     push!(world._archetypes, arch)
+    arch_hot = _ArchetypeHot(node, table, relations)
+    push!(world._archetypes_hot, arch_hot)
+
     if _has_relations(arch)
         push!(world._relation_archetypes, arch.id)
     end
@@ -304,7 +308,8 @@ function _create_archetype!(world::World, node::_GraphNode, table::UInt32)::UInt
     _push_zero_to_all_archetype_relations!(world)
 
     for comp in arch.components
-        push!(world._index.components[comp], arch)
+        push!(world._index.archetypes[comp], arch)
+        push!(world._index.archetypes_hot[comp], arch_hot)
     end
 
     for (i, comp) in enumerate(relations)
@@ -1808,12 +1813,15 @@ end
         targets = BitVector((false,))
         sizehint!(targets, initial_capacity)
 
+        node = graph.nodes[$start_mask]
+
         World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
             index,
             targets,
             $storage_tuple,
             $relations_vec,
-            [_Archetype(UInt32(1), graph.nodes[$start_mask], UInt32(1))],
+            [_Archetype(UInt32(1), node, UInt32(1))],
+            [_ArchetypeHot(node, UInt32(1))],
             Vector{UInt32}(),
             [_new_table(UInt32(1), UInt32(1))],
             _ComponentIndex{$(M)}($(length(types))),
