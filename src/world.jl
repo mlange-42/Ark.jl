@@ -171,8 +171,7 @@ end
             new_arch = world._archetypes[new_arch_index]
             return _create_table!(world, new_arch, _empty_relations)
         end
-        new_table = @inbounds world._tables[new_arch_hot.table]
-        return new_table.id
+        return new_arch_hot.table
     end
 
     new_arch = world._archetypes[new_arch_index]
