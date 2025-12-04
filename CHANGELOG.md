@@ -5,6 +5,7 @@
 ### Features
 
 - Adds entity relationships (#340, #349)
+- Adds events for relationship changes (#370)
 
 ### Performance
 
