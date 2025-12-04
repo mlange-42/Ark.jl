@@ -11,6 +11,15 @@ const _no_entity::Entity = _new_entity(0, 0)
 
 const _empty_relations = Pair{Int,Entity}[]
 
+struct _WorldPool{M}
+    relations::Vector{Pair{Int,Entity}}
+    mask::_MutableMask{M}
+end
+
+function _WorldPool{M}() where {M}
+    return _WorldPool(Vector{Pair{Int,Entity}}(), _MutableMask{M}())
+end
+
 """
     World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M}
 
@@ -35,7 +44,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager{World{CS,CT,ST,N,M},M}
-    const _temp_relations::Vector{Pair{Int,Entity}}
+    const _pool::_WorldPool{M}
     const _initial_capacity::Int
 end
 
@@ -189,7 +198,7 @@ function _find_or_create_table!(
     has_remove::Bool,
 )::Tuple{UInt32,Bool}
     # Find existing relations that were not removed, and add new relations.
-    all_relations = world._temp_relations
+    all_relations = world._pool.relations
     requires_free = true
     relation_removed = false
     if _has_relations(old_table) || !isempty(relations)
@@ -330,7 +339,7 @@ end
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
 )
-    new_relations = world._temp_relations
+    new_relations = world._pool.relations
     append!(new_relations, old_table.relations)
 
     changed = false
@@ -357,7 +366,7 @@ function _get_exchange_targets_unchecked(
     old_table::_Table,
     relations::Vector{Pair{Int,Entity}},
 )
-    new_relations = world._temp_relations
+    new_relations = world._pool.relations
     append!(new_relations, old_table.relations)
 
     for (rel, trg) in relations
@@ -1856,7 +1865,7 @@ end
                 World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
                 $(M),
             }(),
-            Vector{Pair{Int,Entity}}(),
+            _WorldPool{$M}(),
             initial_capacity,
         )
     end
