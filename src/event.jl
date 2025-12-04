@@ -322,6 +322,9 @@ function _fire_create_or_remove_entity_relations(
     end
     found = false
     for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
         if o._has_with && !_contains_all(mask, o._with)
             continue
         end
@@ -343,6 +346,37 @@ function _fire_create_entities(m::_EventManager{W,M}, table::_BatchTable{M}) whe
         return
     end
     for o in observers
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        entities = table.table.entities._data
+        for i in table.start_idx:table.end_idx
+            o._fn(entities[i])
+        end
+    end
+end
+
+function _fire_create_entities_relations(m::_EventManager{W,M}, table::_BatchTable{M}) where {W<:_AbstractWorld,M}
+    evt = OnAddRelations._id
+    observers = m.observers[evt]
+    mask = table.archetype.node.mask
+    if length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return
+        end
+    end
+    for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
         if o._has_with && !_contains_all(mask, o._with)
             continue
         end

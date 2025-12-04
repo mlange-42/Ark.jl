@@ -1418,12 +1418,17 @@ end
                 )
                 return batch
             else
-                if _has_observers(world._event_manager, OnCreateEntity)
+                has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+                has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                if has_entity_obs || has_rel_obs
                     l = _lock(world._lock)
-                    _fire_create_entities(
-                        world._event_manager,
-                        _BatchTable(table, world._archetypes[table.archetype], indices...),
-                    )
+                    batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                    if has_entity_obs
+                        _fire_create_entities(world._event_manager, batch)
+                    end
+                    if has_rel_obs
+                        _fire_create_entities_relations(world._event_manager, batch)
+                    end
                     _unlock(world._lock, l)
                 end
                 return nothing
