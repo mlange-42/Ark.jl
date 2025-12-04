@@ -1970,48 +1970,22 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _activate_archetype_relation_for_comp!(
+function _activate_archetype_relation_for_comp!(
     world::World{CS,CT},
     comp::Int,
     arch::Int,
     index::Int,
 ) where {CS,CT}
-    comp_types = CT.parameters
-    n = length(comp_types)
-    exprs = Expr[]
-    for i in 1:n
-        if !(comp_types[i].parameters[1] <: Relationship)
-            continue
-        end
-        push!(exprs, :(
-            if comp == $i
-                _activate_archetype_column!(world._relations[$i], arch, index)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    _activate_archetype_column!(world._relations[comp], arch, index)
 end
 
-@generated function _activate_table_relation_for_comp!(
+function _activate_table_relation_for_comp!(
     world::World{CS,CT},
     comp::Int,
     table::Int,
     target::Entity,
 ) where {CS,CT}
-    comp_types = CT.parameters
-    n = length(comp_types)
-    exprs = Expr[]
-    for i in 1:n
-        if !(comp_types[i].parameters[1] <: Relationship)
-            continue
-        end
-        push!(exprs, :(
-            if comp == $i
-                _activate_table_column!(world._relations[$i], table, target)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    _activate_table_column!(world._relations[comp], table, target)
 end
 
 @generated function _ensure_column_size_for_comp!(
