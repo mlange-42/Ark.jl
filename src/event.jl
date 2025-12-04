@@ -247,40 +247,11 @@ function _reset!(m::_EventManager{W,M}) where {W<:_AbstractWorld,M}
 end
 
 function _fire_create_entity(m::_EventManager{W,M}, entity::Entity, mask::_Mask{M}) where {W<:_AbstractWorld,M}
-    _fire_create_or_remove_entity(m, entity, mask, OnCreateEntity, true)
-    return nothing
+    _do_fire_no_comps(m, OnCreateEntity, entity, mask, true)
 end
 
 function _fire_remove_entity(m::_EventManager{W,M}, entity::Entity, mask::_Mask{M}) where {W<:_AbstractWorld,M}
-    _fire_create_or_remove_entity(m, entity, mask, OnRemoveEntity, true)
-    return nothing
-end
-
-function _fire_create_or_remove_entity(
-    m::_EventManager{W,M},
-    entity::Entity,
-    mask::_Mask{M},
-    event::EventType,
-    early_out::Bool,
-)::Bool where {W<:_AbstractWorld,M}
-    evt = event._id
-    observers = m.observers[evt]
-    with, any_no_with = m.with[evt]
-    if early_out && length(observers) > 1 && !any_no_with && !_contains_any(with, mask)
-        return false
-    end
-    found = false
-    for o in observers
-        if o._has_with && !_contains_all(mask, o._with)
-            continue
-        end
-        if o._has_without && _contains_any(mask, o._without)
-            continue
-        end
-        o._fn(entity)
-        found = true
-    end
-    return found
+    _do_fire_no_comps(m, OnRemoveEntity, entity, mask, true)
 end
 
 function _fire_create_entity_relations(
@@ -288,8 +259,7 @@ function _fire_create_entity_relations(
     entity::Entity,
     mask::_Mask{M},
 ) where {W<:_AbstractWorld,M}
-    _fire_create_or_remove_entity_relations(m, entity, mask, OnAddRelations, true)
-    return nothing
+    _do_fire_comps(m, OnAddRelations, entity, mask, mask, true)
 end
 
 function _fire_remove_entity_relations(
@@ -297,53 +267,18 @@ function _fire_remove_entity_relations(
     entity::Entity,
     mask::_Mask{M},
 ) where {W<:_AbstractWorld,M}
-    _fire_create_or_remove_entity_relations(m, entity, mask, OnRemoveRelations, true)
-    return nothing
-end
-
-function _fire_create_or_remove_entity_relations(
-    m::_EventManager{W,M},
-    entity::Entity,
-    mask::_Mask{M},
-    event::EventType,
-    early_out::Bool,
-)::Bool where {W<:_AbstractWorld,M}
-    evt = event._id
-    observers = m.observers[evt]
-    if early_out && length(observers) > 1
-        comps, any_no_comps = m.comps[evt]
-        if !any_no_comps && !_contains_any(comps, mask)
-            return false
-        end
-        with, any_no_with = m.with[evt]
-        if !any_no_with && !_contains_any(with, mask)
-            return false
-        end
-    end
-    found = false
-    for o in observers
-        if o._has_comps && !_contains_all(mask, o._comps)
-            continue
-        end
-        if o._has_with && !_contains_all(mask, o._with)
-            continue
-        end
-        if o._has_without && _contains_any(mask, o._without)
-            continue
-        end
-        o._fn(entity)
-        found = true
-    end
-    return found
+    _do_fire_comps(m, OnRemoveRelations, entity, mask, mask, true)
 end
 
 function _fire_create_entities(m::_EventManager{W,M}, table::_BatchTable{M}) where {W<:_AbstractWorld,M}
     evt = OnCreateEntity._id
     observers = m.observers[evt]
     mask = table.archetype.node.mask
-    with, any_no_with = m.with[evt]
-    if length(observers) > 1 && !any_no_with && !_contains_any(with, mask)
-        return
+    if length(observers) > 1
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return
+        end
     end
     for o in observers
         if o._has_with && !_contains_all(mask, o._with)
@@ -471,9 +406,30 @@ function _fire_set_relations(
     event::EventType,
     entity::Entity,
     mask::_MutableMask{M},
-    new_mask::_Mask{M},
+    entity_mask::_Mask{M},
     early_out::Bool,
 )::Bool where {W<:_AbstractWorld,M}
+    _do_fire_comps(m, event, entity, mask, entity_mask, early_out)
+end
+
+function _fire_custom_event(
+    m::_EventManager{W,M},
+    event::EventType,
+    entity::Entity,
+    mask::_Mask{M},
+    entity_mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    _do_fire_comps(m, event, entity, mask, entity_mask, true)
+end
+
+@inline function _do_fire_comps(
+    m::_EventManager{W,M},
+    event::EventType,
+    entity::Entity,
+    mask::_AbstractMask{M},
+    entity_mask::_Mask{M},
+    early_out::Bool,
+) where {W<:_AbstractWorld,M}
     evt = event._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
@@ -482,46 +438,11 @@ function _fire_set_relations(
             return false
         end
         with, any_no_with = m.with[evt]
-        if !any_no_with && !_contains_any(with, new_mask)
+        if !any_no_with && !_contains_any(with, entity_mask)
             return false
         end
     end
     found = false
-    for o in observers
-        if o._has_comps && !_contains_all(mask, o._comps)
-            continue
-        end
-        if o._has_with && !_contains_all(new_mask, o._with)
-            continue
-        end
-        if o._has_without && _contains_any(new_mask, o._without)
-            continue
-        end
-        o._fn(entity)
-        found = true
-    end
-    return found
-end
-
-function _fire_custom_event(
-    m::_EventManager{W,M},
-    entity::Entity,
-    event::EventType,
-    mask::_Mask{M},
-    entity_mask::_Mask{M},
-) where {W<:_AbstractWorld,M}
-    evt = event._id
-    observers = m.observers[evt]
-    if length(observers) > 1
-        comps, any_no_comps = m.comps[evt]
-        if !any_no_comps && !_contains_any(comps, mask)
-            return
-        end
-        with, any_no_with = m.with[evt]
-        if !any_no_with && !_contains_any(with, entity_mask)
-            return
-        end
-    end
     for o in observers
         if o._has_comps && !_contains_all(mask, o._comps)
             continue
@@ -533,5 +454,36 @@ function _fire_custom_event(
             continue
         end
         o._fn(entity)
+        found = true
     end
+    return found
+end
+
+@inline function _do_fire_no_comps(
+    m::_EventManager{W,M},
+    event::EventType,
+    entity::Entity,
+    mask::_Mask{M},
+    early_out::Bool,
+) where {W<:_AbstractWorld,M}
+    evt = event._id
+    observers = m.observers[evt]
+    if early_out && length(observers) > 1
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return false
+        end
+    end
+    found = false
+    for o in observers
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
 end

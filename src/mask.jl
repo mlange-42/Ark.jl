@@ -1,7 +1,9 @@
 
 struct _Not end
 
-struct _Mask{M}
+abstract type _AbstractMask{M} end
+
+struct _Mask{M} <: _AbstractMask{M}
     bits::NTuple{M,UInt64}
 end
 
@@ -132,7 +134,7 @@ _hash(::Tuple{}, h::UInt) = h ⊻ tuplehash_seed
 _hash(t::Tuple, h::UInt) = _hash(t[1], _hash(Base.tail(t), h))
 Base.hash(m::_Mask, h::UInt) = _hash(m.bits[1], _hash(Base.tail(m.bits), h))
 
-struct _MutableMask{M}
+struct _MutableMask{M} <: _AbstractMask{M}
     bits::MVector{M,UInt64}
 end
 
