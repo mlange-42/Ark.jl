@@ -31,12 +31,12 @@ end
     @test isa(_get_storage(world, Altitude), _ComponentStorage{Altitude,Vector{Altitude}})
     @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
 
-    @test length(_get_relations(world, Position).archetypes) == 0
-    @test length(_get_relations(world, Position).targets) == 0
-    @test length(_get_relations(world, ChildOf).archetypes) == 1
-    @test length(_get_relations(world, ChildOf).targets) == 1
-    @test _get_relations(world, ChildOf).archetypes[1] == 0
-    @test _get_relations(world, ChildOf).targets[1] == _no_entity
+    @test length(_get_relations_storage(world, Position).archetypes) == 0
+    @test length(_get_relations_storage(world, Position).targets) == 0
+    @test length(_get_relations_storage(world, ChildOf).archetypes) == 1
+    @test length(_get_relations_storage(world, ChildOf).targets) == 1
+    @test _get_relations_storage(world, ChildOf).archetypes[1] == 0
+    @test _get_relations_storage(world, ChildOf).targets[1] == _no_entity
 end
 
 @testset "World show" begin
@@ -221,7 +221,7 @@ end
         _get_storage(world, Float64))
 
     @test_throws("ArgumentError: Component type Float64 not found in the World",
-        _get_relations(world, Float64))
+        _get_relations_storage(world, Float64))
 end
 
 @testset "_find_or_create_table! Tests" begin
@@ -549,7 +549,7 @@ end
         get_relations(world, entity1, (Position,)),
     )
     @test_throws(
-        "ArgumentError: entity does not have the requested relationship component",
+        "ArgumentError: entity does not have relationship component ChildOf2",
         get_relations(world, entity1, (ChildOf2,)),
     )
     @test_throws(
@@ -1100,9 +1100,9 @@ end
     new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()); relations=(ChildOf => parent1, ChildOf2 => parent2))
     new_entity!(world, (Position(0, 0), ChildOf2(), ChildOf()); relations=(ChildOf => parent2, ChildOf2 => parent1))
 
-    pos_relations = _get_relations(world, Position)
-    child_relations = _get_relations(world, ChildOf)
-    child2_relations = _get_relations(world, ChildOf2)
+    pos_relations = _get_relations_storage(world, Position)
+    child_relations = _get_relations_storage(world, ChildOf)
+    child2_relations = _get_relations_storage(world, ChildOf2)
 
     @test length(pos_relations.archetypes) == 0
     @test length(pos_relations.targets) == 0

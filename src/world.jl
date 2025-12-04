@@ -118,7 +118,7 @@ end
     return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
 end
 
-@generated function _get_relations(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
+@generated function _get_relations_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
         if S <: _ComponentStorage && S.parameters[1] === C
@@ -925,15 +925,18 @@ end
 
     exprs = Expr[]
     push!(exprs, :(@inbounds idx = world._entities[entity._id]))
-    push!(exprs, :(@inbounds table = world._tables[idx.table]))
 
     for i in 1:length(types)
         T = types[i]
-        rel_sym = Symbol("rel", i)
         target_sym = Symbol("t", i)
 
-        push!(exprs, :($(rel_sym) = _get_relations(world, $T)))
-        push!(exprs, :($(target_sym) = _get_relation($(rel_sym), table)))
+        push!(exprs, :($(target_sym) = @inbounds _get_relations_storage(world, $T).targets[idx.table]))
+        push!(exprs, :(
+            if $(target_sym)._id == 0
+                tp = $T
+                throw(ArgumentError(lazy"entity does not have relationship component $tp"))
+            end
+        ))
     end
 
     vals = [:($(Symbol("t", i))) for i in 1:length(types)]
