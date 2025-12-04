@@ -218,6 +218,40 @@ end
     @test counter_rel == 0
 end
 
+@testset "Fire OnAddRelations entity creation early out" begin
+    world = World(Dummy, ChildOf, ChildOf2)
+
+    counter = 0
+    observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counter += 1
+    end
+    observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counter += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entity!(world, (ChildOf(),); relations=(ChildOf => parent,))
+    @test counter == 0
+end
+
+@testset "Fire OnAddRelations entity creation filtered" begin
+    world = World(Dummy, ChildOf, ChildOf2)
+
+    counter = 0
+    obs = observe!(world, OnAddRelations, (ChildOf,)) do entity
+        counter += 1
+    end
+    obs = observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counter += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entity!(world, (ChildOf(),); relations=(ChildOf => parent,))
+    @test counter == 1
+end
+
 @testset "Fire OnAddRelations entity creation" begin
     world = World(Dummy, Position, Velocity, Altitude, ChildOf)
 
@@ -377,6 +411,40 @@ end
     @test counter == 60
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,))
     @test counter == 60
+end
+
+@testset "Fire OnAddRelations batch early out" begin
+    world = World(Dummy, ChildOf, ChildOf2)
+
+    counter = 0
+    observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counter += 1
+    end
+    observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counter += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entities!(world, 10, (ChildOf(),); relations=(ChildOf => parent,))
+    @test counter == 0
+end
+
+@testset "Fire OnAddRelations batch filtered" begin
+    world = World(Dummy, ChildOf, ChildOf2)
+
+    counter = 0
+    obs = observe!(world, OnAddRelations, (ChildOf,)) do entity
+        counter += 1
+    end
+    obs = observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counter += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entities!(world, 10, (ChildOf(),); relations=(ChildOf => parent,))
+    @test counter == 10
 end
 
 @testset "Fire OnRemoveEntity" begin
