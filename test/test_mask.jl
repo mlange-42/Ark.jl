@@ -127,6 +127,39 @@ end
     @test _get_bit(mm, 193) == false
 end
 
+@testset "_MutableMask clear" begin
+    base = _Mask{4}(1, 65, 129, 193)
+    mm = _MutableMask(base)
+
+    @test _get_bit(mm, 1) == true
+    @test _get_bit(mm, 65) == true
+    @test _get_bit(mm, 129) == true
+    @test _get_bit(mm, 193) == true
+
+    mm = _clear_mask!(mm)
+
+    @test _get_bit(mm, 1) == false
+    @test _get_bit(mm, 65) == false
+    @test _get_bit(mm, 129) == false
+    @test _get_bit(mm, 193) == false
+end
+
+@testset "_MutableMask contains all/any" begin
+    m1 = _Mask{4}(1, 64, 65, 128, 129, 192, 193)
+    m2 = _Mask{4}(64, 128, 193)
+    mm1 = _MutableMask(m1)
+    mm2 = _MutableMask(m2)
+
+    @test _contains_all(mm1, m2) == true
+    @test _contains_all(mm2, m1) == false
+
+    m3 = _Mask{4}(2, 3, 4)
+    mm3 = _MutableMask(m3)
+    @test _contains_any(m1, mm2) == true
+    @test _contains_any(m1, mm3) == false
+    @test _contains_any(m2, mm3) == false
+end
+
 @testset "_active_bit_indices" begin
     # Test with no bits set
     m0 = _Mask{4}()
