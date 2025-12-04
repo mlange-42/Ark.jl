@@ -18,9 +18,9 @@ const RUN_JET = "CI" in keys(ENV) && VERSION >= v"1.12.0" && isempty(VERSION.pre
 include("TestTypes.jl")
 
 include("test_util.jl")
+include("test_event.jl")
 include("test_world.jl")
 include("test_query.jl")
-include("test_event.jl")
 include("test_relations.jl")
 include("test_archetype.jl")
 include("test_structarray.jl")

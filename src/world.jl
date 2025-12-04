@@ -688,12 +688,16 @@ function remove_entity!(world::World, entity::Entity)
     table = world._tables[index.table]
     archetype = world._archetypes[table.archetype]
 
-    if _has_observers(world._event_manager, OnRemoveEntity)
+    has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
+    has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
+    if has_entity_obs || has_rel_obs
         l = _lock(world._lock)
-        _fire_remove_entity(
-            world._event_manager, entity,
-            archetype.node.mask,
-        )
+        if has_entity_obs
+            _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
+        end
+        if has_rel_obs
+            _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
+        end
         _unlock(world._lock, l)
     end
 
@@ -1105,9 +1109,18 @@ Base.@constprop :aggressive function new_entity!(
     targets = ntuple(i -> relations[i].second, length(relations))
 
     entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
-    if _has_observers(world._event_manager, OnCreateEntity)
+
+    has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+    has_rel_obs = !isempty(relations) && _has_observers(world._event_manager, OnAddRelations)
+    if has_entity_obs || has_rel_obs
         table = world._tables[table_id]
-        _fire_create_entity(world._event_manager, entity, world._archetypes_hot[table.archetype].mask)
+        mask = world._archetypes_hot[table.archetype].mask
+        if has_entity_obs
+            _fire_create_entity(world._event_manager, entity, mask)
+        end
+        if has_rel_obs
+            _fire_create_entity_relations(world._event_manager, entity, mask)
+        end
     end
     return entity
 end

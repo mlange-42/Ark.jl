@@ -7,10 +7,14 @@ See [EventRegistry](@ref) for creating custom event types.
 
 # Built-in event types
 
-  - `OnCreateEntity`: Event emitted when a new entity is created.
-  - `OnRemoveEntity`: Event emitted when an entity is removed from the [World](@ref).
-  - `OnAddComponents`: Event emitted when components are added to an entity.
-  - `OnRemoveComponents`: Event emitted when components are removed from an entity.
+  - `OnCreateEntity`: Event emitted after a new entity is created.
+  - `OnRemoveEntity`: Event emitted before an entity is removed from the [World](@ref).
+  - `OnAddComponents`: Event emitted after components are added to an entity.
+  - `OnRemoveComponents`: Event emitted before components are removed from an entity.
+  - `OnAddRelations`: Event emitted after relation targets are added to an entity.
+    Includes creating entities, adding components as well as setting relation targets.
+  - `OnRemoveRelations`: Event emitted before relation targets are removed from an entity.
+    Includes removing entities, removing components as well as setting relation targets.
 """
 struct EventType
     _id::UInt8
@@ -264,6 +268,57 @@ function _fire_create_or_remove_entity(
     with, any_no_with = m.with[evt]
     if early_out && length(observers) > 1 && !any_no_with && !_contains_any(with, mask)
         return false
+    end
+    found = false
+    for o in observers
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
+end
+
+function _fire_create_entity_relations(
+    m::_EventManager{W,M},
+    entity::Entity,
+    mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    _fire_create_or_remove_entity_relations(m, entity, mask, OnAddRelations, true)
+    return nothing
+end
+
+function _fire_remove_entity_relations(
+    m::_EventManager{W,M},
+    entity::Entity,
+    mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    _fire_create_or_remove_entity_relations(m, entity, mask, OnRemoveRelations, true)
+    return nothing
+end
+
+function _fire_create_or_remove_entity_relations(
+    m::_EventManager{W,M},
+    entity::Entity,
+    mask::_Mask{M},
+    event::EventType,
+    early_out::Bool,
+)::Bool where {W<:_AbstractWorld,M}
+    evt = event._id
+    observers = m.observers[evt]
+    if early_out && length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return false
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return false
+        end
     end
     found = false
     for o in observers

@@ -213,6 +213,55 @@ end
     @test counter_remove == 0
 end
 
+@testset "Fire OnAddRelations entity creation" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf)
+
+    counter = 0
+    obs = observe!(world, OnAddRelations) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == false
+        counter += 1
+    end
+    counter_remove = 0
+    observe!(world, OnRemoveRelations) do entity
+        counter_remove += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entity!(world, (ChildOf(),); relations=(ChildOf => parent,))
+    @test counter == 1
+
+    observe!(world, obs; unregister=true)
+
+    observe!(world, OnAddRelations, (); with=(Position,)) do entity
+    end
+    obs = observe!(world, OnAddRelations, (); with=(Position, Velocity)) do entity
+        counter += 1
+    end
+
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 2
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 3
+    new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 3
+    new_entity!(world, (Altitude(0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 3
+
+    observe!(world, obs; unregister=true)
+
+    obs = observe!(world, OnAddRelations; with=(Position, Velocity), without=(Altitude,)) do entity
+        counter += 1
+    end
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 4
+    new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 4
+
+    @test counter_remove == 0
+end
+
 @testset "Fire OnCreateEntity batch" begin
     world = World(Dummy, Position, Velocity, Altitude)
 
@@ -298,6 +347,59 @@ end
     remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0))))
     @test counter == 4
     remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0))))
+    @test counter == 4
+end
+
+@testset "Fire OnRemoveRelations entity removal" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf)
+
+    counter = 0
+    obs = observe!(world, OnRemoveRelations) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == true
+        counter += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    remove_entity!(world, new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,)))
+    @test counter == 1
+
+    observe!(world, obs; unregister=true)
+
+    obs = observe!(world, OnRemoveRelations; with=(Position, Velocity)) do entity
+        counter += 1
+    end
+
+    remove_entity!(
+        world,
+        new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,)),
+    )
+    @test counter == 2
+    remove_entity!(
+        world,
+        new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,)),
+    )
+    @test counter == 3
+    remove_entity!(world, new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,)))
+    @test counter == 3
+    remove_entity!(world, new_entity!(world, (Altitude(0), ChildOf()); relations=(ChildOf => parent,)))
+    @test counter == 3
+
+    observe!(world, obs; unregister=true)
+
+    obs = observe!(world, OnRemoveRelations; with=(Position, Velocity), without=(Altitude,)) do entity
+        counter += 1
+    end
+    remove_entity!(
+        world,
+        new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,)),
+    )
+    @test counter == 4
+    remove_entity!(
+        world,
+        new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,)),
+    )
     @test counter == 4
 end
 
@@ -514,18 +616,21 @@ end
     parent2 = new_entity!(world, ())
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent1,))
-    set_relations!(world, e, (ChildOf => parent2,))
     @test counter_add == 1
+    @test counter_rem == 0
+
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 2
     @test counter_rem == 1
 
     e = new_entity!(world, (Altitude(0), ChildOf()); relations=(ChildOf => parent1,))
     set_relations!(world, e, (ChildOf => parent2,))
-    @test counter_add == 1
+    @test counter_add == 2
     @test counter_rem == 1
 
     e = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
     set_relations!(world, e, (ChildOf => parent2,))
-    @test counter_add == 1
+    @test counter_add == 2
     @test counter_rem == 1
 end
 
@@ -549,18 +654,21 @@ end
     parent2 = new_entity!(world, ())
 
     e = new_entity!(world, (Altitude(0), ChildOf()); relations=(ChildOf => parent1,))
-    set_relations!(world, e, (ChildOf => parent2,))
     @test counter_add == 1
+    @test counter_rem == 0
+
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 2
     @test counter_rem == 1
 
     e = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
     set_relations!(world, e, (ChildOf => parent2,))
-    @test counter_add == 1
+    @test counter_add == 2
     @test counter_rem == 1
 
     e = new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent1,))
     set_relations!(world, e, (ChildOf => parent2,))
-    @test counter_add == 1
+    @test counter_add == 2
     @test counter_rem == 1
 end
 
