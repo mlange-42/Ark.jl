@@ -343,6 +343,7 @@ end
     append!(new_relations, old_table.relations)
 
     changed = false
+    mask = _clear_mask!(world._pool.mask)
     for (rel, trg) in zip(relations, targets)
         @inbounds target = world._relations[rel].targets[old_table.id]
         if target._id == 0
@@ -352,12 +353,13 @@ end
         if target._id == trg._id
             continue
         end
+        _set_bit!(mask, rel)
         @inbounds index = world._relations[rel].archetypes[old_table.archetype]
         @inbounds new_relations[index] = Pair(rel, trg)
         changed = true
     end
 
-    return new_relations, changed
+    return new_relations, changed, mask
 end
 
 # only for internal use in _cleanup_archetypes
@@ -1018,7 +1020,7 @@ end
     index = world._entities[entity._id]
     old_table = world._tables[index.table]
     archetype = world._archetypes[old_table.archetype]
-    new_relations, changed = _get_exchange_targets(world, old_table, relations, targets)
+    new_relations, changed, mask = _get_exchange_targets(world, old_table, relations, targets)
     if !changed
         resize!(new_relations, 0)
         return nothing
@@ -1029,9 +1031,33 @@ end
         new_table_id = _create_table!(world, archetype, copy(new_relations))
         new_table = world._tables[new_table_id]
     end
-    resize!(new_relations, 0)
 
+    if _has_observers(world._event_manager, OnRemoveRelations)
+        l = _lock(world._lock)
+        _fire_set_relations(
+            world._event_manager,
+            OnRemoveRelations,
+            entity,
+            mask,
+            world._archetypes_hot[new_table.archetype].mask,
+            true,
+        )
+        _unlock(world._lock, l)
+    end
+
+    resize!(new_relations, 0)
     _ = _move_entity!(world, entity, new_table.id)
+
+    if _has_observers(world._event_manager, OnAddRelations)
+        _fire_set_relations(
+            world._event_manager,
+            OnAddRelations,
+            entity,
+            mask,
+            world._archetypes_hot[new_table.archetype].mask,
+            true,
+        )
+    end
 
     return nothing
 end
