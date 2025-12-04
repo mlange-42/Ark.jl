@@ -179,6 +179,10 @@ end
     observe!(world, OnRemoveEntity) do entity
         counter_remove += 1
     end
+    counter_rel = 0
+    observe!(world, OnAddRelations) do entity
+        counter_rel += 1
+    end
 
     new_entity!(world, (Position(0, 0),))
     @test counter == 1
@@ -211,6 +215,7 @@ end
     @test counter == 4
 
     @test counter_remove == 0
+    @test counter_rel == 0
 end
 
 @testset "Fire OnAddRelations entity creation" begin
@@ -271,6 +276,10 @@ end
         @test is_locked(world) == true
         counter += 1
     end
+    counter_rel = 0
+    observe!(world, OnAddRelations) do entity
+        counter_rel += 1
+    end
 
     for (p, v) in new_entities!(world, 10, (Position, Velocity))
     end
@@ -309,6 +318,65 @@ end
     @test counter == 60
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0)))
     @test counter == 60
+
+    @test counter_rel == 0
+end
+
+@testset "Fire OnAddRelations batch" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf)
+
+    counter = 0
+    obs = observe!(world, OnAddRelations) do entity
+        @test is_alive(world, entity) == true
+        @test is_locked(world) == true
+        counter += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    for (p, v) in new_entities!(world, 10, (Position, Velocity, ChildOf); relations=(ChildOf => parent,))
+    end
+    @test counter == 10
+
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 20
+
+    for (p, v) in new_entities!(
+        world,
+        10,
+        (Position(0, 0), Velocity(0, 0), ChildOf());
+        relations=(ChildOf => parent,),
+        iterate=true,
+    )
+    end
+    @test counter == 30
+
+    observe!(world, obs; unregister=true)
+
+    observe!(world, OnAddRelations, (); with=(Position,)) do entity
+    end
+    obs = observe!(world, OnAddRelations; with=(Position, Velocity)) do entity
+        counter += 1
+    end
+
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 40
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 50
+    new_entities!(world, 10, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 50
+    new_entities!(world, 10, (Altitude(0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 50
+
+    observe!(world, obs; unregister=true)
+
+    obs = observe!(world, OnAddRelations; with=(Position, Velocity), without=(Altitude,)) do entity
+        counter += 1
+    end
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 60
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,))
+    @test counter == 60
 end
 
 @testset "Fire OnRemoveEntity" begin
@@ -319,6 +387,10 @@ end
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter += 1
+    end
+    counter_rel = 0
+    observe!(world, OnRemoveRelations) do entity
+        counter_rel += 1
     end
 
     remove_entity!(world, new_entity!(world, (Position(0, 0),)))
@@ -348,6 +420,8 @@ end
     @test counter == 4
     remove_entity!(world, new_entity!(world, (Position(0, 0), Velocity(0, 0), Altitude(0))))
     @test counter == 4
+
+    @test counter_rel == 0
 end
 
 @testset "Fire OnRemoveRelations entity removal" begin
