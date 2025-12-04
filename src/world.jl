@@ -2218,6 +2218,7 @@ emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
         return
     end
     _emit_event!(world, event, entity, ntuple(i -> Val(components[i]), length(components)))
+    return nothing
 end
 
 @generated function _emit_event!(world::W, event::EventType, entity::Entity, ::CT) where {W<:World,CT<:Tuple}
@@ -2239,7 +2240,7 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
         if has_comps
             throw(ArgumentError("can't emit event with components for the zero entity"))
         end
-        return _fire_custom_event(world._event_manager, entity, event, mask, world._archetypes_hot[1].mask)
+        return _fire_custom_event(world._event_manager, event, entity, mask, world._archetypes_hot[1].mask)
     end
 
     if !is_alive(world, entity)
@@ -2252,7 +2253,7 @@ function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps:
     if !_contains_all(entity_mask, mask)
         throw(ArgumentError("entity does not have all components of the event emitted for it"))
     end
-    _fire_custom_event(world._event_manager, entity, event, mask, entity_mask)
+    return _fire_custom_event(world._event_manager, event, entity, mask, entity_mask)
 end
 
 """
