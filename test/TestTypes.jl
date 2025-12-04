@@ -37,6 +37,7 @@ end
 
 struct ChildOf <: Relationship end
 struct ChildOf2 <: Relationship end
+struct ChildOf3 <: Relationship end
 
 mutable struct Tick
     time::Int

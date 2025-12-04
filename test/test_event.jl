@@ -438,7 +438,7 @@ end
 end
 
 @testset "Fire OnAddRelations/OnRemoveRelations" begin
-    world = World(Dummy, Position, Velocity, ChildOf, ChildOf2)
+    world = World(Dummy, Position, Velocity, ChildOf, ChildOf2, ChildOf3)
 
     counter_add = 0
     counter_rem = 0
@@ -484,6 +484,84 @@ end
     remove_components!(world, entity, (ChildOf,))
     @test counter_add == 5
     @test counter_rem == 4
+
+    add_components!(world, entity, (ChildOf3(),); relations=(ChildOf3 => parent1,))
+    @test counter_add == 5
+    @test counter_rem == 4
+
+    set_relations!(world, entity, (ChildOf3 => parent2,))
+    @test counter_add == 5
+    @test counter_rem == 4
+end
+
+@testset "Fire OnAddRelations/OnRemoveRelations with" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf, ChildOf2)
+
+    counter_add = 0
+    counter_rem = 0
+    obs_add = observe!(world, OnAddRelations, (); with=(Position, Velocity)) do entity
+        counter_add += 1
+    end
+    obs_rem = observe!(world, OnRemoveRelations, (); with=(Position, Velocity)) do entity
+        counter_rem += 1
+    end
+    obs_add_dummy = observe!(world, OnAddRelations, (); with=(Position,)) do entity
+    end
+    obs_rem_dummy = observe!(world, OnRemoveRelations, (); with=(Position,)) do entity
+    end
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Altitude(0), ChildOf()); relations=(ChildOf => parent1,))
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 1
+    @test counter_rem == 1
+end
+
+@testset "Fire OnAddRelations/OnRemoveRelations without" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf)
+
+    counter_add = 0
+    counter_rem = 0
+    obs_add = observe!(world, OnAddRelations, (); without=(Position, Velocity)) do entity
+        counter_add += 1
+    end
+    obs_rem = observe!(world, OnRemoveRelations, (); without=(Position, Velocity)) do entity
+        counter_rem += 1
+    end
+    obs_add_dummy = observe!(world, OnAddRelations, (); without=(Position,)) do entity
+    end
+    obs_rem_dummy = observe!(world, OnRemoveRelations, (); without=(Position,)) do entity
+    end
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    e = new_entity!(world, (Altitude(0), ChildOf()); relations=(ChildOf => parent1,))
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 1
+    @test counter_rem == 1
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent1,))
+    set_relations!(world, e, (ChildOf => parent2,))
+    @test counter_add == 1
+    @test counter_rem == 1
 end
 
 @testset "Observers combine" begin
