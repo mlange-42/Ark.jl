@@ -113,6 +113,9 @@ function close!(b::Batch)
     if _has_observers(b._world._event_manager, OnCreateEntity)
         _fire_create_entities(b._world._event_manager, b._tables[1])
     end
+    if _has_relations(b._tables[1].table) && _has_observers(b._world._event_manager, OnAddRelations)
+        _fire_create_entities_relations(b._world._event_manager, b._tables[1])
+    end
     b._b_lock.closed = true
     _unlock(b._world._lock, b._lock)
     return nothing

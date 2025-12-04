@@ -11,6 +11,15 @@ const _no_entity::Entity = _new_entity(0, 0)
 
 const _empty_relations = Pair{Int,Entity}[]
 
+struct _WorldPool{M}
+    relations::Vector{Pair{Int,Entity}}
+    mask::_MutableMask{M}
+end
+
+function _WorldPool{M}() where {M}
+    return _WorldPool(Vector{Pair{Int,Entity}}(), _MutableMask{M}())
+end
+
 """
     World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M}
 
@@ -35,7 +44,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager{World{CS,CT,ST,N,M},M}
-    const _temp_relations::Vector{Pair{Int,Entity}}
+    const _pool::_WorldPool{M}
     const _initial_capacity::Int
 end
 
@@ -158,7 +167,7 @@ end
     add_mask::_Mask,
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
-)::UInt32
+)::Tuple{UInt32,Bool}
     @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index, is_new = _find_or_create_archetype!(
         world, old_arch.node, add, remove, add_mask, rem_mask, use_map,
@@ -169,9 +178,9 @@ end
     if !new_arch_hot.has_relations && isempty(relations)
         if is_new
             new_arch = world._archetypes[new_arch_index]
-            return _create_table!(world, new_arch, _empty_relations)
+            return _create_table!(world, new_arch, _empty_relations), false
         end
-        return new_arch_hot.table
+        return new_arch_hot.table, false
     end
 
     new_arch = world._archetypes[new_arch_index]
@@ -187,15 +196,18 @@ function _find_or_create_table!(
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
     has_remove::Bool,
-)::UInt32
+)::Tuple{UInt32,Bool}
     # Find existing relations that were not removed, and add new relations.
-    all_relations = world._temp_relations
+    all_relations = world._pool.relations
     requires_free = true
+    relation_removed = false
     if _has_relations(old_table) || !isempty(relations)
         if has_remove > 0
             for rel in old_table.relations
                 if _get_bit(new_arch_hot.mask, rel[1])
                     push!(all_relations, rel)
+                else
+                    relation_removed = true
                 end
             end
             @inbounds for i in eachindex(relations)
@@ -220,7 +232,7 @@ function _find_or_create_table!(
         if requires_free
             resize!(all_relations, 0)
         end
-        return new_table.id
+        return new_table.id, relation_removed
     end
 
     if length(all_relations) > 0
@@ -237,7 +249,7 @@ function _find_or_create_table!(
         resize!(all_relations, 0)
     end
 
-    return new_table_id
+    return new_table_id, relation_removed
 end
 
 function _recycle_table!(world::World, arch::_Archetype, table_id::UInt32, relations::Vector{Pair{Int,Entity}})
@@ -327,10 +339,11 @@ end
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
 )
-    new_relations = world._temp_relations
+    new_relations = world._pool.relations
     append!(new_relations, old_table.relations)
 
     changed = false
+    mask = _clear_mask!(world._pool.mask)
     for (rel, trg) in zip(relations, targets)
         @inbounds target = world._relations[rel].targets[old_table.id]
         if target._id == 0
@@ -340,12 +353,13 @@ end
         if target._id == trg._id
             continue
         end
+        _set_bit!(mask, rel)
         @inbounds index = world._relations[rel].archetypes[old_table.archetype]
         @inbounds new_relations[index] = Pair(rel, trg)
         changed = true
     end
 
-    return new_relations, changed
+    return new_relations, changed, mask
 end
 
 # only for internal use in _cleanup_archetypes
@@ -354,7 +368,7 @@ function _get_exchange_targets_unchecked(
     old_table::_Table,
     relations::Vector{Pair{Int,Entity}},
 )
-    new_relations = world._temp_relations
+    new_relations = world._pool.relations
     append!(new_relations, old_table.relations)
 
     for (rel, trg) in relations
@@ -556,6 +570,9 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     if _has_observers(world._event_manager, OnCreateEntity)
         _fire_create_entity(world._event_manager, new_entity, archetype.node.mask)
     end
+    if _has_relations(archetype) && _has_observers(world._event_manager, OnAddRelations)
+        _fire_create_entity_relations(world._event_manager, new_entity, archetype.node.mask)
+    end
     return new_entity
 end
 
@@ -602,7 +619,7 @@ end
             new_table_index =
                 _find_or_create_table!(
                     world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
-                )
+                )[1]
         ),
     )
     push!(exprs, :(new_table = world._tables[new_table_index]))
@@ -636,8 +653,13 @@ end
     end
 
     push!(exprs, :(
-        if _has_observers(world._event_manager, OnCreateEntity)
-            _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
+        begin
+            if _has_observers(world._event_manager, OnCreateEntity)
+                _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
+            end
+            if new_archetype.has_relations && _has_observers(world._event_manager, OnAddRelations)
+                _fire_create_entity_relations(world._event_manager, new_entity, new_archetype.mask)
+            end
         end
     ))
 
@@ -674,12 +696,16 @@ function remove_entity!(world::World, entity::Entity)
     table = world._tables[index.table]
     archetype = world._archetypes[table.archetype]
 
-    if _has_observers(world._event_manager, OnRemoveEntity)
+    has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
+    has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
+    if has_entity_obs || has_rel_obs
         l = _lock(world._lock)
-        _fire_remove_entity(
-            world._event_manager, entity,
-            archetype.node.mask,
-        )
+        if has_entity_obs
+            _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
+        end
+        if has_rel_obs
+            _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
+        end
         _unlock(world._lock, l)
     end
 
@@ -1006,7 +1032,7 @@ end
     index = world._entities[entity._id]
     old_table = world._tables[index.table]
     archetype = world._archetypes[old_table.archetype]
-    new_relations, changed = _get_exchange_targets(world, old_table, relations, targets)
+    new_relations, changed, mask = _get_exchange_targets(world, old_table, relations, targets)
     if !changed
         resize!(new_relations, 0)
         return nothing
@@ -1017,9 +1043,33 @@ end
         new_table_id = _create_table!(world, archetype, copy(new_relations))
         new_table = world._tables[new_table_id]
     end
-    resize!(new_relations, 0)
 
+    if _has_observers(world._event_manager, OnRemoveRelations)
+        l = _lock(world._lock)
+        _fire_set_relations(
+            world._event_manager,
+            OnRemoveRelations,
+            entity,
+            mask,
+            world._archetypes_hot[new_table.archetype].mask,
+            true,
+        )
+        _unlock(world._lock, l)
+    end
+
+    resize!(new_relations, 0)
     _ = _move_entity!(world, entity, new_table.id)
+
+    if _has_observers(world._event_manager, OnAddRelations)
+        _fire_set_relations(
+            world._event_manager,
+            OnAddRelations,
+            entity,
+            mask,
+            world._archetypes_hot[new_table.archetype].mask,
+            true,
+        )
+    end
 
     return nothing
 end
@@ -1067,9 +1117,18 @@ Base.@constprop :aggressive function new_entity!(
     targets = ntuple(i -> relations[i].second, length(relations))
 
     entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
-    if _has_observers(world._event_manager, OnCreateEntity)
+
+    has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+    has_rel_obs = !isempty(relations) && _has_observers(world._event_manager, OnAddRelations)
+    if has_entity_obs || has_rel_obs
         table = world._tables[table_id]
-        _fire_create_entity(world._event_manager, entity, world._archetypes_hot[table.archetype].mask)
+        mask = world._archetypes_hot[table.archetype].mask
+        if has_entity_obs
+            _fire_create_entity(world._event_manager, entity, mask)
+        end
+        if has_rel_obs
+            _fire_create_entity_relations(world._event_manager, entity, mask)
+        end
     end
     return entity
 end
@@ -1113,7 +1172,7 @@ end
                 $add_mask,
                 $rem_mask,
                 $use_map,
-            )
+            )[1]
         ),
     )
     push!(exprs, :(tmp = _create_entity!(world, table)))
@@ -1329,7 +1388,7 @@ end
                 $add_mask,
                 $rem_mask,
                 $use_map,
-            )
+            )[1]
         ),
     )
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
@@ -1367,12 +1426,17 @@ end
                 )
                 return batch
             else
-                if _has_observers(world._event_manager, OnCreateEntity)
+                has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+                has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                if has_entity_obs || has_rel_obs
                     l = _lock(world._lock)
-                    _fire_create_entities(
-                        world._event_manager,
-                        _BatchTable(table, world._archetypes[table.archetype], indices...),
-                    )
+                    batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                    if has_entity_obs
+                        _fire_create_entities(world._event_manager, batch)
+                    end
+                    if has_rel_obs
+                        _fire_create_entities_relations(world._event_manager, batch)
+                    end
                     _unlock(world._lock, l)
                 end
                 return nothing
@@ -1478,7 +1542,7 @@ end
                 $add_mask,
                 $rem_mask,
                 $use_map,
-            )
+            )[1]
         ),
     )
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
@@ -1648,27 +1712,43 @@ end
     push!(
         exprs,
         :(
-            new_table_index =
+            new_table_tuple =
                 _find_or_create_table!(
                     world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
                 )
         ),
     )
+    push!(exprs, :(new_table_index = new_table_tuple[1]))
+    push!(exprs, :(relations_removed = new_table_tuple[2]))
     push!(exprs, :(new_table = world._tables[new_table_index]))
 
     if length(rem_types) > 0
         push!(
             exprs,
             :(
-                if _has_observers(world._event_manager, OnRemoveComponents)
-                    l = _lock(world._lock)
-                    _fire_remove_components(
-                        world._event_manager, entity,
-                        world._archetypes_hot[old_table.archetype].mask,
-                        world._archetypes_hot[new_table.archetype].mask,
-                        true,
-                    )
-                    _unlock(world._lock, l)
+                begin
+                    has_comp_obs = _has_observers(world._event_manager, OnRemoveComponents)
+                    has_rel_obs = relations_removed && _has_observers(world._event_manager, OnRemoveRelations)
+                    if has_comp_obs || has_rel_obs
+                        l = _lock(world._lock)
+                        old_mask = world._archetypes_hot[old_table.archetype].mask
+                        new_mask = world._archetypes_hot[new_table.archetype].mask
+                        if has_comp_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveComponents, entity,
+                                old_mask, new_mask, true,
+                            )
+                        end
+                        if has_rel_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveRelations, entity,
+                                old_mask, new_mask, true,
+                            )
+                        end
+                        _unlock(world._lock, l)
+                    end
                 end
             ),
         )
@@ -1687,13 +1767,14 @@ end
         push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
     end
 
-    if length(add_types) > 0
+    if !isempty(add_types)
         push!(
             exprs,
             :(
                 if _has_observers(world._event_manager, OnAddComponents)
-                    _fire_add_components(
-                        world._event_manager, entity,
+                    _fire_add(
+                        world._event_manager,
+                        OnAddComponents, entity,
                         world._archetypes_hot[old_table.archetype].mask,
                         world._archetypes_hot[new_table.archetype].mask,
                         true,
@@ -1701,6 +1782,22 @@ end
                 end
             ),
         )
+        if !isempty(rel_types)
+            push!(
+                exprs,
+                :(
+                    if _has_observers(world._event_manager, OnAddRelations)
+                        _fire_add(
+                            world._event_manager,
+                            OnAddRelations, entity,
+                            world._archetypes_hot[old_table.archetype].mask,
+                            world._archetypes_hot[new_table.archetype].mask,
+                            true,
+                        )
+                    end
+                ),
+            )
+        end
     end
 
     push!(exprs, Expr(:return, :nothing))
@@ -1820,7 +1917,7 @@ end
                 World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
                 $(M),
             }(),
-            Vector{Pair{Int,Entity}}(),
+            _WorldPool{$M}(),
             initial_capacity,
         )
     end

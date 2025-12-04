@@ -7,10 +7,14 @@ See [EventRegistry](@ref) for creating custom event types.
 
 # Built-in event types
 
-  - `OnCreateEntity`: Event emitted when a new entity is created.
-  - `OnRemoveEntity`: Event emitted when an entity is removed from the [World](@ref).
-  - `OnAddComponents`: Event emitted when components are added to an entity.
-  - `OnRemoveComponents`: Event emitted when components are removed from an entity.
+  - `OnCreateEntity`: Event emitted after a new entity is created.
+  - `OnRemoveEntity`: Event emitted before an entity is removed from the [World](@ref).
+  - `OnAddComponents`: Event emitted after components are added to an entity.
+  - `OnRemoveComponents`: Event emitted before components are removed from an entity.
+  - `OnAddRelations`: Event emitted after relation targets are added to an entity.
+    Includes creating entities, adding components as well as setting relation targets.
+  - `OnRemoveRelations`: Event emitted before relation targets are removed from an entity.
+    Includes removing entities, removing components as well as setting relation targets.
 """
 struct EventType
     _id::UInt8
@@ -27,7 +31,9 @@ const OnCreateEntity::EventType = EventType(UInt8(1), :OnCreateEntity)
 const OnRemoveEntity::EventType = EventType(UInt8(2), :OnRemoveEntity)
 const OnAddComponents::EventType = EventType(UInt8(3), :OnAddComponents)
 const OnRemoveComponents::EventType = EventType(UInt8(4), :OnRemoveComponents)
-const _custom_events::EventType = EventType(UInt8(5), :custom_event)
+const OnAddRelations::EventType = EventType(UInt8(5), :OnAddRelations)
+const OnRemoveRelations::EventType = EventType(UInt8(6), :OnRemoveRelations)
+const _custom_events::EventType = EventType(UInt8(7), :custom_event)
 
 """
     EventRegistry
@@ -49,6 +55,8 @@ function EventRegistry()
     new_event_type!(reg, :OnRemoveEntity)
     new_event_type!(reg, :OnAddComponents)
     new_event_type!(reg, :OnRemoveComponents)
+    new_event_type!(reg, :OnAddRelations)
+    new_event_type!(reg, :OnRemoveRelations)
     reg
 end
 
@@ -238,23 +246,23 @@ function _reset!(m::_EventManager{W,M}) where {W<:_AbstractWorld,M}
     m.num_observers = 0
 end
 
-function _fire_create_entity(m::_EventManager, entity::Entity, mask::_Mask)
+function _fire_create_entity(m::_EventManager{W,M}, entity::Entity, mask::_Mask{M}) where {W<:_AbstractWorld,M}
     _fire_create_or_remove_entity(m, entity, mask, OnCreateEntity, true)
     return nothing
 end
 
-function _fire_remove_entity(m::_EventManager, entity::Entity, mask::_Mask)
+function _fire_remove_entity(m::_EventManager{W,M}, entity::Entity, mask::_Mask{M}) where {W<:_AbstractWorld,M}
     _fire_create_or_remove_entity(m, entity, mask, OnRemoveEntity, true)
     return nothing
 end
 
 function _fire_create_or_remove_entity(
-    m::_EventManager,
+    m::_EventManager{W,M},
     entity::Entity,
-    mask::_Mask,
+    mask::_Mask{M},
     event::EventType,
     early_out::Bool,
-)::Bool
+)::Bool where {W<:_AbstractWorld,M}
     evt = event._id
     observers = m.observers[evt]
     with, any_no_with = m.with[evt]
@@ -275,7 +283,61 @@ function _fire_create_or_remove_entity(
     return found
 end
 
-function _fire_create_entities(m::_EventManager, table::_BatchTable)
+function _fire_create_entity_relations(
+    m::_EventManager{W,M},
+    entity::Entity,
+    mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    _fire_create_or_remove_entity_relations(m, entity, mask, OnAddRelations, true)
+    return nothing
+end
+
+function _fire_remove_entity_relations(
+    m::_EventManager{W,M},
+    entity::Entity,
+    mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    _fire_create_or_remove_entity_relations(m, entity, mask, OnRemoveRelations, true)
+    return nothing
+end
+
+function _fire_create_or_remove_entity_relations(
+    m::_EventManager{W,M},
+    entity::Entity,
+    mask::_Mask{M},
+    event::EventType,
+    early_out::Bool,
+)::Bool where {W<:_AbstractWorld,M}
+    evt = event._id
+    observers = m.observers[evt]
+    if early_out && length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return false
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return false
+        end
+    end
+    found = false
+    for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
+end
+
+function _fire_create_entities(m::_EventManager{W,M}, table::_BatchTable{M}) where {W<:_AbstractWorld,M}
     evt = OnCreateEntity._id
     observers = m.observers[evt]
     mask = table.archetype.node.mask
@@ -297,14 +359,46 @@ function _fire_create_entities(m::_EventManager, table::_BatchTable)
     end
 end
 
-function _fire_add_components(
-    m::_EventManager,
+function _fire_create_entities_relations(m::_EventManager{W,M}, table::_BatchTable{M}) where {W<:_AbstractWorld,M}
+    evt = OnAddRelations._id
+    observers = m.observers[evt]
+    mask = table.archetype.node.mask
+    if length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return
+        end
+    end
+    for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        entities = table.table.entities._data
+        for i in table.start_idx:table.end_idx
+            o._fn(entities[i])
+        end
+    end
+end
+
+function _fire_add(
+    m::_EventManager{W,M},
+    event::EventType,
     entity::Entity,
-    old_mask::_Mask,
-    new_mask::_Mask,
+    old_mask::_Mask{M},
+    new_mask::_Mask{M},
     early_out::Bool,
-)::Bool
-    evt = OnAddComponents._id
+)::Bool where {W<:_AbstractWorld,M}
+    evt = event._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
         comps, any_no_comps = m.comps[evt]
@@ -334,14 +428,15 @@ function _fire_add_components(
     return found
 end
 
-function _fire_remove_components(
-    m::_EventManager,
+function _fire_remove(
+    m::_EventManager{W,M},
+    event::EventType,
     entity::Entity,
-    old_mask::_Mask,
-    new_mask::_Mask,
+    old_mask::_Mask{M},
+    new_mask::_Mask{M},
     early_out::Bool,
-)::Bool
-    evt = OnRemoveComponents._id
+)::Bool where {W<:_AbstractWorld,M}
+    evt = event._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
         comps, any_no_comps = m.comps[evt]
@@ -371,13 +466,50 @@ function _fire_remove_components(
     return found
 end
 
+function _fire_set_relations(
+    m::_EventManager{W,M},
+    event::EventType,
+    entity::Entity,
+    mask::_MutableMask{M},
+    new_mask::_Mask{M},
+    early_out::Bool,
+)::Bool where {W<:_AbstractWorld,M}
+    evt = event._id
+    observers = m.observers[evt]
+    if early_out && length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return false
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, new_mask)
+            return false
+        end
+    end
+    found = false
+    for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
+        if o._has_with && !_contains_all(new_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(new_mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
+end
+
 function _fire_custom_event(
-    m::_EventManager,
+    m::_EventManager{W,M},
     entity::Entity,
     event::EventType,
-    mask::_Mask,
-    entity_mask::_Mask,
-)
+    mask::_Mask{M},
+    entity_mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
     evt = event._id
     observers = m.observers[evt]
     if length(observers) > 1

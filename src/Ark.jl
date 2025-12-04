@@ -47,6 +47,7 @@ export Entities
 
 export EventType, EventRegistry, new_event_type!
 export OnCreateEntity, OnRemoveEntity, OnAddComponents, OnRemoveComponents
+export OnAddRelations, OnRemoveRelations
 
 export Observer, observe!, emit_event!
 export unpack, @unpack
