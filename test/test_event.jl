@@ -316,6 +316,14 @@ end
         @test is_locked(world) == true
         counter_rem += 1
     end
+    counter_add_rel = 0
+    counter_rem_rel = 0
+    obs_add_rel = observe!(world, OnAddRelations) do entity
+        counter_add_rel += 1
+    end
+    obs_rem_rel = observe!(world, OnRemoveRelations) do entity
+        counter_rem_rel += 1
+    end
 
     e = new_entity!(world, ())
     add_components!(world, e, (Position(0, 0),))
@@ -354,6 +362,9 @@ end
     remove_components!(world, e, (Position,))
     @test counter_add == 2
     @test counter_rem == 2
+
+    @test counter_add_rel == 0
+    @test counter_rem_rel == 0
 end
 
 @testset "Fire OnAddComponents/OnRemoveComponents with" begin

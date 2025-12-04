@@ -1665,16 +1665,29 @@ end
         push!(
             exprs,
             :(
-                if _has_observers(world._event_manager, OnRemoveComponents)
-                    l = _lock(world._lock)
-                    _fire_remove(
-                        world._event_manager,
-                        OnRemoveComponents, entity,
-                        world._archetypes_hot[old_table.archetype].mask,
-                        world._archetypes_hot[new_table.archetype].mask,
-                        true,
-                    )
-                    _unlock(world._lock, l)
+                begin
+                    has_comp_obs = _has_observers(world._event_manager, OnRemoveComponents)
+                    has_rel_obs = relations_removed && _has_observers(world._event_manager, OnRemoveRelations)
+                    if has_comp_obs || has_rel_obs
+                        l = _lock(world._lock)
+                        old_mask = world._archetypes_hot[old_table.archetype].mask
+                        new_mask = world._archetypes_hot[new_table.archetype].mask
+                        if has_comp_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveComponents, entity,
+                                old_mask, new_mask, true,
+                            )
+                        end
+                        if has_rel_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveRelations, entity,
+                                old_mask, new_mask, true,
+                            )
+                        end
+                        _unlock(world._lock, l)
+                    end
                 end
             ),
         )
@@ -1693,7 +1706,7 @@ end
         push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
     end
 
-    if length(add_types) > 0
+    if !isempty(add_types)
         push!(
             exprs,
             :(
@@ -1708,6 +1721,22 @@ end
                 end
             ),
         )
+        if !isempty(rel_types)
+            push!(
+                exprs,
+                :(
+                    if _has_observers(world._event_manager, OnAddRelations)
+                        _fire_add(
+                            world._event_manager,
+                            OnAddRelations, entity,
+                            world._archetypes_hot[old_table.archetype].mask,
+                            world._archetypes_hot[new_table.archetype].mask,
+                            true,
+                        )
+                    end
+                ),
+            )
+        end
     end
 
     push!(exprs, Expr(:return, :nothing))
