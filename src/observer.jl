@@ -80,6 +80,13 @@ end
     with_ids = map(C -> _component_id(CS, C), with_types)
     without_ids = map(C -> _component_id(CS, C), without_types)
 
+    all_comps_relations = true
+    for T in comp_types
+        if !(T <: Relationship)
+            all_comps_relations = false
+        end
+    end
+
     M = max(1, cld(length(CS.parameters), 64))
     mask = _Mask{M}(ids...)
     with_mask = _Mask{M}(with_ids...)
@@ -94,6 +101,13 @@ end
     return quote
         if (event == OnCreateEntity || event == OnRemoveEntity) && _is_not_zero($mask)
             throw(ArgumentError("components tuple must be empty for event types OnCreateEntity and OnRemoveEntity"))
+        end
+        if (event == OnAddRelations || event == OnRemoveRelations) && !$all_comps_relations
+            throw(
+                ArgumentError(
+                    "all components must be relationships for event types OnAddRelations and OnRemoveRelations",
+                ),
+            )
         end
         obs = Observer(
             world,

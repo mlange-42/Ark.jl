@@ -27,7 +27,9 @@ const OnCreateEntity::EventType = EventType(UInt8(1), :OnCreateEntity)
 const OnRemoveEntity::EventType = EventType(UInt8(2), :OnRemoveEntity)
 const OnAddComponents::EventType = EventType(UInt8(3), :OnAddComponents)
 const OnRemoveComponents::EventType = EventType(UInt8(4), :OnRemoveComponents)
-const _custom_events::EventType = EventType(UInt8(5), :custom_event)
+const OnAddRelations::EventType = EventType(UInt8(5), :OnAddRelations)
+const OnRemoveRelations::EventType = EventType(UInt8(6), :OnRemoveRelations)
+const _custom_events::EventType = EventType(UInt8(7), :custom_event)
 
 """
     EventRegistry
@@ -49,6 +51,8 @@ function EventRegistry()
     new_event_type!(reg, :OnRemoveEntity)
     new_event_type!(reg, :OnAddComponents)
     new_event_type!(reg, :OnRemoveComponents)
+    new_event_type!(reg, :OnAddRelations)
+    new_event_type!(reg, :OnRemoveRelations)
     reg
 end
 
@@ -363,6 +367,43 @@ function _fire_remove_components(
             continue
         end
         if o._has_without && _contains_any(old_mask, o._without)
+            continue
+        end
+        o._fn(entity)
+        found = true
+    end
+    return found
+end
+
+function _fire_set_relations(
+    m::_EventManager,
+    event::EventType,
+    entity::Entity,
+    mask::_Mask,
+    new_mask::_Mask,
+    early_out::Bool,
+)::Bool
+    evt = event._id
+    observers = m.observers[evt]
+    if early_out && length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return false
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, new_mask)
+            return false
+        end
+    end
+    found = false
+    for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
+        if o._has_with && !_contains_all(new_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(new_mask, o._without)
             continue
         end
         o._fn(entity)

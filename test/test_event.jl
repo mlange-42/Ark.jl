@@ -3,11 +3,11 @@
 
     e1 = new_event_type!(reg, :Event1)
     e2 = new_event_type!(reg, :Event2)
-    @test e1._id == 5
-    @test e2._id == 6
+    @test e1._id == 7
+    @test e2._id == 8
 
-    @test string(reg) == "6-events EventRegistry()
- [:OnCreateEntity, :OnRemoveEntity, :OnAddComponents, :OnRemoveComponents, :Event1, :Event2]
+    @test string(reg) == "8-events EventRegistry()
+ [:OnCreateEntity, :OnRemoveEntity, :OnAddComponents, :OnRemoveComponents, :OnAddRelations, :OnRemoveRelations, :Event1, :Event2]
 "
 
     @test_throws "there is already an event with symbol :Event1" new_event_type!(reg, :Event1)
@@ -26,6 +26,8 @@
     @test OnRemoveEntity._id == 2
     @test OnAddComponents._id == 3
     @test OnRemoveComponents._id == 4
+    @test OnAddRelations._id == 5
+    @test OnRemoveRelations._id == 6
 
     @test string(OnCreateEntity) == "EventType(:OnCreateEntity)"
 end
