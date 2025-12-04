@@ -301,14 +301,15 @@ function _fire_create_entities(m::_EventManager, table::_BatchTable)
     end
 end
 
-function _fire_add_components(
+function _fire_add(
     m::_EventManager,
+    event::EventType,
     entity::Entity,
     old_mask::_Mask,
     new_mask::_Mask,
     early_out::Bool,
 )::Bool
-    evt = OnAddComponents._id
+    evt = event._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
         comps, any_no_comps = m.comps[evt]
@@ -338,14 +339,15 @@ function _fire_add_components(
     return found
 end
 
-function _fire_remove_components(
+function _fire_remove(
     m::_EventManager,
+    event::EventType,
     entity::Entity,
     old_mask::_Mask,
     new_mask::_Mask,
     early_out::Bool,
 )::Bool
-    evt = OnRemoveComponents._id
+    evt = event._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
         comps, any_no_comps = m.comps[evt]
