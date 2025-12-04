@@ -81,6 +81,13 @@ end
             println(entity)
         end,
     )
+
+    @test_throws(
+        "ArgumentError: all components must be relationships for event types OnAddRelations and OnRemoveRelations",
+        observe!(world, OnAddRelations, (Position,)) do entity
+            println(entity)
+        end,
+    )
 end
 
 @testset "Observer registration" begin
