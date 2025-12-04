@@ -584,20 +584,30 @@ end
         Dummy,
         Position,
         Velocity => StructArrayStorage,
+        ChildOf,
     )
 
     counter = 0
     observe!(world, OnCreateEntity; with=(Position,)) do entity
-        @test entity._id == counter + 2
+        @test entity._id == counter + 3
         counter += 1
     end
+    counter_rel = 0
+    observe!(world, OnAddRelations; with=(Position,)) do entity
+        @test entity._id == counter_rel + 3
+        counter_rel += 1
+    end
 
-    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
+    parent = new_entity!(world, ())
+
+    entity = new_entity!(world, (Position(1, 2), Velocity(3, 4), ChildOf()); relations=(ChildOf => parent,))
     entity2 = copy_entity!(world, entity)
+
     @test counter == 2
+    @test counter_rel == 2
 
     @test entity2._id == entity._id + 1
-    @test entity2._id == 3
+    @test entity2._id == 4
     @test world._tables[2].entities == [entity, entity2]
     @test length(world._storages[offset_ID+2].data[2]) == 2
     @test length(world._storages[offset_ID+3].data[2]) == 2
@@ -605,6 +615,8 @@ end
     pos, vel = get_components(world, entity2, (Position, Velocity))
     @test pos == Position(1, 2)
     @test vel == Velocity(3, 4)
+
+    @test get_relations(world, entity2, (ChildOf,)) == (parent,)
 
     @test_throws "can't copy a dead entity" copy_entity!(world, zero_entity)
 end
@@ -615,17 +627,27 @@ end
         Position,
         Velocity => StructArrayStorage,
         Altitude,
+        ChildOf,
     )
 
     counter = 0
     observe!(world, OnCreateEntity; with=(Altitude,)) do entity
-        @test entity._id == 3
+        @test entity._id == 4
         counter += 1
     end
+    counter_rel = 0
+    observe!(world, OnAddRelations, (ChildOf,)) do entity
+        @test entity._id == 4
+        counter_rel += 1
+    end
+
+    parent = new_entity!(world, ())
 
     entity = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
-    entity2 = copy_entity!(world, entity; add=(Altitude(5),), remove=(Position,))
+    entity2 =
+        copy_entity!(world, entity; add=(Altitude(5), ChildOf()), remove=(Position,), relations=(ChildOf => parent,))
     @test counter == 1
+    @test counter_rel == 1
 
     @test entity2._id == entity._id + 1
     @test has_components(world, entity2, (Position,)) == false

@@ -570,6 +570,9 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     if _has_observers(world._event_manager, OnCreateEntity)
         _fire_create_entity(world._event_manager, new_entity, archetype.node.mask)
     end
+    if _has_relations(archetype) && _has_observers(world._event_manager, OnAddRelations)
+        _fire_create_entity_relations(world._event_manager, new_entity, archetype.node.mask)
+    end
     return new_entity
 end
 
@@ -650,8 +653,13 @@ end
     end
 
     push!(exprs, :(
-        if _has_observers(world._event_manager, OnCreateEntity)
-            _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
+        begin
+            if _has_observers(world._event_manager, OnCreateEntity)
+                _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
+            end
+            if new_archetype.has_relations && _has_observers(world._event_manager, OnAddRelations)
+                _fire_create_entity_relations(world._event_manager, new_entity, new_archetype.mask)
+            end
         end
     ))
 
