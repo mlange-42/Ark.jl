@@ -1,12 +1,12 @@
 
 struct _TableIDs
     tables::Vector{UInt32}
-    indices::Dict{UInt32,Int}
+    indices::_Linear_Map2{UInt32,Int}
 end
 
 function _TableIDs(tables::UInt32...)
     vec = collect(tables)
-    indices = Dict{UInt32,Int}()
+    indices = _Linear_Map2{UInt32,Int}()
 
     for (i, table) in enumerate(tables)
         indices[table] = i
