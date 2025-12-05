@@ -180,6 +180,43 @@ end
     end
 end
 
+@generated function _Query_from_filter(
+    world::W,
+    filter::Filter{W,TS,EX,OPT,M},
+) where {W<:World,TS<:Tuple,EX,OPT<:Tuple,M}
+    CS = W.parameters[1]
+    world_storage_modes = W.parameters[3].parameters
+    comp_types = _to_types(TS)
+    optional_flags = OPT.parameters
+
+    storage_modes = [
+        world_storage_modes[_component_id(W.parameters[1], T)]
+        for T in comp_types
+    ]
+    storage_tuple_mode = Expr(:curly, :Tuple, storage_modes...)
+
+    required_ids = [_component_id(CS, comp_types[i]) for i in length(comp_types) if optional_flags[i] === Val{false}]
+    ids_tuple = tuple(required_ids...)
+
+    archetypes =
+        length(ids_tuple) == 0 ? :((world._archetypes, world._archetypes_hot)) : :(_get_archetypes(world, $ids_tuple))
+
+    return quote
+        arches, hot = $(archetypes)
+        Query{$W,$TS,$storage_tuple_mode,$EX,$OPT,$(length(comp_types)),$M}(
+            filter._mask,
+            filter._exclude_mask,
+            world,
+            arches,
+            hot,
+            filter._relations,
+            _QueryCursor(_empty_tables, false),
+            _lock(world._lock),
+            filter._has_excluded,
+        )
+    end
+end
+
 function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     comps = world._index.archetypes
     hot = world._index.archetypes_hot
