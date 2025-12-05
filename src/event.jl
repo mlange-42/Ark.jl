@@ -426,10 +426,10 @@ end
     m::_EventManager{W,M},
     event::EventType,
     entity::Entity,
-    mask::_AbstractMask{M},
+    mask::MK,
     entity_mask::_Mask{M},
     early_out::Bool,
-) where {W<:_AbstractWorld,M}
+) where {W<:_AbstractWorld,MK<:_AbstractMask{M}} where {M}
     evt = event._id
     observers = m.observers[evt]
     if early_out && length(observers) > 1
