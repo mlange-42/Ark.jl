@@ -89,7 +89,7 @@ end
 """
     Query(filter::Filter)
 
-Creates a query from a filter.
+Creates a query from a [Filter](@ref).
 """
 Base.@constprop :aggressive function Query(
     filter::F,

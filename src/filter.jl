@@ -1,4 +1,11 @@
 
+"""
+    Filter
+
+A filter for components. See function
+[Filter](@ref Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
+See also [Query](@ref).
+"""
 struct Filter{W<:World,TS<:Tuple,EX,OPT,M}
     _mask::_Mask{M}
     _exclude_mask::_Mask{M}
@@ -19,6 +26,18 @@ end
     )
 
 Creates a filter.
+
+See the user manual chapter on [Queries](@ref) for more details and examples.
+
+# Arguments
+
+  - `world`: The `World` instance to filter.
+  - `comp_types::Tuple`: Components the filter filters for.
+  - `with::Tuple`: Additional components the entities must have.
+  - `without::Tuple`: Components the entities must not have.
+  - `optional::Tuple`: Additional components that are optional in the filter.
+  - `exclusive::Bool`: Makes the filter exclusive in base and `with` components, can't be combined with `without`.
+  - `relations::Tuple`: Relationship component type => target entity pairs. These relation components must be in the filter's components or `with`.
 """
 Base.@constprop :aggressive function Filter(
     world::World,
