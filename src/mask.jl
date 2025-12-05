@@ -168,8 +168,8 @@ function _set_mask!(mask::_MutableMask, other::_Mask)
     return mask
 end
 
-function _clear_mask!(mask::_MutableMask)
-    fill!(mask.bits, 0x00)
+function _clear_mask!(mask::_MutableMask{M}) where M
+    mask.bits.data = ntuple(_ -> UInt64(0), M)
     return mask
 end
 
