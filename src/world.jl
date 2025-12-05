@@ -109,32 +109,15 @@ function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity:
 end
 
 @generated function _component_id(::Type{CS}, ::Type{C})::Int where {CS<:Tuple,C}
-    for (i, S) in enumerate(CS.parameters)
-        if S <: _ComponentStorage && S.parameters[1] === C
-            return :($i)
-        end
-    end
-    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
+    _generate_type_lookup(CS, C, i -> :($i))
 end
 
 @generated function _get_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
-        if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._storages.$i)
-        end
-    end
-    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
+    _generate_type_lookup(CS, C, i -> :(world._storages.$i))
 end
 
 @generated function _get_relations_storage(world::World{CS}, ::Type{C}) where {CS<:Tuple,C}
-    storage_types = CS.parameters
-    for (i, S) in enumerate(storage_types)
-        if S <: _ComponentStorage && S.parameters[1] === C
-            return :(world._relations[$i])
-        end
-    end
-    return :(throw(ArgumentError(lazy"Component type $C not found in the World")))
+    _generate_type_lookup(CS, C, i -> :(world._relations[$i]))
 end
 
 @inline function _find_or_create_archetype!(
@@ -1957,17 +1940,9 @@ end
     return Expr(:block, exprs...)
 end
 
-@generated function _activate_new_column_for_comp!(world::World{CS}, comp::Int, index::Int) where {CS}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _activate_column!(world._storages.$i, index, world._initial_capacity)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+@generated function _activate_new_column_for_comp!(world::World{CS}, comp::Int, index::Int) where CS
+    _generate_component_switch(CS, :comp,
+        i -> :(_activate_column!(world._storages.$i, index, world._initial_capacity)))
 end
 
 function _activate_archetype_relation_for_comp!(
@@ -1993,17 +1968,9 @@ end
     comp::Int,
     arch::UInt32,
     needed::Int,
-) where {CS<:Tuple}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _ensure_column_size!(world._storages.$i, arch, needed)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+) where CS
+    _generate_component_switch(CS, :comp,
+        i -> :(_ensure_column_size!(world._storages.$i, arch, needed)))
 end
 
 @generated function _move_component_data!(
@@ -2012,17 +1979,9 @@ end
     old_arch::UInt32,
     new_arch::UInt32,
     row::UInt32,
-) where {CS<:Tuple}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _move_component_data!(world._storages.$i, old_arch, new_arch, row)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+) where CS
+    _generate_component_switch(CS, :comp,
+        i -> :(_move_component_data!(world._storages.$i, old_arch, new_arch, row)))
 end
 
 @generated function _copy_component_data!(
@@ -2038,17 +1997,8 @@ end
         mode = CP.parameters[1]
         throw(ArgumentError(":$mode is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
-
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, mode)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    _generate_component_switch(CS, :comp,
+        i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, mode)))
 end
 
 @generated function _copy_component_data!(
@@ -2059,16 +2009,8 @@ end
     old_row::UInt32,
     new_row::UInt32,
 ) where {CS<:Tuple}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    _generate_component_switch(CS, :comp,
+        i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)))
 end
 
 @generated function _clear_component_data!(
@@ -2076,16 +2018,8 @@ end
     comp::Int,
     arch::UInt32,
 ) where {CS<:Tuple}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _clear_column!(world._storages.$i, arch)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    _generate_component_switch(CS, :comp,
+        i -> :(_clear_column!(world._storages.$i, arch)))
 end
 
 @generated function _swap_remove_in_column_for_comp!(
@@ -2094,16 +2028,8 @@ end
     arch::UInt32,
     row::UInt32,
 ) where {CS<:Tuple}
-    n = length(CS.parameters)
-    exprs = Expr[]
-    for i in 1:n
-        push!(exprs, :(
-            if comp == $i
-                _remove_component_data!(world._storages.$i, arch, row)
-            end
-        ))
-    end
-    return Expr(:block, exprs...)
+    _generate_component_switch(CS, :comp,
+        i -> :(_remove_component_data!(world._storages.$i, arch, row)))
 end
 
 """

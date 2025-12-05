@@ -73,3 +73,27 @@ end
         return $(Expr(:new, T, field_exprs...))
     end
 end
+
+function _generate_component_switch(CS::Type{<:Tuple}, comp_idx_sym::Symbol, func_generator::Function)
+    N = length(CS.parameters)
+    exprs = Expr[]
+    for i in 1:N
+        call_expr = func_generator(i)
+        push!(exprs, :(
+            if $comp_idx_sym == $i
+                return $call_expr
+            end
+        ))
+    end
+    return Expr(:block, exprs...)
+end
+
+function _generate_type_lookup(CS::Type{<:Tuple}, TargetType::Type, result_generator::Function)
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: _ComponentStorage && S.parameters[1] === TargetType
+            return result_generator(i)
+        end
+    end
+    return :(throw(ArgumentError($(lazy"Component type $(TargetType) not found in the World"))))
+end
