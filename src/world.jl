@@ -1941,7 +1941,7 @@ end
 end
 
 @generated function _activate_new_column_for_comp!(world::World{CS}, comp::Int, index::Int) where CS
-    _generate_component_switch(CS, :comp, 
+    _generate_component_switch(CS, :comp,
         i -> :(_activate_column!(world._storages.$i, index, world._initial_capacity)))
 end
 
@@ -1969,7 +1969,7 @@ end
     arch::UInt32,
     needed::Int,
 ) where CS
-    _generate_component_switch(CS, :comp, 
+    _generate_component_switch(CS, :comp,
         i -> :(_ensure_column_size!(world._storages.$i, arch, needed)))
 end
 
@@ -1980,7 +1980,7 @@ end
     new_arch::UInt32,
     row::UInt32,
 ) where CS
-    _generate_component_switch(CS, :comp, 
+    _generate_component_switch(CS, :comp,
         i -> :(_move_component_data!(world._storages.$i, old_arch, new_arch, row)))
 end
 
@@ -1997,7 +1997,7 @@ end
         mode = CP.parameters[1]
         throw(ArgumentError(":$mode is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
-    _generate_component_switch(CS, :comp, 
+    _generate_component_switch(CS, :comp,
         i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, mode)))
 end
 
@@ -2009,7 +2009,7 @@ end
     old_row::UInt32,
     new_row::UInt32,
 ) where {CS<:Tuple}
-    _generate_component_switch(CS, :comp, 
+    _generate_component_switch(CS, :comp,
         i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)))
 end
 
@@ -2018,7 +2018,7 @@ end
     comp::Int,
     arch::UInt32,
 ) where {CS<:Tuple}
-    _generate_component_switch(CS, :comp, 
+    _generate_component_switch(CS, :comp,
         i -> :(_clear_column!(world._storages.$i, arch)))
 end
 
@@ -2028,7 +2028,7 @@ end
     arch::UInt32,
     row::UInt32,
 ) where {CS<:Tuple}
-    _generate_component_switch(CS, :comp, 
+    _generate_component_switch(CS, :comp,
         i -> :(_remove_component_data!(world._storages.$i, arch, row)))
 end
 
