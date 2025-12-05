@@ -1,12 +1,12 @@
 
 struct _TableIDs
     tables::Vector{UInt32}
-    indices::Dict{UInt32,Int}
+    indices::_Linear_Map2{UInt32,Int}
 end
 
 function _TableIDs(tables::UInt32...)
     vec = collect(tables)
-    indices = Dict{UInt32,Int}()
+    indices = _Linear_Map2{UInt32,Int}()
 
     for (i, table) in enumerate(tables)
         indices[table] = i
@@ -76,8 +76,8 @@ end
 mutable struct _Archetype{M}
     const components::Vector{Int}
     const tables::_TableIDs
-    const index::Vector{Dict{UInt32,_TableIDs}}
-    const target_tables::Dict{UInt32,_TableIDs}
+    const index::Vector{_Linear_Map2{UInt32,_TableIDs}}
+    const target_tables::_Linear_Map2{UInt32,_TableIDs}
     const free_tables::Vector{UInt32}
     const node::_GraphNode{M}
     const num_relations::UInt32
@@ -89,8 +89,8 @@ function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
     _Archetype(
         Vector{Int}(),
         _TableIDs(table),
-        Vector{Dict{UInt32,_TableIDs}}(),
-        Dict{UInt32,_TableIDs}(),
+        Vector{_Linear_Map2{UInt32,_TableIDs}}(),
+        _Linear_Map2{UInt32,_TableIDs}(),
         Vector{UInt32}(),
         node,
         UInt32(0),
@@ -109,8 +109,8 @@ function _Archetype(
     _Archetype(
         collect(Int, components),
         _TableIDs(),
-        [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
-        Dict{UInt32,_TableIDs}(),
+        [_Linear_Map2{UInt32,_TableIDs}() for _ in eachindex(relations)],
+        _Linear_Map2{UInt32,_TableIDs}(),
         Vector{UInt32}(),
         node,
         UInt32(length(relations)),
