@@ -79,7 +79,11 @@ function _generate_component_switch(CS::Type{<:Tuple}, comp_idx_sym::Symbol, fun
     exprs = Expr[]
     for i in 1:N
         call_expr = func_generator(i)
-        push!(exprs, :(if $comp_idx_sym == $i; return $call_expr; end))
+        push!(exprs, :(
+            if $comp_idx_sym == $i
+                return $call_expr
+            end
+        ))
     end
     return Expr(:block, exprs...)
 end
