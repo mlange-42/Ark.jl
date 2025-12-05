@@ -11,7 +11,7 @@
     for i in 1:10
         query = Query(world, (Position, Velocity))
         @test Base.IteratorSize(typeof(query)) == Base.SizeUnknown()
-        @test query._has_excluded == false
+        @test query._filter._has_excluded == false
         @test length(query) == 1
         @test count_entities(query) == 10
         count = 0
@@ -36,6 +36,27 @@
         @test count == 10
         @test is_locked(world) == false
     end
+end
+
+@testset "Query from filter" begin
+    world = World(Dummy, Position, Velocity, Altitude, Health)
+
+    for i in 1:10
+        new_entity!(world, (Altitude(1), Health(2)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Health(3)))
+    end
+
+    filter = Filter(world, (Position, Velocity))
+    query = Query(filter)
+    @test length(query) == 1
+    @test count_entities(query) == 10
+    close!(query)
+    count = 0
+    for (entities, vec_pos, vec_vel) in Query(filter)
+        count += length(entities)
+    end
+    @test count == 10
 end
 
 @testset "Query with" begin
@@ -101,9 +122,9 @@ end
     arch = 1
     for (ent, vec_pos, vec_vel, vec_alt) in query
         if arch == 1
-            @test vec_alt == nothing
+            @test vec_alt === nothing
         else
-            @test vec_alt != nothing
+            @test vec_alt !== nothing
         end
         for i in eachindex(ent)
             e = ent[i]
@@ -129,7 +150,7 @@ end
     )
 
     query = Query(world, (Position, Velocity); with=(Altitude,), exclusive=true)
-    @test query._has_excluded == true
+    @test query._filter._has_excluded == true
     @test length(query) == 1
     @test count_entities(query) == 10
 

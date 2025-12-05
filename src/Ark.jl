@@ -23,6 +23,7 @@ include("pool.jl")
 include("lock.jl")
 include("world.jl")
 include("observer.jl")
+include("filter.jl")
 include("query.jl")
 include("batch.jl")
 
@@ -40,7 +41,7 @@ export get_resource, has_resource, add_resource!, set_resource!, remove_resource
 export Entity
 export is_zero
 
-export Query, Batch
+export Query, Batch, Filter
 export close!, count_entities
 
 export Entities

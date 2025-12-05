@@ -6,6 +6,7 @@
 
 - Adds entity relationships (#340, #349)
 - Adds events for relationship changes (#370)
+- Adds re-usable filters for query construction (#375)
 
 ### Performance
 

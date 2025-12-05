@@ -62,9 +62,12 @@ certain set of [Components](@ref components-api).
 ```@docs
 Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
+Query(::Filter)
 close!(::Query)
 count_entities(::Query)
 length(::Query)
+Filter
+Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
 Entities
 @unpack
 unpack
