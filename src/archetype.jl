@@ -160,11 +160,11 @@ function _free_table!(a::_Archetype, table::_Table)
 
     # TODO: can/should we be more selective here?
     for dict in a.index
-        for (_, tables) in dict
+        for tables in values(dict)
             _remove_table!(tables, table.id)
         end
     end
-    for (_, tables) in a.target_tables
+    for tables in values(a.target_tables)
         _remove_table!(tables, table.id)
     end
 end
