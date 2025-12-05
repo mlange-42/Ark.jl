@@ -153,8 +153,7 @@ end
         if tab == 0
             @inbounds archetype_hot = q._archetypes_hot[arch]
 
-            if !_contains_all(archetype_hot.mask, q._filter._mask) ||
-               (q._filter._has_excluded && _contains_any(archetype_hot.mask, q._filter._exclude_mask))
+            if !_matches(q._filter, archetype_hot)
                 arch += 1
                 continue
             end
@@ -220,14 +219,14 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 """
 function Base.length(q::Query)
     count = 0
-    for archetype in q._archetypes
-        if !_contains_all(archetype.node.mask, q._filter._mask) ||
-           (q._filter._has_excluded && _contains_any(archetype.node.mask, q._filter._exclude_mask))
+    for i in eachindex(q._archetypes)
+        archetype_hot = @inbounds q._archetypes_hot[i]
+        if !_matches(q._filter, archetype_hot)
             continue
         end
 
-        if !_has_relations(archetype)
-            table = @inbounds q._filter._world._tables[Int(archetype.table)]
+        if !archetype_hot.has_relations
+            table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
             if isempty(table.entities)
                 continue
             end
@@ -235,6 +234,7 @@ function Base.length(q::Query)
             continue
         end
 
+        archetype = @inbounds q._archetypes[i]
         if isempty(archetype.tables.tables)
             continue
         end
@@ -265,18 +265,19 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 """
 function count_entities(q::Query)
     count = 0
-    for archetype in q._archetypes
-        if !_contains_all(archetype.node.mask, q._filter._mask) ||
-           (q._filter._has_excluded && _contains_any(archetype.node.mask, q._filter._exclude_mask))
+    for i in eachindex(q._archetypes)
+        archetype_hot = @inbounds q._archetypes_hot[i]
+        if !_matches(q._filter, archetype_hot)
             continue
         end
 
-        if !_has_relations(archetype)
-            table = @inbounds q._filter._world._tables[Int(archetype.table)]
+        if !archetype_hot.has_relations
+            table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
             count += length(table.entities)
             continue
         end
 
+        archetype = @inbounds q._archetypes[i]
         if isempty(archetype.tables.tables)
             continue
         end
