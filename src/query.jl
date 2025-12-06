@@ -209,8 +209,8 @@ end
 
 @inline function Base.iterate(q::Query, state::Int)
     if state <= length(q._filter.tables)
-        table_id = q._filter.tables.tables[state]
-        table = q._world._tables[table_id]
+        @inbounds table_id = q._filter.tables.tables[state]
+        @inbounds table = q._world._tables[table_id]
         result = _get_columns(q, table)
         return result, state + 1
     end
@@ -247,9 +247,7 @@ end
     end
 
     return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
+        $(Expr(:block, exprs...))
     end
 end
 
@@ -264,7 +262,30 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 
     The time complexity is linear with the number of tables in the query's pre-selection.
 """
-function Base.length(q::Query)
+@generated function Base.length(
+    q::Query{W,TS,SM,EX,OPT,REG},
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG<:Val}
+    exprs = Expr[]
+    if REG === Val{true}
+        push!(
+            exprs,
+            :(
+                if q._filter.id[] == 0
+                    throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
+                end
+            ),
+        )
+        push!(exprs, :(return _length_registered(q)))
+    else
+        push!(exprs, :(return _length(q)))
+    end
+
+    return quote
+        $(Expr(:block, exprs...))
+    end
+end
+
+function _length(q::Query)
     count = 0
     for i in eachindex(q._archetypes)
         archetype_hot = @inbounds q._archetypes_hot[i]
@@ -298,6 +319,17 @@ function Base.length(q::Query)
     count
 end
 
+function _length_registered(q::Query)
+    count = 0
+    for table_id in q._filter.tables.tables
+        table = @inbounds q._world._tables[table_id]
+        if !isempty(table.entities)
+            count += 1
+        end
+    end
+    return count
+end
+
 """
     count_entities(q::Query)
 
@@ -310,7 +342,30 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     The time complexity is linear with the number of archetypes in the query's pre-selection.
     It is equivalent to iterating the query's archetypes and summing up their lengths.
 """
-function count_entities(q::Query)
+@generated function count_entities(
+    q::Query{W,TS,SM,EX,OPT,REG},
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG<:Val}
+    exprs = Expr[]
+    if REG === Val{true}
+        push!(
+            exprs,
+            :(
+                if q._filter.id[] == 0
+                    throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
+                end
+            ),
+        )
+        push!(exprs, :(return _count_entities_registered(q)))
+    else
+        push!(exprs, :(return _count_entities(q)))
+    end
+
+    return quote
+        $(Expr(:block, exprs...))
+    end
+end
+
+function _count_entities(q::Query)
     count = 0
     for i in eachindex(q._archetypes)
         archetype_hot = @inbounds q._archetypes_hot[i]
@@ -339,6 +394,15 @@ function count_entities(q::Query)
         end
     end
     count
+end
+
+function _count_entities_registered(q::Query)
+    count = 0
+    for table_id in q._filter.tables.tables
+        table = @inbounds q._world._tables[table_id]
+        count += length(table.entities)
+    end
+    return count
 end
 
 """

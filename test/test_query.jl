@@ -69,10 +69,11 @@ end
     end
 
     filter = Filter(world, (Position, Velocity); register=true)
-    #query = Query(filter)
-    #@test length(query) == 1
-    #@test count_entities(query) == 10
-    #close!(query)
+    query = Query(filter)
+    @test length(query) == 1
+    @test count_entities(query) == 10
+    close!(query)
+
     count = 0
     for (entities, vec_pos, vec_vel) in Query(filter)
         count += length(entities)
@@ -80,9 +81,18 @@ end
     @test count == 10
 
     unregister(filter)
+    query = Query(filter)
     @test_throws(
         "InvalidStateException: the filter of this query got unregistered",
-        for (entities, vec_pos, vec_vel) in Query(filter)
+        length(query)
+    )
+    @test_throws(
+        "InvalidStateException: the filter of this query got unregistered",
+        count_entities(query)
+    )
+    @test_throws(
+        "InvalidStateException: the filter of this query got unregistered",
+        for (entities, vec_pos, vec_vel) in query
         end
     )
 end
