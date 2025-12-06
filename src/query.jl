@@ -122,7 +122,7 @@ end
     required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
     ids_tuple = tuple(required_ids...)
 
-    # TODO: simplify/omit this for registered filters
+    # TODO: simplify/omit this for registered filters (only if comp-time, which it is currently not)
     archetypes =
         length(ids_tuple) == 0 ? :((filter._world._archetypes, filter._world._archetypes_hot)) :
         :(_get_archetypes(filter._world, $ids_tuple))
@@ -247,17 +247,11 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 
     The time complexity is linear with the number of tables in the query's pre-selection.
 """
-@generated function Base.length(q::Q) where {Q<:Query}
-    REG = Q.parameters[6]
-    exprs = Expr[]
-    if REG === Val{true}
-        push!(exprs, :(return _length_registered(q)))
+function Base.length(q::Q) where {Q<:Query}
+    if q._filter.id[] == 0
+        return _length(q)
     else
-        push!(exprs, :(return _length(q)))
-    end
-
-    return quote
-        $(Expr(:block, exprs...))
+        return _length_registered(q)
     end
 end
 
@@ -321,17 +315,11 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     The time complexity is linear with the number of archetypes in the query's pre-selection.
     It is equivalent to iterating the query's archetypes and summing up their lengths.
 """
-@generated function count_entities(q::Q) where {Q<:Query}
-    REG = Q.parameters[6]
-    exprs = Expr[]
-    if REG === Val{true}
-        push!(exprs, :(return _count_entities_registered(q)))
+function count_entities(q::Q) where {Q<:Query}
+    if q._filter.id[] == 0
+        return _count_entities(q)
     else
-        push!(exprs, :(return _count_entities(q)))
-    end
-
-    return quote
-        $(Expr(:block, exprs...))
+        return _count_entities_registered(q)
     end
 end
 

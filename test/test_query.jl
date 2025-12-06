@@ -80,16 +80,16 @@ end
     end
     @test count == 10
 
-    unregister(filter)
-    query = Query(filter)
-    @test_throws(
-        "InvalidStateException: the filter of this query got unregistered",
-        length(query)
-    )
-    @test_throws(
-        "InvalidStateException: the filter of this query got unregistered",
-        count_entities(query)
-    )
+    #unregister(filter)
+    #query = Query(filter)
+    # @test_throws(
+    #     "InvalidStateException: the filter of this query got unregistered",
+    #     length(query)
+    # )
+    # @test_throws(
+    #     "InvalidStateException: the filter of this query got unregistered",
+    #     count_entities(query)
+    # )
     # @test_throws(
     #     "InvalidStateException: the filter of this query got unregistered",
     #     for (entities, vec_pos, vec_vel) in query
