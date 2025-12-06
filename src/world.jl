@@ -150,6 +150,7 @@ end
     add_mask::_Mask,
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
+    world_has_rel::Val{false},
 )::Tuple{UInt32,Bool}
     @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index, is_new = _find_or_create_archetype!(
@@ -167,6 +168,30 @@ end
 
     @inbounds new_arch = world._archetypes[new_arch_index]
     return _find_or_create_table!(world, old_table, new_arch_hot, new_arch, relations, targets, !isempty(remove))
+end
+
+@inline function _find_or_create_table!(
+    world::World,
+    old_table::_Table,
+    add::Tuple{Vararg{Int}},
+    remove::Tuple{Vararg{Int}},
+    relations::Tuple{Vararg{Int}},
+    targets::Tuple{Vararg{Entity}},
+    add_mask::_Mask,
+    rem_mask::_Mask,
+    use_map::Union{_NoUseMap,_UseMap},
+    world_has_rel::Val{true},
+)::Tuple{UInt32,Bool}
+    @inbounds old_arch = world._archetypes[old_table.archetype]
+    new_arch_index, is_new = _find_or_create_archetype!(
+        world, old_arch.node, add, remove, relations, add_mask, rem_mask, use_map,
+    )
+    @inbounds new_arch_hot = world._archetypes_hot[new_arch_index]
+    if is_new
+        @inbounds new_arch = world._archetypes[new_arch_index]
+        return _create_table!(world, new_arch, _empty_relations), false
+    end
+    return new_arch_hot.table, false
 end
 
 # internal for handling relations
@@ -592,6 +617,7 @@ end
     add_mask = _Mask{M}(add_ids...)
     rem_mask = _Mask{M}(rem_ids...)
 
+    world_has_rel = Val{_has_relations(CS)}()
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_table = world._tables[index.table]))
     push!(exprs, :(old_archetype = world._archetypes[old_table.archetype]))
@@ -601,6 +627,7 @@ end
             new_table_index =
                 _find_or_create_table!(
                     world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
+                    $world_has_rel,
                 )[1]
         ),
     )
@@ -1140,6 +1167,8 @@ end
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
 
+    world_has_rel = Val{_has_relations(CS)}()
+
     exprs = []
     push!(
         exprs,
@@ -1154,6 +1183,7 @@ end
                 $add_mask,
                 $rem_mask,
                 $use_map,
+                $world_has_rel,
             )[1]
         ),
     )
@@ -1356,6 +1386,8 @@ end
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
 
+    world_has_rel = Val{_has_relations(CS)}()
+
     exprs = []
     push!(
         exprs,
@@ -1370,6 +1402,7 @@ end
                 $add_mask,
                 $rem_mask,
                 $use_map,
+                $world_has_rel,
             )[1]
         ),
     )
@@ -1510,6 +1543,8 @@ end
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
 
+    world_has_rel = Val{_has_relations(CS)}()
+
     exprs = []
     push!(
         exprs,
@@ -1524,6 +1559,7 @@ end
                 $add_mask,
                 $rem_mask,
                 $use_map,
+                $world_has_rel,
             )[1]
         ),
     )
@@ -1689,6 +1725,8 @@ end
     add_mask = _Mask{M}(add_ids...)
     rem_mask = _Mask{M}(rem_ids...)
 
+    world_has_rel = Val{_has_relations(CS)}()
+
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_table = world._tables[index.table]))
     push!(
@@ -1697,6 +1735,7 @@ end
             new_table_tuple =
                 _find_or_create_table!(
                     world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
+                    $world_has_rel
                 )
         ),
     )

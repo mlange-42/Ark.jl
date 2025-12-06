@@ -97,3 +97,13 @@ function _generate_type_lookup(CS::Type{<:Tuple}, TargetType::Type, result_gener
     end
     return :(throw(ArgumentError($(lazy"Component type $(TargetType) not found in the World"))))
 end
+
+function _has_relations(CS::Type{<:Tuple})
+    storage_types = CS.parameters
+    for (i, S) in enumerate(storage_types)
+        if S <: Relationship
+            return true
+        end
+    end
+    return false
+end
