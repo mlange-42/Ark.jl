@@ -127,6 +127,8 @@ end
                 $(mask),
                 $(exclude_mask),
                 relations,
+                _empty_table_ids,
+                Base.RefValue{UInt32}(UInt32(0)),
                 $(has_excluded),
             ),
             world,

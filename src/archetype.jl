@@ -46,6 +46,7 @@ Base.length(t::_TableIDs) = length(t.tables)
 Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
 
 const _empty_tables = Vector{UInt32}()
+const _empty_table_ids = _TableIDs()
 
 struct _ArchetypeHot{M}
     mask::_Mask{M}
