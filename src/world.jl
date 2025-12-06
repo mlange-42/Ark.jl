@@ -701,49 +701,57 @@ remove_entity!(world, entity)
 
 ```
 """
-function remove_entity!(world::World, entity::Entity)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't remove a dead entity"))
-    end
-    _check_locked(world)
-
-    index = world._entities[entity._id]
-    table = world._tables[index.table]
-    archetype = world._archetypes[table.archetype]
-
-    has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
-    has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
-    if has_entity_obs || has_rel_obs
-        l = _lock(world._lock)
-        if has_entity_obs
-            _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
+@generated function remove_entity!(world::W, entity::Entity) where {W<:World}
+    CS = W.parameters[1]
+    has_rel = _has_relations(CS)
+    quote
+        if !is_alive(world, entity)
+            throw(ArgumentError("can't remove a dead entity"))
         end
-        if has_rel_obs
-            _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
+        _check_locked(world)
+
+        index = world._entities[entity._id]
+        table = world._tables[index.table]
+        archetype = world._archetypes[table.archetype]
+
+        has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
+        if $has_rel
+            has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
+        else
+            has_rel_obs = false
         end
-        _unlock(world._lock, l)
+        if has_entity_obs || has_rel_obs
+            l = _lock(world._lock)
+            if has_entity_obs
+                _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
+            end
+            if has_rel_obs
+                _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
+            end
+            _unlock(world._lock, l)
+        end
+
+        swapped = _swap_remove!(table.entities._data, index.row)
+
+        # Only operate on storages for components present in this archetype
+        for comp in archetype.components
+            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
+        end
+
+        if swapped
+            swap_entity = table.entities[index.row]
+            world._entities[swap_entity._id] = index
+        end
+
+        _recycle(world._entity_pool, entity)
+
+        if world._targets[entity._id]
+            _cleanup_archetypes(world, entity)
+            world._targets[entity._id] = false
+        end
+
+        return nothing
     end
-
-    swapped = _swap_remove!(table.entities._data, index.row)
-
-    # Only operate on storages for components present in this archetype
-    for comp in archetype.components
-        _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
-    end
-
-    if swapped
-        swap_entity = table.entities[index.row]
-        world._entities[swap_entity._id] = index
-    end
-
-    _recycle(world._entity_pool, entity)
-
-    if world._targets[entity._id]
-        _cleanup_archetypes(world, entity)
-        world._targets[entity._id] = false
-    end
-
-    return nothing
 end
 
 """
