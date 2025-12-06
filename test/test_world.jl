@@ -128,6 +128,7 @@ end
         _Mask{M_mask}(1),
         _Mask{M_mask}(),
         _NoUseMap(),
+        Val(false),
     )
     @test table1 == (2, false)
     @test world._tables[table1[1]].archetype == 2
@@ -143,6 +144,7 @@ end
         _Mask{M_mask}(1),
         _Mask{M_mask}(),
         _NoUseMap(),
+        Val(false),
     )
     @test table2 == (3, false)
     @test world._tables[table2[1]].archetype == 3
@@ -158,6 +160,7 @@ end
         _Mask{M_mask}(1),
         _Mask{M_mask}(),
         _NoUseMap(),
+        Val(false),
     )
     @test table3 == table1
     @test length(world._tables) == 3
@@ -241,6 +244,7 @@ end
         _Mask{M_mask}(pos_id),
         _Mask{M_mask}(),
         _NoUseMap(),
+        Val(false),
     )
     @test index == (2, false)
     @test length(world._tables) == 2
@@ -259,6 +263,7 @@ end
         _Mask{M_mask}(pos_id, vel_id),
         _Mask{M_mask}(),
         _NoUseMap(),
+        Val(false),
     )
     @test index == (3, false)
     @test length(world._tables) == 3
@@ -274,6 +279,7 @@ end
         _Mask{M_mask}(pos_id, vel_id),
         _Mask{M_mask}(),
         _UseMap(),
+        Val(false),
     )
     @test index == (3, false)
     @test length(world._tables) == 3
@@ -309,6 +315,7 @@ end
         _Mask{M_mask}(pos_id, vel_id),
         _Mask{M_mask}(),
         _NoUseMap(),
+        Val(false),
     )
     @test table_index == (2, false)
 
