@@ -157,7 +157,7 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     return rare_comp, rare_hot
 end
 
-@inline function Base.iterate(q::Query, state::Tuple{Int,Int})
+@inline function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
     arch, tab = state
     while arch <= length(q._archetypes)
         if tab == 0
@@ -207,7 +207,7 @@ end
     return nothing
 end
 
-@inline function Base.iterate(q::Query, state::Int)
+@inline function Base.iterate(q::Q, state::Int) where {Q<:Query}
     if state <= length(q._filter.tables)
         @inbounds table_id = q._filter.tables.tables[state]
         @inbounds table = q._world._tables[table_id]
@@ -219,8 +219,9 @@ end
 end
 
 @inline @generated function Base.iterate(
-    q::Query{W,TS,SM,EX,OPT,REG},
-) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG<:Val}
+    q::Q,
+) where {Q<:Query}
+    REG = Q.parameters[6]
     exprs = Expr[]
     push!(
         exprs,
@@ -284,7 +285,7 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     end
 end
 
-function _length(q::Query)
+function _length(q::Q) where {Q<:Query}
     count = 0
     for i in eachindex(q._archetypes)
         archetype_hot = @inbounds q._archetypes_hot[i]
@@ -318,7 +319,7 @@ function _length(q::Query)
     count
 end
 
-function _length_registered(q::Query)
+function _length_registered(q::Q) where {Q<:Query}
     count = 0
     for table_id in q._filter.tables.tables
         table = @inbounds q._world._tables[table_id]
@@ -363,7 +364,7 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     end
 end
 
-function _count_entities(q::Query)
+function _count_entities(q::Q) where {Q<:Query}
     count = 0
     for i in eachindex(q._archetypes)
         archetype_hot = @inbounds q._archetypes_hot[i]
@@ -394,7 +395,7 @@ function _count_entities(q::Query)
     count
 end
 
-function _count_entities_registered(q::Query)
+function _count_entities_registered(q::Q) where {Q<:Query}
     count = 0
     for table_id in q._filter.tables.tables
         table = @inbounds q._world._tables[table_id]
@@ -410,7 +411,7 @@ Closes the query and unlocks the world.
 
 Must be called if a query is not fully iterated.
 """
-function close!(q::Query)
+function close!(q::Q) where {Q<:Query}
     _unlock(q._world._lock, q._lock)
     q._q_lock.closed = true
     return nothing
