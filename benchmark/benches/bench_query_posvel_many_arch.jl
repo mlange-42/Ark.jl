@@ -1,5 +1,5 @@
 
-function setup_query_posvel_32_arch(n_entities::Int, register::Bool)
+function setup_query_posvel_32_arch(n_entities::Int)
     world = World(
         Position, Velocity,
         CompN{1}, CompN{2}, CompN{3}, CompN{4}, CompN{5};
@@ -35,10 +35,8 @@ function setup_query_posvel_32_arch(n_entities::Int, register::Bool)
         error("expected $expected_archetypes archetypes, got $num_archetypes")
     end
 
-    filter = Filter(world, (Position, Velocity); register=register)
-
     sum = 0
-    for (_, pos_column, vel_column) in Query(filter)
+    for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
         for i in eachindex(pos_column)
             @inbounds pos = pos_column[i]
             @inbounds vel = vel_column[i]
@@ -94,18 +92,41 @@ function setup_query_posvel_1k_arch(n_entities::Int, register::Bool)
     filter = Filter(world, (Position, Velocity); register=register)
 
     sum = 0
-    for (_, pos_column, vel_column) in Query(filter)
-        for i in eachindex(pos_column)
-            @inbounds pos = pos_column[i]
-            @inbounds vel = vel_column[i]
-            @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+    if register
+        for (_, pos_column, vel_column) in Query(filter)
+            for i in eachindex(pos_column)
+                @inbounds pos = pos_column[i]
+                @inbounds vel = vel_column[i]
+                @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+            end
+            sum += length(pos_column) + length(vel_column)
         end
-        sum += length(pos_column) + length(vel_column)
+    else
+        for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
+            for i in eachindex(pos_column)
+                @inbounds pos = pos_column[i]
+                @inbounds vel = vel_column[i]
+                @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+            end
+            sum += length(pos_column) + length(vel_column)
+        end
     end
     return world, filter, sum
 end
 
 function benchmark_query_posvel_many_arch(args, n)
+    world, _, _ = args
+    for (_, pos_column, vel_column) in Query(world, (Position, Velocity))
+        for i in eachindex(pos_column)
+            @inbounds pos = pos_column[i]
+            @inbounds vel = vel_column[i]
+            @inbounds pos_column[i] = Position(pos.x + vel.dx, pos.y + vel.dy)
+        end
+    end
+    return world
+end
+
+function benchmark_query_posvel_many_arch_cached(args, n)
     world, filter, _ = args
     for (_, pos_column, vel_column) in Query(filter)
         for i in eachindex(pos_column)
@@ -119,7 +140,7 @@ end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
     SUITE["benchmark_query_posvel_32_arch n=$(n)"] =
-        @be setup_query_posvel_32_arch($n, $(false)) benchmark_query_posvel_many_arch(_, $n) evals = 100 seconds =
+        @be setup_query_posvel_32_arch($n) benchmark_query_posvel_many_arch(_, $n) evals = 100 seconds =
             SECONDS
 end
 
@@ -131,6 +152,6 @@ end
 
 for n in (100, 1_000, 10_000, 100_000, 1_000_000)
     SUITE["benchmark_query_posvel_1k_arch_cached n=$(n)"] =
-        @be setup_query_posvel_1k_arch($n, $(true)) benchmark_query_posvel_many_arch(_, $n) evals = 100 seconds =
+        @be setup_query_posvel_1k_arch($n, $(true)) benchmark_query_posvel_many_arch_cached(_, $n) evals = 100 seconds =
             SECONDS
 end
