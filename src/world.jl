@@ -617,7 +617,8 @@ end
     add_mask = _Mask{M}(add_ids...)
     rem_mask = _Mask{M}(rem_ids...)
 
-    world_has_rel = Val{_has_relations(CS)}()
+    has_rel = _has_relations(CS)
+    world_has_rel = Val{has_rel}()
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_table = world._tables[index.table]))
     push!(exprs, :(old_archetype = world._archetypes[old_table.archetype]))
@@ -663,10 +664,15 @@ end
 
     push!(exprs, :(
         begin
+            if $has_rel
+                has_rel_obs = new_archetype.has_relations && _has_observers(world._event_manager, OnAddRelations)
+            else
+                has_rel_obs = false
+            end
             if _has_observers(world._event_manager, OnCreateEntity)
                 _fire_create_entity(world._event_manager, new_entity, new_archetype.mask)
             end
-            if new_archetype.has_relations && _has_observers(world._event_manager, OnAddRelations)
+            if has_rel_obs
                 _fire_create_entity_relations(world._event_manager, new_entity, new_archetype.mask)
             end
         end
@@ -1386,7 +1392,8 @@ end
     add_mask = _Mask{M}(ids...)
     rem_mask = _Mask{M}()
 
-    world_has_rel = Val{_has_relations(CS)}()
+    has_rel = _has_relations(CS)
+    world_has_rel = Val{has_rel}()
 
     exprs = []
     push!(
@@ -1442,7 +1449,11 @@ end
                 return batch
             else
                 has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
-                has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                if $has_rel
+                    has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                else
+                    has_rel_obs = false
+                end
                 if has_entity_obs || has_rel_obs
                     l = _lock(world._lock)
                     batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
@@ -1725,7 +1736,8 @@ end
     add_mask = _Mask{M}(add_ids...)
     rem_mask = _Mask{M}(rem_ids...)
 
-    world_has_rel = Val{_has_relations(CS)}()
+    has_rel = _has_relations(CS)
+    world_has_rel = Val{has_rel}()
 
     push!(exprs, :(index = world._entities[entity._id]))
     push!(exprs, :(old_table = world._tables[index.table]))
@@ -1749,7 +1761,11 @@ end
             :(
                 begin
                     has_comp_obs = _has_observers(world._event_manager, OnRemoveComponents)
-                    has_rel_obs = relations_removed && _has_observers(world._event_manager, OnRemoveRelations)
+                    if $has_rel
+                        has_rel_obs = relations_removed && _has_observers(world._event_manager, OnRemoveRelations)
+                    else
+                        has_rel_obs = false
+                    end
                     if has_comp_obs || has_rel_obs
                         l = _lock(world._lock)
                         old_mask = world._archetypes_hot[old_table.archetype].mask
