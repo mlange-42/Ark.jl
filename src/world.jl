@@ -459,8 +459,8 @@ end
         push!(world._entities, _EntityIndex(table_index, UInt32(index)))
         push!(world._targets, false)
     else
-        @inbounds world._entities[entity._id] = _EntityIndex(table_index, UInt32(index))
-        @inbounds world._targets[entity._id] = false
+        @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, UInt32(index))
+        @inbounds world._targets[Int(entity._id)] = false
     end
     return entity, index
 end
