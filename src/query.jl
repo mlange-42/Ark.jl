@@ -157,7 +157,20 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     return rare_comp, rare_hot
 end
 
-@inline function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
+@inline @generated function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
+    REG = Q.parameters[6]
+    exprs = Expr[]
+    if REG === Val{true}
+        push!(exprs, :(return _iterate_registered(q, state)))
+    else
+        push!(exprs, :(return _iterate(q, state)))
+    end
+    return quote
+        $(Expr(:block, exprs...))
+    end
+end
+
+@inline function _iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
     arch, tab = state
     while arch <= length(q._archetypes)
         if tab == 0
@@ -207,20 +220,19 @@ end
     return nothing
 end
 
-@inline function Base.iterate(q::Q, state::Int) where {Q<:Query}
-    if state <= length(q._filter.tables)
-        @inbounds table_id = q._filter.tables.tables[state]
+@inline function _iterate_registered(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
+    index, _ = state
+    if index <= length(q._filter.tables)
+        @inbounds table_id = q._filter.tables.tables[index]
         @inbounds table = q._world._tables[table_id]
         result = _get_columns(q, table)
-        return result, state + 1
+        return result, (index + 1, 0)
     end
     close!(q)
     return nothing
 end
 
-@inline @generated function Base.iterate(
-    q::Q,
-) where {Q<:Query}
+@inline @generated function Base.iterate(q::Q) where {Q<:Query}
     REG = Q.parameters[6]
     exprs = Expr[]
     push!(
@@ -242,10 +254,9 @@ end
                 end
             ),
         )
-        push!(exprs, :(return Base.iterate(q, 1)))
-    else
-        push!(exprs, :(return Base.iterate(q, (1, 0))))
     end
+
+    push!(exprs, :(return Base.iterate(q, (1, 0))))
 
     return quote
         $(Expr(:block, exprs...))
@@ -267,14 +278,6 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     REG = Q.parameters[6]
     exprs = Expr[]
     if REG === Val{true}
-        push!(
-            exprs,
-            :(
-                if q._filter.id[] == 0
-                    throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
-                end
-            ),
-        )
         push!(exprs, :(return _length_registered(q)))
     else
         push!(exprs, :(return _length(q)))
@@ -320,6 +323,9 @@ function _length(q::Q) where {Q<:Query}
 end
 
 function _length_registered(q::Q) where {Q<:Query}
+    if q._filter.id[] == 0
+        throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
+    end
     count = 0
     for table_id in q._filter.tables.tables
         table = @inbounds q._world._tables[table_id]
@@ -346,14 +352,6 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     REG = Q.parameters[6]
     exprs = Expr[]
     if REG === Val{true}
-        push!(
-            exprs,
-            :(
-                if q._filter.id[] == 0
-                    throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
-                end
-            ),
-        )
         push!(exprs, :(return _count_entities_registered(q)))
     else
         push!(exprs, :(return _count_entities(q)))
@@ -396,6 +394,9 @@ function _count_entities(q::Q) where {Q<:Query}
 end
 
 function _count_entities_registered(q::Q) where {Q<:Query}
+    if q._filter.id[] == 0
+        throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
+    end
     count = 0
     for table_id in q._filter.tables.tables
         table = @inbounds q._world._tables[table_id]
