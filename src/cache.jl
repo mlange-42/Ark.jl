@@ -109,3 +109,13 @@ function _remove_table!(cache::_Cache, table::_Table)
     end
     _clear!(table.filters)
 end
+
+function _reset!(cache::_Cache)
+    for filter in cache.filters
+        _clear!(filter.tables)
+        filter.id[] = UInt32(0)
+    end
+
+    resize!(cache.filters, 0)
+    resize!(cache.free_indices, 0)
+end

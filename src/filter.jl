@@ -158,11 +158,6 @@ function _matches(filter::F, archetype::_ArchetypeHot) where {F<:_MaskFilter}
            (!filter.has_excluded || !_contains_any(archetype.mask, filter.exclude_mask))
 end
 
-function _matches(filter::F, archetype::_Archetype) where {F<:_MaskFilter}
-    return _contains_all(archetype.node.mask, filter.mask) &&
-           (!filter.has_excluded || !_contains_any(archetype.node.mask, filter.exclude_mask))
-end
-
 function Base.show(io::IO, filter::Filter{W,CT,EX,OPT,M,REG}) where {W<:World,CT<:Tuple,EX<:Val,OPT,M,REG<:Val}
     world_types = W.parameters[2].parameters
     comp_types = CT.parameters

@@ -2214,9 +2214,11 @@ function reset!(world::W) where {W<:World}
     _reset!(world._entity_pool)
     _reset!(world._lock)
     _reset!(world._event_manager)
+    _reset!(world._cache)
 
     for table in world._tables
         resize!(table, 0)
+        _clear!(table.filters)
         archetype = world._archetypes[table.archetype]
         for comp in archetype.components
             _clear_component_data!(world, comp, table.id)
