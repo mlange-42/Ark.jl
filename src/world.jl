@@ -9,7 +9,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 const _no_entity::Entity = _new_entity(0, 0)
 
-const _empty_relations = Vector{Pair{Int,Entity}}()
+const _empty_relations::Vector{Pair{Int,Entity}} = Vector{Pair{Int,Entity}}()
 
 struct _WorldPool{M}
     relations::Vector{Pair{Int,Entity}}
