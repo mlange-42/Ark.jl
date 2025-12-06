@@ -126,7 +126,7 @@ end
         else
             _empty_relations
         end
-        Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$M,$C}(
+        filter = Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$M,$C}(
             _MaskFilter{$M}(
                 $(mask),
                 $(exclude_mask),
@@ -137,12 +137,21 @@ end
             ),
             world,
         )
+        if $is_cached
+            _register_filter(world, filter._filter)
+        end
+        return filter
     end
 end
 
 function _matches(filter::F, archetype::_ArchetypeHot) where {F<:_MaskFilter}
     return _contains_all(archetype.mask, filter.mask) &&
            (!filter.has_excluded || !_contains_any(archetype.mask, filter.exclude_mask))
+end
+
+function _matches(filter::F, archetype::_Archetype) where {F<:_MaskFilter}
+    return _contains_all(archetype.node.mask, filter.mask) &&
+           (!filter.has_excluded || !_contains_any(archetype.node.mask, filter.exclude_mask))
 end
 
 function Base.show(io::IO, filter::Filter{W,CT,EX,OPT,M,C}) where {W<:World,CT<:Tuple,EX<:Val,OPT,M,C<:Val}

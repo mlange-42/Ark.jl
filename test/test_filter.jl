@@ -6,6 +6,12 @@
     f2 = Filter(world, (Position, Velocity); with=(Altitude,))
     f3 = Filter(world, (Position, Velocity); without=(Altitude,))
     f4 = Filter(world, (Position, Velocity); exclusive=true)
+
+    f5 = Filter(world, (Position, Velocity); cached=true)
+    @test length(world._cache.filters) == 1
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    @test length(f5._filter.tables.tables) == 1
 end
 
 @testset "Filter show" begin

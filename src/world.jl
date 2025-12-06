@@ -44,6 +44,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager{World{CS,CT,ST,N,M},M}
+    const _cache::_Cache{M}
     const _pool::_WorldPool{M}
     const _initial_capacity::Int
 end
@@ -300,6 +301,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     end
 
     _add_table!(world._relations, arch, table)
+    _add_table!(world._cache, world, arch, table)
 
     return UInt32(new_table_id)
 end
@@ -1938,6 +1940,7 @@ end
                 World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
                 $(M),
             }(),
+            _Cache{$M}(),
             _WorldPool{$M}(),
             initial_capacity,
         )
