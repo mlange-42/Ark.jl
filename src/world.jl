@@ -745,12 +745,14 @@ remove_entity!(world, entity)
 
         _recycle(world._entity_pool, entity)
 
-        $(world_has_rel ? 
-            :(if world._targets[entity._id]
+        $(world_has_rel ?
+          :(
+            if world._targets[entity._id]
                 _cleanup_archetypes(world, entity)
                 world._targets[entity._id] = false
-            end) : 
-            (:(nothing))
+            end
+        ) :
+          (:(nothing))
         )
 
         return nothing
