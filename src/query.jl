@@ -262,9 +262,8 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 
     The time complexity is linear with the number of tables in the query's pre-selection.
 """
-@generated function Base.length(
-    q::Query{W,TS,SM,EX,OPT,REG},
-) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG<:Val}
+@generated function Base.length(q::Q) where {Q<:Query}
+    REG = Q.parameters[6]
     exprs = Expr[]
     if REG === Val{true}
         push!(
@@ -342,9 +341,8 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     The time complexity is linear with the number of archetypes in the query's pre-selection.
     It is equivalent to iterating the query's archetypes and summing up their lengths.
 """
-@generated function count_entities(
-    q::Query{W,TS,SM,EX,OPT,REG},
-) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG<:Val}
+@generated function count_entities(q::Q) where {Q<:Query}
+    REG = Q.parameters[6]
     exprs = Expr[]
     if REG === Val{true}
         push!(
