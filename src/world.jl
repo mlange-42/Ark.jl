@@ -125,19 +125,19 @@ end
     start::_GraphNode,
     add::Tuple{Vararg{Int}},
     remove::Tuple{Vararg{Int}},
+    relations::Tuple{Vararg{Int}},
     add_mask::_Mask,
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
-    table::UInt32,
 )::Tuple{UInt32,Bool}
     node = _find_node(world._graph, start, add, remove, add_mask, rem_mask, use_map)
 
-    archetype_new =
-        (node.archetype[] == typemax(UInt32)) ?
-        (_create_archetype!(world, node, table), true) :
-        (node.archetype[], false)
-
-    return archetype_new
+    if node.archetype[] == typemax(UInt32)
+        table = ifelse(isempty(relations), UInt32(length(world._tables) + 1), UInt32(0))
+        return (_create_archetype!(world, node, table), true)
+    else
+        return (node.archetype[], false)
+    end
 end
 
 @inline function _find_or_create_table!(
@@ -153,20 +153,19 @@ end
 )::Tuple{UInt32,Bool}
     @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index, is_new = _find_or_create_archetype!(
-        world, old_arch.node, add, remove, add_mask, rem_mask, use_map,
-        isempty(relations) ? UInt32(length(world._tables) + 1) : UInt32(0),
+        world, old_arch.node, add, remove, relations, add_mask, rem_mask, use_map,
     )
     @inbounds new_arch_hot = world._archetypes_hot[new_arch_index]
 
     if !new_arch_hot.has_relations && isempty(relations)
         if is_new
-            new_arch = world._archetypes[new_arch_index]
+            @inbounds new_arch = world._archetypes[new_arch_index]
             return _create_table!(world, new_arch, _empty_relations), false
         end
         return new_arch_hot.table, false
     end
 
-    new_arch = world._archetypes[new_arch_index]
+    @inbounds new_arch = world._archetypes[new_arch_index]
     return _find_or_create_table!(world, old_table, new_arch_hot, new_arch, relations, targets, !isempty(remove))
 end
 
