@@ -101,7 +101,7 @@ end
 function _has_relations(CS::Type{<:Tuple})
     storage_types = CS.parameters
     for (i, S) in enumerate(storage_types)
-        if S <: Relationship
+        if S.parameters[1] <: Relationship
             return true
         end
     end
