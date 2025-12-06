@@ -442,56 +442,64 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
     return @inbounds index[target_id].tables
 end
 
-@inline function _create_entity!(world::World, table_index::UInt32)::Tuple{Entity,Int}
-    _check_locked(world)
+@inline @generated function _create_entity!(world::W, table_index::UInt32)::Tuple{Entity,Int} where {W<:World}
+    CS = W.parameters[1]
+    world_has_rel = _has_relations(CS)
+    quote
+        _check_locked(world)
 
-    entity = _get_entity(world._entity_pool)
-    table = world._tables[table_index]
-    archetype = world._archetypes[table.archetype]
-
-    index = _add_entity!(table, entity)
-
-    for comp in archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, index)
-    end
-
-    if entity._id > length(world._entities)
-        push!(world._entities, _EntityIndex(table_index, UInt32(index)))
-        push!(world._targets, false)
-    else
-        @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, UInt32(index))
-        @inbounds world._targets[Int(entity._id)] = false
-    end
-    return entity, index
-end
-
-function _create_entities!(world::World, table_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32}
-    _check_locked(world)
-
-    table = world._tables[Int(table_index)]
-    archetype = world._archetypes[table.archetype]
-    old_length = length(table.entities)
-    new_length = old_length + n
-
-    resize!(table, new_length)
-    for i in (old_length+1):new_length
         entity = _get_entity(world._entity_pool)
-        @inbounds table.entities._data[i] = entity
+        table = world._tables[table_index]
+        archetype = world._archetypes[table.archetype]
+
+        index = _add_entity!(table, entity)
+
+        for comp in archetype.components
+            _ensure_column_size_for_comp!(world, comp, table_index, index)
+        end
 
         if entity._id > length(world._entities)
-            push!(world._entities, _EntityIndex(table_index, i))
-            push!(world._targets, false)
+            push!(world._entities, _EntityIndex(table_index, UInt32(index)))
+            $(world_has_rel ? :(push!(world._targets, false)) : (:(nothing)))
         else
-            @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, i)
-            @inbounds world._targets[Int(entity._id)] = false
+            @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, UInt32(index))
+            $(world_has_rel ? :(@inbounds world._targets[Int(entity._id)] = false) : (:(nothing)))
         end
+        return entity, index
     end
+end
 
-    for comp in archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, new_length)
+@generated function _create_entities!(world::W, table_index::UInt32, n::UInt32)::Tuple{UInt32,UInt32} where {W<:World}
+    CS = W.parameters[1]
+    world_has_rel = _has_relations(CS)
+    quote
+        _check_locked(world)
+
+        table = world._tables[Int(table_index)]
+        archetype = world._archetypes[table.archetype]
+        old_length = length(table.entities)
+        new_length = old_length + n
+
+        resize!(table, new_length)
+        for i in (old_length+1):new_length
+            entity = _get_entity(world._entity_pool)
+            @inbounds table.entities._data[i] = entity
+
+            if entity._id > length(world._entities)
+                push!(world._entities, _EntityIndex(table_index, i))
+                $(world_has_rel ? :(push!(world._targets, false)) : (:(nothing)))
+            else
+                @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, i)
+                $(world_has_rel ? :(@inbounds world._targets[Int(entity._id)] = false) : (:(nothing)))
+            end
+        end
+
+        for comp in archetype.components
+            _ensure_column_size_for_comp!(world, comp, table_index, new_length)
+        end
+
+        return (old_length + 1) % UInt32, new_length % UInt32
     end
-
-    return old_length + 1, new_length
 end
 
 function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
@@ -697,49 +705,56 @@ remove_entity!(world, entity)
 
 ```
 """
-function remove_entity!(world::World, entity::Entity)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't remove a dead entity"))
-    end
-    _check_locked(world)
-
-    index = world._entities[entity._id]
-    table = world._tables[index.table]
-    archetype = world._archetypes[table.archetype]
-
-    has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
-    has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
-    if has_entity_obs || has_rel_obs
-        l = _lock(world._lock)
-        if has_entity_obs
-            _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
+@generated function remove_entity!(world::W, entity::Entity) where {W<:World}
+    CS = W.parameters[1]
+    world_has_rel = _has_relations(CS)
+    quote
+        if !is_alive(world, entity)
+            throw(ArgumentError("can't remove a dead entity"))
         end
-        if has_rel_obs
-            _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
+        _check_locked(world)
+
+        index = world._entities[entity._id]
+        table = world._tables[index.table]
+        archetype = world._archetypes[table.archetype]
+
+        has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
+        has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
+        if has_entity_obs || has_rel_obs
+            l = _lock(world._lock)
+            if has_entity_obs
+                _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
+            end
+            if has_rel_obs
+                _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
+            end
+            _unlock(world._lock, l)
         end
-        _unlock(world._lock, l)
+
+        swapped = _swap_remove!(table.entities._data, index.row)
+
+        # Only operate on storages for components present in this archetype
+        for comp in archetype.components
+            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
+        end
+
+        if swapped
+            swap_entity = table.entities[index.row]
+            world._entities[swap_entity._id] = index
+        end
+
+        _recycle(world._entity_pool, entity)
+
+        $(world_has_rel ? 
+            :(if world._targets[entity._id]
+                _cleanup_archetypes(world, entity)
+                world._targets[entity._id] = false
+            end) : 
+            (:(nothing))
+        )
+
+        return nothing
     end
-
-    swapped = _swap_remove!(table.entities._data, index.row)
-
-    # Only operate on storages for components present in this archetype
-    for comp in archetype.components
-        _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
-    end
-
-    if swapped
-        swap_entity = table.entities[index.row]
-        world._entities[swap_entity._id] = index
-    end
-
-    _recycle(world._entity_pool, entity)
-
-    if world._targets[entity._id]
-        _cleanup_archetypes(world, entity)
-        world._targets[entity._id] = false
-    end
-
-    return nothing
 end
 
 """
