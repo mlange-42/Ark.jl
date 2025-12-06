@@ -43,7 +43,7 @@ export Entity
 export is_zero
 
 export Query, Batch, Filter
-export close!, count_entities, unregister
+export close!, count_entities, unregister!
 
 export Entities
 

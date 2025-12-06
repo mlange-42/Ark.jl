@@ -138,19 +138,19 @@ end
             world,
         )
         if $register
-            _register_filter(world, filter._filter)
+            _register_filter!(world, filter._filter)
         end
         return filter
     end
 end
 
 """
-    unregister(world::World, filter::Filter)
+    unregister!(world::World, filter::Filter)
 
 Un-registers a [Filter](@ref).
 """
-function unregister(filter::F) where {F<:Filter}
-    _unregister_filter(filter._world, filter._filter)
+function unregister!(filter::F) where {F<:Filter}
+    _unregister_filter!(filter._world, filter._filter)
 end
 
 function _matches(filter::F, archetype::_ArchetypeHot) where {F<:_MaskFilter}

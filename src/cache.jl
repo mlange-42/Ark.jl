@@ -20,7 +20,7 @@ end
 
 _Cache{M}() where {M} = _Cache{M}(Vector{_MaskFilter{M}}(), Vector{UInt32}())
 
-function _register_filter(
+function _register_filter!(
     world::W,
     filter::F,
 ) where {W<:_AbstractWorld,F<:_MaskFilter}
@@ -60,7 +60,7 @@ function _register_filter(
     end
 end
 
-function _unregister_filter(world::W, filter::F) where {W<:_AbstractWorld,F<:_MaskFilter{M}} where {M}
+function _unregister_filter!(world::W, filter::F) where {W<:_AbstractWorld,F<:_MaskFilter{M}} where {M}
     if filter.id[] == 0
         throw(InvalidStateException("filter is not registered to the cache", :filter_not_registered))
     end

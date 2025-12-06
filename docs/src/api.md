@@ -68,7 +68,7 @@ count_entities(::Query)
 length(::Query)
 Filter
 Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
-unregister
+unregister!
 Entities
 @unpack
 unpack
