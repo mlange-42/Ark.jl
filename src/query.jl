@@ -290,9 +290,6 @@ function _length(q::Q) where {Q<:Query}
 end
 
 function _length_registered(q::Q) where {Q<:Query}
-    if q._filter.id[] == 0
-        throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
-    end
     count = 0
     for table_id in q._filter.tables.tables
         table = @inbounds q._world._tables[table_id]
@@ -355,9 +352,6 @@ function _count_entities(q::Q) where {Q<:Query}
 end
 
 function _count_entities_registered(q::Q) where {Q<:Query}
-    if q._filter.id[] == 0
-        throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
-    end
     count = 0
     for table_id in q._filter.tables.tables
         table = @inbounds q._world._tables[table_id]
