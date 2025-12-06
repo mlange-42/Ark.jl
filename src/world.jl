@@ -2271,6 +2271,7 @@ function _cleanup_archetypes(world::World, entity::Entity)
                 _move_entities!(world, table.id, new_table.id)
             end
             _free_table!(archetype, table)
+            _remove_table!(world._cache, table)
             resize!(relations, 0)
         end
         _remove_target!(archetype, entity)

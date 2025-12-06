@@ -144,6 +144,15 @@ end
     end
 end
 
+"""
+    unregister(world::World, filter::Filter)
+
+Un-registers a [Filter](@ref).
+"""
+function unregister(filter::F) where {F<:Filter}
+    _unregister_filter(filter._world, filter._filter)
+end
+
 function _matches(filter::F, archetype::_ArchetypeHot) where {F<:_MaskFilter}
     return _contains_all(archetype.mask, filter.mask) &&
            (!filter.has_excluded || !_contains_any(archetype.mask, filter.exclude_mask))

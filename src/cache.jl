@@ -45,10 +45,11 @@ function _register_filter(
 
         if !arch_hot.has_relations
             _add_table!(filter, world._tables[arch_hot.table])
+            continue
         end
 
         arch = @inbounds world._archetypes[i]
-        tables = _get_tables(filter._world, arch, filter.relations)
+        tables = _get_tables(world, arch, filter.relations)
         for table_id in tables
             table = @inbounds world._tables[Int(table_id)]
             if _matches(world._relations, table, filter.relations)
@@ -68,9 +69,16 @@ function _unregister_filter(world::W, filter::F) where {W<:_AbstractWorld,F<:_Ma
         _remove_table!(table.filters, filter.id[])
     end
 
-    push!(world._cache.free_indices, filter.id[])
+    if filter.id[] == length(world._cache.filters)
+        pop!(world._cache.filters)
+    else
+        push!(world._cache.free_indices, filter.id[])
+    end
+
     _clear!(filter.tables)
     filter.id[] = 0
+
+    return nothing
 end
 
 function _add_table!(
@@ -85,6 +93,7 @@ function _add_table!(
         end
         if !_has_relations(archetype)
             _add_table!(filter, table)
+            continue
         end
         if _matches(world._relations, table, filter.relations)
             _add_table!(filter, table)
