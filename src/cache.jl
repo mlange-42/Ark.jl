@@ -24,9 +24,10 @@ function _register_filter(
     world::W,
     filter::F,
 ) where {W<:_AbstractWorld,F<:_MaskFilter}
-    if filter.id[] != 0
-        throw(InvalidStateException("filter is already registered to the cache", :filter_registered))
-    end
+    # TODO: re-enable this check in case re-registration is allowed.
+    #if filter.id[] != 0
+    #    throw(InvalidStateException("filter is already registered to the cache", :filter_registered))
+    #end
 
     if isempty(world._cache.free_indices)
         push!(world._cache.filters, filter)
@@ -84,14 +85,14 @@ end
 function _add_table!(
     cache::_Cache,
     world::W,
-    archetype::_Archetype,
+    archetype::_ArchetypeHot,
     table::_Table,
 ) where {W<:_AbstractWorld}
     for filter in cache.filters
         if !_matches(filter, archetype)
             continue
         end
-        if !_has_relations(archetype)
+        if !archetype.has_relations
             _add_table!(filter, table)
             continue
         end

@@ -34,8 +34,15 @@
     @test length(world._cache.filters) == 2
     @test length(filter3._filter.tables.tables) == 0
 
+    @test_throws(
+        "InvalidStateException: filter is not registered to the cache",
+        unregister(filter3)
+    )
+
     filter3 = Filter(world, (Position, Velocity); register=true)
     @test length(world._cache.filters) == 2
     @test length(filter3._filter.tables.tables) == 1
     @test filter3._filter.id[] == 1
 end
+
+@testset "Cache functionality relations" begin end

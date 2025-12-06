@@ -301,7 +301,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     end
 
     _add_table!(world._relations, arch, table)
-    _add_table!(world._cache, world, arch, table)
+    _add_table!(world._cache, world, world._archetypes_hot[arch.id], table)
 
     return UInt32(new_table_id)
 end
