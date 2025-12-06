@@ -483,7 +483,7 @@ function _create_entities!(world::World, table_index::UInt32, n::UInt32)::Tuple{
             push!(world._targets, false)
         else
             @inbounds world._entities[Int(entity._id)] = _EntityIndex(table_index, i)
-            @inbounds world._targets[entity._id] = false
+            @inbounds world._targets[Int(entity._id)] = false
         end
     end
 
