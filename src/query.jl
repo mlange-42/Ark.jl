@@ -157,16 +157,11 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     return rare_comp, rare_hot
 end
 
-@inline @generated function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
-    REG = Q.parameters[6]
-    exprs = Expr[]
-    if REG === Val{true}
-        push!(exprs, :(return _iterate_registered(q, state)))
+@inline function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
+    if q._filter.id[] == 0
+        return _iterate(q, state)
     else
-        push!(exprs, :(return _iterate(q, state)))
-    end
-    return quote
-        $(Expr(:block, exprs...))
+        return _iterate_registered(q, state)
     end
 end
 
@@ -232,35 +227,13 @@ end
     return nothing
 end
 
-@inline @generated function Base.iterate(q::Q) where {Q<:Query}
-    REG = Q.parameters[6]
-    exprs = Expr[]
-    push!(
-        exprs,
-        :(
-            if q._q_lock.closed
-                throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
-            end
-        ),
-    )
-    push!(exprs, :(q._q_lock.closed = true))
-
-    if REG === Val{true}
-        push!(
-            exprs,
-            :(
-                if q._filter.id[] == 0
-                    throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
-                end
-            ),
-        )
+@inline function Base.iterate(q::Q) where {Q<:Query}
+    if q._q_lock.closed
+        throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
     end
+    q._q_lock.closed = true
 
-    push!(exprs, :(return Base.iterate(q, (1, 0))))
-
-    return quote
-        $(Expr(:block, exprs...))
-    end
+    return Base.iterate(q, (1, 0))
 end
 
 """
