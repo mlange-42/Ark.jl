@@ -1735,7 +1735,7 @@ end
             new_table_tuple =
                 _find_or_create_table!(
                     world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
-                    $world_has_rel
+                    $world_has_rel,
                 )
         ),
     )
