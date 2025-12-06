@@ -10,7 +10,7 @@ end
 A query for components. See function
 [Query](@ref Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG,N,M}
     _filter::_MaskFilter{M}
     _archetypes::Vector{_Archetype{M}}
     _archetypes_hot::Vector{_ArchetypeHot{M}}
@@ -106,7 +106,8 @@ end
     TS = filter.parameters[2]
     EX = filter.parameters[3]
     OPT = filter.parameters[4]
-    M = filter.parameters[5]
+    REG = filter.parameters[5]
+    M = filter.parameters[6]
 
     world_storage_modes = W.parameters[3].parameters
     comp_types = _to_types(TS.parameters)
@@ -127,7 +128,7 @@ end
 
     return quote
         arches, hot = $(archetypes)
-        Query{$W,$TS,$storage_tuple_mode,$EX,$OPT,$(length(comp_types)),$M}(
+        Query{$W,$TS,$storage_tuple_mode,$EX,$OPT,$REG,$(length(comp_types)),$M}(
             filter._filter,
             arches,
             hot,
@@ -205,13 +206,31 @@ end
     return nothing
 end
 
-@inline function Base.iterate(q::Query)
-    if q._q_lock.closed
-        throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
-    end
-    q._q_lock.closed = true
+@inline @generated function Base.iterate(
+    q::Query{W,TS,SM,EX,OPT,REG},
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG<:Val}
+    exprs = Expr[]
+    push!(
+        exprs,
+        :(
+            if q._q_lock.closed
+                throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
+            end
+        ),
+    )
+    push!(exprs, :(q._q_lock.closed = true))
 
-    return Base.iterate(q, (1, 0))
+    if REG === Val{true}
+        push!(exprs, :(return Base.iterate(q, 1)))
+    else
+        push!(exprs, :(return Base.iterate(q, (1, 0))))
+    end
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
 end
 
 """
@@ -316,9 +335,9 @@ function close!(q::Query)
 end
 
 @generated function _get_columns(
-    q::Query{W,TS,SM,EX,OPT,N,M},
+    q::Query{W,TS,SM,EX,OPT,REG,N,M},
     table::_Table,
-) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters
@@ -351,7 +370,7 @@ end
         push!(result_exprs, Symbol("vec", i))
     end
 
-    element_type = Base.eltype(Query{W,TS,SM,EX,OPT,N,M})
+    element_type = Base.eltype(Query{W,TS,SM,EX,OPT,REG,N,M})
 
     result_exprs = map(x -> :($x), result_exprs)
     tuple_expr = Expr(:tuple, result_exprs...)
@@ -366,7 +385,9 @@ end
 
 Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
 
-@generated function Base.eltype(::Type{Query{W,TS,SM,EX,OPT,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
+@generated function Base.eltype(
+    ::Type{Query{W,TS,SM,EX,OPT,REG,N,M}},
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters

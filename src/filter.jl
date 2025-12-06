@@ -6,7 +6,7 @@ A filter for components. See function
 [Filter](@ref Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 See also [Query](@ref).
 """
-struct Filter{W<:World,TS<:Tuple,EX,OPT,M,REG}
+struct Filter{W<:World,TS<:Tuple,EX,OPT,REG,M}
     _filter::_MaskFilter{M}
     _world::W
 end
@@ -126,7 +126,7 @@ end
         else
             _empty_relations
         end
-        filter = Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$M,$REG}(
+        filter = Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$REG,$M}(
             _MaskFilter{$M}(
                 $(mask),
                 $(exclude_mask),
@@ -158,7 +158,7 @@ function _matches(filter::F, archetype::_ArchetypeHot) where {F<:_MaskFilter}
            (!filter.has_excluded || !_contains_any(archetype.mask, filter.exclude_mask))
 end
 
-function Base.show(io::IO, filter::Filter{W,CT,EX,OPT,M,REG}) where {W<:World,CT<:Tuple,EX<:Val,OPT,M,REG<:Val}
+function Base.show(io::IO, filter::Filter{W,CT,EX,OPT,REG,M}) where {W<:World,CT<:Tuple,EX<:Val,OPT,REG<:Val,M}
     world_types = W.parameters[2].parameters
     comp_types = CT.parameters
 
