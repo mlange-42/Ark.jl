@@ -7,10 +7,11 @@
 - Adds entity relationships (#340, #349)
 - Adds events for relationship changes (#370)
 - Adds re-usable filters for query construction (#375)
+- Adds cached/registered filters for faster query iteration with many archetypes (#378)
 
 ### Performance
 
-- Use an hash table for some component transitions (#348)
+- Use a hash table for some component transitions (#348)
 
 ## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 
