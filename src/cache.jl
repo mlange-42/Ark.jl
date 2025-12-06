@@ -83,7 +83,7 @@ function _add_table!(
         if !_matches(filter, archetype)
             continue
         end
-        if _has_relations(archetype)
+        if !_has_relations(archetype)
             _add_table!(filter, table)
         end
         if _matches(world._relations, table, filter.relations)
