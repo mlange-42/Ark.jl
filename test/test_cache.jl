@@ -45,4 +45,32 @@
     @test filter3._filter.id[] == 1
 end
 
-@testset "Cache functionality relations" begin end
+@testset "Cache functionality relations" begin
+    world = World(Dummy, Position, Velocity, ChildOf)
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+
+    filter1 = Filter(world, (ChildOf,); register=true)
+    filter2 = Filter(world, (ChildOf,); relations=(ChildOf => parent1,), register=true)
+
+    e1 = new_entity!(world, (ChildOf(),); relations=(ChildOf => parent1,))
+    e2 = new_entity!(world, (ChildOf(),); relations=(ChildOf => parent2,))
+
+    @test length(filter1._filter.tables.tables) == 2
+    @test length(filter2._filter.tables.tables) == 1
+
+    @test length(world._tables[2].filters.tables) == 2
+    @test length(world._tables[3].filters.tables) == 1
+
+    remove_entity!(world, e1)
+    remove_entity!(world, e2)
+    remove_entity!(world, parent1)
+    remove_entity!(world, parent2)
+
+    @test length(filter1._filter.tables.tables) == 0
+    @test length(filter2._filter.tables.tables) == 0
+
+    @test length(world._tables[2].filters.tables) == 0
+    @test length(world._tables[3].filters.tables) == 0
+end
