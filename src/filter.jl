@@ -127,7 +127,7 @@ end
             _empty_relations
         end
         Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$M,$C}(
-            _MaskFilter(
+            _MaskFilter{$M}(
                 $(mask),
                 $(exclude_mask),
                 relations,

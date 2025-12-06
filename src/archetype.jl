@@ -4,8 +4,12 @@ struct _TableIDs
     indices::Dict{UInt32,Int}
 end
 
+function _TableIDs()
+    return _TableIDs(Vector{UInt32}(), Dict{UInt32,Int}())
+end
+
 function _TableIDs(tables::UInt32...)
-    vec = collect(tables)
+    vec = collect(UInt32, tables)
     indices = Dict{UInt32,Int}()
 
     for (i, table) in enumerate(tables)

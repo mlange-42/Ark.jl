@@ -39,7 +39,7 @@ function _register_filter(
     end
 end
 
-function _unregister_filter(cache::_Cache, filter::F) where {W<:_AbstractWorld,F<:_MaskFilter}
+function _unregister_filter(cache::_Cache, filter::F) where {F<:_MaskFilter{M}} where {M}
     if filter.id[] == 0
         throw(InvalidStateException("filter is not registered to the cache", :filter_not_registered))
     end

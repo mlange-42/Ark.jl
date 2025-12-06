@@ -15,7 +15,7 @@ struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
     _archetypes::Vector{_Archetype{M}}
     _archetypes_hot::Vector{_ArchetypeHot{M}}
     _q_lock::_QueryCursor
-    _world::World
+    _world::W
     _lock::Int
 end
 
@@ -99,9 +99,15 @@ Base.@constprop :aggressive function Query(
 end
 
 @generated function _Query_from_filter(
-    filter::Filter{W,TS,EX,OPT,M,C},
-) where {W<:World,TS<:Tuple,EX,OPT<:Tuple,M,C}
+    filter::F,
+) where {F<:Filter}
+    W = filter.parameters[1]
     CS = W.parameters[1]
+    TS = filter.parameters[2]
+    EX = filter.parameters[3]
+    OPT = filter.parameters[4]
+    M = filter.parameters[5]
+
     world_storage_modes = W.parameters[3].parameters
     comp_types = _to_types(TS.parameters)
     optional_flags = OPT.parameters
