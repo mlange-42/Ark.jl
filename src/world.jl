@@ -150,7 +150,7 @@ end
     add_mask::_Mask,
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
-    world_has_rel::Val{false},
+    world_has_rel::Val{true},
 )::Tuple{UInt32,Bool}
     @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index, is_new = _find_or_create_archetype!(
@@ -180,7 +180,7 @@ end
     add_mask::_Mask,
     rem_mask::_Mask,
     use_map::Union{_NoUseMap,_UseMap},
-    world_has_rel::Val{true},
+    world_has_rel::Val{false},
 )::Tuple{UInt32,Bool}
     @inbounds old_arch = world._archetypes[old_table.archetype]
     new_arch_index, is_new = _find_or_create_archetype!(
