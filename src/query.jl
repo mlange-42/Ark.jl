@@ -10,11 +10,12 @@ end
 A query for components. See function
 [Query](@ref Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 """
-struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
-    _filter::Filter{W,TS,EX,OPT,M}
+struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG,N,M}
+    _filter::_MaskFilter{M}
     _archetypes::Vector{_Archetype{M}}
     _archetypes_hot::Vector{_ArchetypeHot{M}}
     _q_lock::_QueryCursor
+    _world::W
     _lock::Int
 end
 
@@ -98,9 +99,16 @@ Base.@constprop :aggressive function Query(
 end
 
 @generated function _Query_from_filter(
-    filter::Filter{W,TS,EX,OPT,M},
-) where {W<:World,TS<:Tuple,EX,OPT<:Tuple,M}
+    filter::F,
+) where {F<:Filter}
+    W = filter.parameters[1]
     CS = W.parameters[1]
+    TS = filter.parameters[2]
+    EX = filter.parameters[3]
+    OPT = filter.parameters[4]
+    REG = filter.parameters[5]
+    M = filter.parameters[6]
+
     world_storage_modes = W.parameters[3].parameters
     comp_types = _to_types(TS.parameters)
     optional_flags = OPT.parameters
@@ -114,17 +122,19 @@ end
     required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
     ids_tuple = tuple(required_ids...)
 
+    # TODO: simplify/omit this for registered filters (only if comp-time, which it is currently not)
     archetypes =
         length(ids_tuple) == 0 ? :((filter._world._archetypes, filter._world._archetypes_hot)) :
         :(_get_archetypes(filter._world, $ids_tuple))
 
     return quote
         arches, hot = $(archetypes)
-        Query{$W,$TS,$storage_tuple_mode,$EX,$OPT,$(length(comp_types)),$M}(
-            filter,
+        Query{$W,$TS,$storage_tuple_mode,$EX,$OPT,$REG,$(length(comp_types)),$M}(
+            filter._filter,
             arches,
             hot,
             _QueryCursor(_empty_tables, false),
+            filter._world,
             _lock(filter._world._lock),
         )
     end
@@ -147,7 +157,15 @@ function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
     return rare_comp, rare_hot
 end
 
-@inline function Base.iterate(q::Query, state::Tuple{Int,Int})
+@inline function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
+    if q._filter.id[] == 0
+        return _iterate(q, state)
+    else
+        return _iterate_registered(q, state)
+    end
+end
+
+@inline function _iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
     arch, tab = state
     while arch <= length(q._archetypes)
         if tab == 0
@@ -159,7 +177,7 @@ end
             end
 
             if !archetype_hot.has_relations
-                table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
+                table = @inbounds q._world._tables[Int(archetype_hot.table)]
                 if isempty(table.entities)
                     arch += 1
                     continue
@@ -174,14 +192,14 @@ end
                 continue
             end
 
-            q._q_lock.tables = _get_tables(q._filter._world, archetype, q._filter._relations)
+            q._q_lock.tables = _get_tables(q._world, archetype, q._filter.relations)
             tab = 1
         end
 
         while tab <= length(q._q_lock.tables)
-            table = @inbounds q._filter._world._tables[Int(q._q_lock.tables[tab])]
+            table = @inbounds q._world._tables[Int(q._q_lock.tables[tab])]
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            if isempty(table.entities) || !_matches(q._filter._world._relations, table, q._filter._relations)
+            if isempty(table.entities) || !_matches(q._world._relations, table, q._filter.relations)
                 tab += 1
                 continue
             end
@@ -197,7 +215,19 @@ end
     return nothing
 end
 
-@inline function Base.iterate(q::Query)
+@inline function _iterate_registered(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
+    index, _ = state
+    if index <= length(q._filter.tables)
+        @inbounds table_id = q._filter.tables.tables[index]
+        @inbounds table = q._world._tables[table_id]
+        result = _get_columns(q, table)
+        return result, (index + 1, 0)
+    end
+    close!(q)
+    return nothing
+end
+
+@inline function Base.iterate(q::Q) where {Q<:Query}
     if q._q_lock.closed
         throw(InvalidStateException("query closed, queries can't be used multiple times", :batch_closed))
     end
@@ -217,7 +247,15 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
 
     The time complexity is linear with the number of tables in the query's pre-selection.
 """
-function Base.length(q::Query)
+function Base.length(q::Q) where {Q<:Query}
+    if q._filter.id[] == 0
+        return _length(q)
+    else
+        return _length_registered(q)
+    end
+end
+
+function _length(q::Q) where {Q<:Query}
     count = 0
     for i in eachindex(q._archetypes)
         archetype_hot = @inbounds q._archetypes_hot[i]
@@ -226,7 +264,7 @@ function Base.length(q::Query)
         end
 
         if !archetype_hot.has_relations
-            table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
+            table = @inbounds q._world._tables[Int(archetype_hot.table)]
             if isempty(table.entities)
                 continue
             end
@@ -239,16 +277,27 @@ function Base.length(q::Query)
             continue
         end
 
-        tables = _get_tables(q._filter._world, archetype, q._filter._relations)
+        tables = _get_tables(q._world, archetype, q._filter.relations)
         for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            table = @inbounds q._filter._world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(q._filter._world._relations, table, q._filter._relations)
+            table = @inbounds q._world._tables[Int(table_id)]
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter.relations)
                 count += 1
             end
         end
     end
     count
+end
+
+function _length_registered(q::Q) where {Q<:Query}
+    count = 0
+    for table_id in q._filter.tables.tables
+        table = @inbounds q._world._tables[table_id]
+        if !isempty(table.entities)
+            count += 1
+        end
+    end
+    return count
 end
 
 """
@@ -263,7 +312,15 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     The time complexity is linear with the number of archetypes in the query's pre-selection.
     It is equivalent to iterating the query's archetypes and summing up their lengths.
 """
-function count_entities(q::Query)
+function count_entities(q::Q) where {Q<:Query}
+    if q._filter.id[] == 0
+        return _count_entities(q)
+    else
+        return _count_entities_registered(q)
+    end
+end
+
+function _count_entities(q::Q) where {Q<:Query}
     count = 0
     for i in eachindex(q._archetypes)
         archetype_hot = @inbounds q._archetypes_hot[i]
@@ -272,7 +329,7 @@ function count_entities(q::Query)
         end
 
         if !archetype_hot.has_relations
-            table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
+            table = @inbounds q._world._tables[Int(archetype_hot.table)]
             count += length(table.entities)
             continue
         end
@@ -282,16 +339,25 @@ function count_entities(q::Query)
             continue
         end
 
-        tables = _get_tables(q._filter._world, archetype, q._filter._relations)
+        tables = _get_tables(q._world, archetype, q._filter.relations)
         for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            table = @inbounds q._filter._world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(q._filter._world._relations, table, q._filter._relations)
+            table = @inbounds q._world._tables[Int(table_id)]
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter.relations)
                 count += length(table.entities)
             end
         end
     end
     count
+end
+
+function _count_entities_registered(q::Q) where {Q<:Query}
+    count = 0
+    for table_id in q._filter.tables.tables
+        table = @inbounds q._world._tables[table_id]
+        count += length(table.entities)
+    end
+    return count
 end
 
 """
@@ -301,16 +367,16 @@ Closes the query and unlocks the world.
 
 Must be called if a query is not fully iterated.
 """
-function close!(q::Query)
-    _unlock(q._filter._world._lock, q._lock)
+function close!(q::Q) where {Q<:Query}
+    _unlock(q._world._lock, q._lock)
     q._q_lock.closed = true
     return nothing
 end
 
 @generated function _get_columns(
-    q::Query{W,TS,SM,EX,OPT,N,M},
+    q::Query{W,TS,SM,EX,OPT,REG,N,M},
     table::_Table,
-) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters
@@ -321,7 +387,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :(@inbounds $stor_sym = _get_storage(q._filter._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table.id]))
 
         if is_optional[i] === Val{true}
@@ -343,7 +409,7 @@ end
         push!(result_exprs, Symbol("vec", i))
     end
 
-    element_type = Base.eltype(Query{W,TS,SM,EX,OPT,N,M})
+    element_type = Base.eltype(Query{W,TS,SM,EX,OPT,REG,N,M})
 
     result_exprs = map(x -> :($x), result_exprs)
     tuple_expr = Expr(:tuple, result_exprs...)
@@ -358,7 +424,9 @@ end
 
 Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
 
-@generated function Base.eltype(::Type{Query{W,TS,SM,EX,OPT,N,M}}) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
+@generated function Base.eltype(
+    ::Type{Query{W,TS,SM,EX,OPT,REG,N,M}},
+) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG,N,M}
     comp_types = TS.parameters
     storage_modes = SM.parameters
     is_optional = OPT.parameters
@@ -386,7 +454,7 @@ function Base.show(io::IO, query::Query{W,CT,SM,EX}) where {W<:World,CT<:Tuple,S
     world_types = W.parameters[2].parameters
     comp_types = CT.parameters
 
-    mask_ids = _active_bit_indices(query._filter._mask)
+    mask_ids = _active_bit_indices(query._filter.mask)
     mask_types = tuple(map(i -> world_types[Int(i)].parameters[1], mask_ids)...)
 
     required_types = intersect(mask_types, comp_types)
@@ -401,7 +469,7 @@ function Base.show(io::IO, query::Query{W,CT,SM,EX}) where {W<:World,CT<:Tuple,S
     excl_types = ()
     without_names = ""
     if !is_exclusive
-        excl_ids = _active_bit_indices(query._filter._exclude_mask)
+        excl_ids = _active_bit_indices(query._filter.exclude_mask)
         excl_types = tuple(map(i -> world_types[Int(i)].parameters[1], excl_ids)...)
         without_names = join(map(_format_type, excl_types), ", ")
     end

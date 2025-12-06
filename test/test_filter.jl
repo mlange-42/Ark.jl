@@ -6,6 +6,13 @@
     f2 = Filter(world, (Position, Velocity); with=(Altitude,))
     f3 = Filter(world, (Position, Velocity); without=(Altitude,))
     f4 = Filter(world, (Position, Velocity); exclusive=true)
+
+    f5 = Filter(world, (Position, Velocity); register=true)
+    @test length(world._cache.filters) == 1
+    @test length(f5._filter.tables) == 0
+
+    e = new_entity!(world, (Position(0, 0), Velocity(0, 0)))
+    @test length(f5._filter.tables) == 1
 end
 
 @testset "Filter show" begin
@@ -24,4 +31,7 @@ end
 
     filter = Filter(world, (Position, Velocity); optional=(Altitude,), without=(Health,))
     @test string(filter) == "Filter((Position, Velocity); optional=(Altitude), without=(Health))"
+
+    filter = Filter(world, (Position, Velocity); register=true)
+    @test string(filter) == "Filter((Position, Velocity); registered=true)"
 end

@@ -1080,13 +1080,19 @@ end
     new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent1,))
     new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent2,))
 
+    filter = Filter(world, (Position,); register=true)
+
     reset!(world)
 
     @test length(world._entities) == 1
     @test length(world._entity_pool.entities) == 1
+    @test length(world._cache.filters) == 0
+    @test filter._filter.id[] == 0
+    @test length(filter._filter.tables) == 0
 
     for t in 2:6
         @test length(world._tables[t].entities) == 0
+        @test length(world._tables[t].filters) == 0
     end
 
     for s in 2:4

@@ -16,6 +16,7 @@ include("linear_map.jl")
 include("graph.jl")
 include("table.jl")
 include("archetype.jl")
+include("cache.jl")
 include("event.jl")
 include("index.jl")
 include("registry.jl")
@@ -42,7 +43,7 @@ export Entity
 export is_zero
 
 export Query, Batch, Filter
-export close!, count_entities
+export close!, count_entities, unregister!
 
 export Entities
 

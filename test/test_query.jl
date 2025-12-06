@@ -11,7 +11,7 @@
     for i in 1:10
         query = Query(world, (Position, Velocity))
         @test Base.IteratorSize(typeof(query)) == Base.SizeUnknown()
-        @test query._filter._has_excluded == false
+        @test query._filter.has_excluded == false
         @test length(query) == 1
         @test count_entities(query) == 10
         count = 0
@@ -52,6 +52,28 @@ end
     @test length(query) == 1
     @test count_entities(query) == 10
     close!(query)
+    count = 0
+    for (entities, vec_pos, vec_vel) in Query(filter)
+        count += length(entities)
+    end
+    @test count == 10
+end
+
+@testset "Query from registered filter" begin
+    world = World(Dummy, Position, Velocity, Altitude, Health)
+
+    for i in 1:10
+        new_entity!(world, (Altitude(1), Health(2)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Health(3)))
+    end
+
+    filter = Filter(world, (Position, Velocity); register=true)
+    query = Query(filter)
+    @test length(query) == 1
+    @test count_entities(query) == 10
+    close!(query)
+
     count = 0
     for (entities, vec_pos, vec_vel) in Query(filter)
         count += length(entities)
@@ -150,7 +172,7 @@ end
     )
 
     query = Query(world, (Position, Velocity); with=(Altitude,), exclusive=true)
-    @test query._filter._has_excluded == true
+    @test query._filter.has_excluded == true
     @test length(query) == 1
     @test count_entities(query) == 10
 

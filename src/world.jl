@@ -9,7 +9,7 @@ const zero_entity::Entity = _new_entity(1, 0)
 
 const _no_entity::Entity = _new_entity(0, 0)
 
-const _empty_relations = Pair{Int,Entity}[]
+const _empty_relations::Vector{Pair{Int,Entity}} = Vector{Pair{Int,Entity}}()
 
 struct _WorldPool{M}
     relations::Vector{Pair{Int,Entity}}
@@ -44,6 +44,7 @@ mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _graph::_Graph{M}
     const _resources::Dict{DataType,Any}
     const _event_manager::_EventManager{World{CS,CT,ST,N,M},M}
+    const _cache::_Cache{M}
     const _pool::_WorldPool{M}
     const _initial_capacity::Int
 end
@@ -300,6 +301,7 @@ function _create_table!(world::World, arch::_Archetype, relations::Vector{Pair{I
     end
 
     _add_table!(world._relations, arch, table)
+    _add_table!(world._cache, world, world._archetypes_hot[arch.id], table)
 
     return UInt32(new_table_id)
 end
@@ -1938,6 +1940,7 @@ end
                 World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
                 $(M),
             }(),
+            _Cache{$M}(),
             _WorldPool{$M}(),
             initial_capacity,
         )
@@ -2211,9 +2214,11 @@ function reset!(world::W) where {W<:World}
     _reset!(world._entity_pool)
     _reset!(world._lock)
     _reset!(world._event_manager)
+    _reset!(world._cache)
 
     for table in world._tables
         resize!(table, 0)
+        _clear!(table.filters)
         archetype = world._archetypes[table.archetype]
         for comp in archetype.components
             _clear_component_data!(world, comp, table.id)
@@ -2268,6 +2273,7 @@ function _cleanup_archetypes(world::World, entity::Entity)
                 _move_entities!(world, table.id, new_table.id)
             end
             _free_table!(archetype, table)
+            _remove_table!(world._cache, table)
             resize!(relations, 0)
         end
         _remove_target!(archetype, entity)

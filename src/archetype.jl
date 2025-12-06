@@ -1,52 +1,4 @@
 
-struct _TableIDs
-    tables::Vector{UInt32}
-    indices::Dict{UInt32,Int}
-end
-
-function _TableIDs(tables::UInt32...)
-    vec = collect(tables)
-    indices = Dict{UInt32,Int}()
-
-    for (i, table) in enumerate(tables)
-        indices[table] = i
-    end
-
-    return _TableIDs(vec, indices)
-end
-
-function _add_table!(ids::_TableIDs, table::UInt32)
-    push!(ids.tables, table)
-    ids.indices[table] = length(ids.tables)
-    return nothing
-end
-
-function _remove_table!(ids::_TableIDs, table::UInt32)
-    if !haskey(ids.indices, table)
-        return false
-    end
-    idx = ids.indices[table]
-    last = length(ids.tables)
-    if idx != last
-        ids.tables[idx], ids.tables[last] = ids.tables[last], ids.tables[idx]
-        ids.indices[ids.tables[idx]] = idx
-    end
-    pop!(ids.tables)
-    delete!(ids.indices, table)
-    return true
-end
-
-function _clear!(ids::_TableIDs)
-    resize!(ids.tables, 0)
-    empty!(ids.indices)
-    return nothing
-end
-
-Base.length(t::_TableIDs) = length(t.tables)
-Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
-
-const _empty_tables = Vector{UInt32}()
-
 struct _ArchetypeHot{M}
     mask::_Mask{M}
     table::UInt32
@@ -137,7 +89,7 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
 
         if haskey(arch.target_tables, target._id)
             tables = arch.target_tables[target._id]
-            if !haskey(tables.indices, t.id)
+            if !_contains(tables, t.id)
                 _add_table!(tables, t.id)
             end
         else

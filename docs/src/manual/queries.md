@@ -147,6 +147,50 @@ end
 Note that it is possible to branch already outside of the inner loop,
 as all entities in an archetype either have a component or don't.
 
+## Filter caching
+
+With normal queries as shown above, [archetypes](@ref Architecture) and [relationship](@ref "Entity relationships") tables
+are matched against filter masks during query iteration.
+For large numbers of archetypes, this has a certain overhead, although archetypes are pre-selected
+based on the most "rare" queried component.
+
+To speed up query iteration for a large number of archetypes, Ark provides [filter](@ref Filter) caching.
+With cached/registered filters, archetypes and tables are only matched against masks at their creation,
+but not during query iteration.
+
+This example shows how to use registered [filters](@ref Filter):
+
+```jldoctest filter-cache; output = false
+# A registered filter. Store it permanently and re-use it!
+filter = Filter(world, (Position, Velocity); register=true)
+
+# The actual query iteration.
+for (entities, positions, velocities) in Query(filter)
+    @inbounds for i in eachindex(entities)
+        # ...
+    end
+end
+
+# output
+
+```
+
+!!! note
+
+    Registering filters only makes sense when they are stored permanently
+    (e.g. in a System) and re-used for query creation.
+
+Filters support all keyword arguments of queries (see above).
+
+A registered filter can be un-registered like this:
+
+```jldoctest filter-cache; output = false
+unregister!(filter)
+
+# output
+
+```
+
 ## Component field views
 
 Individual fields of components can be accessed as vectors in queries, e.g. using [@unpack](@ref).
