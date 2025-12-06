@@ -59,6 +59,34 @@ end
     @test count == 10
 end
 
+@testset "Query from registered filter" begin
+    world = World(Dummy, Position, Velocity, Altitude, Health)
+
+    for i in 1:10
+        new_entity!(world, (Altitude(1), Health(2)))
+        new_entity!(world, (Position(i, i * 2), Velocity(1, 1)))
+        new_entity!(world, (Position(i, i * 2), Health(3)))
+    end
+
+    filter = Filter(world, (Position, Velocity); register=true)
+    #query = Query(filter)
+    #@test length(query) == 1
+    #@test count_entities(query) == 10
+    #close!(query)
+    count = 0
+    for (entities, vec_pos, vec_vel) in Query(filter)
+        count += length(entities)
+    end
+    @test count == 10
+
+    unregister(filter)
+    @test_throws(
+        "InvalidStateException: the filter of this query got unregistered",
+        for (entities, vec_pos, vec_vel) in Query(filter)
+        end
+    )
+end
+
 @testset "Query with" begin
     world = World(Dummy, Position, Velocity, Altitude)
 

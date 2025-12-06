@@ -122,6 +122,7 @@ end
     required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
     ids_tuple = tuple(required_ids...)
 
+    # TODO: simplify/omit this for registered filters
     archetypes =
         length(ids_tuple) == 0 ? :((filter._world._archetypes, filter._world._archetypes_hot)) :
         :(_get_archetypes(filter._world, $ids_tuple))
@@ -206,6 +207,17 @@ end
     return nothing
 end
 
+@inline function Base.iterate(q::Query, state::Int)
+    if state <= length(q._filter.tables)
+        table_id = q._filter.tables.tables[state]
+        table = q._world._tables[table_id]
+        result = _get_columns(q, table)
+        return result, state + 1
+    end
+    close!(q)
+    return nothing
+end
+
 @inline @generated function Base.iterate(
     q::Query{W,TS,SM,EX,OPT,REG},
 ) where {W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,REG<:Val}
@@ -221,6 +233,14 @@ end
     push!(exprs, :(q._q_lock.closed = true))
 
     if REG === Val{true}
+        push!(
+            exprs,
+            :(
+                if q._filter.id[] == 0
+                    throw(InvalidStateException("the filter of this query got unregistered", :filter_not_registered))
+                end
+            ),
+        )
         push!(exprs, :(return Base.iterate(q, 1)))
     else
         push!(exprs, :(return Base.iterate(q, (1, 0))))
