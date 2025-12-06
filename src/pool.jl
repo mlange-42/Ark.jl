@@ -1,8 +1,8 @@
 
 mutable struct _EntityPool
     const entities::Vector{Entity}
-    next::UInt32
-    available::UInt32
+    next::Int
+    available::Int
 end
 
 function _EntityPool(cap::UInt32)
@@ -20,7 +20,7 @@ function _get_entity(p::_EntityPool)::Entity
     p.next = p.entities[p.next]._id
 
     temp = p.entities[curr]
-    entity = Entity(curr, temp._gen)
+    entity = Entity(curr % UInt32, temp._gen)
     p.entities[curr] = entity
 
     p.available -= 1
@@ -39,7 +39,7 @@ function _recycle(p::_EntityPool, e::Entity)
     end
     temp = p.next
     p.next = e._id
-    p.entities[e._id] = _new_entity(temp, e._gen + UInt32(1))
+    p.entities[e._id] = _new_entity(temp % UInt32, e._gen + UInt32(1))
     p.available += 1
     return nothing
 end
