@@ -7,11 +7,8 @@ A filter for components. See function
 See also [Query](@ref).
 """
 struct Filter{W<:World,TS<:Tuple,EX,OPT,M}
-    _mask::_Mask{M}
-    _exclude_mask::_Mask{M}
+    _filter::_MaskFilter{M}
     _world::W
-    _relations::Vector{Pair{Int,Entity}}
-    _has_excluded::Bool
 end
 
 """
@@ -126,16 +123,18 @@ end
             _empty_relations
         end
         Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$M}(
-            $(mask),
-            $(exclude_mask),
+            _MaskFilter(
+                $(mask),
+                $(exclude_mask),
+                relations,
+                $(has_excluded),
+            ),
             world,
-            relations,
-            $(has_excluded),
         )
     end
 end
 
-function _matches(filter::F, archetype::_ArchetypeHot) where {F<:Filter}
+function _matches(filter::F, archetype::_ArchetypeHot) where {F<:_MaskFilter}
     return _contains_all(archetype.mask, filter._mask) &&
            (!filter._has_excluded || !_contains_any(archetype.mask, filter._exclude_mask))
 end
@@ -144,7 +143,7 @@ function Base.show(io::IO, filter::Filter{W,CT,EX}) where {W<:World,CT<:Tuple,EX
     world_types = W.parameters[2].parameters
     comp_types = CT.parameters
 
-    mask_ids = _active_bit_indices(filter._mask)
+    mask_ids = _active_bit_indices(filter._filter._mask)
     mask_types = tuple(map(i -> world_types[Int(i)].parameters[1], mask_ids)...)
 
     required_types = intersect(mask_types, comp_types)
@@ -159,7 +158,7 @@ function Base.show(io::IO, filter::Filter{W,CT,EX}) where {W<:World,CT<:Tuple,EX
     excl_types = ()
     without_names = ""
     if !is_exclusive
-        excl_ids = _active_bit_indices(filter._exclude_mask)
+        excl_ids = _active_bit_indices(filter._filter._exclude_mask)
         excl_types = tuple(map(i -> world_types[Int(i)].parameters[1], excl_ids)...)
         without_names = join(map(_format_type, excl_types), ", ")
     end

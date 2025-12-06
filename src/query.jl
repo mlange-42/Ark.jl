@@ -11,10 +11,11 @@ A query for components. See function
 [Query](@ref Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 """
 struct Query{W<:World,TS<:Tuple,SM<:Tuple,EX,OPT,N,M}
-    _filter::Filter{W,TS,EX,OPT,M}
+    _filter::_MaskFilter{M}
     _archetypes::Vector{_Archetype{M}}
     _archetypes_hot::Vector{_ArchetypeHot{M}}
     _q_lock::_QueryCursor
+    _world::World
     _lock::Int
 end
 
@@ -121,10 +122,11 @@ end
     return quote
         arches, hot = $(archetypes)
         Query{$W,$TS,$storage_tuple_mode,$EX,$OPT,$(length(comp_types)),$M}(
-            filter,
+            filter._filter,
             arches,
             hot,
             _QueryCursor(_empty_tables, false),
+            filter._world,
             _lock(filter._world._lock),
         )
     end
@@ -159,7 +161,7 @@ end
             end
 
             if !archetype_hot.has_relations
-                table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
+                table = @inbounds q._world._tables[Int(archetype_hot.table)]
                 if isempty(table.entities)
                     arch += 1
                     continue
@@ -174,14 +176,14 @@ end
                 continue
             end
 
-            q._q_lock.tables = _get_tables(q._filter._world, archetype, q._filter._relations)
+            q._q_lock.tables = _get_tables(q._world, archetype, q._filter._relations)
             tab = 1
         end
 
         while tab <= length(q._q_lock.tables)
-            table = @inbounds q._filter._world._tables[Int(q._q_lock.tables[tab])]
+            table = @inbounds q._world._tables[Int(q._q_lock.tables[tab])]
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            if isempty(table.entities) || !_matches(q._filter._world._relations, table, q._filter._relations)
+            if isempty(table.entities) || !_matches(q._world._relations, table, q._filter._relations)
                 tab += 1
                 continue
             end
@@ -226,7 +228,7 @@ function Base.length(q::Query)
         end
 
         if !archetype_hot.has_relations
-            table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
+            table = @inbounds q._world._tables[Int(archetype_hot.table)]
             if isempty(table.entities)
                 continue
             end
@@ -239,11 +241,11 @@ function Base.length(q::Query)
             continue
         end
 
-        tables = _get_tables(q._filter._world, archetype, q._filter._relations)
+        tables = _get_tables(q._world, archetype, q._filter._relations)
         for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            table = @inbounds q._filter._world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(q._filter._world._relations, table, q._filter._relations)
+            table = @inbounds q._world._tables[Int(table_id)]
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter._relations)
                 count += 1
             end
         end
@@ -272,7 +274,7 @@ function count_entities(q::Query)
         end
 
         if !archetype_hot.has_relations
-            table = @inbounds q._filter._world._tables[Int(archetype_hot.table)]
+            table = @inbounds q._world._tables[Int(archetype_hot.table)]
             count += length(table.entities)
             continue
         end
@@ -282,11 +284,11 @@ function count_entities(q::Query)
             continue
         end
 
-        tables = _get_tables(q._filter._world, archetype, q._filter._relations)
+        tables = _get_tables(q._world, archetype, q._filter._relations)
         for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            table = @inbounds q._filter._world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(q._filter._world._relations, table, q._filter._relations)
+            table = @inbounds q._world._tables[Int(table_id)]
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter._relations)
                 count += length(table.entities)
             end
         end
@@ -302,7 +304,7 @@ Closes the query and unlocks the world.
 Must be called if a query is not fully iterated.
 """
 function close!(q::Query)
-    _unlock(q._filter._world._lock, q._lock)
+    _unlock(q._world._lock, q._lock)
     q._q_lock.closed = true
     return nothing
 end
@@ -321,7 +323,7 @@ end
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :(@inbounds $stor_sym = _get_storage(q._filter._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(q._world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table.id]))
 
         if is_optional[i] === Val{true}
