@@ -99,8 +99,8 @@ Base.@constprop :aggressive function Query(
 end
 
 @generated function _Query_from_filter(
-    filter::Filter{W,TS,EX,OPT,M},
-) where {W<:World,TS<:Tuple,EX,OPT<:Tuple,M}
+    filter::Filter{W,TS,EX,OPT,M,C},
+) where {W<:World,TS<:Tuple,EX,OPT<:Tuple,M,C}
     CS = W.parameters[1]
     world_storage_modes = W.parameters[3].parameters
     comp_types = _to_types(TS.parameters)
@@ -176,14 +176,14 @@ end
                 continue
             end
 
-            q._q_lock.tables = _get_tables(q._world, archetype, q._filter._relations)
+            q._q_lock.tables = _get_tables(q._world, archetype, q._filter.relations)
             tab = 1
         end
 
         while tab <= length(q._q_lock.tables)
             table = @inbounds q._world._tables[Int(q._q_lock.tables[tab])]
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            if isempty(table.entities) || !_matches(q._world._relations, table, q._filter._relations)
+            if isempty(table.entities) || !_matches(q._world._relations, table, q._filter.relations)
                 tab += 1
                 continue
             end
@@ -241,11 +241,11 @@ function Base.length(q::Query)
             continue
         end
 
-        tables = _get_tables(q._world, archetype, q._filter._relations)
+        tables = _get_tables(q._world, archetype, q._filter.relations)
         for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
             table = @inbounds q._world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter._relations)
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter.relations)
                 count += 1
             end
         end
@@ -284,11 +284,11 @@ function count_entities(q::Query)
             continue
         end
 
-        tables = _get_tables(q._world, archetype, q._filter._relations)
+        tables = _get_tables(q._world, archetype, q._filter.relations)
         for table_id in tables
             # TODO we can probably optimize here if exactly one relation in archetype and one queried.
             table = @inbounds q._world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter._relations)
+            if !isempty(table.entities) && _matches(q._world._relations, table, q._filter.relations)
                 count += length(table.entities)
             end
         end
@@ -388,7 +388,7 @@ function Base.show(io::IO, query::Query{W,CT,SM,EX}) where {W<:World,CT<:Tuple,S
     world_types = W.parameters[2].parameters
     comp_types = CT.parameters
 
-    mask_ids = _active_bit_indices(query._filter._mask)
+    mask_ids = _active_bit_indices(query._filter.mask)
     mask_types = tuple(map(i -> world_types[Int(i)].parameters[1], mask_ids)...)
 
     required_types = intersect(mask_types, comp_types)
@@ -403,7 +403,7 @@ function Base.show(io::IO, query::Query{W,CT,SM,EX}) where {W<:World,CT<:Tuple,S
     excl_types = ()
     without_names = ""
     if !is_exclusive
-        excl_ids = _active_bit_indices(query._filter._exclude_mask)
+        excl_ids = _active_bit_indices(query._filter.exclude_mask)
         excl_types = tuple(map(i -> world_types[Int(i)].parameters[1], excl_ids)...)
         without_names = join(map(_format_type, excl_types), ", ")
     end

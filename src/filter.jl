@@ -6,7 +6,7 @@ A filter for components. See function
 [Filter](@ref Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 See also [Query](@ref).
 """
-struct Filter{W<:World,TS<:Tuple,EX,OPT,M}
+struct Filter{W<:World,TS<:Tuple,EX,OPT,M,C}
     _filter::_MaskFilter{M}
     _world::W
 end
@@ -43,6 +43,7 @@ Base.@constprop :aggressive function Filter(
     without::Tuple=(),
     optional::Tuple=(),
     exclusive::Bool=false,
+    cached::Bool=false,
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
@@ -53,6 +54,7 @@ Base.@constprop :aggressive function Filter(
         ntuple(i -> Val(without[i]), length(without)),
         ntuple(i -> Val(optional[i]), length(optional)),
         Val(exclusive),
+        Val(cached),
         rel_types, targets,
     )
 end
@@ -64,9 +66,10 @@ end
     ::WO,
     ::OT,
     ::EX,
+    ::C,
     ::TR,
     targets::Tuple{Vararg{Entity}},
-) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val,TR<:Tuple}
+) where {W<:World,CT<:Tuple,WT<:Tuple,WO<:Tuple,OT<:Tuple,EX<:Val,C<:Val,TR<:Tuple}
     world_storage_modes = W.parameters[3].parameters
 
     required_types = _to_types(CT)
@@ -102,6 +105,7 @@ end
     mask = _Mask{M}(required_ids..., with_ids...)
     exclude_mask = EX === Val{true} ? _Mask{M}(_Not(), non_exclude_ids...) : _Mask{M}(without_ids...)
     has_excluded = (length(without_ids) > 0) || (EX === Val{true})
+    is_cached = C === Val{true}
 
     comp_tuple_type = Expr(:curly, :Tuple, comp_types...)
 
@@ -122,12 +126,12 @@ end
         else
             _empty_relations
         end
-        Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$M}(
+        Filter{$W,$comp_tuple_type,$EX,$optional_flags_type,$M,$C}(
             _MaskFilter(
                 $(mask),
                 $(exclude_mask),
                 relations,
-                _empty_table_ids,
+                $is_cached ? _TableIDs() : _empty_table_ids,
                 Base.RefValue{UInt32}(UInt32(0)),
                 $(has_excluded),
             ),
@@ -137,15 +141,15 @@ end
 end
 
 function _matches(filter::F, archetype::_ArchetypeHot) where {F<:_MaskFilter}
-    return _contains_all(archetype.mask, filter._mask) &&
-           (!filter._has_excluded || !_contains_any(archetype.mask, filter._exclude_mask))
+    return _contains_all(archetype.mask, filter.mask) &&
+           (!filter.has_excluded || !_contains_any(archetype.mask, filter.exclude_mask))
 end
 
-function Base.show(io::IO, filter::Filter{W,CT,EX}) where {W<:World,CT<:Tuple,EX<:Val}
+function Base.show(io::IO, filter::Filter{W,CT,EX,OPT,M,C}) where {W<:World,CT<:Tuple,EX<:Val,OPT,M,C<:Val}
     world_types = W.parameters[2].parameters
     comp_types = CT.parameters
 
-    mask_ids = _active_bit_indices(filter._filter._mask)
+    mask_ids = _active_bit_indices(filter._filter.mask)
     mask_types = tuple(map(i -> world_types[Int(i)].parameters[1], mask_ids)...)
 
     required_types = intersect(mask_types, comp_types)
@@ -156,11 +160,12 @@ function Base.show(io::IO, filter::Filter{W,CT,EX}) where {W<:World,CT<:Tuple,EX
     optional_names = join(map(_format_type, optional_types), ", ")
     with_names = join(map(_format_type, with_types), ", ")
     is_exclusive = EX === Val{true}
+    is_cached = C === Val{true}
 
     excl_types = ()
     without_names = ""
     if !is_exclusive
-        excl_ids = _active_bit_indices(filter._filter._exclude_mask)
+        excl_ids = _active_bit_indices(filter._filter.exclude_mask)
         excl_types = tuple(map(i -> world_types[Int(i)].parameters[1], excl_ids)...)
         without_names = join(map(_format_type, excl_types), ", ")
     end
@@ -177,6 +182,9 @@ function Base.show(io::IO, filter::Filter{W,CT,EX}) where {W<:World,CT<:Tuple,EX
     end
     if is_exclusive
         push!(kw_parts, "exclusive=true")
+    end
+    if is_cached
+        push!(kw_parts, "cached=true")
     end
 
     if isempty(kw_parts)

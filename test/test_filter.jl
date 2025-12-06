@@ -24,4 +24,7 @@ end
 
     filter = Filter(world, (Position, Velocity); optional=(Altitude,), without=(Health,))
     @test string(filter) == "Filter((Position, Velocity); optional=(Altitude), without=(Health))"
+
+    filter = Filter(world, (Position, Velocity); cached=true)
+    @test string(filter) == "Filter((Position, Velocity); cached=true)"
 end
