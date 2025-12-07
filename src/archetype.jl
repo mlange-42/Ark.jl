@@ -140,7 +140,7 @@ function _reset!(a::_Archetype)
         return
     end
 
-    for table in a.tables.tables
+    for table in a.tables.ids
         push!(a.free_tables, table)
     end
     _clear!(a.tables)

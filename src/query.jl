@@ -187,7 +187,7 @@ end
             end
 
             @inbounds archetype = q._archetypes[arch]
-            if isempty(archetype.tables.tables)
+            if isempty(archetype.tables.ids)
                 arch += 1
                 continue
             end
@@ -218,7 +218,7 @@ end
 @inline function _iterate_registered(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
     index, _ = state
     if index <= length(q._filter.tables)
-        @inbounds table_id = q._filter.tables.tables[index]
+        @inbounds table_id = q._filter.tables[index]
         @inbounds table = q._world._tables[table_id]
         result = _get_columns(q, table)
         return result, (index + 1, 0)
@@ -273,7 +273,7 @@ function _length(q::Q) where {Q<:Query}
         end
 
         archetype = @inbounds q._archetypes[i]
-        if isempty(archetype.tables.tables)
+        if isempty(archetype.tables)
             continue
         end
 
@@ -291,7 +291,7 @@ end
 
 function _length_registered(q::Q) where {Q<:Query}
     count = 0
-    for table_id in q._filter.tables.tables
+    for table_id in q._filter.tables.ids
         table = @inbounds q._world._tables[table_id]
         if !isempty(table.entities)
             count += 1
@@ -335,7 +335,7 @@ function _count_entities(q::Q) where {Q<:Query}
         end
 
         archetype = @inbounds q._archetypes[i]
-        if isempty(archetype.tables.tables)
+        if isempty(archetype.tables)
             continue
         end
 
@@ -353,7 +353,7 @@ end
 
 function _count_entities_registered(q::Q) where {Q<:Query}
     count = 0
-    for table_id in q._filter.tables.tables
+    for table_id in q._filter.tables.ids
         table = @inbounds q._world._tables[table_id]
         count += length(table.entities)
     end

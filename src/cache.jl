@@ -65,7 +65,7 @@ function _unregister_filter!(world::W, filter::F) where {W<:_AbstractWorld,F<:_M
         throw(InvalidStateException("filter is not registered to the cache", :filter_not_registered))
     end
 
-    for table_id in filter.tables.tables
+    for table_id in filter.tables.ids
         table = world._tables[table_id]
         _remove_table!(table.filters, filter.id[])
     end
@@ -103,7 +103,7 @@ function _add_table!(
 end
 
 function _remove_table!(cache::_Cache, table::_Table)
-    for filter_id in table.filters.tables
+    for filter_id in table.filters.ids
         filter = cache.filters[filter_id]
         _remove_table!(filter.tables, table.id)
     end

@@ -6,7 +6,7 @@
     @test length(world._cache.filters) == 1
     @test length(filter1._filter.tables) == 1
     @test filter1._filter.id[] == 1
-    @test world._tables[1].filters.tables == [UInt32(1)]
+    @test world._tables[1].filters.ids == [UInt32(1)]
 
     filter2 = Filter(world, (Altitude,); register=true)
     @test length(world._cache.filters) == 2
@@ -27,7 +27,7 @@
     @test world._cache.free_indices == [UInt32(1)]
     @test length(filter1._filter.tables) == 0
     @test filter1._filter.id[] == 0
-    @test world._tables[1].filters.tables == []
+    @test world._tables[1].filters.ids == []
 
     unregister!(filter3)
     @test world._cache.free_indices == [UInt32(1)]

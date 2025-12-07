@@ -1,60 +1,58 @@
 
 struct _IdCollection
-    tables::Vector{UInt32}
+    ids::Vector{UInt32}
     indices::Dict{UInt32,Int}
 end
 
-# TODO: rename to reflect it is just a collection of IDs
 function _IdCollection()
     return _IdCollection(Vector{UInt32}(), Dict{UInt32,Int}())
 end
 
-function _IdCollection(tables::UInt32...)
-    vec = collect(UInt32, tables)
+function _IdCollection(ids::UInt32...)
+    vec = collect(UInt32, ids)
     indices = Dict{UInt32,Int}()
 
-    for (i, table) in enumerate(tables)
-        indices[table] = i
+    for (i, id) in enumerate(ids)
+        indices[id] = i
     end
 
     return _IdCollection(vec, indices)
 end
 
-# TODO: rename to reflect it is just a collection of IDs
-function _add_table!(ids::_IdCollection, table::UInt32)
-    push!(ids.tables, table)
-    ids.indices[table] = length(ids.tables)
+function _add_table!(ids::_IdCollection, id::UInt32)
+    push!(ids.ids, id)
+    ids.indices[id] = length(ids.ids)
     return nothing
 end
 
-# TODO: rename to reflect it is just a collection of IDs
-function _remove_table!(ids::_IdCollection, table::UInt32)
-    if !haskey(ids.indices, table)
+function _remove_table!(ids::_IdCollection, id::UInt32)
+    if !haskey(ids.indices, id)
         return false
     end
-    idx = ids.indices[table]
-    last = length(ids.tables)
+    idx = ids.indices[id]
+    last = length(ids.ids)
     if idx != last
-        ids.tables[idx], ids.tables[last] = ids.tables[last], ids.tables[idx]
-        ids.indices[ids.tables[idx]] = idx
+        ids.ids[idx], ids.ids[last] = ids.ids[last], ids.ids[idx]
+        ids.indices[ids.ids[idx]] = idx
     end
-    pop!(ids.tables)
-    delete!(ids.indices, table)
+    pop!(ids.ids)
+    delete!(ids.indices, id)
     return true
 end
 
-function _contains(ids::_IdCollection, table::UInt32)
-    return haskey(ids.indices, table)
+function _contains(ids::_IdCollection, id::UInt32)
+    return haskey(ids.indices, id)
 end
 
 function _clear!(ids::_IdCollection)
-    resize!(ids.tables, 0)
+    resize!(ids.ids, 0)
     empty!(ids.indices)
     return nothing
 end
 
-Base.length(t::_IdCollection) = length(t.tables)
-Base.@propagate_inbounds Base.getindex(t::_IdCollection, i::Int) = t.tables[i]
+Base.length(t::_IdCollection) = length(t.ids)
+Base.isempty(t::_IdCollection) = isempty(t.ids)
+Base.@propagate_inbounds Base.getindex(t::_IdCollection, i::Int) = t.ids[i]
 
 const _empty_tables::Vector{UInt32} = Vector{UInt32}()
 const _empty_table_ids::_IdCollection = _IdCollection()
