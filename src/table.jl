@@ -2,17 +2,17 @@
 struct _Table
     entities::Entities
     relations::Vector{Pair{Int,Entity}}
-    filters::_TableIDs
+    filters::_IdCollection
     id::UInt32
     archetype::UInt32
 end
 
 function _new_table(id::UInt32, archetype::UInt32)
-    return _Table(Entities(0), Pair{Int,Entity}[], _TableIDs(), id, archetype)
+    return _Table(Entities(0), Pair{Int,Entity}[], _IdCollection(), id, archetype)
 end
 
 function _new_table(id::UInt32, archetype::UInt32, cap::Int, relations::Vector{Pair{Int,Entity}})
-    return _Table(Entities(cap), relations, _TableIDs(), id, archetype)
+    return _Table(Entities(cap), relations, _IdCollection(), id, archetype)
 end
 
 _has_relations(t::_Table) = !isempty(t.relations)

@@ -1,15 +1,15 @@
 
-struct _TableIDs
+struct _IdCollection
     tables::Vector{UInt32}
     indices::Dict{UInt32,Int}
 end
 
 # TODO: rename to reflect it is just a collection of IDs
-function _TableIDs()
-    return _TableIDs(Vector{UInt32}(), Dict{UInt32,Int}())
+function _IdCollection()
+    return _IdCollection(Vector{UInt32}(), Dict{UInt32,Int}())
 end
 
-function _TableIDs(tables::UInt32...)
+function _IdCollection(tables::UInt32...)
     vec = collect(UInt32, tables)
     indices = Dict{UInt32,Int}()
 
@@ -17,18 +17,18 @@ function _TableIDs(tables::UInt32...)
         indices[table] = i
     end
 
-    return _TableIDs(vec, indices)
+    return _IdCollection(vec, indices)
 end
 
 # TODO: rename to reflect it is just a collection of IDs
-function _add_table!(ids::_TableIDs, table::UInt32)
+function _add_table!(ids::_IdCollection, table::UInt32)
     push!(ids.tables, table)
     ids.indices[table] = length(ids.tables)
     return nothing
 end
 
 # TODO: rename to reflect it is just a collection of IDs
-function _remove_table!(ids::_TableIDs, table::UInt32)
+function _remove_table!(ids::_IdCollection, table::UInt32)
     if !haskey(ids.indices, table)
         return false
     end
@@ -43,18 +43,18 @@ function _remove_table!(ids::_TableIDs, table::UInt32)
     return true
 end
 
-function _contains(ids::_TableIDs, table::UInt32)
+function _contains(ids::_IdCollection, table::UInt32)
     return haskey(ids.indices, table)
 end
 
-function _clear!(ids::_TableIDs)
+function _clear!(ids::_IdCollection)
     resize!(ids.tables, 0)
     empty!(ids.indices)
     return nothing
 end
 
-Base.length(t::_TableIDs) = length(t.tables)
-Base.@propagate_inbounds Base.getindex(t::_TableIDs, i::Int) = t.tables[i]
+Base.length(t::_IdCollection) = length(t.tables)
+Base.@propagate_inbounds Base.getindex(t::_IdCollection, i::Int) = t.tables[i]
 
 const _empty_tables::Vector{UInt32} = Vector{UInt32}()
-const _empty_table_ids::_TableIDs = _TableIDs()
+const _empty_table_ids::_IdCollection = _IdCollection()

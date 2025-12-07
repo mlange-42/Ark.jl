@@ -131,7 +131,7 @@ end
                 $(mask),
                 $(exclude_mask),
                 relations,
-                $register ? _TableIDs() : _empty_table_ids,
+                $register ? _IdCollection() : _empty_table_ids,
                 Base.RefValue{UInt32}(UInt32(0)),
                 $(has_excluded),
             ),

@@ -27,9 +27,9 @@ end
 
 mutable struct _Archetype{M}
     const components::Vector{Int}
-    const tables::_TableIDs
-    const index::Vector{Dict{UInt32,_TableIDs}}
-    const target_tables::Dict{UInt32,_TableIDs}
+    const tables::_IdCollection
+    const index::Vector{Dict{UInt32,_IdCollection}}
+    const target_tables::Dict{UInt32,_IdCollection}
     const free_tables::Vector{UInt32}
     const node::_GraphNode{M}
     const num_relations::UInt32
@@ -40,9 +40,9 @@ end
 function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
     _Archetype(
         Vector{Int}(),
-        _TableIDs(table),
-        Vector{Dict{UInt32,_TableIDs}}(),
-        Dict{UInt32,_TableIDs}(),
+        _IdCollection(table),
+        Vector{Dict{UInt32,_IdCollection}}(),
+        Dict{UInt32,_IdCollection}(),
         Vector{UInt32}(),
         node,
         UInt32(0),
@@ -60,9 +60,9 @@ function _Archetype(
 )
     _Archetype(
         collect(Int, components),
-        _TableIDs(),
-        [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
-        Dict{UInt32,_TableIDs}(),
+        _IdCollection(),
+        [Dict{UInt32,_IdCollection}() for _ in eachindex(relations)],
+        Dict{UInt32,_IdCollection}(),
         Vector{UInt32}(),
         node,
         UInt32(length(relations)),
@@ -84,7 +84,7 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
         if haskey(dict, target._id)
             _add_table!(dict[target._id], t.id)
         else
-            dict[target._id] = _TableIDs(t.id)
+            dict[target._id] = _IdCollection(t.id)
         end
 
         if haskey(arch.target_tables, target._id)
@@ -93,7 +93,7 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
                 _add_table!(tables, t.id)
             end
         else
-            arch.target_tables[target._id] = _TableIDs(t.id)
+            arch.target_tables[target._id] = _IdCollection(t.id)
         end
     end
 end

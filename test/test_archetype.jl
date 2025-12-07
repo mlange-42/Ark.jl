@@ -1,5 +1,5 @@
 
-@testset "_TableIDs" begin
+@testset "_IdCollection" begin
     t1 = _new_table(UInt32(1), UInt32(1))
     t2 = _new_table(UInt32(2), UInt32(1))
     t3 = _new_table(UInt32(3), UInt32(1))
@@ -7,7 +7,7 @@
     t5 = _new_table(UInt32(5), UInt32(1))
     t6 = _new_table(UInt32(6), UInt32(1))
 
-    ids = _TableIDs(t5.id, t4.id, t3.id, t2.id, t1.id)
+    ids = _IdCollection(t5.id, t4.id, t3.id, t2.id, t1.id)
 
     @test ids.tables == [t5.id, t4.id, t3.id, t2.id, t1.id]
     @test ids[1] == 5
