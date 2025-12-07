@@ -13,6 +13,10 @@
 
 - Use a hash table for some component transitions (#348)
 
+## Documentation
+
+- Adds a chapter on Ark's architecture to the user manual (#391)
+
 ## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 
 ### Breaking changes
