@@ -1,5 +1,5 @@
 
-@testset "_TableIDs" begin
+@testset "_IdCollection" begin
     t1 = _new_table(UInt32(1), UInt32(1))
     t2 = _new_table(UInt32(2), UInt32(1))
     t3 = _new_table(UInt32(3), UInt32(1))
@@ -7,28 +7,28 @@
     t5 = _new_table(UInt32(5), UInt32(1))
     t6 = _new_table(UInt32(6), UInt32(1))
 
-    ids = _TableIDs(t5.id, t4.id, t3.id, t2.id, t1.id)
+    ids = _IdCollection(t5.id, t4.id, t3.id, t2.id, t1.id)
 
-    @test ids.tables == [t5.id, t4.id, t3.id, t2.id, t1.id]
+    @test ids.ids == [t5.id, t4.id, t3.id, t2.id, t1.id]
     @test ids[1] == 5
     @test ids[5] == 1
     @test ids.indices[5] == 1
     @test ids.indices[1] == 5
 
-    _add_table!(ids, t6.id)
-    @test ids.tables == [t5.id, t4.id, t3.id, t2.id, t1.id, t6.id]
+    _add_id!(ids, t6.id)
+    @test ids.ids == [t5.id, t4.id, t3.id, t2.id, t1.id, t6.id]
     @test ids.indices[6] == 6
 
-    @test _remove_table!(ids, t3.id) == true
-    @test ids.tables == [t5.id, t4.id, t6.id, t2.id, t1.id]
+    @test _remove_id!(ids, t3.id) == true
+    @test ids.ids == [t5.id, t4.id, t6.id, t2.id, t1.id]
     @test ids.indices[6] == 3
 
-    @test _remove_table!(ids, t1.id) == true
-    @test ids.tables == [t5.id, t4.id, t6.id, t2.id]
+    @test _remove_id!(ids, t1.id) == true
+    @test ids.ids == [t5.id, t4.id, t6.id, t2.id]
     @test ids.indices[6] == 3
 
-    @test _remove_table!(ids, t1.id) == false
-    @test ids.tables == [t5.id, t4.id, t6.id, t2.id]
+    @test _remove_id!(ids, t1.id) == false
+    @test ids.ids == [t5.id, t4.id, t6.id, t2.id]
     @test ids[3] == 6
     @test ids.indices[6] == 3
 end

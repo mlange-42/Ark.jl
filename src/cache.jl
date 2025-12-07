@@ -3,14 +3,14 @@ struct _MaskFilter{M}
     mask::_Mask{M}
     exclude_mask::_Mask{M}
     relations::Vector{Pair{Int,Entity}}
-    tables::_TableIDs
+    tables::_IdCollection
     id::Base.RefValue{UInt32}
     has_excluded::Bool
 end
 
 function _add_table!(filter::F, table::_Table) where {F<:_MaskFilter}
-    _add_table!(filter.tables, table.id)
-    _add_table!(table.filters, filter.id[])
+    _add_id!(filter.tables, table.id)
+    _add_id!(table.filters, filter.id[])
 end
 
 struct _Cache{M}
@@ -65,9 +65,9 @@ function _unregister_filter!(world::W, filter::F) where {W<:_AbstractWorld,F<:_M
         throw(InvalidStateException("filter is not registered to the cache", :filter_not_registered))
     end
 
-    for table_id in filter.tables.tables
+    for table_id in filter.tables.ids
         table = world._tables[table_id]
-        _remove_table!(table.filters, filter.id[])
+        _remove_id!(table.filters, filter.id[])
     end
 
     if filter.id[] == length(world._cache.filters)
@@ -103,9 +103,9 @@ function _add_table!(
 end
 
 function _remove_table!(cache::_Cache, table::_Table)
-    for filter_id in table.filters.tables
+    for filter_id in table.filters.ids
         filter = cache.filters[filter_id]
-        _remove_table!(filter.tables, table.id)
+        _remove_id!(filter.tables, table.id)
     end
     _clear!(table.filters)
 end

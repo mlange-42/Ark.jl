@@ -411,10 +411,10 @@ end
 
     @inbounds tables = index[target_id]
     if arch.num_relations == 1
-        return @inbounds world._tables[tables.tables[1]], true
+        return @inbounds world._tables[tables.ids[1]], true
     end
 
-    for table_id in tables.tables
+    for table_id in tables.ids
         table = world._tables[table_id]
         if _matches_exact(world._relations, table, relations)
             return table, true
@@ -426,7 +426,7 @@ end
 
 function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,Entity}})::Vector{UInt32}
     if !_has_relations(arch) || isempty(relations)
-        return arch.tables.tables
+        return arch.tables.ids
     end
 
     @inbounds first_rel = relations[1]
@@ -439,7 +439,7 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
         return _empty_tables
     end
 
-    return @inbounds index[target_id].tables
+    return @inbounds index[target_id].ids
 end
 
 @inline @generated function _create_entity!(world::W, table_index::UInt32)::Tuple{Entity,Int} where {W<:World}
@@ -2266,8 +2266,8 @@ function _cleanup_archetypes(world::World, entity::Entity)
         end
         tables = archetype.target_tables[entity._id]
 
-        for t in length(tables.tables):-1:1
-            table_id = tables.tables[t]
+        for t in length(tables.ids):-1:1
+            table_id = tables.ids[t]
             table = world._tables[table_id]
             has_target = false
             for rel in table.relations

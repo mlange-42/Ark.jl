@@ -27,9 +27,9 @@ end
 
 mutable struct _Archetype{M}
     const components::Vector{Int}
-    const tables::_TableIDs
-    const index::Vector{Dict{UInt32,_TableIDs}}
-    const target_tables::Dict{UInt32,_TableIDs}
+    const tables::_IdCollection
+    const index::Vector{Dict{UInt32,_IdCollection}}
+    const target_tables::Dict{UInt32,_IdCollection}
     const free_tables::Vector{UInt32}
     const node::_GraphNode{M}
     const num_relations::UInt32
@@ -40,9 +40,9 @@ end
 function _Archetype(id::UInt32, node::_GraphNode, table::UInt32)
     _Archetype(
         Vector{Int}(),
-        _TableIDs(table),
-        Vector{Dict{UInt32,_TableIDs}}(),
-        Dict{UInt32,_TableIDs}(),
+        _IdCollection(table),
+        Vector{Dict{UInt32,_IdCollection}}(),
+        Dict{UInt32,_IdCollection}(),
         Vector{UInt32}(),
         node,
         UInt32(0),
@@ -60,9 +60,9 @@ function _Archetype(
 )
     _Archetype(
         collect(Int, components),
-        _TableIDs(),
-        [Dict{UInt32,_TableIDs}() for _ in eachindex(relations)],
-        Dict{UInt32,_TableIDs}(),
+        _IdCollection(),
+        [Dict{UInt32,_IdCollection}() for _ in eachindex(relations)],
+        Dict{UInt32,_IdCollection}(),
         Vector{UInt32}(),
         node,
         UInt32(length(relations)),
@@ -72,7 +72,7 @@ function _Archetype(
 end
 
 function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::_Table)
-    _add_table!(arch.tables, t.id)
+    _add_id!(arch.tables, t.id)
 
     if !_has_relations(arch)
         return
@@ -82,18 +82,18 @@ function _add_table!(indices::Vector{_ComponentRelations}, arch::_Archetype, t::
         idx = indices[comp].archetypes[arch.id]
         dict = arch.index[idx]
         if haskey(dict, target._id)
-            _add_table!(dict[target._id], t.id)
+            _add_id!(dict[target._id], t.id)
         else
-            dict[target._id] = _TableIDs(t.id)
+            dict[target._id] = _IdCollection(t.id)
         end
 
         if haskey(arch.target_tables, target._id)
             tables = arch.target_tables[target._id]
             if !_contains(tables, t.id)
-                _add_table!(tables, t.id)
+                _add_id!(tables, t.id)
             end
         else
-            arch.target_tables[target._id] = _TableIDs(t.id)
+            arch.target_tables[target._id] = _IdCollection(t.id)
         end
     end
 end
@@ -101,7 +101,7 @@ end
 _has_relations(a::_Archetype) = a.num_relations > 0
 
 function _free_table!(a::_Archetype, table::_Table)
-    _remove_table!(a.tables, table.id)
+    _remove_id!(a.tables, table.id)
     push!(a.free_tables, table.id)
 
     # If there is only one relation, the resp. relation_tables
@@ -113,11 +113,11 @@ function _free_table!(a::_Archetype, table::_Table)
     # TODO: can/should we be more selective here?
     for dict in a.index
         for tables in values(dict)
-            _remove_table!(tables, table.id)
+            _remove_id!(tables, table.id)
         end
     end
     for tables in values(a.target_tables)
-        _remove_table!(tables, table.id)
+        _remove_id!(tables, table.id)
     end
 end
 
@@ -140,7 +140,7 @@ function _reset!(a::_Archetype)
         return
     end
 
-    for table in a.tables.tables
+    for table in a.tables.ids
         push!(a.free_tables, table)
     end
     _clear!(a.tables)
