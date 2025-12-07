@@ -19,13 +19,13 @@ function _IdCollection(ids::UInt32...)
     return _IdCollection(vec, indices)
 end
 
-function _add_table!(ids::_IdCollection, id::UInt32)
+function _add_id!(ids::_IdCollection, id::UInt32)
     push!(ids.ids, id)
     ids.indices[id] = length(ids.ids)
     return nothing
 end
 
-function _remove_table!(ids::_IdCollection, id::UInt32)
+function _remove_id!(ids::_IdCollection, id::UInt32)
     if !haskey(ids.indices, id)
         return false
     end
