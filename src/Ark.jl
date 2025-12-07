@@ -6,6 +6,7 @@ using FunctionWrappers: FunctionWrapper
 
 include("abstract.jl")
 include("util.jl")
+include("collections.jl")
 include("structarray.jl")
 include("fieldsview.jl")
 include("entity.jl")
