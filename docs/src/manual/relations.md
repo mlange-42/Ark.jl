@@ -189,7 +189,7 @@ Entities that are the target of any relationships can be removed from the world 
 When this happens, all entities that have this target in a relation get assigned to the zero entity as target.
 The respective [archetype](@ref Architecture) sub-table is de-activated and marked for potential re-use for another target entity.
 
-## Limitation
+## Limitations
 
 Unlike [Flecs](https://flecs.dev), the ECS that pioneered entity relationships,
 Ark is limited to supporting only "exclusive" relationships.

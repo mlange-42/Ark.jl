@@ -8,3 +8,11 @@ For now, see chapter [Architecture](https://mlange-42.github.io/ark/architecture
 of the Go ECS [Ark](https://github.com/mlange-42/ark), which Arks.jl is a port of.
 
 TODO
+
+## Archetypes
+
+## World component access
+
+## Component index
+
+## Relationships
