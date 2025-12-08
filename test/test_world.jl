@@ -1070,11 +1070,19 @@ end
     world = World(Dummy, Position, Velocity, ChildOf)
 
     count = 0
-    obs = observe!(world, OnRemoveEntity) do entity
+    obs1 = observe!(world, OnRemoveEntity) do entity
         @test is_locked(world) == true
         @test is_alive(world, entity) == true
         count += 1
     end
+    count_rel = 0
+    obs2 = observe!(world, OnRemoveRelations) do entity
+        @test is_locked(world) == true
+        @test is_alive(world, entity) == true
+        count_rel += 1
+    end
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
 
     e1 = new_entity!(world, (Position(1, 1),))
     e2 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
@@ -1085,8 +1093,51 @@ end
     @test is_alive(world, e1) == true
     @test is_alive(world, e2) == false
     @test count == 1
+    @test count_rel == 0
 
     @test length(world._tables[3].entities) == 0
+
+    entities1 = Entity[]
+    for (entities, _, _, _) in new_entities!(world, 10,
+        (Position(0, 0), Velocity(0, 0), ChildOf());
+        relations=(ChildOf => parent1,),
+        iterate=true,
+    )
+        append!(entities1, entities)
+    end
+
+    entities2 = Entity[]
+    for (entities, _, _, _) in new_entities!(world, 10,
+        (Position(0, 0), Velocity(0, 0), ChildOf());
+        relations=(ChildOf => parent2,),
+        iterate=true,
+    )
+        append!(entities2, entities)
+    end
+
+    filter2 = Filter(world, (ChildOf,); relations=(ChildOf => parent1,))
+    remove_entities!(world, filter2)
+
+    @test count == 11
+    @test count_rel == 10
+
+    for entity in entities1
+        @test is_alive(world, entity) == false
+    end
+
+    for entity in entities2
+        @test is_alive(world, entity) == true
+    end
+
+    filter3 = Filter(world, ())
+    remove_entities!(world, filter3)
+
+    @test count == 24
+    @test count_rel == 20
+
+    query = Query(world, ())
+    @test count_entities(query) == 0
+    close!(query)
 end
 
 @testset "World reset!" begin

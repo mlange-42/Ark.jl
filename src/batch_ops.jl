@@ -129,8 +129,9 @@ function _get_tables(
     arches::Vector{_Archetype{M}},
     arches_hot::Vector{_ArchetypeHot{M}},
     filter::F,
-) where {M,F<:Filter}
+)::Tuple{Vector{_Table},Bool} where {M,F<:Filter}
     tables = world._pool.tables
+    any_relations = false
     for arch in eachindex(arches)
         @inbounds archetype_hot = arches_hot[arch]
         if !_matches(filter._filter, archetype_hot)
@@ -144,20 +145,21 @@ function _get_tables(
             push!(tables, table)
             continue
         end
-        archetype = @inbounds arch[arch]
+        archetype = @inbounds arches[arch]
         if isempty(archetype.tables)
             continue
         end
-        tables = _get_tables(world, archetype, filter._filter.relations)
-        for table_id in tables
+        arch_tables = _get_tables(world, archetype, filter._filter.relations)
+        for table_id in arch_tables
             table = @inbounds world._tables[Int(table_id)]
             if !isempty(table.entities) && _matches(world._relations, table, filter._filter.relations)
                 push!(tables, table)
+                any_relations = true
             end
         end
     end
 
-    return tables
+    return tables, any_relations
 end
 
 @generated function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
@@ -181,20 +183,30 @@ end
 
         arches, arches_hot = $archetypes
         # TODO: make separate path for cached filters.
-        tables = _get_tables(world, arches, arches_hot, filter)
+        tables, any_relations = _get_tables(world, arches, arches_hot, filter)
 
         has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
-        has_rel_obs = _has_observers(world._event_manager, OnRemoveRelations)
+        has_rel_obs = any_relations && _has_observers(world._event_manager, OnRemoveRelations)
         if has_entity_obs || has_rel_obs
             l = _lock(world._lock)
             if has_entity_obs
                 for table in tables
-                    _fire_remove_entities(world._event_manager, table, world._archetypes_hot[table.id].mask)
+                    _fire_remove_entities(
+                        world._event_manager,
+                        table,
+                        world._archetypes_hot[table.archetype].mask,
+                    )
                 end
             end
             if has_rel_obs
                 for table in tables
-                    _fire_remove_entities_relations(world._event_manager, table, world._archetypes_hot[table.id].mask)
+                    if _has_relations(table)
+                        _fire_remove_entities_relations(
+                            world._event_manager,
+                            table,
+                            world._archetypes_hot[table.archetype].mask,
+                        )
+                    end
                 end
             end
             _unlock(world._lock, l)
@@ -209,12 +221,10 @@ end
                 _recycle(world._entity_pool, entity)
             end
             resize!(table, 0)
-            for comp in world._archetypes[table.id].components
+            for comp in world._archetypes[table.archetype].components
                 _clear_component_data!(world, comp, table.id)
             end
         end
-
-        resize!(tables, 0)
 
         $(world_has_rel ?
           :(
@@ -225,6 +235,8 @@ end
         ) :
           (:(nothing))
         )
+
+        resize!(tables, 0)
         resize!(cleanup, 0)
 
         return nothing
