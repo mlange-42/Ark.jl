@@ -13,11 +13,18 @@ const _empty_relations::Vector{Pair{Int,Entity}} = Vector{Pair{Int,Entity}}()
 
 struct _WorldPool{M}
     relations::Vector{Pair{Int,Entity}}
+    entities::Vector{Entity}
+    tables::Vector{_Table}
     mask::_MutableMask{M}
 end
 
 function _WorldPool{M}() where {M}
-    return _WorldPool(Vector{Pair{Int,Entity}}(), _MutableMask{M}())
+    return _WorldPool(
+        Vector{Pair{Int,Entity}}(),
+        Vector{Entity}(),
+        Vector{_Table}(),
+        _MutableMask{M}(),
+    )
 end
 
 """
@@ -429,6 +436,71 @@ remove_entity!(world, entity)
         ) :
           (:(nothing))
         )
+
+        return nothing
+    end
+end
+
+@generated function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
+    CS = W.parameters[1]
+    TS = filter.parameters[2]
+    OPT = filter.parameters[4]
+
+    comp_types = _to_types(TS.parameters)
+    optional_flags = OPT.parameters
+
+    required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
+    ids_tuple = tuple(required_ids...)
+
+    archetypes =
+        length(ids_tuple) == 0 ? :((world._archetypes, world._archetypes_hot)) :
+        :(_get_archetypes(world, $ids_tuple))
+
+    world_has_rel = _has_relations(CS)
+    quote
+        _check_locked(world)
+
+        arches, arches_hot = $arches
+
+        has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
+        has_rel_obs = _has_observers(world._event_manager, OnRemoveRelations)
+        if has_entity_obs || has_rel_obs
+            l = _lock(world._lock)
+            if has_entity_obs
+                # TODO
+            end
+            if has_rel_obs
+                # TODO _has_relations(archetype)...
+            end
+            _unlock(world._lock, l)
+        end
+
+        # TODO: make separate path for cached filters.
+        tables = _get_table(world, arches, arches_hot, filter)
+        cleanup = world._pool.entities
+        for table in tables
+            append!(cleanup, table.entities._data)
+            for entity in table.entities
+                _recycle(world._entity_pool, entity)
+            end
+            resize!(table, 0)
+            for comp in archetype.components
+                _clear_component_data!(world, comp, table.id)
+            end
+        end
+
+        resize!(tables, 0)
+
+        $(world_has_rel ?
+          :(
+            if world._targets[entity._id]
+                _cleanup_archetypes(world, entity)
+                world._targets[entity._id] = false
+            end
+        ) :
+          (:(nothing))
+        )
+        resize!(cleanup, 0)
 
         return nothing
     end
@@ -1246,6 +1318,57 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
     end
 
     return @inbounds index[target_id].ids
+end
+
+function _get_tables(
+    world::World,
+    arches::Vector{_Archetype{M}},
+    arches_hot::Vector{_ArchetypeHot{M}},
+    filter::F,
+) where {M,F<:Filter}
+    tables = world._pool.tables
+    for arch in eachindex(arches)
+        @inbounds archetype_hot = arches_hot[arch]
+        if !_matches(filter, archetype_hot)
+            continue
+        end
+        if !archetype_hot.has_relations
+            table = @inbounds world._tables[Int(archetype_hot.table)]
+            if isempty(table.entities)
+                continue
+            end
+            push!(tables, table)
+            continue
+        end
+        archetype = @inbounds arch[arch]
+        if isempty(archetype.tables)
+            continue
+        end
+        tables = _get_tables(world, archetype, filter.relations)
+        for table_id in tables
+            table = @inbounds world._tables[Int(table_id)]
+            if !isempty(table.entities) && _matches(world._relations, table, filter.relations)
+                push!(tables, table)
+            end
+        end
+    end
+end
+
+function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
+    comps = world._index.archetypes
+    hot = world._index.archetypes_hot
+    rare_comp = @inbounds comps[ids[1]]
+    rare_hot = @inbounds hot[ids[1]]
+    min_len = length(rare_comp)
+    @inbounds for i in 2:length(ids)
+        comp = comps[ids[i]]
+        comp_len = length(comp)
+        if comp_len < min_len
+            rare_comp, min_len = comp, comp_len
+            rare_hot = hot[ids[i]]
+        end
+    end
+    return rare_comp, rare_hot
 end
 
 function _cleanup_archetypes(world::World, entity::Entity)
