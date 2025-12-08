@@ -1067,7 +1067,7 @@ end
 end
 
 @testset "remove_entities! Tests" begin
-    world = World(Dummy, Position, Velocity, ChildOf)
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf)
 
     count = 0
     obs1 = observe!(world, OnRemoveEntity) do entity
@@ -1085,17 +1085,19 @@ end
     parent2 = new_entity!(world, ())
 
     e1 = new_entity!(world, (Position(1, 1),))
-    e2 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
+    e2 = new_entity!(world, (Velocity(1, 1),))
+    e3 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
 
     filter1 = Filter(world, (Position, Velocity))
     remove_entities!(world, filter1)
 
     @test is_alive(world, e1) == true
-    @test is_alive(world, e2) == false
+    @test is_alive(world, e2) == true
+    @test is_alive(world, e3) == false
     @test count == 1
     @test count_rel == 0
 
-    @test length(world._tables[3].entities) == 0
+    @test length(world._tables[4].entities) == 0
 
     entities1 = Entity[]
     for (entities, _, _, _) in new_entities!(world, 10,
@@ -1115,11 +1117,16 @@ end
         append!(entities2, entities)
     end
 
+    # create an archetype without tables
+    parent3 = new_entity!(world, ())
+    remove_entity!(world, new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent3,)))
+    remove_entity!(world, parent3)
+
     filter2 = Filter(world, (ChildOf,); relations=(ChildOf => parent1,))
     remove_entities!(world, filter2)
 
-    @test count == 11
-    @test count_rel == 10
+    @test count == 13
+    @test count_rel == 11
 
     for entity in entities1
         @test is_alive(world, entity) == false
@@ -1132,8 +1139,8 @@ end
     filter3 = Filter(world, ())
     remove_entities!(world, filter3)
 
-    @test count == 24
-    @test count_rel == 20
+    @test count == 27
+    @test count_rel == 21
 
     query = Query(world, ())
     @test count_entities(query) == 0
