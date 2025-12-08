@@ -162,7 +162,12 @@ function _get_tables(
     return tables, any_relations
 end
 
-@generated function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
+function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
+    remove_entities!(world, filter) do entities
+    end
+end
+
+@generated function remove_entities!(fn::Fn, world::W, filter::F) where {Fn,W<:World,F<:Filter}
     CS = W.parameters[1]
     TS = F.parameters[2]
     OPT = F.parameters[4]
@@ -185,32 +190,34 @@ end
         # TODO: make separate path for cached filters.
         tables, any_relations = _get_tables(world, arches, arches_hot, filter)
 
-        has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
-        has_rel_obs = any_relations && _has_observers(world._event_manager, OnRemoveRelations)
-        if has_entity_obs || has_rel_obs
-            l = _lock(world._lock)
-            if has_entity_obs
-                for table in tables
-                    _fire_remove_entities(
+        for table in tables
+            fn(table.entities)
+        end
+
+        l = _lock(world._lock)
+
+        if _has_observers(world._event_manager, OnRemoveEntity)
+            for table in tables
+                _fire_remove_entities(
+                    world._event_manager,
+                    table,
+                    world._archetypes_hot[table.archetype].mask,
+                )
+            end
+        end
+        if any_relations && _has_observers(world._event_manager, OnRemoveRelations)
+            for table in tables
+                if _has_relations(table)
+                    _fire_remove_entities_relations(
                         world._event_manager,
                         table,
                         world._archetypes_hot[table.archetype].mask,
                     )
                 end
             end
-            if has_rel_obs
-                for table in tables
-                    if _has_relations(table)
-                        _fire_remove_entities_relations(
-                            world._event_manager,
-                            table,
-                            world._archetypes_hot[table.archetype].mask,
-                        )
-                    end
-                end
-            end
-            _unlock(world._lock, l)
         end
+
+        _unlock(world._lock, l)
 
         cleanup = world._pool.entities
         for table in tables

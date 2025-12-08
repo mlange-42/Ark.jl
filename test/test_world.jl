@@ -1147,6 +1147,23 @@ end
     close!(query)
 end
 
+@testset "remove_entities! callback" begin
+    world = World(Dummy, Position, Velocity, Altitude)
+
+    new_entity!(world, (Position(1, 1),))
+    new_entity!(world, (Position(2, 2),))
+
+    filter = Filter(world, (Position,))
+
+    counter = 0
+    remove_entities!(world, filter) do entities
+        @test entities isa Entities
+        @test length(entities) == 2
+        counter += 1
+    end
+    @test counter == 1
+end
+
 @testset "World reset!" begin
     world = World(Dummy, Position, Velocity, ChildOf)
 
