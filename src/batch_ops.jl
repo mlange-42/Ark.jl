@@ -133,7 +133,7 @@ function _get_tables(
     tables = world._pool.tables
     for arch in eachindex(arches)
         @inbounds archetype_hot = arches_hot[arch]
-        if !_matches(filter, archetype_hot)
+        if !_matches(filter._filter, archetype_hot)
             continue
         end
         if !archetype_hot.has_relations
@@ -148,10 +148,10 @@ function _get_tables(
         if isempty(archetype.tables)
             continue
         end
-        tables = _get_tables(world, archetype, filter.relations)
+        tables = _get_tables(world, archetype, filter._filter.relations)
         for table_id in tables
             table = @inbounds world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(world._relations, table, filter.relations)
+            if !isempty(table.entities) && _matches(world._relations, table, filter._filter.relations)
                 push!(tables, table)
             end
         end
@@ -162,8 +162,8 @@ end
 
 @generated function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
     CS = W.parameters[1]
-    TS = filter.parameters[2]
-    OPT = filter.parameters[4]
+    TS = F.parameters[2]
+    OPT = F.parameters[4]
 
     comp_types = _to_types(TS.parameters)
     optional_flags = OPT.parameters
@@ -179,8 +179,8 @@ end
     quote
         _check_locked(world)
 
+        arches, arches_hot = $archetypes
         # TODO: make separate path for cached filters.
-        arches, arches_hot = $arches
         tables = _get_tables(world, arches, arches_hot, filter)
 
         has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
@@ -202,12 +202,14 @@ end
 
         cleanup = world._pool.entities
         for table in tables
-            append!(cleanup, table.entities._data)
             for entity in table.entities
+                if world._targets[entity._id]
+                    push!(cleanup, entity)
+                end
                 _recycle(world._entity_pool, entity)
             end
             resize!(table, 0)
-            for comp in archetype.components
+            for comp in world._archetypes[table.id].components
                 _clear_component_data!(world, comp, table.id)
             end
         end
@@ -216,7 +218,7 @@ end
 
         $(world_has_rel ?
           :(
-            if world._targets[entity._id]
+            for entity in cleanup
                 _cleanup_archetypes(world, entity)
                 world._targets[entity._id] = false
             end

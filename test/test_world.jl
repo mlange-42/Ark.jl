@@ -1066,6 +1066,29 @@ end
         remove_entity!(world, zero_entity))
 end
 
+@testset "remove_entities! Tests" begin
+    world = World(Dummy, Position, Velocity, ChildOf)
+
+    count = 0
+    obs = observe!(world, OnRemoveEntity) do entity
+        @test is_locked(world) == true
+        @test is_alive(world, entity) == true
+        count += 1
+    end
+
+    e1 = new_entity!(world, (Position(1, 1),))
+    e2 = new_entity!(world, (Position(2, 2), Velocity(1, 1)))
+
+    filter1 = Filter(world, (Position, Velocity))
+    remove_entities!(world, filter1)
+
+    @test is_alive(world, e1) == true
+    @test is_alive(world, e2) == false
+    @test count == 1
+
+    @test length(world._tables[3].entities) == 0
+end
+
 @testset "World reset!" begin
     world = World(Dummy, Position, Velocity, ChildOf)
 
