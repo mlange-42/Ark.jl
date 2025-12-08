@@ -110,3 +110,27 @@ They are deactivated, but their allocated memory for entities and components is 
 When a table in the same archetype, but for another target entity is requested, a recycled table is reused if available.
 To be able to efficiently detect whether a table can be removed,
 a bitset is used to keep track of entities that are the target of a relationship.
+
+## Performance implications
+
+Archetypes are primarily designed to maximize iteration speed by grouping entities with identical
+component sets into tightly packed memory layouts.
+This structure enables blazing-fast traversal and component access during queries.
+
+However, this optimization comes with a trade-off: Adding or removing components from an entity,
+as well as setting relationship targets, requires relocating it to a different archetype,
+essentially moving all of its component data.
+This operation typically costs &approx;20ns per involved component, plus some baseline cost.
+
+To reduce the number of archetype changes, it is recommended to add/remove/exchange multiple components at the same time
+rather than one after the other. Further, operations can be batched to manipulate many entities in a single command.
+
+```@meta
+# TODO: Remove this when batch operations are fully implemented.
+```
+
+!!! note
+
+    Batch operations are not fully implemented yet.
+
+For detailed benchmarks and performance metrics, refer to the [Benchmarks](@ref) chapter.
