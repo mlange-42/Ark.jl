@@ -162,11 +162,45 @@ function _get_tables(
     return tables, any_relations
 end
 
+"""
+    remove_entities!(world::World, filter::Filter)
+
+Removes all entities that match the given [Filter](@ref) from the [World](@ref).
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Position, Velocity))
+remove_entities!(world, filter)
+
+# output
+
+```
+"""
 function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
     remove_entities!(world, filter) do entities
     end
 end
 
+"""
+    remove_entities!(fn::F, world::World, filter::Filter)
+
+Removes all entities that match the given [Filter](@ref) from the [World](@ref),
+and calls the given callback on them before the removal.
+The callback's argument is an [Entities](@ref) list.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Position, Velocity))
+remove_entities!(world, filter) do entities
+    # do something with the entities.
+end
+
+# output
+
+```
+"""
 @generated function remove_entities!(fn::Fn, world::W, filter::F) where {Fn,W<:World,F<:Filter}
     CS = W.parameters[1]
     TS = F.parameters[2]
