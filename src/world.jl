@@ -441,7 +441,7 @@ remove_entity!(world, entity)
     end
 end
 
-@generated function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
+@generated function remove_entities!(world::W, filter::F) where {W<:World,F<:_AbstractFilter}
     CS = W.parameters[1]
     TS = filter.parameters[2]
     OPT = filter.parameters[4]
@@ -460,23 +460,27 @@ end
     quote
         _check_locked(world)
 
+        # TODO: make separate path for cached filters.
         arches, arches_hot = $arches
+        tables = _get_tables(world, arches, arches_hot, filter)
 
         has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
         has_rel_obs = _has_observers(world._event_manager, OnRemoveRelations)
         if has_entity_obs || has_rel_obs
             l = _lock(world._lock)
             if has_entity_obs
-                # TODO
+                for table in tables
+                    _fire_remove_entities(world._event_manager, table, world._archetypes_hot[table.id].mask)
+                end
             end
             if has_rel_obs
-                # TODO _has_relations(archetype)...
+                for table in tables
+                    _fire_remove_entities_relations(world._event_manager, table, world._archetypes_hot[table.id].mask)
+                end
             end
             _unlock(world._lock, l)
         end
 
-        # TODO: make separate path for cached filters.
-        tables = _get_table(world, arches, arches_hot, filter)
         cleanup = world._pool.entities
         for table in tables
             append!(cleanup, table.entities._data)
@@ -1325,7 +1329,7 @@ function _get_tables(
     arches::Vector{_Archetype{M}},
     arches_hot::Vector{_ArchetypeHot{M}},
     filter::F,
-) where {M,F<:Filter}
+) where {M,F<:_AbstractFilter}
     tables = world._pool.tables
     for arch in eachindex(arches)
         @inbounds archetype_hot = arches_hot[arch]
@@ -1352,6 +1356,8 @@ function _get_tables(
             end
         end
     end
+
+    return tables
 end
 
 function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})

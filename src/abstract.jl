@@ -1,5 +1,6 @@
 
 abstract type _AbstractWorld end
+abstract type _AbstractFilter end
 
 """
     Relationship

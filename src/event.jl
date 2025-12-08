@@ -325,6 +325,65 @@ function _fire_create_entities_relations(m::_EventManager{W,M}, table::_BatchTab
     end
 end
 
+function _fire_remove_entities(
+    m::_EventManager{W,M},
+    table::_Table,
+    mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    evt = OnRemoveEntity._id
+    observers = m.observers[evt]
+    if length(observers) > 1
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return
+        end
+    end
+    for o in observers
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        for entity in table.entities
+            o._fn(entity)
+        end
+    end
+end
+
+function _fire_remove_entities_relations(
+    m::_EventManager{W,M},
+    table::_Table,
+    mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    evt = OnRemoveRelations._id
+    observers = m.observers[evt]
+    if length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, mask)
+            return
+        end
+    end
+    for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
+        if o._has_with && !_contains_all(mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(mask, o._without)
+            continue
+        end
+        for entity in table.entities
+            o._fn(entity)
+        end
+    end
+end
+
 function _fire_add(
     m::_EventManager{W,M},
     event::EventType,
