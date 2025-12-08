@@ -8,10 +8,11 @@
 - Adds events for relationship changes (#370)
 - Adds re-usable filters for query construction (#375)
 - Adds cached/registered filters for faster query iteration with many archetypes (#378)
+- Adds batch entity removal (#396)
 
 ### Performance
 
-- Use a hash table for some component transitions (#348)
+- Uses a hash table for some component transitions (#348)
 
 ## Documentation
 
