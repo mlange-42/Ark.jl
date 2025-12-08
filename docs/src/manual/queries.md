@@ -147,7 +147,7 @@ end
 Note that it is possible to branch already outside of the inner loop,
 as all entities in an archetype either have a component or don't.
 
-## Filter caching
+## [Filter caching](@id filter-caching)
 
 With normal queries as shown above, [archetypes](@ref Architecture) and [relationship](@ref "Entity relationships") tables
 are matched against filter masks during query iteration.
