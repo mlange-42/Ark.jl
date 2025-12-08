@@ -34,6 +34,7 @@ zero_entity
 new_entity!
 new_entities!
 remove_entity!
+remove_entities!
 copy_entity!
 is_alive
 is_zero

@@ -122,7 +122,6 @@ end
     required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
     ids_tuple = tuple(required_ids...)
 
-    # TODO: simplify/omit this for registered filters (only if comp-time, which it is currently not)
     archetypes =
         length(ids_tuple) == 0 ? :((filter._world._archetypes, filter._world._archetypes_hot)) :
         :(_get_archetypes(filter._world, $ids_tuple))
@@ -138,23 +137,6 @@ end
             _lock(filter._world._lock),
         )
     end
-end
-
-function _get_archetypes(world::World, ids::Tuple{Vararg{Int}})
-    comps = world._index.archetypes
-    hot = world._index.archetypes_hot
-    rare_comp = @inbounds comps[ids[1]]
-    rare_hot = @inbounds hot[ids[1]]
-    min_len = length(rare_comp)
-    @inbounds for i in 2:length(ids)
-        comp = comps[ids[i]]
-        comp_len = length(comp)
-        if comp_len < min_len
-            rare_comp, min_len = comp, comp_len
-            rare_hot = hot[ids[i]]
-        end
-    end
-    return rare_comp, rare_hot
 end
 
 @inline function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}

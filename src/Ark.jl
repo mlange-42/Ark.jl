@@ -28,12 +28,13 @@ include("observer.jl")
 include("filter.jl")
 include("query.jl")
 include("batch.jl")
+include("batch_ops.jl")
 
 #include("docs.jl") # doctest setup
 
 export World
 export is_alive, new_entity!, new_entities!, copy_entity!
-export remove_entity!, zero_entity, is_locked, reset!
+export remove_entity!, remove_entities!, zero_entity, is_locked, reset!
 export get_components, set_components!, has_components
 export add_components!, remove_components!
 export exchange_components!

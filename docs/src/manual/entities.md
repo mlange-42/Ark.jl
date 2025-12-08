@@ -22,6 +22,7 @@ DocTestSetup = quote
     end
 
     world = World(Position, Velocity)
+    entity = new_entity!(world, ())
 end
 ```
 
@@ -36,7 +37,7 @@ entity = new_entity!(world, (
 
 # output
 
-Entity(2, 0)
+Entity(3, 0)
 ```
 
 Components can be added to and removed from the entity later. This is described in the [next chapter](@ref Components).
@@ -84,16 +85,34 @@ Note that with the second approach, all components of all entities should be set
 
 Removing an entity from the World is as simple as this, using [remove_entity!](@ref):
 
-```@meta
-DocTestSetup = quote
-    using Ark
-    world = World()
-    entity = new_entity!(world, ())
-end
-```
-
 ```jldoctest; output = false
 remove_entity!(world, entity)
+
+# output
+
+```
+
+## Batch removal
+
+Similar to entity creation, entities can also be removed in batches with [remove_entities!](@ref).
+It takes a [Filter](@ref) instead of a single entity as argument:
+
+```jldoctest; output = false
+filter = Filter(world, (Position, Velocity))
+remove_entities!(world, filter)
+
+# output
+
+```
+
+If something needs to be done with the entities to be removed, a callback can be used,
+which takes [Entities](@ref) as an argument:
+
+```jldoctest; output = false
+filter = Filter(world, (Position, Velocity))
+remove_entities!(world, filter) do entities
+    # do something with the entities.
+end
 
 # output
 
