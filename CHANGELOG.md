@@ -15,7 +15,7 @@
 
 ## Documentation
 
-- Adds a chapter on Ark's architecture to the user manual (#391)
+- Adds a chapter on Ark's architecture to the user manual (#391, #394)
 
 ## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 
