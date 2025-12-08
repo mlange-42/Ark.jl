@@ -215,9 +215,14 @@ end
         cleanup = world._pool.entities
         for table in tables
             for entity in table.entities
-                if world._targets[entity._id]
-                    push!(cleanup, entity)
-                end
+                $(world_has_rel ?
+                  :(
+                    if world._targets[entity._id]
+                        push!(cleanup, entity)
+                    end
+                ) :
+                  (:(nothing))
+                )
                 _recycle(world._entity_pool, entity)
             end
             resize!(table, 0)
