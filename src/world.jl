@@ -109,6 +109,812 @@ function World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity:
     _World_from_types(Val{Tuple{types...}}(), Val{Tuple{storages...}}(), Val(allow_mutable), initial_capacity)
 end
 
+"""
+    new_entity!(world::World, values::Tuple; relations::Tuple=())::Entity
+
+Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
+
+# Arguments
+
+  - `world::World`: The `World` instance to use.
+  - `values::Tuple`: Component values for the entity.
+  - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+
+# Examples
+
+Create an entity with components:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
+
+# output
+
+Entity(4, 0)
+```
+
+Create an entity with components and relationships:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,))
+
+# output
+
+Entity(4, 0)
+```
+"""
+Base.@constprop :aggressive function new_entity!(
+    world::World,
+    values::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+
+    entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
+
+    has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+    has_rel_obs = !isempty(relations) && _has_observers(world._event_manager, OnAddRelations)
+    if has_entity_obs || has_rel_obs
+        table = world._tables[table_id]
+        mask = world._archetypes_hot[table.archetype].mask
+        if has_entity_obs
+            _fire_create_entity(world._event_manager, entity, mask)
+        end
+        if has_rel_obs
+            _fire_create_entity_relations(world._event_manager, entity, mask)
+        end
+    end
+    return entity
+end
+
+"""
+    copy_entity!(
+        world::World,
+        entity::Entity;
+        add::Tuple=(),
+        remove::Tuple=(),
+        relations::Tuple=(),
+        mode=:copy,
+    )
+
+Copies an [`Entity`](@ref), optionally adding and/or removing components.
+
+Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
+
+# Arguments
+
+  - `world`: The `World` instance to query.
+  - `entity::Entity`: The entity to copy.
+  - `add::Tuple`: Components to add, like `with=(Health(0),)`.
+  - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+  - `mode::Tuple`: Copy mode for mutable and non-isbits components. Modes are :ref, :copy, :deepcopy.
+
+# Examples
+
+Simple copy of an entity:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity1 = copy_entity!(world, entity)
+
+# output
+
+Entity(4, 0)
+```
+
+Copy an entity, adding and removing some components in the same operation:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+entity2 = copy_entity!(world, entity;
+    add=(Health(100),),
+    remove=(Position, Velocity),
+)
+
+# output
+
+Entity(4, 0)
+```
+"""
+@inline Base.@constprop :aggressive function copy_entity!(
+    world::World, entity::Entity;
+    add::Tuple=(), remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+    mode::Symbol=:copy,
+)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't copy a dead entity"))
+    end
+    if isempty(add) && isempty(remove) && isempty(relations)
+        return @inline _copy_entity!(world, entity, Val(mode))
+    end
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _copy_entity!(
+        world,
+        entity,
+        Val{typeof(add)}(),
+        add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+        rel_types, targets,
+        Val(mode),
+    )
+end
+
+"""
+    new_entities!(
+        world::World,
+        n::Int, 
+        defaults::Tuple;
+        relations:Tuple=(),
+        iterate::Bool=false,
+    )::Union{Batch,Nothing}
+
+Creates the given number of [`Entity`](@ref), initialized with default values.
+Component types are inferred from the provided default values.
+
+If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
+that can be used for initialization.
+
+See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creating entities from component types.
+
+# Arguments
+
+  - `world::World`: The `World` instance to use.
+  - `n::Int`: The number of entities to create.
+  - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+  - `iterate::Bool`: Whether to return a batch for individual entity initialization.
+
+# Examples
+
+Create 100 entities from default values:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)))
+
+# output
+
+```
+
+Create 100 entities from default values and iterate them:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for (entities, positions, velocities) in new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)); iterate=true)
+    for i in eachindex(entities)
+        positions[i] = Position(rand(), rand())
+    end
+end
+
+# output
+
+```
+"""
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    defaults::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+    iterate::Bool=false,
+)
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return _new_entities_from_defaults!(world, UInt32(n),
+        Val{typeof(defaults)}(), defaults,
+        rel_types, targets, iterate)
+end
+
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    defaults::Tuple{};
+    iterate::Bool=false,
+)
+    return _new_entities_from_defaults!(world, UInt32(n),
+        Val{typeof(defaults)}(), defaults,
+        (), (), iterate)
+end
+
+"""
+    new_entities!(
+        world::World,
+        n::Int,
+        comp_types::Tuple;
+        relations:Tuple=(),
+    )::Batch
+
+Creates the given number of [`Entity`](@ref).
+
+Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
+Note that components are not initialized/undef unless set in the iterator!
+
+See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
+
+# Arguments
+
+  - `world::World`: The `World` instance to use.
+  - `n::Int`: The number of entities to create.
+  - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+
+# Example
+
+Create 100 entities from component types and initialize them:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
+    for i in eachindex(entities)
+        positions[i] = Position(rand(), rand())
+        velocities[i] = Velocity(1, 1)
+    end
+end
+
+# output
+
+```
+"""
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    comp_types::Tuple{Vararg{DataType}};
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return _new_entities_from_types!(world, UInt32(n),
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+        rel_types, targets)
+end
+
+"""
+    remove_entity!(world::World, entity::Entity)
+
+Removes an [`Entity`](@ref) from the [`World`](@ref).
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+remove_entity!(world, entity)
+
+# output
+
+```
+"""
+@generated function remove_entity!(world::W, entity::Entity) where {W<:World}
+    CS = W.parameters[1]
+    world_has_rel = _has_relations(CS)
+    quote
+        if !is_alive(world, entity)
+            throw(ArgumentError("can't remove a dead entity"))
+        end
+        _check_locked(world)
+
+        index = world._entities[entity._id]
+        table = world._tables[index.table]
+        archetype = world._archetypes[table.archetype]
+
+        has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
+        has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
+        if has_entity_obs || has_rel_obs
+            l = _lock(world._lock)
+            if has_entity_obs
+                _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
+            end
+            if has_rel_obs
+                _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
+            end
+            _unlock(world._lock, l)
+        end
+
+        swapped = _swap_remove!(table.entities._data, index.row)
+
+        # Only operate on storages for components present in this archetype
+        for comp in archetype.components
+            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
+        end
+
+        if swapped
+            swap_entity = table.entities[index.row]
+            world._entities[swap_entity._id] = index
+        end
+
+        _recycle(world._entity_pool, entity)
+
+        $(world_has_rel ?
+          :(
+            if world._targets[entity._id]
+                _cleanup_archetypes(world, entity)
+                world._targets[entity._id] = false
+            end
+        ) :
+          (:(nothing))
+        )
+
+        return nothing
+    end
+end
+
+"""
+    get_components(world::World, entity::Entity, comp_types::Tuple)
+
+Get the given components for an [`Entity`](@ref).
+Components are returned as a tuple.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+pos, vel = get_components(world, entity, (Position, Velocity))
+
+# output
+
+(Position(0.0, 0.0), Velocity(0.0, 0.0))
+```
+"""
+@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't get components of a dead entity"))
+    end
+    return @inline _get_components(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
+end
+
+"""
+    has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
+
+Returns whether an [`Entity`](@ref) has all given components.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+has = has_components(world, entity, (Position, Velocity))
+
+# output
+
+true
+```
+"""
+@inline Base.@constprop :aggressive function has_components(world::World, entity::Entity, comp_types::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't check components of a dead entity"))
+    end
+    index = world._entities[entity._id]
+    return @inline _has_components(world, index, ntuple(i -> Val(comp_types[i]), length(comp_types)))
+end
+
+"""
+    set_components!(world::World, entity::Entity, values::Tuple)
+
+Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
+The entity must already have all these components.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+set_components!(world, entity, (Position(0, 0), Velocity(1, 1)))
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function set_components!(world::World, entity::Entity, values::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't set components of a dead entity"))
+    end
+    return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
+end
+
+"""
+    get_relations(world::World, entity::Entity, comp_types::Tuple)
+
+Get the relation targets for components of an [`Entity`](@ref).
+Targets are returned as a tuple.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+parent, = get_relations(world, entity, (ChildOf,))
+
+# output
+
+(Entity(2, 0),)
+```
+"""
+@inline Base.@constprop :aggressive function get_relations(world::World, entity::Entity, comp_types::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't get relations of a dead entity"))
+    end
+    return @inline _get_relations(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
+end
+
+"""
+    set_relations!(world::World, entity::Entity, relations::Tuple)
+
+Sets relation targets for the given components of an [`Entity`](@ref).
+The entity must already have all these relationship components.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+set_relations!(world, entity, (ChildOf => parent,))
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function set_relations!(world::World, entity::Entity, relations::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't set relation targets of a dead entity"))
+    end
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _set_relations!(world, entity, rel_types, targets)
+end
+
+"""
+    add_components!(world::World, entity::Entity, values::Tuple; relations::Tuple)
+
+Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+add_components!(world, entity, (Health(100),))
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function add_components!(
+    world::World,
+    entity::Entity,
+    values::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't add components to a dead entity"))
+    end
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(world, entity, Val{typeof(values)}(), values, (), rel_types, targets)
+end
+
+"""
+    remove_components!(world::World, entity::Entity, comp_types::Tuple)
+
+Removes the given components from an [`Entity`](@ref).
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+remove_components!(world, entity, (Position, Velocity))
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function remove_components!(world::World, entity::Entity, comp_types::Tuple)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't remove components from a dead entity"))
+    end
+    return @inline _exchange_components!(
+        world,
+        entity,
+        Val{Tuple{}}(),
+        (),
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+        (), (),
+    )
+end
+
+"""
+    exchange_components!(
+        world::World,
+        entity::Entity;
+        add::Tuple=(),
+        remove::Tuple=(),
+        relations::Tuple=(),
+    )
+
+Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+exchange_components!(world, entity;
+    add=(Health(100),),
+    remove=(Position, Velocity),
+)
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function exchange_components!(
+    world::World,
+    entity::Entity;
+    add::Tuple=(),
+    remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't exchange components on a dead entity"))
+    end
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(
+        world,
+        entity,
+        Val{typeof(add)}(),
+        add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+        rel_types, targets,
+    )
+end
+
+"""
+    get_resource(world::World, res_type::Type{T})::T
+
+Get the resource of type `T` from the world.
+"""
+function get_resource(world::World, res_type::Type{T})::T where T
+    getindex(world._resources, res_type)::T
+end
+
+"""
+    has_resource(world::World, res_type::Type{T})::Bool
+
+Check if a resource of type `T` is in the world.
+"""
+function has_resource(world::World, res_type::Type)::Bool
+    res_type in keys(world._resources)
+end
+
+"""
+    add_resource!(world::World, res::T)::T
+
+Add the given resource to the world.
+Returns the newly added resource.
+"""
+function add_resource!(world::World, res::T)::T where T
+    has_resource(world, T) && throw(ArgumentError(lazy"World already contains a resource of type $T"))
+    setindex!(world._resources, res, T)
+    return res
+end
+
+"""
+    set_resource!(world::World, res::T)::T
+
+Overwrites an existing resource in the world.
+Returns the newly overwritten resource.
+"""
+function set_resource!(world::World, res::T)::T where T
+    !has_resource(world, T) && throw(ArgumentError(lazy"World does not contain a resource of type $T"))
+    setindex!(world._resources, res, T)
+    return res
+end
+
+"""
+    remove_resource!(world::World, res_type::Type{T})::T
+
+Remove the resource of type `T` from the world.
+Returns the removed resource.
+"""
+function remove_resource!(world::World, res_type::Type{T}) where T
+    res = pop!(world._resources, res_type)
+    return res::T
+end
+
+"""
+    is_alive(world::World, entity::Entity)::Bool
+
+Returns whether an [`Entity`](@ref) is alive.
+"""
+function is_alive(world::World, entity::Entity)::Bool
+    return _is_alive(world._entity_pool, entity)
+end
+
+"""
+    is_locked(world::World)::Bool
+
+Returns whether the world is currently [locked](@ref world-lock) for modifications.
+"""
+function is_locked(world::World)::Bool
+    return _is_locked(world._lock)
+end
+
+"""
+    emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
+
+Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
+The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
+
+  - `world::World`: The [World](@ref) to emit the event.
+  - `event::EventType`: The [EventType](@ref) to emit.
+  - `entity::Entity`: The [Entity](@ref) to emit the event for.
+  - `components::Tuple=()`: The component types to emit the event for. Optional.
+
+# Example
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function emit_event!(
+    world::W,
+    event::EventType,
+    entity::Entity,
+    components::Tuple=(),
+) where {W<:World}
+    if event._id < _custom_events._id
+        throw(ArgumentError("only custom events can be emitted manually"))
+    end
+    if !_has_observers(world._event_manager, event)
+        return
+    end
+    _emit_event!(world, event, entity, ntuple(i -> Val(components[i]), length(components)))
+    return nothing
+end
+
+"""
+    reset!(world::World)
+
+Removes all entities and resources from the world, and un-registers all observers.
+Does NOT free reserved memory or remove archetypes.
+
+Can be used to run systematic simulations without the need to re-allocate memory for each run.
+Accelerates re-populating the world by a factor of 2-3.
+"""
+function reset!(world::W) where {W<:World}
+    _check_locked(world)
+
+    resize!(world._entities, 1)
+    resize!(world._targets, 1)
+    _reset!(world._entity_pool)
+    _reset!(world._lock)
+    _reset!(world._event_manager)
+    _reset!(world._cache)
+
+    for table in world._tables
+        resize!(table, 0)
+        _clear!(table.filters)
+        archetype = world._archetypes[table.archetype]
+        for comp in archetype.components
+            _clear_component_data!(world, comp, table.id)
+        end
+    end
+
+    for archetype in world._archetypes
+        _reset!(archetype)
+    end
+
+    empty!(world._resources)
+    return nothing
+end
+
+function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
+    comp_types = CT.parameters
+    type_names = join(map(_format_type, comp_types), ", ")
+    entities = sum(length(arch.entities) for arch in world._tables)
+    print(io, "World(entities=$entities, comp_types=($type_names))")
+end
+
+@generated function _World_from_types(
+    ::Val{CS},
+    ::Val{ST},
+    ::Val{MUT},
+    initial_capacity::Int,
+) where {CS<:Tuple,ST<:Tuple,MUT}
+    types = CS.parameters
+    storage_val_types = ST.parameters
+    allow_mutable = MUT::Bool
+
+    for (T, mode) in zip(types, storage_val_types)
+        if !isconcretetype(T)
+            throw(
+                ArgumentError("can't use $(nameof(T)) as component as it is not a concrete type"),
+            )
+        end
+        if !(mode <: StructArrayStorage || mode <: VectorStorage)
+            throw(
+                ArgumentError(
+                    "$(nameof(mode)) is not a valid storage mode, must be StructArrayStorage or VectorStorage",
+                ),
+            )
+        end
+        if mode <: StructArrayStorage && fieldcount(T) == 0
+            throw(
+                ArgumentError("can't use StructArrayStorage for $(nameof(T)) because it has no fields"),
+            )
+        end
+    end
+
+    # Immutability checks
+    for (T, mode) in zip(types, storage_val_types)
+        if ismutabletype(T)
+            if mode <: StructArrayStorage
+                throw(
+                    ArgumentError("Component type $(nameof(T)) must be immutable because it uses StructArray storage"),
+                )
+            elseif !allow_mutable
+                throw(ArgumentError("Component type $(nameof(T)) must be immutable unless 'allow_mutable' is used"))
+            end
+        end
+    end
+
+    # Component type tuple
+    component_types = map(T -> :(Type{$T}), types)
+    component_tuple_type = :(Tuple{$(component_types...)})
+
+    # Storage type logic (based on resolved Val{...} types)
+    storage_types = Vector{Any}(undef, length(types))
+    storage_exprs = Vector{Any}(undef, length(types))
+
+    for i in 1:length(types)
+        T = types[i]
+        mode = storage_val_types[i]
+        if mode <: StructArrayStorage
+            storage_types[i] = :(_ComponentStorage{$T,_StructArray_type($T)})
+            storage_exprs[i] = :(_new_struct_array_storage($T))
+        else
+            storage_types[i] = :(_ComponentStorage{$T,Vector{$T}})
+            storage_exprs[i] = :(_new_vector_storage($T))
+        end
+    end
+
+    # Final type and value tuples
+    storage_tuple_type = :(Tuple{$(storage_types...)})
+    storage_tuple = Expr(:tuple, storage_exprs...)
+
+    storage_mode_type = :(Tuple{$(storage_val_types...)})
+
+    # Component registration
+    id_exprs = [:(_register_component!(registry, $T)) for T in types]
+    id_tuple = Expr(:tuple, id_exprs...)
+
+    relations_expr = [:(_new_component_relations($T <: Relationship)) for T in types]
+    relations_vec = Expr(:vect, relations_expr...)
+
+    M = max(1, cld(length(types), 64))
+    start_mask = _Mask{M}()
+    return quote
+        registry = _ComponentRegistry()
+        ids = $id_tuple
+        graph = _Graph{$(M)}()
+        index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
+        sizehint!(index, initial_capacity)
+        targets = BitVector((false,))
+        sizehint!(targets, initial_capacity)
+
+        node = graph.nodes[$start_mask]
+
+        World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
+            index,
+            targets,
+            $storage_tuple,
+            $relations_vec,
+            [_Archetype(UInt32(1), node, UInt32(1))],
+            [_ArchetypeHot(node, UInt32(1))],
+            Vector{UInt32}(),
+            [_new_table(UInt32(1), UInt32(1))],
+            _ComponentIndex{$(M)}($(length(types))),
+            registry,
+            _EntityPool(UInt32(1024)),
+            _Lock(),
+            graph,
+            Dict{DataType,Any}(),
+            _EventManager{
+                World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
+                $(M),
+            }(),
+            _Cache{$M}(),
+            _WorldPool{$M}(),
+            initial_capacity,
+        )
+    end
+end
+
 @generated function _component_id(::Type{CS}, ::Type{C})::Int where {CS<:Tuple,C}
     _generate_type_lookup(CS, C, i -> :($i))
 end
@@ -442,6 +1248,292 @@ function _get_tables(world::World, arch::_Archetype, relations::Vector{Pair{Int,
     return @inbounds index[target_id].ids
 end
 
+function _cleanup_archetypes(world::World, entity::Entity)
+    relations = Pair{Int,Entity}[]
+    for arch in world._relation_archetypes
+        archetype = world._archetypes[arch]
+        if !haskey(archetype.target_tables, entity._id)
+            continue
+        end
+        tables = archetype.target_tables[entity._id]
+
+        for t in length(tables.ids):-1:1
+            table_id = tables.ids[t]
+            table = world._tables[table_id]
+            has_target = false
+            for rel in table.relations
+                if rel.second._id == entity._id
+                    push!(relations, Pair(rel.first, zero_entity))
+                    has_target = true
+                end
+            end
+            @check has_target == true
+
+            if !isempty(table.entities)
+                new_relations = _get_exchange_targets_unchecked(world, table, relations)
+                new_table, found = _get_table(world, archetype, new_relations)
+                if !found
+                    new_table_id = _create_table!(world, archetype, copy(new_relations))
+                    new_table = world._tables[new_table_id]
+                end
+                resize!(new_relations, 0)
+
+                _move_entities!(world, table.id, new_table.id)
+            end
+            _free_table!(archetype, table)
+            _remove_table!(world._cache, table)
+            resize!(relations, 0)
+        end
+        _remove_target!(archetype, entity)
+    end
+end
+
+@generated function _new_entity!(
+    world::W,
+    ::Val{TS},
+    values::Tuple,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,TS<:Tuple,TR<:Tuple}
+    types = _to_types(TS.parameters)
+    rel_types = _to_types(TR)
+
+    _check_no_duplicates(types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, types)
+
+    CS = W.parameters[1]
+    ids = tuple([_component_id(CS, T) for T in types]...)
+    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
+    num_ids = length(ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
+
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(ids...)
+    rem_mask = _Mask{M}()
+
+    world_has_rel = Val{_has_relations(CS)}()
+
+    exprs = []
+    push!(
+        exprs,
+        :(
+            table = _find_or_create_table!(
+                world,
+                world._tables[1],
+                $ids,
+                (),
+                $rel_ids,
+                targets,
+                $add_mask,
+                $rem_mask,
+                $use_map,
+                $world_has_rel,
+            )[1]
+        ),
+    )
+    push!(exprs, :(tmp = _create_entity!(world, table)))
+    push!(exprs, :(entity = tmp[1]))
+    push!(exprs, :(index = tmp[2]))
+
+    # Set each component
+    for i in 1:length(types)
+        T = types[i]
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        val_expr = :(values.$i)
+
+        push!(exprs, :($stor_sym = _get_storage(world, $T)))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table]))
+        push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
+    end
+
+    push!(exprs, Expr(:return, Expr(:tuple, :entity, :table)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@generated function _new_entities_from_defaults!(
+    world::W,
+    n::UInt32,
+    ::Val{TS},
+    values::Tuple,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+    iterate::Bool,
+) where {W<:World,TS<:Tuple,TR<:Tuple}
+    types = _to_types(TS.parameters)
+    rel_types = _to_types(TR)
+
+    _check_no_duplicates(types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, types)
+
+    CS = W.parameters[1]
+    ids = tuple([_component_id(CS, T) for T in types]...)
+    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
+    num_ids = length(ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
+
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(ids...)
+    rem_mask = _Mask{M}()
+
+    world_has_rel = Val{_has_relations(CS)}()
+
+    exprs = []
+    push!(
+        exprs,
+        :(
+            table_idx = _find_or_create_table!(
+                world,
+                world._tables[1],
+                $ids,
+                (),
+                $rel_ids,
+                targets,
+                $add_mask,
+                $rem_mask,
+                $use_map,
+                $world_has_rel,
+            )[1]
+        ),
+    )
+    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
+    push!(exprs, :(table = world._tables[table_idx]))
+
+    if length(types) > 0
+        body_exprs = Expr(:block)
+        for i in 1:length(types)
+            T = types[i]
+            stor_sym = Symbol("stor", i)
+            col_sym = Symbol("col", i)
+            val_expr = :(values.$i)
+
+            push!(body_exprs.args, :($stor_sym = _get_storage(world, $T)))
+            push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[table_idx]))
+            push!(body_exprs.args, :(fill!(view($col_sym, Int(indices[1]):Int(indices[2])), $val_expr)))
+        end
+        push!(exprs, :(
+            if !isempty(values)
+                $(body_exprs)
+            end
+        ))
+    end
+
+    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
+    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
+    push!(
+        exprs,
+        :(
+            if iterate
+                batch = _Batch_from_types(
+                    world,
+                    [_BatchTable(table, world._archetypes[table.archetype], indices...)],
+                    $ts_val_expr,
+                )
+                return batch
+            else
+                has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+                has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                if has_entity_obs || has_rel_obs
+                    l = _lock(world._lock)
+                    batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                    if has_entity_obs
+                        _fire_create_entities(world._event_manager, batch)
+                    end
+                    if has_rel_obs
+                        _fire_create_entities_relations(world._event_manager, batch)
+                    end
+                    _unlock(world._lock, l)
+                end
+                return nothing
+            end
+        ),
+    )
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@generated function _new_entities_from_types!(
+    world::W,
+    n::UInt32,
+    ::TS,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+) where {W<:World,TS<:Tuple,TR<:Tuple}
+    types = _to_types(TS)
+    rel_types = _to_types(TR)
+
+    _check_no_duplicates(types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, types)
+
+    CS = W.parameters[1]
+    ids = tuple([_component_id(CS, T) for T in types]...)
+    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
+
+    num_ids = length(ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
+
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(ids...)
+    rem_mask = _Mask{M}()
+
+    world_has_rel = Val{_has_relations(CS)}()
+
+    exprs = []
+    push!(
+        exprs,
+        :(
+            table_idx = _find_or_create_table!(
+                world,
+                world._tables[1],
+                $ids,
+                (),
+                $rel_ids,
+                targets,
+                $add_mask,
+                $rem_mask,
+                $use_map,
+                $world_has_rel,
+            )[1]
+        ),
+    )
+    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
+    push!(exprs, :(table = world._tables[table_idx]))
+
+    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
+    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
+    push!(exprs,
+        :(
+            batch = _Batch_from_types(
+                world,
+                [_BatchTable(table, world._archetypes[table.archetype], indices[1], indices[2])],
+                $ts_val_expr)
+        ),
+    )
+
+    push!(exprs, Expr(:return, :batch))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
 @inline @generated function _create_entity!(world::W, table_index::UInt32)::Tuple{Entity,Int} where {W<:World}
     CS = W.parameters[1]
     world_has_rel = _has_relations(CS)
@@ -691,138 +1783,6 @@ end
     end
 end
 
-"""
-    remove_entity!(world::World, entity::Entity)
-
-Removes an [`Entity`](@ref) from the [`World`](@ref).
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-remove_entity!(world, entity)
-
-# output
-
-```
-"""
-@generated function remove_entity!(world::W, entity::Entity) where {W<:World}
-    CS = W.parameters[1]
-    world_has_rel = _has_relations(CS)
-    quote
-        if !is_alive(world, entity)
-            throw(ArgumentError("can't remove a dead entity"))
-        end
-        _check_locked(world)
-
-        index = world._entities[entity._id]
-        table = world._tables[index.table]
-        archetype = world._archetypes[table.archetype]
-
-        has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
-        has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
-        if has_entity_obs || has_rel_obs
-            l = _lock(world._lock)
-            if has_entity_obs
-                _fire_remove_entity(world._event_manager, entity, archetype.node.mask)
-            end
-            if has_rel_obs
-                _fire_remove_entity_relations(world._event_manager, entity, archetype.node.mask)
-            end
-            _unlock(world._lock, l)
-        end
-
-        swapped = _swap_remove!(table.entities._data, index.row)
-
-        # Only operate on storages for components present in this archetype
-        for comp in archetype.components
-            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
-        end
-
-        if swapped
-            swap_entity = table.entities[index.row]
-            world._entities[swap_entity._id] = index
-        end
-
-        _recycle(world._entity_pool, entity)
-
-        $(world_has_rel ?
-          :(
-            if world._targets[entity._id]
-                _cleanup_archetypes(world, entity)
-                world._targets[entity._id] = false
-            end
-        ) :
-          (:(nothing))
-        )
-
-        return nothing
-    end
-end
-
-"""
-    is_alive(world::World, entity::Entity)::Bool
-
-Returns whether an [`Entity`](@ref) is alive.
-"""
-function is_alive(world::World, entity::Entity)::Bool
-    return _is_alive(world._entity_pool, entity)
-end
-
-"""
-    is_locked(world::World)::Bool
-
-Returns whether the world is currently [locked](@ref world-lock) for modifications.
-"""
-function is_locked(world::World)::Bool
-    return _is_locked(world._lock)
-end
-
-function _check_locked(world::World)
-    if _is_locked(world._lock)
-        throw(
-            InvalidStateException(
-                "cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed",
-                :locked_world,
-            ),
-        )
-    end
-end
-
-function _check_relation_targets(world::World, relations::Vector{Pair{Int,Entity}})
-    for rel in relations
-        _check_relation_target(world, rel.second)
-    end
-end
-
-function _check_relation_target(world::World, target::Entity)
-    if !is_zero(target) && !is_alive(world, target)
-        throw(ArgumentError("can't use a dead entity as relation target, except for the zero entity"))
-    end
-end
-
-"""
-    get_components(world::World, entity::Entity, comp_types::Tuple)
-
-Get the given components for an [`Entity`](@ref).
-Components are returned as a tuple.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-pos, vel = get_components(world, entity, (Position, Velocity))
-
-# output
-
-(Position(0.0, 0.0), Velocity(0.0, 0.0))
-```
-"""
-@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't get components of a dead entity"))
-    end
-    return @inline _get_components(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
-end
-
 @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
     types = _to_types(TS)
     if length(types) == 0
@@ -849,29 +1809,6 @@ end
             $(Expr(:block, exprs...))
         end
     end
-end
-
-"""
-    has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
-
-Returns whether an [`Entity`](@ref) has all given components.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-has = has_components(world, entity, (Position, Velocity))
-
-# output
-
-true
-```
-"""
-@inline Base.@constprop :aggressive function has_components(world::World, entity::Entity, comp_types::Tuple)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't check components of a dead entity"))
-    end
-    index = world._entities[entity._id]
-    return @inline _has_components(world, index, ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _has_components(world::World, index::_EntityIndex, ::TS) where {TS<:Tuple}
@@ -901,28 +1838,6 @@ end
     end
 end
 
-"""
-    set_components!(world::World, entity::Entity, values::Tuple)
-
-Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
-The entity must already have all these components.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-set_components!(world, entity, (Position(0, 0), Velocity(1, 1)))
-
-# output
-
-```
-"""
-@inline Base.@constprop :aggressive function set_components!(world::World, entity::Entity, values::Tuple)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't set components of a dead entity"))
-    end
-    return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
-end
-
 @generated function _set_components!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS<:Tuple}
     types = TS.parameters
     exprs = [:(@inbounds idx = world._entities[entity._id])]
@@ -943,29 +1858,6 @@ end
             $(Expr(:block, exprs...))
         end
     end
-end
-
-"""
-    get_relations(world::World, entity::Entity, comp_types::Tuple)
-
-Get the relation targets for components of an [`Entity`](@ref).
-Targets are returned as a tuple.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-parent, = get_relations(world, entity, (ChildOf,))
-
-# output
-
-(Entity(2, 0),)
-```
-"""
-@inline Base.@constprop :aggressive function get_relations(world::World, entity::Entity, comp_types::Tuple)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't get relations of a dead entity"))
-    end
-    return @inline _get_relations(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
 end
 
 @generated function _get_relations(world::World, entity::Entity, ::TS) where {TS<:Tuple}
@@ -1001,30 +1893,6 @@ end
             $(Expr(:block, exprs...))
         end
     end
-end
-
-"""
-    set_relations!(world::World, entity::Entity, relations::Tuple)
-
-Sets relation targets for the given components of an [`Entity`](@ref).
-The entity must already have all these relationship components.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-set_relations!(world, entity, (ChildOf => parent,))
-
-# output
-
-```
-"""
-@inline Base.@constprop :aggressive function set_relations!(world::World, entity::Entity, relations::Tuple)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't set relation targets of a dead entity"))
-    end
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return @inline _set_relations!(world, entity, rel_types, targets)
 end
 
 @generated function _set_relations!(
@@ -1100,610 +1968,6 @@ end
     end
 
     return nothing
-end
-
-"""
-    new_entity!(world::World, values::Tuple; relations::Tuple=())::Entity
-
-Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
-
-# Arguments
-
-  - `world::World`: The `World` instance to use.
-  - `values::Tuple`: Component values for the entity.
-  - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
-  - `relations::Tuple`: Relationship component type => target entity pairs.
-
-# Examples
-
-Create an entity with components:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
-
-# output
-
-Entity(4, 0)
-```
-
-Create an entity with components and relationships:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-entity = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,))
-
-# output
-
-Entity(4, 0)
-```
-"""
-Base.@constprop :aggressive function new_entity!(
-    world::World,
-    values::Tuple;
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-
-    entity, table_id = _new_entity!(world, Val{typeof(values)}(), values, rel_types, targets)
-
-    has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
-    has_rel_obs = !isempty(relations) && _has_observers(world._event_manager, OnAddRelations)
-    if has_entity_obs || has_rel_obs
-        table = world._tables[table_id]
-        mask = world._archetypes_hot[table.archetype].mask
-        if has_entity_obs
-            _fire_create_entity(world._event_manager, entity, mask)
-        end
-        if has_rel_obs
-            _fire_create_entity_relations(world._event_manager, entity, mask)
-        end
-    end
-    return entity
-end
-
-@generated function _new_entity!(
-    world::W,
-    ::Val{TS},
-    values::Tuple,
-    ::TR,
-    targets::Tuple{Vararg{Entity}},
-) where {W<:World,TS<:Tuple,TR<:Tuple}
-    types = _to_types(TS.parameters)
-    rel_types = _to_types(TR)
-
-    _check_no_duplicates(types)
-    _check_no_duplicates(rel_types)
-    _check_relations(rel_types)
-    _check_is_subset(rel_types, types)
-
-    CS = W.parameters[1]
-    ids = tuple([_component_id(CS, T) for T in types]...)
-    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
-    num_ids = length(ids)
-    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
-
-    M = max(1, cld(length(CS.parameters), 64))
-    add_mask = _Mask{M}(ids...)
-    rem_mask = _Mask{M}()
-
-    world_has_rel = Val{_has_relations(CS)}()
-
-    exprs = []
-    push!(
-        exprs,
-        :(
-            table = _find_or_create_table!(
-                world,
-                world._tables[1],
-                $ids,
-                (),
-                $rel_ids,
-                targets,
-                $add_mask,
-                $rem_mask,
-                $use_map,
-                $world_has_rel,
-            )[1]
-        ),
-    )
-    push!(exprs, :(tmp = _create_entity!(world, table)))
-    push!(exprs, :(entity = tmp[1]))
-    push!(exprs, :(index = tmp[2]))
-
-    # Set each component
-    for i in 1:length(types)
-        T = types[i]
-        stor_sym = Symbol("stor", i)
-        col_sym = Symbol("col", i)
-        val_expr = :(values.$i)
-
-        push!(exprs, :($stor_sym = _get_storage(world, $T)))
-        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table]))
-        push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
-    end
-
-    push!(exprs, Expr(:return, Expr(:tuple, :entity, :table)))
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
-end
-
-"""
-    copy_entity!(
-        world::World,
-        entity::Entity;
-        add::Tuple=(),
-        remove::Tuple=(),
-        relations::Tuple=(),
-        mode=:copy,
-    )
-
-Copies an [`Entity`](@ref), optionally adding and/or removing components.
-
-Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
-
-# Arguments
-
-  - `world`: The `World` instance to query.
-  - `entity::Entity`: The entity to copy.
-  - `add::Tuple`: Components to add, like `with=(Health(0),)`.
-  - `remove::Tuple`: Component types to remove, like `(Position,Velocity)`.
-  - `relations::Tuple`: Relationship component type => target entity pairs.
-  - `mode::Tuple`: Copy mode for mutable and non-isbits components. Modes are :ref, :copy, :deepcopy.
-
-# Examples
-
-Simple copy of an entity:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-entity1 = copy_entity!(world, entity)
-
-# output
-
-Entity(4, 0)
-```
-
-Copy an entity, adding and removing some components in the same operation:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-entity2 = copy_entity!(world, entity;
-    add=(Health(100),),
-    remove=(Position, Velocity),
-)
-
-# output
-
-Entity(4, 0)
-```
-"""
-@inline Base.@constprop :aggressive function copy_entity!(
-    world::World, entity::Entity;
-    add::Tuple=(), remove::Tuple=(),
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-    mode::Symbol=:copy,
-)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't copy a dead entity"))
-    end
-    if isempty(add) && isempty(remove) && isempty(relations)
-        return @inline _copy_entity!(world, entity, Val(mode))
-    end
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return @inline _copy_entity!(
-        world,
-        entity,
-        Val{typeof(add)}(),
-        add,
-        ntuple(i -> Val(remove[i]), length(remove)),
-        rel_types, targets,
-        Val(mode),
-    )
-end
-
-"""
-    new_entities!(
-        world::World,
-        n::Int, 
-        defaults::Tuple;
-        relations:Tuple=(),
-        iterate::Bool=false,
-    )::Union{Batch,Nothing}
-
-Creates the given number of [`Entity`](@ref), initialized with default values.
-Component types are inferred from the provided default values.
-
-If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
-that can be used for initialization.
-
-See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creating entities from component types.
-
-# Arguments
-
-  - `world::World`: The `World` instance to use.
-  - `n::Int`: The number of entities to create.
-  - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
-  - `relations::Tuple`: Relationship component type => target entity pairs.
-  - `iterate::Bool`: Whether to return a batch for individual entity initialization.
-
-# Examples
-
-Create 100 entities from default values:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)))
-
-# output
-
-```
-
-Create 100 entities from default values and iterate them:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)); iterate=true)
-    for i in eachindex(entities)
-        positions[i] = Position(rand(), rand())
-    end
-end
-
-# output
-
-```
-"""
-Base.@constprop :aggressive function new_entities!(
-    world::World,
-    n::Int,
-    defaults::Tuple;
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-    iterate::Bool=false,
-)
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_defaults!(world, UInt32(n),
-        Val{typeof(defaults)}(), defaults,
-        rel_types, targets, iterate)
-end
-
-Base.@constprop :aggressive function new_entities!(
-    world::World,
-    n::Int,
-    defaults::Tuple{};
-    iterate::Bool=false,
-)
-    return _new_entities_from_defaults!(world, UInt32(n),
-        Val{typeof(defaults)}(), defaults,
-        (), (), iterate)
-end
-
-@generated function _new_entities_from_defaults!(
-    world::W,
-    n::UInt32,
-    ::Val{TS},
-    values::Tuple,
-    ::TR,
-    targets::Tuple{Vararg{Entity}},
-    iterate::Bool,
-) where {W<:World,TS<:Tuple,TR<:Tuple}
-    types = _to_types(TS.parameters)
-    rel_types = _to_types(TR)
-
-    _check_no_duplicates(types)
-    _check_no_duplicates(rel_types)
-    _check_relations(rel_types)
-    _check_is_subset(rel_types, types)
-
-    CS = W.parameters[1]
-    ids = tuple([_component_id(CS, T) for T in types]...)
-    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
-    num_ids = length(ids)
-    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
-
-    M = max(1, cld(length(CS.parameters), 64))
-    add_mask = _Mask{M}(ids...)
-    rem_mask = _Mask{M}()
-
-    world_has_rel = Val{_has_relations(CS)}()
-
-    exprs = []
-    push!(
-        exprs,
-        :(
-            table_idx = _find_or_create_table!(
-                world,
-                world._tables[1],
-                $ids,
-                (),
-                $rel_ids,
-                targets,
-                $add_mask,
-                $rem_mask,
-                $use_map,
-                $world_has_rel,
-            )[1]
-        ),
-    )
-    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
-    push!(exprs, :(table = world._tables[table_idx]))
-
-    if length(types) > 0
-        body_exprs = Expr(:block)
-        for i in 1:length(types)
-            T = types[i]
-            stor_sym = Symbol("stor", i)
-            col_sym = Symbol("col", i)
-            val_expr = :(values.$i)
-
-            push!(body_exprs.args, :($stor_sym = _get_storage(world, $T)))
-            push!(body_exprs.args, :(@inbounds $col_sym = $stor_sym.data[table_idx]))
-            push!(body_exprs.args, :(fill!(view($col_sym, Int(indices[1]):Int(indices[2])), $val_expr)))
-        end
-        push!(exprs, :(
-            if !isempty(values)
-                $(body_exprs)
-            end
-        ))
-    end
-
-    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
-    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-    push!(
-        exprs,
-        :(
-            if iterate
-                batch = _Batch_from_types(
-                    world,
-                    [_BatchTable(table, world._archetypes[table.archetype], indices...)],
-                    $ts_val_expr,
-                )
-                return batch
-            else
-                has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
-                has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
-                if has_entity_obs || has_rel_obs
-                    l = _lock(world._lock)
-                    batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
-                    if has_entity_obs
-                        _fire_create_entities(world._event_manager, batch)
-                    end
-                    if has_rel_obs
-                        _fire_create_entities_relations(world._event_manager, batch)
-                    end
-                    _unlock(world._lock, l)
-                end
-                return nothing
-            end
-        ),
-    )
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
-end
-
-"""
-    new_entities!(
-        world::World,
-        n::Int,
-        comp_types::Tuple;
-        relations:Tuple=(),
-    )::Batch
-
-Creates the given number of [`Entity`](@ref).
-
-Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator!
-
-See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
-
-# Arguments
-
-  - `world::World`: The `World` instance to use.
-  - `n::Int`: The number of entities to create.
-  - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
-  - `relations::Tuple`: Relationship component type => target entity pairs.
-
-# Example
-
-Create 100 entities from component types and initialize them:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
-    for i in eachindex(entities)
-        positions[i] = Position(rand(), rand())
-        velocities[i] = Velocity(1, 1)
-    end
-end
-
-# output
-
-```
-"""
-Base.@constprop :aggressive function new_entities!(
-    world::World,
-    n::Int,
-    comp_types::Tuple{Vararg{DataType}};
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_types!(world, UInt32(n),
-        ntuple(i -> Val(comp_types[i]), length(comp_types)),
-        rel_types, targets)
-end
-
-@generated function _new_entities_from_types!(
-    world::W,
-    n::UInt32,
-    ::TS,
-    ::TR,
-    targets::Tuple{Vararg{Entity}},
-) where {W<:World,TS<:Tuple,TR<:Tuple}
-    types = _to_types(TS)
-    rel_types = _to_types(TR)
-
-    _check_no_duplicates(types)
-    _check_no_duplicates(rel_types)
-    _check_relations(rel_types)
-    _check_is_subset(rel_types, types)
-
-    CS = W.parameters[1]
-    ids = tuple([_component_id(CS, T) for T in types]...)
-    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
-
-    num_ids = length(ids)
-    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
-
-    M = max(1, cld(length(CS.parameters), 64))
-    add_mask = _Mask{M}(ids...)
-    rem_mask = _Mask{M}()
-
-    world_has_rel = Val{_has_relations(CS)}()
-
-    exprs = []
-    push!(
-        exprs,
-        :(
-            table_idx = _find_or_create_table!(
-                world,
-                world._tables[1],
-                $ids,
-                (),
-                $rel_ids,
-                targets,
-                $add_mask,
-                $rem_mask,
-                $use_map,
-                $world_has_rel,
-            )[1]
-        ),
-    )
-    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
-    push!(exprs, :(table = world._tables[table_idx]))
-
-    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
-    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-    push!(exprs,
-        :(
-            batch = _Batch_from_types(
-                world,
-                [_BatchTable(table, world._archetypes[table.archetype], indices[1], indices[2])],
-                $ts_val_expr)
-        ),
-    )
-
-    push!(exprs, Expr(:return, :batch))
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
-end
-
-"""
-    add_components!(world::World, entity::Entity, values::Tuple; relations::Tuple)
-
-Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-add_components!(world, entity, (Health(100),))
-
-# output
-
-```
-"""
-@inline Base.@constprop :aggressive function add_components!(
-    world::World,
-    entity::Entity,
-    values::Tuple;
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't add components to a dead entity"))
-    end
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return @inline _exchange_components!(world, entity, Val{typeof(values)}(), values, (), rel_types, targets)
-end
-
-"""
-    remove_components!(world::World, entity::Entity, comp_types::Tuple)
-
-Removes the given components from an [`Entity`](@ref).
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-remove_components!(world, entity, (Position, Velocity))
-
-# output
-
-```
-"""
-@inline Base.@constprop :aggressive function remove_components!(world::World, entity::Entity, comp_types::Tuple)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't remove components from a dead entity"))
-    end
-    return @inline _exchange_components!(
-        world,
-        entity,
-        Val{Tuple{}}(),
-        (),
-        ntuple(i -> Val(comp_types[i]), length(comp_types)),
-        (), (),
-    )
-end
-
-"""
-    exchange_components!(
-        world::World,
-        entity::Entity;
-        add::Tuple=(),
-        remove::Tuple=(),
-        relations::Tuple=(),
-    )
-
-Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-exchange_components!(world, entity;
-    add=(Health(100),),
-    remove=(Position, Velocity),
-)
-
-# output
-
-```
-"""
-@inline Base.@constprop :aggressive function exchange_components!(
-    world::World,
-    entity::Entity;
-    add::Tuple=(),
-    remove::Tuple=(),
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't exchange components on a dead entity"))
-    end
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return @inline _exchange_components!(
-        world,
-        entity,
-        Val{typeof(add)}(),
-        add,
-        ntuple(i -> Val(remove[i]), length(remove)),
-        rel_types, targets,
-    )
 end
 
 @generated function _exchange_components!(
@@ -1849,119 +2113,39 @@ end
     end
 end
 
-@generated function _World_from_types(
-    ::Val{CS},
-    ::Val{ST},
-    ::Val{MUT},
-    initial_capacity::Int,
-) where {CS<:Tuple,ST<:Tuple,MUT}
-    types = CS.parameters
-    storage_val_types = ST.parameters
-    allow_mutable = MUT::Bool
+@generated function _emit_event!(world::W, event::EventType, entity::Entity, ::CT) where {W<:World,CT<:Tuple}
+    comp_types = [x.parameters[1] for x in CT.parameters]
 
-    for (T, mode) in zip(types, storage_val_types)
-        if !isconcretetype(T)
-            throw(
-                ArgumentError("can't use $(nameof(T)) as component as it is not a concrete type"),
-            )
-        end
-        if !(mode <: StructArrayStorage || mode <: VectorStorage)
-            throw(
-                ArgumentError(
-                    "$(nameof(mode)) is not a valid storage mode, must be StructArrayStorage or VectorStorage",
-                ),
-            )
-        end
-        if mode <: StructArrayStorage && fieldcount(T) == 0
-            throw(
-                ArgumentError("can't use StructArrayStorage for $(nameof(T)) because it has no fields"),
-            )
-        end
-    end
+    CS = W.parameters[1]
+    has_comps = (length(comp_types) > 0) ? :(true) : (false)
+    ids = map(C -> _component_id(CS, C), comp_types)
+    M = max(1, cld(length(CS.parameters), 64))
+    mask = _Mask{M}(ids...)
 
-    # Immutability checks
-    for (T, mode) in zip(types, storage_val_types)
-        if ismutabletype(T)
-            if mode <: StructArrayStorage
-                throw(
-                    ArgumentError("Component type $(nameof(T)) must be immutable because it uses StructArray storage"),
-                )
-            elseif !allow_mutable
-                throw(ArgumentError("Component type $(nameof(T)) must be immutable unless 'allow_mutable' is used"))
-            end
-        end
-    end
-
-    # Component type tuple
-    component_types = map(T -> :(Type{$T}), types)
-    component_tuple_type = :(Tuple{$(component_types...)})
-
-    # Storage type logic (based on resolved Val{...} types)
-    storage_types = Vector{Any}(undef, length(types))
-    storage_exprs = Vector{Any}(undef, length(types))
-
-    for i in 1:length(types)
-        T = types[i]
-        mode = storage_val_types[i]
-        if mode <: StructArrayStorage
-            storage_types[i] = :(_ComponentStorage{$T,_StructArray_type($T)})
-            storage_exprs[i] = :(_new_struct_array_storage($T))
-        else
-            storage_types[i] = :(_ComponentStorage{$T,Vector{$T}})
-            storage_exprs[i] = :(_new_vector_storage($T))
-        end
-    end
-
-    # Final type and value tuples
-    storage_tuple_type = :(Tuple{$(storage_types...)})
-    storage_tuple = Expr(:tuple, storage_exprs...)
-
-    storage_mode_type = :(Tuple{$(storage_val_types...)})
-
-    # Component registration
-    id_exprs = [:(_register_component!(registry, $T)) for T in types]
-    id_tuple = Expr(:tuple, id_exprs...)
-
-    relations_expr = [:(_new_component_relations($T <: Relationship)) for T in types]
-    relations_vec = Expr(:vect, relations_expr...)
-
-    M = max(1, cld(length(types), 64))
-    start_mask = _Mask{M}()
     return quote
-        registry = _ComponentRegistry()
-        ids = $id_tuple
-        graph = _Graph{$(M)}()
-        index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
-        sizehint!(index, initial_capacity)
-        targets = BitVector((false,))
-        sizehint!(targets, initial_capacity)
-
-        node = graph.nodes[$start_mask]
-
-        World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M}(
-            index,
-            targets,
-            $storage_tuple,
-            $relations_vec,
-            [_Archetype(UInt32(1), node, UInt32(1))],
-            [_ArchetypeHot(node, UInt32(1))],
-            Vector{UInt32}(),
-            [_new_table(UInt32(1), UInt32(1))],
-            _ComponentIndex{$(M)}($(length(types))),
-            registry,
-            _EntityPool(UInt32(1024)),
-            _Lock(),
-            graph,
-            Dict{DataType,Any}(),
-            _EventManager{
-                World{$(storage_tuple_type),$(component_tuple_type),$(storage_mode_type),$(length(types)),$M},
-                $(M),
-            }(),
-            _Cache{$M}(),
-            _WorldPool{$M}(),
-            initial_capacity,
-        )
+        _do_emit_event!(world, event, $mask, $has_comps, entity)
     end
+end
+
+function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps::Bool, entity::Entity)
+    if is_zero(entity)
+        if has_comps
+            throw(ArgumentError("can't emit event with components for the zero entity"))
+        end
+        return _fire_custom_event(world._event_manager, event, entity, mask, world._archetypes_hot[1].mask)
+    end
+
+    if !is_alive(world, entity)
+        throw(ArgumentError("can't emit event for a dead entity"))
+    end
+    index = world._entities[entity._id]
+    table = world._tables[index.table]
+    entity_mask = world._archetypes_hot[table.archetype].mask
+
+    if !_contains_all(entity_mask, mask)
+        throw(ArgumentError("entity does not have all components of the event emitted for it"))
+    end
+    return _fire_custom_event(world._event_manager, event, entity, mask, entity_mask)
 end
 
 @generated function _push_empty_to_all_storages!(world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
@@ -2090,209 +2274,25 @@ end
         i -> :(_remove_component_data!(world._storages.$i, arch, row)))
 end
 
-"""
-    get_resource(world::World, res_type::Type{T})::T
-
-Get the resource of type `T` from the world.
-"""
-function get_resource(world::World, res_type::Type{T})::T where T
-    getindex(world._resources, res_type)::T
-end
-
-"""
-    has_resource(world::World, res_type::Type{T})::Bool
-
-Check if a resource of type `T` is in the world.
-"""
-function has_resource(world::World, res_type::Type)::Bool
-    res_type in keys(world._resources)
-end
-
-"""
-    add_resource!(world::World, res::T)::T
-
-Add the given resource to the world.
-Returns the newly added resource.
-"""
-function add_resource!(world::World, res::T)::T where T
-    has_resource(world, T) && throw(ArgumentError(lazy"World already contains a resource of type $T"))
-    setindex!(world._resources, res, T)
-    return res
-end
-
-"""
-    set_resource!(world::World, res::T)::T
-
-Overwrites an existing resource in the world.
-Returns the newly overwritten resource.
-"""
-function set_resource!(world::World, res::T)::T where T
-    !has_resource(world, T) && throw(ArgumentError(lazy"World does not contain a resource of type $T"))
-    setindex!(world._resources, res, T)
-    return res
-end
-
-"""
-    remove_resource!(world::World, res_type::Type{T})::T
-
-Remove the resource of type `T` from the world.
-Returns the removed resource.
-"""
-function remove_resource!(world::World, res_type::Type{T}) where T
-    res = pop!(world._resources, res_type)
-    return res::T
-end
-
-"""
-    emit_event!(world::World, event::EventType, entity::Entity, components::Tuple=())
-
-Emits a custom event for the given [EventType](@ref), [Entity](@ref) and optional components.
-The entity must have the given components. The entity can be the reserved [zero_entity](@ref).
-
-  - `world::World`: The [World](@ref) to emit the event.
-  - `event::EventType`: The [EventType](@ref) to emit.
-  - `entity::Entity`: The [Entity](@ref) to emit the event for.
-  - `components::Tuple=()`: The component types to emit the event for. Optional.
-
-# Example
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-emit_event!(world, OnCollisionDetected, entity, (Position, Velocity))
-
-# output
-
-```
-"""
-@inline Base.@constprop :aggressive function emit_event!(
-    world::W,
-    event::EventType,
-    entity::Entity,
-    components::Tuple=(),
-) where {W<:World}
-    if event._id < _custom_events._id
-        throw(ArgumentError("only custom events can be emitted manually"))
-    end
-    if !_has_observers(world._event_manager, event)
-        return
-    end
-    _emit_event!(world, event, entity, ntuple(i -> Val(components[i]), length(components)))
-    return nothing
-end
-
-@generated function _emit_event!(world::W, event::EventType, entity::Entity, ::CT) where {W<:World,CT<:Tuple}
-    comp_types = [x.parameters[1] for x in CT.parameters]
-
-    CS = W.parameters[1]
-    has_comps = (length(comp_types) > 0) ? :(true) : (false)
-    ids = map(C -> _component_id(CS, C), comp_types)
-    M = max(1, cld(length(CS.parameters), 64))
-    mask = _Mask{M}(ids...)
-
-    return quote
-        _do_emit_event!(world, event, $mask, $has_comps, entity)
+function _check_locked(world::World)
+    if _is_locked(world._lock)
+        throw(
+            InvalidStateException(
+                "cannot modify a locked world: collect entities into a vector and apply changes after query iteration has completed",
+                :locked_world,
+            ),
+        )
     end
 end
 
-function _do_emit_event!(world::World, event::EventType, mask::_Mask, has_comps::Bool, entity::Entity)
-    if is_zero(entity)
-        if has_comps
-            throw(ArgumentError("can't emit event with components for the zero entity"))
-        end
-        return _fire_custom_event(world._event_manager, event, entity, mask, world._archetypes_hot[1].mask)
+function _check_relation_targets(world::World, relations::Vector{Pair{Int,Entity}})
+    for rel in relations
+        _check_relation_target(world, rel.second)
     end
-
-    if !is_alive(world, entity)
-        throw(ArgumentError("can't emit event for a dead entity"))
-    end
-    index = world._entities[entity._id]
-    table = world._tables[index.table]
-    entity_mask = world._archetypes_hot[table.archetype].mask
-
-    if !_contains_all(entity_mask, mask)
-        throw(ArgumentError("entity does not have all components of the event emitted for it"))
-    end
-    return _fire_custom_event(world._event_manager, event, entity, mask, entity_mask)
 end
 
-"""
-    reset!(world::World)
-
-Removes all entities and resources from the world, and un-registers all observers.
-Does NOT free reserved memory or remove archetypes.
-
-Can be used to run systematic simulations without the need to re-allocate memory for each run.
-Accelerates re-populating the world by a factor of 2-3.
-"""
-function reset!(world::W) where {W<:World}
-    _check_locked(world)
-
-    resize!(world._entities, 1)
-    resize!(world._targets, 1)
-    _reset!(world._entity_pool)
-    _reset!(world._lock)
-    _reset!(world._event_manager)
-    _reset!(world._cache)
-
-    for table in world._tables
-        resize!(table, 0)
-        _clear!(table.filters)
-        archetype = world._archetypes[table.archetype]
-        for comp in archetype.components
-            _clear_component_data!(world, comp, table.id)
-        end
-    end
-
-    for archetype in world._archetypes
-        _reset!(archetype)
-    end
-
-    empty!(world._resources)
-    return nothing
-end
-
-function Base.show(io::IO, world::World{CS,CT}) where {CS<:Tuple,CT<:Tuple}
-    comp_types = CT.parameters
-    type_names = join(map(_format_type, comp_types), ", ")
-    entities = sum(length(arch.entities) for arch in world._tables)
-    print(io, "World(entities=$entities, comp_types=($type_names))")
-end
-
-function _cleanup_archetypes(world::World, entity::Entity)
-    relations = Pair{Int,Entity}[]
-    for arch in world._relation_archetypes
-        archetype = world._archetypes[arch]
-        if !haskey(archetype.target_tables, entity._id)
-            continue
-        end
-        tables = archetype.target_tables[entity._id]
-
-        for t in length(tables.ids):-1:1
-            table_id = tables.ids[t]
-            table = world._tables[table_id]
-            has_target = false
-            for rel in table.relations
-                if rel.second._id == entity._id
-                    push!(relations, Pair(rel.first, zero_entity))
-                    has_target = true
-                end
-            end
-            @check has_target == true
-
-            if !isempty(table.entities)
-                new_relations = _get_exchange_targets_unchecked(world, table, relations)
-                new_table, found = _get_table(world, archetype, new_relations)
-                if !found
-                    new_table_id = _create_table!(world, archetype, copy(new_relations))
-                    new_table = world._tables[new_table_id]
-                end
-                resize!(new_relations, 0)
-
-                _move_entities!(world, table.id, new_table.id)
-            end
-            _free_table!(archetype, table)
-            _remove_table!(world._cache, table)
-            resize!(relations, 0)
-        end
-        _remove_target!(archetype, entity)
+function _check_relation_target(world::World, target::Entity)
+    if !is_zero(target) && !is_alive(world, target)
+        throw(ArgumentError("can't use a dead entity as relation target, except for the zero entity"))
     end
 end
