@@ -6,7 +6,7 @@ A filter for components. See function
 [Filter](@ref Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)) for details.
 See also [Query](@ref).
 """
-struct Filter{W<:World,TS<:Tuple,EX,OPT,REG,M} <: _AbstractFilter
+struct Filter{W<:World,TS<:Tuple,EX,OPT,REG,M}
     _filter::_MaskFilter{M}
     _world::W
 end
