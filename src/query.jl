@@ -101,13 +101,13 @@ end
 @generated function _Query_from_filter(
     filter::F,
 ) where {F<:Filter}
-    W = filter.parameters[1]
+    W = F.parameters[1]
     CS = W.parameters[1]
-    TS = filter.parameters[2]
-    EX = filter.parameters[3]
-    OPT = filter.parameters[4]
-    REG = filter.parameters[5]
-    M = filter.parameters[6]
+    TS = F.parameters[2]
+    EX = F.parameters[3]
+    OPT = F.parameters[4]
+    REG = F.parameters[5]
+    M = F.parameters[6]
 
     world_storage_modes = W.parameters[3].parameters
     comp_types = _to_types(TS.parameters)
