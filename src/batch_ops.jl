@@ -195,11 +195,15 @@ end
 ```
 """
 function remove_entities!(world::W, filter::F) where {W<:World,F<:Filter}
-    remove_entities!(world, filter) do entities
+    _remove_entities!(world, filter, Val(false)) do entities
     end
 end
 
-@generated function remove_entities!(fn::Fn, world::W, filter::F) where {Fn,W<:World,F<:Filter}
+function remove_entities!(fn::Fn, world::W, filter::F) where {Fn,W<:World,F<:Filter}
+    _remove_entities!(fn, world, filter, Val(true))
+end
+
+@generated function _remove_entities!(fn::Fn, world::W, filter::F, ::HFN) where {Fn,W<:World,F<:Filter,HFN<:Val}
     CS = W.parameters[1]
     TS = F.parameters[2]
     OPT = F.parameters[4]
@@ -215,6 +219,7 @@ end
         :(_get_archetypes(world, $ids_tuple))
 
     world_has_rel = _has_relations(CS)
+    has_fn = HFN == Val{true}
     quote
         _check_locked(world)
 
@@ -222,13 +227,26 @@ end
         # TODO: make separate path for cached filters.
         tables, any_relations = _get_tables(world, arches, arches_hot, filter)
 
-        for table in tables
-            fn(table.entities)
+        has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
+        has_rel_obs = any_relations && _has_observers(world._event_manager, OnRemoveRelations)
+        has_callback = $has_fn
+        should_lock = has_entity_obs || has_rel_obs || has_callback
+
+        l::Int64 = 0
+        if should_lock
+            l = _lock(world._lock)
         end
 
-        l = _lock(world._lock)
+        $(has_fn ?
+          :(
+            for table in tables
+                fn(table.entities)
+            end
+        ) :
+          (:(nothing))
+        )
 
-        if _has_observers(world._event_manager, OnRemoveEntity)
+        if has_entity_obs
             for table in tables
                 _fire_remove_entities(
                     world._event_manager,
@@ -237,7 +255,7 @@ end
                 )
             end
         end
-        if any_relations && _has_observers(world._event_manager, OnRemoveRelations)
+        if has_rel_obs
             for table in tables
                 if _has_relations(table)
                     _fire_remove_entities_relations(
@@ -249,7 +267,9 @@ end
             end
         end
 
-        _unlock(world._lock, l)
+        if should_lock
+            _unlock(world._lock, l)
+        end
 
         cleanup = world._pool.entities
         for table in tables
