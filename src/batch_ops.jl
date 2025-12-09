@@ -56,6 +56,9 @@ Base.@constprop :aggressive function new_entities!(
     defaults::Tuple;
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 ) where {F}
+    if n == 0
+        return
+    end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_defaults!(fn, world, UInt32(n),
@@ -69,6 +72,9 @@ Base.@constprop :aggressive function new_entities!(
     defaults::Tuple;
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
+    if n == 0
+        return
+    end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_defaults!(world, UInt32(n),
@@ -78,20 +84,13 @@ Base.@constprop :aggressive function new_entities!(
 end
 
 Base.@constprop :aggressive function new_entities!(
-    fn::F,
-    world::World,
-    n::Int,
-    defaults::Tuple{},
-) where {F}
-    return _new_entities_from_defaults!(fn, world, UInt32(n),
-        Val{typeof(defaults)}(), defaults, (), (), Val(true))
-end
-
-Base.@constprop :aggressive function new_entities!(
     world::World,
     n::Int,
     defaults::Tuple{},
 )
+    if n == 0
+        return
+    end
     return _new_entities_from_defaults!(world, UInt32(n),
         Val{typeof(defaults)}(), defaults, (), (), Val(false)) do tuple
     end
@@ -144,6 +143,9 @@ Base.@constprop :aggressive function new_entities!(
     comp_types::Tuple{Vararg{DataType}};
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 ) where {F}
+    if n == 0
+        return
+    end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_types!(fn, world, UInt32(n),

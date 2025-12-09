@@ -730,6 +730,10 @@ end
     remove_entity!(world, e)
 
     cnt = 0
+    new_entities!(world, 0, (Position, Velocity)) do (ent, pos_col, vel_col)
+        cnt += length(ent)
+    end
+
     new_entities!(world, 100, (Position, Velocity)) do (ent, pos_col, vel_col)
         @test length(ent) == 100
         @test length(pos_col) == 100
@@ -773,6 +777,12 @@ end
     remove_entity!(world, e)
 
     count = 0
+    new_entities!(world, 0, (Position(99, 99), Velocity(99, 99))) do (ent, pos_col, vel_col)
+        count += length(ent)
+    end
+    new_entities!(world, 0, (Position(99, 99), Velocity(99, 99)))
+    new_entities!(world, 0, ())
+
     new_entities!(world, 100, (Position(99, 99), Velocity(99, 99))) do (ent, pos_col, vel_col)
         @test length(ent) == 100
         @test length(pos_col) == 100
