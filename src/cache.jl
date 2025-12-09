@@ -8,6 +8,8 @@ struct _MaskFilter{M}
     has_excluded::Bool
 end
 
+_is_cached(f::_MaskFilter) = f.id[] > 0
+
 function _add_table!(filter::F, table::_Table) where {F<:_MaskFilter}
     _add_id!(filter.tables, table.id)
     _add_id!(table.filters, filter.id[])
@@ -25,7 +27,7 @@ function _register_filter!(
     filter::F,
 ) where {W<:_AbstractWorld,F<:_MaskFilter}
     # TODO: re-enable this check in case re-registration is allowed.
-    #if filter.id[] != 0
+    #if _is_cached(filter)
     #    throw(InvalidStateException("filter is already registered to the cache", :filter_registered))
     #end
 
@@ -61,7 +63,7 @@ function _register_filter!(
 end
 
 function _unregister_filter!(world::W, filter::F) where {W<:_AbstractWorld,F<:_MaskFilter{M}} where {M}
-    if filter.id[] == 0
+    if !_is_cached(filter)
         throw(InvalidStateException("filter is not registered to the cache", :filter_not_registered))
     end
 

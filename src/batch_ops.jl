@@ -158,7 +158,18 @@ function _get_tables(
     arches::Vector{_Archetype{M}},
     arches_hot::Vector{_ArchetypeHot{M}},
     filter::F,
-)::Tuple{Vector{_Table},Bool} where {M,F<:Filter}
+)::Tuple{Vector{UInt32},Bool} where {M,F<:Filter}
+    if _is_cached(filter._filter)
+        tables = filter._filter.tables.ids
+        any_relations = false
+        for table_id in tables
+            if _has_relations(world._tables[table_id])
+                any_relations = true
+            end
+        end
+        return tables, any_relations
+    end
+
     tables = world._pool.tables
     any_relations = false
     for arch in eachindex(arches)
@@ -171,7 +182,7 @@ function _get_tables(
             if isempty(table.entities)
                 continue
             end
-            push!(tables, table)
+            push!(tables, table.id)
             continue
         end
         archetype = @inbounds arches[arch]
@@ -182,7 +193,7 @@ function _get_tables(
         for table_id in arch_tables
             table = @inbounds world._tables[Int(table_id)]
             if !isempty(table.entities) && _matches(world._relations, table, filter._filter.relations)
-                push!(tables, table)
+                push!(tables, table.id)
                 any_relations = true
             end
         end
@@ -243,6 +254,7 @@ end
     required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
     ids_tuple = tuple(required_ids...)
 
+    # TODO: skit this for cached filters
     archetypes =
         length(ids_tuple) == 0 ? :((world._archetypes, world._archetypes_hot)) :
         :(_get_archetypes(world, $ids_tuple))
@@ -253,7 +265,6 @@ end
         _check_locked(world)
 
         arches, arches_hot = $archetypes
-        # TODO: make separate path for cached filters.
         tables, any_relations = _get_tables(world, arches, arches_hot, filter)
 
         has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
@@ -268,15 +279,16 @@ end
 
         $(has_fn ?
           :(
-            for table in tables
-                fn(table.entities)
+            for table_id in tables
+                fn(world._tables[table_id].entities)
             end
         ) :
           (:(nothing))
         )
 
         if has_entity_obs
-            for table in tables
+            for table_id in tables
+                table = world._tables[table_id]
                 _fire_remove_entities(
                     world._event_manager,
                     table,
@@ -285,7 +297,8 @@ end
             end
         end
         if has_rel_obs
-            for table in tables
+            for table_id in tables
+                table = world._tables[table_id]
                 if _has_relations(table)
                     _fire_remove_entities_relations(
                         world._event_manager,
@@ -301,7 +314,8 @@ end
         end
 
         cleanup = world._pool.entities
-        for table in tables
+        for table_id in tables
+            table = world._tables[table_id]
             for entity in table.entities
                 $(world_has_rel ?
                   :(
@@ -329,7 +343,9 @@ end
           (:(nothing))
         )
 
-        resize!(tables, 0)
+        if !_is_cached(filter._filter) # Do not clear for cached filters!!!
+            resize!(tables, 0)
+        end
         resize!(cleanup, 0)
 
         return nothing

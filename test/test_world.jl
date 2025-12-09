@@ -1170,6 +1170,38 @@ end
     @test counter == 1
 end
 
+@testset "remove_entities! cached filter" begin
+    world = World(Dummy, Position, Velocity, ChildOf)
+
+    parent = new_entity!(world, ())
+
+    new_entity!(world, (Position(1, 1),))
+    new_entity!(world, (Position(2, 2),))
+
+    filter = Filter(world, (Position,); register=true)
+
+    counter = 0
+    remove_entities!(world, filter) do entities
+        @test is_locked(world) == true
+        @test entities isa Entities
+        @test length(entities) == 2
+        counter += 1
+    end
+    @test counter == 1
+
+    new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent,))
+    new_entity!(world, (Position(2, 2), ChildOf()); relations=(ChildOf => parent,))
+
+    counter = 0
+    remove_entities!(world, filter) do entities
+        @test is_locked(world) == true
+        @test entities isa Entities
+        @test length(entities) == 1
+        counter += 1
+    end
+    @test counter == 1
+end
+
 @testset "World reset!" begin
     world = World(Dummy, Position, Velocity, ChildOf)
 

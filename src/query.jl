@@ -122,6 +122,7 @@ end
     required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
     ids_tuple = tuple(required_ids...)
 
+    # TODO: skit this for cached filters
     archetypes =
         length(ids_tuple) == 0 ? :((filter._world._archetypes, filter._world._archetypes_hot)) :
         :(_get_archetypes(filter._world, $ids_tuple))
@@ -140,10 +141,10 @@ end
 end
 
 @inline function Base.iterate(q::Q, state::Tuple{Int,Int}) where {Q<:Query}
-    if q._filter.id[] == 0
-        return _iterate(q, state)
-    else
+    if _is_cached(q._filter)
         return _iterate_registered(q, state)
+    else
+        return _iterate(q, state)
     end
 end
 
@@ -230,10 +231,10 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     The time complexity is linear with the number of tables in the query's pre-selection.
 """
 function Base.length(q::Q) where {Q<:Query}
-    if q._filter.id[] == 0
-        return _length(q)
-    else
+    if _is_cached(q._filter)
         return _length_registered(q)
+    else
+        return _length(q)
     end
 end
 
@@ -295,10 +296,10 @@ Does not iterate or [close!](@ref close!(::Query)) the query.
     It is equivalent to iterating the query's archetypes and summing up their lengths.
 """
 function count_entities(q::Q) where {Q<:Query}
-    if q._filter.id[] == 0
-        return _count_entities(q)
-    else
+    if _is_cached(q._filter)
         return _count_entities_registered(q)
+    else
+        return _count_entities(q)
     end
 end
 
