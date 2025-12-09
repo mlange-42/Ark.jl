@@ -430,7 +430,9 @@ end
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
     @test counter == 20
 
-    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,)) do _
+        @test is_locked(world) == true
+    end
     @test counter == 30
 
     observe!(world, obs; unregister=true)
