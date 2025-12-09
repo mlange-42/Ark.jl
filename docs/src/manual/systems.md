@@ -94,7 +94,7 @@ struct InitializerSystem <: System
 end
 
 function initialize!(s::InitializerSystem, w::World)
-    for (entities, positions, velocities) in new_entities!(w, s.count, (Position, Velocity))
+    new_entities!(w, s.count, (Position, Velocity)) do (entities, positions, velocities)
         @inbounds for i in eachindex(entities)
             positions[i] = Position(rand() * 100, rand() * 100)
             velocities[i] = Velocity(randn(), randn())

@@ -315,7 +315,8 @@ end
         counter_rel += 1
     end
 
-    new_entities!(world, 10, (Position, Velocity))
+    new_entities!(world, 10, (Position, Velocity)) do _
+    end
     @test counter == 10
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
@@ -420,7 +421,8 @@ end
 
     parent = new_entity!(world, ())
 
-    new_entities!(world, 10, (Position, Velocity, ChildOf); relations=(ChildOf => parent,))
+    new_entities!(world, 10, (Position, Velocity, ChildOf); relations=(ChildOf => parent,)) do _
+    end
     @test counter == 10
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
