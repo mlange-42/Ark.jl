@@ -499,11 +499,13 @@ end
 
 @testset "Fire OnRemoveRelations batch" begin
     world = World(Dummy, Position, Velocity, Altitude, ChildOf)
+
+    parent = new_entity!(world, ())
     filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,), register=true)
 
     # create empty table
     remove_entity!(world,
-        _create_entity!(world,
+        new_entity!(world,
             (Position(0, 0), Velocity(0, 0), Altitude(100), ChildOf());
             relations=(ChildOf => parent,),
         ),
@@ -517,8 +519,6 @@ end
     end
     observe!(world, OnRemoveEntity) do entity
     end
-
-    parent = new_entity!(world, ())
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
     remove_entities!(world, filter)
