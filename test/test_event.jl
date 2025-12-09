@@ -315,14 +315,15 @@ end
         counter_rel += 1
     end
 
-    for (p, v) in new_entities!(world, 10, (Position, Velocity))
+    new_entities!(world, 10, (Position, Velocity)) do _
     end
     @test counter == 10
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
     @test counter == 20
 
-    for (p, v) in new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)); iterate=true)
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0))) do _
+        @test is_locked(world)
     end
     @test counter == 30
 
@@ -422,20 +423,15 @@ end
 
     parent = new_entity!(world, ())
 
-    for (p, v) in new_entities!(world, 10, (Position, Velocity, ChildOf); relations=(ChildOf => parent,))
+    new_entities!(world, 10, (Position, Velocity, ChildOf); relations=(ChildOf => parent,)) do _
     end
     @test counter == 10
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
     @test counter == 20
 
-    for (p, v) in new_entities!(
-        world,
-        10,
-        (Position(0, 0), Velocity(0, 0), ChildOf());
-        relations=(ChildOf => parent,),
-        iterate=true,
-    )
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,)) do _
+        @test is_locked(world) == true
     end
     @test counter == 30
 
@@ -517,14 +513,7 @@ end
     remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
     @test counter == 10
 
-    for (p, v) in new_entities!(
-        world,
-        10,
-        (Position(0, 0), Velocity(0, 0), ChildOf());
-        relations=(ChildOf => parent,),
-        iterate=true,
-    )
-    end
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
     remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
     @test counter == 20
 

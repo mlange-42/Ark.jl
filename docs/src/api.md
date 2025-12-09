@@ -88,18 +88,6 @@ set_resource!
 remove_resource!
 ```
 
-## [Batch](@id batch-api)
-
-An iterator over entities that were created or modified using batch operations.
-Behaves like a [Query](@ref) and can be used for component initialization.
-
-```@docs
-Batch
-close!(::Batch)
-count_entities(::Batch)
-length(::Batch)
-```
-
 ## [Event system](@id events-api)
 
 The [event system](@ref "Event system") allows user code to react on structural changes

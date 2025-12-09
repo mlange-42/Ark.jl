@@ -14,7 +14,7 @@ function initialize!(s::TravelerInit, world::World)
         append!(edges, zip(entities, positions, lengths))
     end
 
-    for (_, travelers, positions, colors) in new_entities!(world, s.count, (Traveler, Position, Color))
+    new_entities!(world, s.count, (Traveler, Position, Color)) do (_, travelers, positions, colors)
         for i in eachindex(travelers)
             edge, edge_pos, edge_len = rand(edges)
             pos = rand() * edge_len.length

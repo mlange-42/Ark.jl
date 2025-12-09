@@ -16,7 +16,7 @@ using Ark: _Lock, _lock, _unlock, _is_locked
 using Ark: _VecMap, _get_map, _set_map!
 using Ark: _Linear_Map, _LOAD_FACTOR
 using Ark: _Graph, _GraphNode, _find_node, _find_or_create, _UseMap, _NoUseMap
-using Ark: _BatchTable, _BatchLock
+using Ark: _BatchTable
 using Ark: _has_observers
 using Ark: _StructArray, _StructArray_type, StructArrayView
 using Ark: _format_type

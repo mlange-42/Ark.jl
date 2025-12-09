@@ -9,8 +9,9 @@ GrazerInit(;
 
 function initialize!(s::GrazerInit, world::World)
     size = get_resource(world, WorldSize)
-    for (_, positions, rotations, energies, genes, _) in new_entities!(world, s.count,
-        (Position, Rotation, Energy, Genes, Moving))
+    new_entities!(world, s.count,
+        (Position, Rotation, Energy, Genes, Moving),
+    ) do (_, positions, rotations, energies, genes, _)
         for i in eachindex(positions)
             positions[i] = Position(
                 rand() * size.width - 0.01,

@@ -1,23 +1,24 @@
 
 """
     new_entities!(
+        [f::Function],
         world::World,
         n::Int, 
         defaults::Tuple;
         relations:Tuple=(),
-        iterate::Bool=false,
     )::Union{Batch,Nothing}
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 Component types are inferred from the provided default values.
 
-If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
-that can be used for initialization.
+The optional callback/`do` block can be used for initialization.
+It takes a tuple of `(entities, columns...)` as argument.
 
 See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creating entities from component types.
 
 # Arguments
 
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
@@ -38,7 +39,7 @@ new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)))
 Create 100 entities from default values and iterate them:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)); iterate=true)
+new_entities!(world, 100, (Position(0, 0), Velocity(1, 1))) do (entities, positions, velocities)
     for i in eachindex(entities)
         positions[i] = Position(rand(), rand())
     end
@@ -49,32 +50,56 @@ end
 ```
 """
 Base.@constprop :aggressive function new_entities!(
+    fn::F,
     world::World,
     n::Int,
     defaults::Tuple;
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-    iterate::Bool=false,
-)
+) where {F}
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_defaults!(world, UInt32(n),
+    return _new_entities_from_defaults!(fn, world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        rel_types, targets, iterate)
+        rel_types, targets, Val(true))
 end
 
 Base.@constprop :aggressive function new_entities!(
     world::World,
     n::Int,
-    defaults::Tuple{};
-    iterate::Bool=false,
+    defaults::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_defaults!(world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        (), (), iterate)
+        rel_types, targets, Val(false)) do tuple
+    end
+end
+
+Base.@constprop :aggressive function new_entities!(
+    fn::F,
+    world::World,
+    n::Int,
+    defaults::Tuple{},
+) where {F}
+    return _new_entities_from_defaults!(fn, world, UInt32(n),
+        Val{typeof(defaults)}(), defaults, (), (), Val(true))
+end
+
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    defaults::Tuple{},
+)
+    return _new_entities_from_defaults!(world, UInt32(n),
+        Val{typeof(defaults)}(), defaults, (), (), Val(false)) do tuple
+    end
 end
 
 """
     new_entities!(
+        f::Function,
         world::World,
         n::Int,
         comp_types::Tuple;
@@ -83,13 +108,14 @@ end
 
 Creates the given number of [`Entity`](@ref).
 
-Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator!
+The callback/`do` block should be used to initialize components.
+Note that components are not initialized/undef unless set in the callback.
 
 See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
 
 # Arguments
 
+  - `f::Function`: Callback for initialization, can be passed as a `do` block.
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
@@ -100,7 +126,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
 Create 100 entities from component types and initialize them:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
+new_entities!(world, 100, (Position, Velocity)) do (entities, positions, velocities)
     for i in eachindex(entities)
         positions[i] = Position(rand(), rand())
         velocities[i] = Velocity(1, 1)
@@ -112,14 +138,15 @@ end
 ```
 """
 Base.@constprop :aggressive function new_entities!(
+    fn::F,
     world::World,
     n::Int,
     comp_types::Tuple{Vararg{DataType}};
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
+) where {F}
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_types!(world, UInt32(n),
+    return _new_entities_from_types!(fn, world, UInt32(n),
         ntuple(i -> Val(comp_types[i]), length(comp_types)),
         rel_types, targets)
 end
@@ -308,14 +335,15 @@ end
 end
 
 @generated function _new_entities_from_defaults!(
+    fn::F,
     world::W,
     n::UInt32,
     ::Val{TS},
     values::Tuple,
     ::TR,
     targets::Tuple{Vararg{Entity}},
-    iterate::Bool,
-) where {W<:World,TS<:Tuple,TR<:Tuple}
+    ::HFN,
+) where {F,W<:World,TS<:Tuple,TR<:Tuple,HFN<:Val}
     types = _to_types(TS.parameters)
     rel_types = _to_types(TR)
 
@@ -378,34 +406,51 @@ end
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-    push!(
-        exprs,
-        :(
-            if iterate
-                batch = _Batch_from_types(
-                    world,
-                    [_BatchTable(table, world._archetypes[table.archetype], indices...)],
-                    $ts_val_expr,
-                )
-                return batch
-            else
-                has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
-                has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
-                if has_entity_obs || has_rel_obs
+
+    if HFN == Val{true}
+        push!(
+            exprs,
+            :(
+                begin
                     l = _lock(world._lock)
+                    columns = _get_columns(world, $ts_val_expr, table, indices...)
+                    fn(columns)
+
                     batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
-                    if has_entity_obs
+                    if _has_observers(world._event_manager, OnCreateEntity)
                         _fire_create_entities(world._event_manager, batch)
                     end
-                    if has_rel_obs
+                    if _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
                         _fire_create_entities_relations(world._event_manager, batch)
                     end
                     _unlock(world._lock, l)
+                    return nothing
                 end
-                return nothing
-            end
-        ),
-    )
+            ),
+        )
+    else
+        push!(
+            exprs,
+            :(
+                begin
+                    has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+                    has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                    if has_entity_obs || has_rel_obs
+                        l = _lock(world._lock)
+                        batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                        if has_entity_obs
+                            _fire_create_entities(world._event_manager, batch)
+                        end
+                        if has_rel_obs
+                            _fire_create_entities_relations(world._event_manager, batch)
+                        end
+                        _unlock(world._lock, l)
+                    end
+                    return nothing
+                end
+            ),
+        )
+    end
 
     return quote
         @inbounds begin
@@ -415,12 +460,13 @@ end
 end
 
 @generated function _new_entities_from_types!(
+    fn::F,
     world::W,
     n::UInt32,
     ::TS,
     ::TR,
     targets::Tuple{Vararg{Entity}},
-) where {W<:World,TS<:Tuple,TR<:Tuple}
+) where {W<:World,TS<:Tuple,TR<:Tuple,F}
     types = _to_types(TS)
     rel_types = _to_types(TR)
 
@@ -467,14 +513,70 @@ end
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
     push!(exprs,
         :(
-            batch = _Batch_from_types(
-                world,
-                [_BatchTable(table, world._archetypes[table.archetype], indices[1], indices[2])],
-                $ts_val_expr)
+            begin
+                l = _lock(world._lock)
+                columns = _get_columns(world, $ts_val_expr, table, indices...)
+                fn(columns)
+
+                batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                if _has_observers(world._event_manager, OnCreateEntity)
+                    _fire_create_entities(world._event_manager, batch)
+                end
+                if _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                    _fire_create_entities_relations(world._event_manager, batch)
+                end
+                _unlock(world._lock, l)
+                return nothing
+            end
         ),
     )
 
     push!(exprs, Expr(:return, :batch))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
+
+@generated function _get_columns(
+    world::W,
+    ::Val{TS},
+    table::_Table,
+    start_idx::UInt32,
+    end_idx::UInt32,
+) where {W<:World,TS<:Tuple}
+    CS = W.parameters[1]
+    comp_types = TS.parameters
+    world_storage_modes = W.parameters[3].parameters
+
+    storage_modes = [
+        world_storage_modes[_component_id(CS, T)]
+        for T in comp_types
+    ]
+
+    exprs = Expr[]
+    push!(exprs, :(entities = view(table.entities, start_idx:end_idx)))
+    for i in 1:length(comp_types)
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        vec_sym = Symbol("vec", i)
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(table.id)]))
+
+        if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0
+            push!(exprs, :($vec_sym = FieldViewable(view($col_sym, start_idx:end_idx))))
+        else
+            push!(exprs, :($vec_sym = view($col_sym, start_idx:end_idx)))
+        end
+    end
+    result_exprs = [:entities]
+    for i in 1:length(comp_types)
+        push!(result_exprs, Symbol("vec", i))
+    end
+    result_exprs = map(x -> :($x), result_exprs)
+    push!(exprs, Expr(:return, Expr(:tuple, result_exprs...)))
 
     return quote
         @inbounds begin

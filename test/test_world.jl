@@ -47,7 +47,7 @@ end
         CompN{Int64},
         Float64,
     )
-    batch = new_entities!(world, 100, (); iterate=false)
+    new_entities!(world, 100, ())
 
     if offset_ID == 0
         @test string(world) == "World(entities=100, comp_types=(Position, Velocity, CompN{1}, CompN{Int64}, Float64))"
@@ -730,10 +730,7 @@ end
     remove_entity!(world, e)
 
     cnt = 0
-    batch = new_entities!(world, 100, (Position, Velocity))
-    @test length(batch) == 1
-    @test count_entities(batch) == 100
-    for (ent, pos_col, vel_col) in batch
+    new_entities!(world, 100, (Position, Velocity)) do (ent, pos_col, vel_col)
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
@@ -745,6 +742,7 @@ end
         end
         @test is_locked(world) == true
     end
+
     @test cnt == 100
     @test is_locked(world) == false
     @test length(world._tables[2].entities) == 101
@@ -775,7 +773,7 @@ end
     remove_entity!(world, e)
 
     count = 0
-    for (ent, pos_col, vel_col) in new_entities!(world, 100, (Position(99, 99), Velocity(99, 99)); iterate=true)
+    new_entities!(world, 100, (Position(99, 99), Velocity(99, 99))) do (ent, pos_col, vel_col)
         @test length(ent) == 100
         @test length(pos_col) == 100
         @test length(vel_col) == 100
@@ -807,8 +805,7 @@ end
     end
     @test count == 101
 
-    batch = new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
-    @test batch === nothing
+    new_entities!(world, 100, (Position(13, 13), Velocity(13, 13)))
     @test is_locked(world) == false
 
     count = 0
@@ -825,7 +822,7 @@ end
     end
     @test count == 201
 
-    for (ent,) in new_entities!(world, 100, (); iterate=true)
+    new_entities!(world, 100, ()) do (ent,)
         @test length(ent) == 100
     end
 end
@@ -838,14 +835,14 @@ end
     )
     parent = new_entity!(world, ())
 
-    for (_, positions, children) in new_entities!(world, 100, (Position, ChildOf); relations=(ChildOf => parent,))
+    new_entities!(world, 100, (Position, ChildOf); relations=(ChildOf => parent,)) do (_, positions, children)
         for i in eachindex(positions, children)
             positions[i] = Position(1, 1)
             children[i] = ChildOf()
         end
     end
 
-    new_entities!(world, 100, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,), iterate=false)
+    new_entities!(world, 100, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,))
 
     for (entities, children) in Query(world, (ChildOf,))
         for i in eachindex(entities)
@@ -1100,20 +1097,18 @@ end
     @test length(world._tables[4].entities) == 0
 
     entities1 = Entity[]
-    for (entities, _, _, _) in new_entities!(world, 10,
+    new_entities!(world, 10,
         (Position(0, 0), Velocity(0, 0), ChildOf());
         relations=(ChildOf => parent1,),
-        iterate=true,
-    )
+    ) do (entities, _, _, _)
         append!(entities1, entities)
     end
 
     entities2 = Entity[]
-    for (entities, _, _, _) in new_entities!(world, 10,
+    new_entities!(world, 10,
         (Position(0, 0), Velocity(0, 0), ChildOf());
         relations=(ChildOf => parent2,),
-        iterate=true,
-    )
+    ) do (entities, _, _, _)
         append!(entities2, entities)
     end
 

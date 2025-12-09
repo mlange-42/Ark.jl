@@ -18,7 +18,7 @@ function initialize!(s::NetworkInit, world::World)
 
     all_entities = Entity[]
 
-    for (entities, positions, nodes) in new_entities!(world, rows * cols, (Position, Node))
+    new_entities!(world, rows * cols, (Position, Node)) do (entities, positions, nodes)
         append!(all_entities, entities)
         for i in eachindex(positions)
             col, row = col_row(i, cols)

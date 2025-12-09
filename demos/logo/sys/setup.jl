@@ -19,7 +19,7 @@ function initialize!(s::SetupSystem, world::World)
         end
     end
 
-    for (_, positions, velocities, targets) in new_entities!(world, length(coords), (Position, Velocity, Target))
+    new_entities!(world, length(coords), (Position, Velocity, Target)) do (_, positions, velocities, targets)
         @inbounds for i in eachindex(positions, velocities, targets)
             x, y = coords[i]
             positions[i] = Position(rand(1:world_size.width), rand(1:world_size.height))

@@ -47,7 +47,7 @@ Components can be added to and removed from the entity later. This is described 
 Often, multiple entities with the same set of components are created at the same time.
 For that sake, Ark provides batch entity creation, which is much faster than creating entities one by one. There are different ways to create entities in batches:
 
-From **default component values** using [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)). Here, we create 100 entities, all with the same `Position` and `Velocity`:
+From **default component values** using [new_entities!](@ref). Here, we create 100 entities, all with the same `Position` and `Velocity`:
 
 ```jldoctest; output = false
 new_entities!(world, 100, (
@@ -64,7 +64,7 @@ This may be sufficient in some use cases, but most often we will use a second ap
 From **component types** with subsequent manual initialization using [new_entities!](@ref) with a tuple of types:
 
 ```jldoctest; output = false
-for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
+new_entities!(world, 100, (Position, Velocity)) do (entities, positions, velocities)
     for i in eachindex(entities)
         positions[i] = Position(i, i)
         velocities[i] = Velocity(0, 0)
@@ -75,9 +75,9 @@ end
 
 ```
 
-The nested loop shown here will be explained in detail in the chapter on [Queries](@ref),
-which work in the same way as the [Batch](@ref) iterator that is returned from [new_entities!](@ref)
-and that is used here.
+Note that the tuple elements of the callback argument are entity and component lists
+that need to be iterated to access individual items.
+See also the chapter on [Queries](@ref), which use a similar nested loop structure.
 
 Note that with the second approach, all components of all entities should be set as they are otherwise uninitialized.
 
