@@ -1,23 +1,24 @@
 
 """
     new_entities!(
+        [f::Function],
         world::World,
         n::Int, 
         defaults::Tuple;
         relations:Tuple=(),
-        iterate::Bool=false,
     )::Union{Batch,Nothing}
 
 Creates the given number of [`Entity`](@ref), initialized with default values.
 Component types are inferred from the provided default values.
 
-If `iterate` is true, a [`Batch`](@ref) iterator over the newly created entities is returned
-that can be used for initialization.
+The optional callback/`do` block can be used for initialization.
+It takes a tuple of `(entities, columns...)` as argument.
 
 See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creating entities from component types.
 
 # Arguments
 
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
@@ -38,7 +39,7 @@ new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)))
 Create 100 entities from default values and iterate them:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)); iterate=true)
+new_entities!(world, 100, (Position(0, 0), Velocity(1, 1))) do (entities, positions, velocities)
     for i in eachindex(entities)
         positions[i] = Position(rand(), rand())
     end
@@ -98,6 +99,7 @@ end
 
 """
     new_entities!(
+        f::Function,
         world::World,
         n::Int,
         comp_types::Tuple;
@@ -106,13 +108,14 @@ end
 
 Creates the given number of [`Entity`](@ref).
 
-Returns a [`Batch`](@ref) iterator over the newly created entities that should be used to initialize components.
-Note that components are not initialized/undef unless set in the iterator!
+The callback/`do` block should be used to initialize components.
+Note that components are not initialized/undef unless set in the callback.
 
 See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
 
 # Arguments
 
+  - `f::Function`: Callback for initialization, can be passed as a `do` block.
   - `world::World`: The `World` instance to use.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
@@ -123,7 +126,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
 Create 100 entities from component types and initialize them:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-for (entities, positions, velocities) in new_entities!(world, 100, (Position, Velocity))
+new_entities!(world, 100, (Position, Velocity)) do (entities, positions, velocities)
     for i in eachindex(entities)
         positions[i] = Position(rand(), rand())
         velocities[i] = Velocity(1, 1)
@@ -146,20 +149,6 @@ Base.@constprop :aggressive function new_entities!(
     return _new_entities_from_types!(fn, world, UInt32(n),
         ntuple(i -> Val(comp_types[i]), length(comp_types)),
         rel_types, targets)
-end
-
-Base.@constprop :aggressive function new_entities!(
-    world::World,
-    n::Int,
-    comp_types::Tuple{Vararg{DataType}};
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_types!(world, UInt32(n),
-        ntuple(i -> Val(comp_types[i]), length(comp_types)),
-        rel_types, targets) do tuple
-    end
 end
 
 function _get_tables(
