@@ -10,8 +10,9 @@ BoidsInit(;
 function initialize!(s::BoidsInit, world::World)
     size = get_resource(world, WorldSize)
 
-    for (_, positions, velocities, rotations, neighbors, updates) in
-        new_entities!(world, s.count, (Position, Velocity, Rotation, Neighbors, UpdateStep))
+    new_entities!(world, s.count,
+        (Position, Velocity, Rotation, Neighbors, UpdateStep),
+    ) do (_, positions, velocities, rotations, neighbors, updates)
         for i in eachindex(positions, rotations)
             positions[i] = Position(Point2f(rand() * size.width, rand() * size.height))
 
