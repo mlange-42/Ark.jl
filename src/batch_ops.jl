@@ -280,7 +280,11 @@ end
         $(has_fn ?
           :(
             for table_id in tables
-                fn(world._tables[table_id].entities)
+                table = world._tables[table_id]
+                if isempty(table)
+                    continue
+                end
+                fn(table.entities)
             end
         ) :
           (:(nothing))
@@ -289,6 +293,9 @@ end
         if has_entity_obs
             for table_id in tables
                 table = world._tables[table_id]
+                if isempty(table)
+                    continue
+                end
                 _fire_remove_entities(
                     world._event_manager,
                     table,
@@ -299,6 +306,9 @@ end
         if has_rel_obs
             for table_id in tables
                 table = world._tables[table_id]
+                if isempty(table)
+                    continue
+                end
                 if _has_relations(table)
                     _fire_remove_entities_relations(
                         world._event_manager,
@@ -316,6 +326,9 @@ end
         cleanup = world._pool.entities
         for table_id in tables
             table = world._tables[table_id]
+            if isempty(table)
+                continue
+            end
             for entity in table.entities
                 $(world_has_rel ?
                   :(

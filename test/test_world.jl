@@ -1189,6 +1189,8 @@ end
     end
     @test counter == 1
 
+    @test length(filter._filter.tables) == 1
+
     new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent,))
     new_entity!(world, (Position(2, 2), ChildOf()); relations=(ChildOf => parent,))
 
@@ -1196,7 +1198,7 @@ end
     remove_entities!(world, filter) do entities
         @test is_locked(world) == true
         @test entities isa Entities
-        @test length(entities) == 1
+        @test length(entities) == 2
         counter += 1
     end
     @test counter == 1
