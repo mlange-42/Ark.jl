@@ -1157,6 +1157,7 @@ end
 
     counter = 0
     remove_entities!(world, filter) do entities
+        @test is_locked(world) == true
         @test entities isa Entities
         @test length(entities) == 2
         counter += 1

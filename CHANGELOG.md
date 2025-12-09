@@ -8,7 +8,7 @@
 - Adds events for relationship changes (#370)
 - Adds re-usable filters for query construction (#375)
 - Adds cached/registered filters for faster query iteration with many archetypes (#378)
-- Adds batch entity removal (#396)
+- Adds batch entity removal (#396, #402)
 
 ### Performance
 
