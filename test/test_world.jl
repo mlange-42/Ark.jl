@@ -1172,13 +1172,15 @@ end
 
 @testset "remove_entities! cached filter" begin
     world = World(Dummy, Position, Velocity, ChildOf)
+    filter = Filter(world, (Position,); register=true)
 
     parent = new_entity!(world, ())
 
     new_entity!(world, (Position(1, 1),))
     new_entity!(world, (Position(2, 2),))
 
-    filter = Filter(world, (Position,); register=true)
+    # Create an empty table
+    remove_entity!(world, new_entity!(world, (Position(1, 1), Velocity(0, 0))))
 
     counter = 0
     remove_entities!(world, filter) do entities
@@ -1189,7 +1191,7 @@ end
     end
     @test counter == 1
 
-    @test length(filter._filter.tables) == 1
+    @test length(filter._filter.tables) == 2
 
     new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent,))
     new_entity!(world, (Position(2, 2), ChildOf()); relations=(ChildOf => parent,))
