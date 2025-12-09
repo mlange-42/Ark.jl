@@ -5,14 +5,14 @@
     parent1 = new_entity!(world, ())
     parent2 = new_entity!(world, ())
 
-    for (_, positions, children) in new_entities!(world, 100, (Position, ChildOf); relations=(ChildOf => parent1,))
+    new_entities!(world, 100, (Position, ChildOf); relations=(ChildOf => parent1,)) do (_, positions, children)
         for i in eachindex(positions, children)
             positions[i] = Position(i, i)
             children[i] = ChildOf()
         end
     end
 
-    for (_, positions, children) in new_entities!(world, 50, (Position, ChildOf); relations=(ChildOf => parent2,))
+    new_entities!(world, 50, (Position, ChildOf); relations=(ChildOf => parent2,)) do (_, positions, children)
         for i in eachindex(positions, children)
             positions[i] = Position(i, i)
             children[i] = ChildOf()

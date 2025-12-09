@@ -153,7 +153,7 @@ Base.@constprop :aggressive function new_entities!(
     n::Int,
     comp_types::Tuple{Vararg{DataType}};
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-) where {F}
+)
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_types!(world, UInt32(n),
@@ -167,7 +167,7 @@ function _get_tables(
     arches::Vector{_Archetype{M}},
     arches_hot::Vector{_ArchetypeHot{M}},
     filter::F,
-)::Tuple{Vector{_BatchTable},Bool} where {M,F<:Filter}
+)::Tuple{Vector{_Table},Bool} where {M,F<:Filter}
     tables = world._pool.tables
     any_relations = false
     for arch in eachindex(arches)
@@ -421,7 +421,7 @@ end
         :(
             begin
                 l = _lock(world._lock)
-                columns = _get_columns(world, types, table, indices...)
+                columns = _get_columns(world, $ts_val_expr, table, indices...)
                 fn(columns)
 
                 batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
@@ -500,7 +500,7 @@ end
         :(
             begin
                 l = _lock(world._lock)
-                columns = _get_columns(world, types, table, indices...)
+                columns = _get_columns(world, $ts_val_expr, table, indices...)
                 fn(columns)
 
                 batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
@@ -526,8 +526,8 @@ end
 end
 
 @generated function _get_columns(
-    ::W,
-    ::TS,
+    world::W,
+    ::Val{TS},
     table::_Table,
     start_idx::UInt32,
     end_idx::UInt32,
@@ -542,13 +542,12 @@ end
     ]
 
     exprs = Expr[]
-    push!(exprs, :(table = b._tables[idx]))
     push!(exprs, :(entities = view(table.entities, start_idx:end_idx)))
     for i in 1:length(comp_types)
         stor_sym = Symbol("stor", i)
         col_sym = Symbol("col", i)
         vec_sym = Symbol("vec", i)
-        push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(world, $(comp_types[i]))))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(table.id)]))
 
         if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0

@@ -27,7 +27,6 @@ include("world.jl")
 include("observer.jl")
 include("filter.jl")
 include("query.jl")
-include("batch.jl")
 include("batch_ops.jl")
 
 #include("docs.jl") # doctest setup
@@ -44,7 +43,7 @@ export get_resource, has_resource, add_resource!, set_resource!, remove_resource
 export Entity
 export is_zero
 
-export Query, Batch, Filter
+export Query, Filter
 export close!, count_entities, unregister!
 
 export Entities

@@ -315,15 +315,13 @@ end
         counter_rel += 1
     end
 
-    for (p, v) in new_entities!(world, 10, (Position, Velocity))
-    end
+    new_entities!(world, 10, (Position, Velocity))
     @test counter == 10
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
     @test counter == 20
 
-    for (p, v) in new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)); iterate=true)
-    end
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
     @test counter == 30
 
     observe!(world, obs; unregister=true)
@@ -422,21 +420,13 @@ end
 
     parent = new_entity!(world, ())
 
-    for (p, v) in new_entities!(world, 10, (Position, Velocity, ChildOf); relations=(ChildOf => parent,))
-    end
+    new_entities!(world, 10, (Position, Velocity, ChildOf); relations=(ChildOf => parent,))
     @test counter == 10
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
     @test counter == 20
 
-    for (p, v) in new_entities!(
-        world,
-        10,
-        (Position(0, 0), Velocity(0, 0), ChildOf());
-        relations=(ChildOf => parent,),
-        iterate=true,
-    )
-    end
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
     @test counter == 30
 
     observe!(world, obs; unregister=true)
@@ -517,14 +507,7 @@ end
     remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
     @test counter == 10
 
-    for (p, v) in new_entities!(
-        world,
-        10,
-        (Position(0, 0), Velocity(0, 0), ChildOf());
-        relations=(ChildOf => parent,),
-        iterate=true,
-    )
-    end
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
     remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
     @test counter == 20
 
