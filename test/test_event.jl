@@ -500,21 +500,32 @@ end
 @testset "Fire OnRemoveRelations batch" begin
     world = World(Dummy, Position, Velocity, Altitude, ChildOf)
 
+    parent = new_entity!(world, ())
+    filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,), register=true)
+
+    # create empty table
+    remove_entity!(world,
+        new_entity!(world,
+            (Position(0, 0), Velocity(0, 0), Altitude(100), ChildOf());
+            relations=(ChildOf => parent,),
+        ),
+    )
+
     counter = 0
     obs = observe!(world, OnRemoveRelations) do entity
         @test is_alive(world, entity) == true
         @test is_locked(world) == true
         counter += 1
     end
-
-    parent = new_entity!(world, ())
+    observe!(world, OnRemoveEntity) do entity
+    end
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 10
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 20
 
     observe!(world, obs; unregister=true)
@@ -526,16 +537,16 @@ end
     end
 
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 30
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 40
     new_entities!(world, 10, (Position(0, 0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 40
     new_entities!(world, 10, (Altitude(0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 40
 
     observe!(world, obs; unregister=true)
@@ -544,10 +555,10 @@ end
         counter += 1
     end
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 50
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(0), ChildOf()); relations=(ChildOf => parent,))
-    remove_entities!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent,)))
+    remove_entities!(world, filter)
     @test counter == 50
 end
 

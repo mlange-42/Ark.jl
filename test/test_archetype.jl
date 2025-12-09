@@ -7,6 +7,9 @@
     t5 = _new_table(UInt32(5), UInt32(1))
     t6 = _new_table(UInt32(6), UInt32(1))
 
+    @test length(t1) == 0
+    @test isempty(t1) == true
+
     ids = _IdCollection(t5.id, t4.id, t3.id, t2.id, t1.id)
 
     @test ids.ids == [t5.id, t4.id, t3.id, t2.id, t1.id]

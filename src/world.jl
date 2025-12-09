@@ -14,7 +14,7 @@ const _empty_relations::Vector{Pair{Int,Entity}} = Vector{Pair{Int,Entity}}()
 struct _WorldPool{M}
     relations::Vector{Pair{Int,Entity}}
     entities::Vector{Entity}
-    tables::Vector{_Table}
+    tables::Vector{UInt32}
     mask::_MutableMask{M}
 end
 
@@ -22,7 +22,7 @@ function _WorldPool{M}() where {M}
     return _WorldPool(
         Vector{Pair{Int,Entity}}(),
         Vector{Entity}(),
-        Vector{_Table}(),
+        Vector{UInt32}(),
         _MutableMask{M}(),
     )
 end
