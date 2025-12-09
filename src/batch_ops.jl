@@ -482,3 +482,49 @@ end
         end
     end
 end
+
+@generated function _get_columns(
+    ::W,
+    ::TS,
+    table::_Table,
+    start_idx::UInt32,
+    end_idx::UInt32,
+) where {W<:World,TS<:Tuple}
+    CS = W.parameters[1]
+    comp_types = TS.parameters
+    world_storage_modes = W.parameters[3].parameters
+
+    storage_modes = [
+        world_storage_modes[_component_id(CS, T)]
+        for T in comp_types
+    ]
+
+    exprs = Expr[]
+    push!(exprs, :(table = b._tables[idx]))
+    push!(exprs, :(entities = view(table.entities, start_idx:end_idx)))
+    for i in 1:length(comp_types)
+        stor_sym = Symbol("stor", i)
+        col_sym = Symbol("col", i)
+        vec_sym = Symbol("vec", i)
+        push!(exprs, :(@inbounds $stor_sym = _get_storage(b._world, $(comp_types[i]))))
+        push!(exprs, :(@inbounds $col_sym = $stor_sym.data[Int(table.id)]))
+
+        if storage_modes[i] == VectorStorage && fieldcount(comp_types[i]) > 0
+            push!(exprs, :($vec_sym = FieldViewable(view($col_sym, start_idx:end_idx))))
+        else
+            push!(exprs, :($vec_sym = view($col_sym, start_idx:end_idx)))
+        end
+    end
+    result_exprs = [:entities]
+    for i in 1:length(comp_types)
+        push!(result_exprs, Symbol("vec", i))
+    end
+    result_exprs = map(x -> :($x), result_exprs)
+    push!(exprs, Expr(:return, Expr(:tuple, result_exprs...)))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
+    end
+end
