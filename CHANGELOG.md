@@ -2,6 +2,10 @@
 
 ## [[unpublished]](https://github.com/mlange-42/Ark.jl/compare/v0.2.0...main)
 
+### Breaking changes
+
+- Batch entity creation uses a callback/`do`-block instead of an iterator (#400)
+
 ### Features
 
 - Adds entity relationships (#340, #349)
