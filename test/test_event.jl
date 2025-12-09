@@ -322,7 +322,9 @@ end
     new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
     @test counter == 20
 
-    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0))) do _
+        @test is_locked(world)
+    end
     @test counter == 30
 
     observe!(world, obs; unregister=true)
