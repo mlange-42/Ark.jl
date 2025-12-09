@@ -60,7 +60,7 @@ Base.@constprop :aggressive function new_entities!(
     targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_defaults!(fn, world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        rel_types, targets)
+        rel_types, targets, Val(true))
 end
 
 Base.@constprop :aggressive function new_entities!(
@@ -73,7 +73,7 @@ Base.@constprop :aggressive function new_entities!(
     targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_defaults!(world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        rel_types, targets) do tuple
+        rel_types, targets, Val(false)) do tuple
     end
 end
 
@@ -84,7 +84,7 @@ Base.@constprop :aggressive function new_entities!(
     defaults::Tuple{},
 ) where {F}
     return _new_entities_from_defaults!(fn, world, UInt32(n),
-        Val{typeof(defaults)}(), defaults, (), ())
+        Val{typeof(defaults)}(), defaults, (), (), Val(true))
 end
 
 Base.@constprop :aggressive function new_entities!(
@@ -93,7 +93,7 @@ Base.@constprop :aggressive function new_entities!(
     defaults::Tuple{},
 )
     return _new_entities_from_defaults!(world, UInt32(n),
-        Val{typeof(defaults)}(), defaults, (), ()) do tuple
+        Val{typeof(defaults)}(), defaults, (), (), Val(false)) do tuple
     end
 end
 
@@ -342,7 +342,8 @@ end
     values::Tuple,
     ::TR,
     targets::Tuple{Vararg{Entity}},
-) where {W<:World,TS<:Tuple,TR<:Tuple,F}
+    ::HFN,
+) where {F,W<:World,TS<:Tuple,TR<:Tuple,HFN<:Val}
     types = _to_types(TS.parameters)
     rel_types = _to_types(TR)
 
@@ -405,26 +406,51 @@ end
 
     types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-    push!(
-        exprs,
-        :(
-            begin
-                l = _lock(world._lock)
-                columns = _get_columns(world, $ts_val_expr, table, indices...)
-                fn(columns)
 
-                batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
-                if _has_observers(world._event_manager, OnCreateEntity)
-                    _fire_create_entities(world._event_manager, batch)
+    if HFN == Val{true}
+        push!(
+            exprs,
+            :(
+                begin
+                    l = _lock(world._lock)
+                    columns = _get_columns(world, $ts_val_expr, table, indices...)
+                    fn(columns)
+
+                    batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                    if _has_observers(world._event_manager, OnCreateEntity)
+                        _fire_create_entities(world._event_manager, batch)
+                    end
+                    if _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                        _fire_create_entities_relations(world._event_manager, batch)
+                    end
+                    _unlock(world._lock, l)
+                    return nothing
                 end
-                if _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
-                    _fire_create_entities_relations(world._event_manager, batch)
+            ),
+        )
+    else
+        push!(
+            exprs,
+            :(
+                begin
+                    has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
+                    has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                    if has_entity_obs || has_rel_obs
+                        l = _lock(world._lock)
+                        batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                        if has_entity_obs
+                            _fire_create_entities(world._event_manager, batch)
+                        end
+                        if has_rel_obs
+                            _fire_create_entities_relations(world._event_manager, batch)
+                        end
+                        _unlock(world._lock, l)
+                    end
+                    return nothing
                 end
-                _unlock(world._lock, l)
-                return nothing
-            end
-        ),
-    )
+            ),
+        )
+    end
 
     return quote
         @inbounds begin
