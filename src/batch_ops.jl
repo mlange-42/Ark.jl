@@ -84,19 +84,6 @@ Base.@constprop :aggressive function new_entities!(
 end
 
 Base.@constprop :aggressive function new_entities!(
-    fn::F,
-    world::World,
-    n::Int,
-    defaults::Tuple{},
-) where {F}
-    if n == 0
-        return
-    end
-    return _new_entities_from_defaults!(fn, world, UInt32(n),
-        Val{typeof(defaults)}(), defaults, (), (), Val(true))
-end
-
-Base.@constprop :aggressive function new_entities!(
     world::World,
     n::Int,
     defaults::Tuple{},
