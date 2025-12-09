@@ -49,28 +49,51 @@ end
 ```
 """
 Base.@constprop :aggressive function new_entities!(
+    fn::F,
     world::World,
     n::Int,
     defaults::Tuple;
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-    iterate::Bool=false,
-)
+) where {F}
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_defaults!(world, UInt32(n),
+    return _new_entities_from_defaults!(fn, world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        rel_types, targets, iterate)
+        rel_types, targets)
 end
 
 Base.@constprop :aggressive function new_entities!(
     world::World,
     n::Int,
-    defaults::Tuple{};
-    iterate::Bool=false,
+    defaults::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 )
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_defaults!(world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        (), (), iterate)
+        rel_types, targets) do tuple
+    end
+end
+
+Base.@constprop :aggressive function new_entities!(
+    fn::F,
+    world::World,
+    n::Int,
+    defaults::Tuple{},
+) where {F}
+    return _new_entities_from_defaults!(fn, world, UInt32(n),
+        Val{typeof(defaults)}(), defaults, (), ())
+end
+
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    defaults::Tuple{},
+)
+    return _new_entities_from_defaults!(world, UInt32(n),
+        Val{typeof(defaults)}(), defaults, (), ()) do tuple
+    end
 end
 
 """
@@ -112,16 +135,31 @@ end
 ```
 """
 Base.@constprop :aggressive function new_entities!(
+    fn::F,
     world::World,
     n::Int,
     comp_types::Tuple{Vararg{DataType}};
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
+) where {F}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return _new_entities_from_types!(fn, world, UInt32(n),
+        ntuple(i -> Val(comp_types[i]), length(comp_types)),
+        rel_types, targets)
+end
+
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    comp_types::Tuple{Vararg{DataType}};
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {F}
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
     return _new_entities_from_types!(world, UInt32(n),
         ntuple(i -> Val(comp_types[i]), length(comp_types)),
-        rel_types, targets)
+        rel_types, targets) do tuple
+    end
 end
 
 function _get_tables(
@@ -129,7 +167,7 @@ function _get_tables(
     arches::Vector{_Archetype{M}},
     arches_hot::Vector{_ArchetypeHot{M}},
     filter::F,
-)::Tuple{Vector{_Table},Bool} where {M,F<:Filter}
+)::Tuple{Vector{_BatchTable},Bool} where {M,F<:Filter}
     tables = world._pool.tables
     any_relations = false
     for arch in eachindex(arches)
@@ -308,14 +346,14 @@ end
 end
 
 @generated function _new_entities_from_defaults!(
+    fn::F,
     world::W,
     n::UInt32,
     ::Val{TS},
     values::Tuple,
     ::TR,
     targets::Tuple{Vararg{Entity}},
-    iterate::Bool,
-) where {W<:World,TS<:Tuple,TR<:Tuple}
+) where {W<:World,TS<:Tuple,TR<:Tuple,F}
     types = _to_types(TS.parameters)
     rel_types = _to_types(TR)
 
@@ -381,27 +419,19 @@ end
     push!(
         exprs,
         :(
-            if iterate
-                batch = _Batch_from_types(
-                    world,
-                    [_BatchTable(table, world._archetypes[table.archetype], indices...)],
-                    $ts_val_expr,
-                )
-                return batch
-            else
-                has_entity_obs = _has_observers(world._event_manager, OnCreateEntity)
-                has_rel_obs = _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
-                if has_entity_obs || has_rel_obs
-                    l = _lock(world._lock)
-                    batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
-                    if has_entity_obs
-                        _fire_create_entities(world._event_manager, batch)
-                    end
-                    if has_rel_obs
-                        _fire_create_entities_relations(world._event_manager, batch)
-                    end
-                    _unlock(world._lock, l)
+            begin
+                l = _lock(world._lock)
+                columns = _get_columns(world, types, table, indices...)
+                fn(columns)
+
+                batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                if _has_observers(world._event_manager, OnCreateEntity)
+                    _fire_create_entities(world._event_manager, batch)
                 end
+                if _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                    _fire_create_entities_relations(world._event_manager, batch)
+                end
+                _unlock(world._lock, l)
                 return nothing
             end
         ),
@@ -415,12 +445,13 @@ end
 end
 
 @generated function _new_entities_from_types!(
+    fn::F,
     world::W,
     n::UInt32,
     ::TS,
     ::TR,
     targets::Tuple{Vararg{Entity}},
-) where {W<:World,TS<:Tuple,TR<:Tuple}
+) where {W<:World,TS<:Tuple,TR<:Tuple,F}
     types = _to_types(TS)
     rel_types = _to_types(TR)
 
@@ -467,10 +498,21 @@ end
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
     push!(exprs,
         :(
-            batch = _Batch_from_types(
-                world,
-                [_BatchTable(table, world._archetypes[table.archetype], indices[1], indices[2])],
-                $ts_val_expr)
+            begin
+                l = _lock(world._lock)
+                columns = _get_columns(world, types, table, indices...)
+                fn(columns)
+
+                batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
+                if _has_observers(world._event_manager, OnCreateEntity)
+                    _fire_create_entities(world._event_manager, batch)
+                end
+                if _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
+                    _fire_create_entities_relations(world._event_manager, batch)
+                end
+                _unlock(world._lock, l)
+                return nothing
+            end
         ),
     )
 
