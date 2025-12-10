@@ -648,6 +648,7 @@ end
     for e in [e1, e2, e3, e4, e5, e6]
         @test get_relations(world, e, (ChildOf,)) == (parent4,)
     end
+    @test world._targets[parent4._id] == true
 
     @test_throws(
         "ArgumentError: can't use a dead entity as relation target, except for the zero entity",
