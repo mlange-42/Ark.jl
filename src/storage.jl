@@ -102,19 +102,6 @@ end
     end
 end
 
-function _copy_component_data!(
-    s::_ComponentStorage{C,A},
-    old_table::UInt32,
-    new_table::UInt32,
-    old_row::UInt32,
-    new_row::UInt32,
-) where {C,A<:AbstractArray}
-    old_vec = s.data[old_table]
-    new_vec = s.data[new_table]
-    @inbounds new_vec[new_row] = old_vec[old_row]
-    return nothing
-end
-
 function _copy_component_data_to_end!(
     s::_ComponentStorage{C,A},
     old_table::UInt32,

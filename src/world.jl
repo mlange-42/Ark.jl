@@ -1971,18 +1971,6 @@ end
         i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, new_row, mode)))
 end
 
-@generated function _copy_component_data!(
-    world::World{CS},
-    comp::Int,
-    old_table::UInt32,
-    new_table::UInt32,
-    old_row::UInt32,
-    new_row::UInt32,
-) where {CS<:Tuple}
-    _generate_component_switch(CS, :comp,
-        i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, new_row)))
-end
-
 @generated function _copy_component_data_to_end!(
     world::World{CS},
     comp::Int,
