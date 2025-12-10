@@ -295,34 +295,7 @@ function _fire_create_entities(m::_EventManager{W,M}, table::_BatchTable{M}) whe
 end
 
 function _fire_create_entities_relations(m::_EventManager{W,M}, table::_BatchTable{M}) where {W<:_AbstractWorld,M}
-    evt = OnAddRelations._id
-    observers = m.observers[evt]
-    mask = table.archetype.node.mask
-    if length(observers) > 1
-        comps, any_no_comps = m.comps[evt]
-        if !any_no_comps && !_contains_any(comps, mask)
-            return
-        end
-        with, any_no_with = m.with[evt]
-        if !any_no_with && !_contains_any(with, mask)
-            return
-        end
-    end
-    for o in observers
-        if o._has_comps && !_contains_all(mask, o._comps)
-            continue
-        end
-        if o._has_with && !_contains_all(mask, o._with)
-            continue
-        end
-        if o._has_without && _contains_any(mask, o._without)
-            continue
-        end
-        entities = table.table.entities._data
-        for i in table.start_idx:table.end_idx
-            o._fn(entities[i])
-        end
-    end
+    _do_fire_comps(m, OnAddRelations, table, table.archetype.node.mask)
 end
 
 function _fire_remove_entities(
@@ -467,8 +440,17 @@ function _fire_set_relations(
     mask::_MutableMask{M},
     entity_mask::_Mask{M},
     early_out::Bool,
-)::Bool where {W<:_AbstractWorld,M}
+) where {W<:_AbstractWorld,M}
     _do_fire_comps(m, event, entity, mask, entity_mask, early_out)
+end
+
+function _fire_set_relations(
+    m::_EventManager{W,M},
+    event::EventType,
+    table::_BatchTable{M},
+    mask::_MutableMask{M},
+) where {W<:_AbstractWorld,M}
+    _do_fire_comps(m, event, table, mask)
 end
 
 function _fire_custom_event(
@@ -516,6 +498,42 @@ end
         found = true
     end
     return found
+end
+
+@inline function _do_fire_comps(
+    m::_EventManager{W,M},
+    event::EventType,
+    table::_BatchTable{M},
+    mask::MK,
+) where {W<:_AbstractWorld,MK<:_AbstractMask{M}} where {M}
+    evt = event._id
+    observers = m.observers[evt]
+    entity_mask = table.archetype.node.mask
+    if length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps && !_contains_any(comps, mask)
+            return
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, entity_mask)
+            return
+        end
+    end
+    for o in observers
+        if o._has_comps && !_contains_all(mask, o._comps)
+            continue
+        end
+        if o._has_with && !_contains_all(entity_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(entity_mask, o._without)
+            continue
+        end
+        entities = table.table.entities._data
+        for i in table.start_idx:table.end_idx
+            o._fn(entities[i])
+        end
+    end
 end
 
 @inline function _do_fire_no_comps(
