@@ -30,6 +30,6 @@ jobs:
       uses: ./.github/actions/setup-julia
       with:
         julia-version: ${{ matrix.version }}
-        project-file: './ext/Project.toml'
+        project-file: './test/ext/Project.toml'
     - name: Run tests
-      run: julia --project=. ext/run_tests.jl
+      run: julia --project=. ext/runtests.jl
