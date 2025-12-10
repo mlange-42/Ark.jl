@@ -319,7 +319,7 @@ end
             # TODO: use a simplified data structure?
             push!(
                 batches,
-                _BatchTable(old_table, world._archetypes[old_table.archetype], UInt32(0), UInt32(length(old_table))),
+                _BatchTable(old_table, world._archetypes[old_table.archetype], UInt32(1), UInt32(length(old_table))),
             )
         end
         if !_is_cached(filter._filter) # Do not clear for cached filters!!!
@@ -359,7 +359,9 @@ function _set_relations_table!(
     end
     resize!(new_relations, 0)
 
-    # TODO: fire OnRemoveRelations
+    if _has_observers(world._event_manager, OnRemoveRelations)
+        _fire_set_relations(world._event_manager, OnRemoveRelations, batch, mask)
+    end
 
     start_idx = length(new_table) + 1
     _move_entities!(world, batch.table.id, new_table.id, batch.end_idx)
@@ -367,7 +369,17 @@ function _set_relations_table!(
         fn(view(new_table.entities, start_idx:length(new_table)))
     end
 
-    # TODO: fire OnAddRelations
+    if _has_observers(world._event_manager, OnAddRelations)
+        _fire_set_relations(
+            world._event_manager,
+            OnAddRelations,
+            _BatchTable(
+                new_table, world._archetypes[new_table.archetype],
+                UInt32(start_idx), UInt32(length(new_table)),
+            ),
+            mask,
+        )
+    end
 end
 
 @generated function _remove_entities!(fn::Fn, world::W, filter::F, ::HFN) where {Fn,W<:World,F<:Filter,HFN<:Val}
