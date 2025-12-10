@@ -264,106 +264,109 @@ function remove_entities!(fn::Fn, world::W, filter::F) where {Fn,W<:World,F<:Fil
     _remove_entities!(fn, world, filter, Val(true))
 end
 
-# @inline Base.@constprop :aggressive function set_relations!(
-#     fn::Fn,
-#     world::W,
-#     filter::F,
-#     relations::Tuple,
-# ) where {Fn,W<:World,F<:Filter}
-#     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-#     targets = ntuple(i -> relations[i].second, length(relations))
-#     return @inline _set_relations_batch!(fn, world, filter, rel_types, targets, Val(true))
-# end
+@inline Base.@constprop :aggressive function set_relations!(
+    fn::Fn,
+    world::W,
+    filter::F,
+    relations::Tuple,
+) where {Fn,W<:World,F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _set_relations_batch!(fn, world, filter, rel_types, targets, Val(true))
+end
 
-# @inline Base.@constprop :aggressive function set_relations!(
-#     world::W,
-#     filter::F,
-#     relations::Tuple,
-# ) where {W<:World,F<:Filter}
-#     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-#     targets = ntuple(i -> relations[i].second, length(relations))
-#     return @inline _set_relations_batch!(world, filter, rel_types, targets, Val(false)) do _
-#     end
-# end
+@inline Base.@constprop :aggressive function set_relations!(
+    world::W,
+    filter::F,
+    relations::Tuple,
+) where {W<:World,F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _set_relations_batch!(world, filter, rel_types, targets, Val(false)) do _
+    end
+end
 
-# @generated function _set_relations_batch!(
-#     fn::Fn,
-#     world::W,
-#     filter::F,
-#     ::TR,
-#     targets::Tuple{Vararg{Entity}},
-# ) where {Fn,W<:World,F<:Filter,TR<:Tuple}
-#     rel_types = _to_types(TR)
+@generated function _set_relations_batch!(
+    fn::Fn,
+    world::W,
+    filter::F,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+    ::HFN,
+) where {Fn,W<:World,F<:Filter,TR<:Tuple,HFN<:Val}
+    rel_types = _to_types(TR)
 
-#     _check_no_duplicates(rel_types)
-#     _check_relations(rel_types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
 
-#     rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
-#     exprs = []
-#     push!(exprs, :(_set_relations_batch!(fn, world, filter, $rel_ids, targets)))
-#     push!(exprs, Expr(:return, :nothing))
+    return quote
+        _check_locked(world)
 
-#     return quote
-#         @inbounds begin
-#             $(Expr(:block, exprs...))
-#         end
-#     end
-# end
+        l = _lock(world._lock)
 
-# @inline function _set_relations_batch!(
-#     fn::Fn,
-#     world::World,
-#     filter::F,
-#     relations::Tuple{Vararg{Int}},
-#     targets::Tuple{Vararg{Entity}},
-# ) where {Fn,W<:World,F<:Filter}
-#     tables = _get_tables()
+        arches, arches_hot = _get_archetypes(world, filter)
+        tables, _ = _get_tables(world, arches, arches_hot, filter)
+        batches = world._pool.batches
 
-#     index = world._entities[entity._id]
-#     old_table = world._tables[index.table]
-#     archetype = world._archetypes[old_table.archetype]
-#     new_relations, changed, mask = _get_exchange_targets(world, old_table, relations, targets)
-#     if !changed
-#         resize!(new_relations, 0)
-#         return nothing
-#     end
+        for table_id in tables
+            old_table = world._tables[table_id]
+            if isempty(old_table)
+                continue
+            end
+            # TODO: use a simplified data structure?
+            push!(batches, _BatchTable{old_table,world._archetypes[old_table.archetype],0,length(old_table)})
+        end
+        if !_is_cached(filter._filter) # Do not clear for cached filters!!!
+            resize!(tables, 0)
+        end
 
-#     new_table, found = _get_table(world, archetype, new_relations)
-#     if !found
-#         new_table_id = _create_table!(world, archetype, copy(new_relations))
-#         new_table = world._tables[new_table_id]
-#     end
+        for batch in batches
+            _set_relations_table!(fn, world, batch.table, batch.end_idx, rel_ids, $rel_ids, targets)
+        end
 
-#     if _has_observers(world._event_manager, OnRemoveRelations)
-#         l = _lock(world._lock)
-#         _fire_set_relations(
-#             world._event_manager,
-#             OnRemoveRelations,
-#             entity,
-#             mask,
-#             world._archetypes_hot[new_table.archetype].mask,
-#             true,
-#         )
-#         _unlock(world._lock, l)
-#     end
+        resize!(batches, 0)
 
-#     resize!(new_relations, 0)
-#     _ = _move_entity!(world, entity, new_table.id)
+        _unlock(world._lock, l)
 
-#     if _has_observers(world._event_manager, OnAddRelations)
-#         _fire_set_relations(
-#             world._event_manager,
-#             OnAddRelations,
-#             entity,
-#             mask,
-#             world._archetypes_hot[new_table.archetype].mask,
-#             true,
-#         )
-#     end
+        return nothing
+    end
+end
 
-#     return nothing
-# end
+function _set_relations_table!(
+    fn::Fn,
+    world::W,
+    table::_Table,
+    archetype::_Archetype{M},
+    len::UInt32,
+    relations::Tuple{Vararg{Int}},
+    targets::Tuple{Vararg{Entity}},
+    has_fn::Bool,
+) where {Fn,W<:World,M}
+    new_relations, changed, mask = _get_exchange_targets(world, table, relations, targets)
+    if !changed
+        resize!(new_relations, 0)
+        return nothing
+    end
+
+    new_table, found = _get_table(world, archetype, new_relations)
+    if !found
+        new_table_id = _create_table!(world, archetype, copy(new_relations))
+        new_table = world._tables[new_table_id]
+    end
+    resize!(new_relations, 0)
+
+    # TODO: fire OnRemoveRelations
+
+    start_idx = length(new_table) + 1
+    _move_entities!(world, table.id, new_table.id, len)
+    if has_fn
+        fn(view(new_table.entities, start_idx:length(new_table)))
+    end
+
+    # TODO: fire OnAddRelations
+end
 
 @generated function _remove_entities!(fn::Fn, world::W, filter::F, ::HFN) where {Fn,W<:World,F<:Filter,HFN<:Val}
     CS = W.parameters[1]

@@ -15,6 +15,7 @@ struct _WorldPool{M}
     relations::Vector{Pair{Int,Entity}}
     entities::Vector{Entity}
     tables::Vector{UInt32}
+    batches::Vector{_BatchTable{M}}
     mask::_MutableMask{M}
 end
 
@@ -23,6 +24,7 @@ function _WorldPool{M}() where {M}
         Vector{Pair{Int,Entity}}(),
         Vector{Entity}(),
         Vector{UInt32}(),
+        Vector{_BatchTable{M}}(),
         _MutableMask{M}(),
     )
 end
@@ -1352,6 +1354,11 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
 end
 
 function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32)
+    old_table = world._tables[old_table_index]
+    _move_entities!(world, old_table_index, table_index, length(old_table.entities))
+end
+
+function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32, num_entities::Int)
     _check_locked(world)
 
     old_table = world._tables[old_table_index]
@@ -1359,7 +1366,6 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
     archetype = world._archetypes[old_table.archetype]
 
     old_entities = length(new_table.entities)
-    num_entities = length(old_table.entities)
     total_entities = old_entities + num_entities
 
     resize!(new_table, total_entities)
