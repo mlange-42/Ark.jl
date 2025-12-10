@@ -400,7 +400,7 @@ parent, = get_relations(world, entity, (ChildOf,))
 (Entity(2, 0),)
 ```
 """
-@inline Base.@constprop :aggressive function get_relations(world::World, entity::Entity, comp_types::Tuple)
+@inline Base.@constprop :aggressive function get_relations(world::W, entity::Entity, comp_types::Tuple) where {W<:World}
     if !is_alive(world, entity)
         throw(ArgumentError("can't get relations of a dead entity"))
     end
@@ -422,7 +422,7 @@ set_relations!(world, entity, (ChildOf => parent,))
 
 ```
 """
-@inline Base.@constprop :aggressive function set_relations!(world::World, entity::Entity, relations::Tuple)
+@inline Base.@constprop :aggressive function set_relations!(world::W, entity::Entity, relations::Tuple) where {W<:World}
     if !is_alive(world, entity)
         throw(ArgumentError("can't set relation targets of a dead entity"))
     end
@@ -1643,11 +1643,11 @@ end
 end
 
 @inline function _set_relations!(
-    world::World,
+    world::W,
     entity::Entity,
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
-)
+) where {W<:World}
     index = world._entities[entity._id]
     old_table = world._tables[index.table]
     archetype = world._archetypes[old_table.archetype]
