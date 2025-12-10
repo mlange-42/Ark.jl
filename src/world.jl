@@ -1377,9 +1377,9 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         entity = old_table.entities[from]
         new_table.entities._data[to] = entity
         world._entities[entity._id] = _EntityIndex(new_table.id, to)
-        for comp in archetype.components
-            _copy_component_data!(world, comp, old_table_index, table_index, UInt32(from), UInt32(to))
-        end
+    end
+    for comp in archetype.components
+        _copy_component_data_to_end!(world, comp, old_table_index, table_index)
     end
 
     for comp in archetype.components
@@ -1981,6 +1981,16 @@ end
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
         i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)))
+end
+
+@generated function _copy_component_data_to_end!(
+    world::World{CS},
+    comp::Int,
+    old_arch::UInt32,
+    new_arch::UInt32,
+) where {CS<:Tuple}
+    _generate_component_switch(CS, :comp,
+        i -> :(_copy_component_data_to_end!(world._storages.$i, old_arch, new_arch)))
 end
 
 @generated function _clear_component_data!(

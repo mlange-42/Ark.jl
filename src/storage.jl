@@ -115,6 +115,17 @@ function _copy_component_data!(
     return nothing
 end
 
+function _copy_component_data_to_end!(
+    s::_ComponentStorage{C,A},
+    old_table::UInt32,
+    new_table::UInt32,
+) where {C,A<:AbstractArray}
+    old_vec = s.data[old_table]
+    new_vec = s.data[new_table]
+    @inbounds new_vec[(end-length(old_vec)+1):end] .= old_vec
+    return nothing
+end
+
 function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     _swap_remove!(col, row)

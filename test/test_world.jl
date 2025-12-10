@@ -603,12 +603,12 @@ end
     filter1 = Filter(world, (ChildOf,); relations=(ChildOf => parent1,), register=true)
     filter2 = Filter(world, (ChildOf,); register=true)
 
-    e1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
-    e2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
-    e3 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
-    e4 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
-    e5 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent3,))
-    e6 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent3,))
+    e1 = new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent1,))
+    e2 = new_entity!(world, (Position(2, 2), ChildOf()); relations=(ChildOf => parent1,))
+    e3 = new_entity!(world, (Position(3, 3), ChildOf()); relations=(ChildOf => parent2,))
+    e4 = new_entity!(world, (Position(4, 4), ChildOf()); relations=(ChildOf => parent2,))
+    e5 = new_entity!(world, (Position(5, 5), ChildOf()); relations=(ChildOf => parent3,))
+    e6 = new_entity!(world, (Position(6, 6), ChildOf()); relations=(ChildOf => parent3,))
 
     count = 0
     set_relations!(world, filter1, (ChildOf => parent2,)) do entities
@@ -619,6 +619,8 @@ end
 
     @test get_relations(world, e1, (ChildOf,)) == (parent2,)
     @test get_relations(world, e2, (ChildOf,)) == (parent2,)
+    @test get_components(world, e1, (Position,)) == (Position(1, 1),)
+    @test get_components(world, e2, (Position,)) == (Position(2, 2),)
 
     count = 0
     total = 0
