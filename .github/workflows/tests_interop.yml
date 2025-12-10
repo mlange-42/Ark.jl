@@ -31,5 +31,7 @@ jobs:
       with:
         julia-version: ${{ matrix.version }}
         project-file: './test/ext/Project.toml'
+    - name: Instantiate Project
+      run: julia --project=./test/ext -e "using Pkg; Pkg.instantiate()"
     - name: Run tests
       run: julia --project=./test/ext test/ext/runtests.jl
