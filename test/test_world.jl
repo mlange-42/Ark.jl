@@ -619,8 +619,6 @@ end
 
     @test get_relations(world, e1, (ChildOf,)) == (parent2,)
     @test get_relations(world, e2, (ChildOf,)) == (parent2,)
-    @test get_components(world, e1, (Position,)) == (Position(1, 1),)
-    @test get_components(world, e2, (Position,)) == (Position(2, 2),)
 
     count = 0
     total = 0
@@ -630,8 +628,9 @@ end
     end
     @test count == 2
     @test total == 6
-    for e in [e1, e2, e3, e4, e5, e6]
+    for (i, e) in enumerate([e1, e2, e3, e4, e5, e6])
         @test get_relations(world, e, (ChildOf,)) == (parent1,)
+        @test get_components(world, e, (Position,)) == (Position(i, i),)
     end
 
     count = 0
@@ -647,8 +646,9 @@ end
     @test count == 0
 
     set_relations!(world, filter2, (ChildOf => parent4,))
-    for e in [e1, e2, e3, e4, e5, e6]
+    for (i, e) in enumerate([e1, e2, e3, e4, e5, e6])
         @test get_relations(world, e, (ChildOf,)) == (parent4,)
+        @test get_components(world, e, (Position,)) == (Position(i, i),)
     end
     @test world._targets[parent4._id] == true
 
