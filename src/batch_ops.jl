@@ -264,6 +264,36 @@ function remove_entities!(fn::Fn, world::W, filter::F) where {Fn,W<:World,F<:Fil
     _remove_entities!(fn, world, filter, Val(true))
 end
 
+"""
+    set_relations!([f::Function], world::World, filter::Filter::Entity, relations::Tuple)
+
+Sets relation targets for the given components of all matching [entities](@ref Entity).
+Optionally runs a callback on the affected entities.
+
+# Example
+
+Setting relation targets:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,))
+set_relations!(world, filter, (ChildOf => parent2,))
+
+# output
+
+```
+
+Setting relation targets and running a callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,))
+set_relations!(world, filter, (ChildOf => parent2,)) do entities
+    # do something with the entities...
+end
+
+# output
+
+```
+"""
 @inline Base.@constprop :aggressive function set_relations!(
     fn::Fn,
     world::W,
