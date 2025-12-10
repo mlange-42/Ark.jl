@@ -603,12 +603,12 @@ end
     filter1 = Filter(world, (ChildOf,); relations=(ChildOf => parent1,), register=true)
     filter2 = Filter(world, (ChildOf,); register=true)
 
-    e1 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
-    e2 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent1,))
-    e3 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
-    e4 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent2,))
-    e5 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent3,))
-    e6 = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => parent3,))
+    e1 = new_entity!(world, (Position(1, 1), ChildOf()); relations=(ChildOf => parent1,))
+    e2 = new_entity!(world, (Position(2, 2), ChildOf()); relations=(ChildOf => parent1,))
+    e3 = new_entity!(world, (Position(3, 3), ChildOf()); relations=(ChildOf => parent2,))
+    e4 = new_entity!(world, (Position(4, 4), ChildOf()); relations=(ChildOf => parent2,))
+    e5 = new_entity!(world, (Position(5, 5), ChildOf()); relations=(ChildOf => parent3,))
+    e6 = new_entity!(world, (Position(6, 6), ChildOf()); relations=(ChildOf => parent3,))
 
     count = 0
     set_relations!(world, filter1, (ChildOf => parent2,)) do entities
@@ -628,8 +628,9 @@ end
     end
     @test count == 2
     @test total == 6
-    for e in [e1, e2, e3, e4, e5, e6]
+    for (i, e) in enumerate([e1, e2, e3, e4, e5, e6])
         @test get_relations(world, e, (ChildOf,)) == (parent1,)
+        @test get_components(world, e, (Position,)) == (Position(i, i),)
     end
 
     count = 0
@@ -645,8 +646,9 @@ end
     @test count == 0
 
     set_relations!(world, filter2, (ChildOf => parent4,))
-    for e in [e1, e2, e3, e4, e5, e6]
+    for (i, e) in enumerate([e1, e2, e3, e4, e5, e6])
         @test get_relations(world, e, (ChildOf,)) == (parent4,)
+        @test get_components(world, e, (Position,)) == (Position(i, i),)
     end
     @test world._targets[parent4._id] == true
 

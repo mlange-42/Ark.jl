@@ -1377,9 +1377,9 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         entity = old_table.entities[from]
         new_table.entities._data[to] = entity
         world._entities[entity._id] = _EntityIndex(new_table.id, to)
-        for comp in archetype.components
-            _copy_component_data!(world, comp, old_table_index, table_index, UInt32(from), UInt32(to))
-        end
+    end
+    for comp in archetype.components
+        _copy_component_data_to_end!(world, comp, old_table_index, table_index)
     end
 
     for comp in archetype.components
@@ -1946,19 +1946,19 @@ end
 @generated function _move_component_data!(
     world::World{CS},
     comp::Int,
-    old_arch::UInt32,
-    new_arch::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
     row::UInt32,
 ) where CS
     _generate_component_switch(CS, :comp,
-        i -> :(_move_component_data!(world._storages.$i, old_arch, new_arch, row)))
+        i -> :(_move_component_data!(world._storages.$i, old_table, new_table, row)))
 end
 
 @generated function _copy_component_data!(
     world::World{CS},
     comp::Int,
-    old_arch::UInt32,
-    new_arch::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
     old_row::UInt32,
     new_row::UInt32,
     mode::CP,
@@ -1968,38 +1968,36 @@ end
         throw(ArgumentError(":$mode is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
     _generate_component_switch(CS, :comp,
-        i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, mode)))
+        i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, new_row, mode)))
 end
 
-@generated function _copy_component_data!(
+@generated function _copy_component_data_to_end!(
     world::World{CS},
     comp::Int,
-    old_arch::UInt32,
-    new_arch::UInt32,
-    old_row::UInt32,
-    new_row::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
-        i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)))
+        i -> :(_copy_component_data_to_end!(world._storages.$i, old_table, new_table)))
 end
 
 @generated function _clear_component_data!(
     world::World{CS},
     comp::Int,
-    arch::UInt32,
+    table::UInt32,
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
-        i -> :(_clear_column!(world._storages.$i, arch)))
+        i -> :(_clear_column!(world._storages.$i, table)))
 end
 
 @generated function _swap_remove_in_column_for_comp!(
     world::World{CS},
     comp::Int,
-    arch::UInt32,
+    table::UInt32,
     row::UInt32,
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
-        i -> :(_remove_component_data!(world._storages.$i, arch, row)))
+        i -> :(_remove_component_data!(world._storages.$i, table, row)))
 end
 
 function _check_locked(world::World)
