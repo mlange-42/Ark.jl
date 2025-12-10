@@ -301,6 +301,7 @@ end
 
     rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
 
+    has_fn = HFN == Val{true}
     return quote
         _check_locked(world)
 
@@ -316,14 +317,17 @@ end
                 continue
             end
             # TODO: use a simplified data structure?
-            push!(batches, _BatchTable{old_table,world._archetypes[old_table.archetype],0,length(old_table)})
+            push!(
+                batches,
+                _BatchTable(old_table, world._archetypes[old_table.archetype], UInt32(0), UInt32(length(old_table))),
+            )
         end
         if !_is_cached(filter._filter) # Do not clear for cached filters!!!
             resize!(tables, 0)
         end
 
         for batch in batches
-            _set_relations_table!(fn, world, batch.table, batch.end_idx, rel_ids, $rel_ids, targets)
+            _set_relations_table!(fn, world, batch, $rel_ids, targets, $has_fn)
         end
 
         resize!(batches, 0)
@@ -337,22 +341,20 @@ end
 function _set_relations_table!(
     fn::Fn,
     world::W,
-    table::_Table,
-    archetype::_Archetype{M},
-    len::UInt32,
+    batch::_BatchTable,
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
     has_fn::Bool,
-) where {Fn,W<:World,M}
-    new_relations, changed, mask = _get_exchange_targets(world, table, relations, targets)
+) where {Fn,W<:World}
+    new_relations, changed, mask = _get_exchange_targets(world, batch.table, relations, targets)
     if !changed
         resize!(new_relations, 0)
         return nothing
     end
 
-    new_table, found = _get_table(world, archetype, new_relations)
+    new_table, found = _get_table(world, batch.archetype, new_relations)
     if !found
-        new_table_id = _create_table!(world, archetype, copy(new_relations))
+        new_table_id = _create_table!(world, batch.archetype, copy(new_relations))
         new_table = world._tables[new_table_id]
     end
     resize!(new_relations, 0)
@@ -360,7 +362,7 @@ function _set_relations_table!(
     # TODO: fire OnRemoveRelations
 
     start_idx = length(new_table) + 1
-    _move_entities!(world, table.id, new_table.id, len)
+    _move_entities!(world, batch.table.id, new_table.id, batch.end_idx)
     if has_fn
         fn(view(new_table.entities, start_idx:length(new_table)))
     end
