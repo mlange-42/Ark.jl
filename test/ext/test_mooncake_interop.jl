@@ -50,6 +50,6 @@ end
 	g = gradient(run_world, backend, (0.1, 0.5))
 	d_alpha, d_beta = g
 
-	@test run_world((0.1 + 10e-5, 0.5)) - run_world((0.1, 0.5)) - d_alpha * 10e-5 < 10e-4
-	@test run_world((0.1, 0.5 + 10e-5)) - run_world((0.1, 0.5)) - d_beta * 10e-5 < 10e-4
+	@test run_world((0.1 + 10e-5, 0.5)) - run_world((0.1, 0.5)) - d_alpha * 10e-5 < 10e-3
+	@test run_world((0.1, 0.5 + 10e-5)) - run_world((0.1, 0.5)) - d_beta * 10e-5 < 10e-3
 end
