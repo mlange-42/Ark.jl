@@ -1,6 +1,7 @@
 
 using DifferentiationInterface
 using Mooncake
+using Mooncake.Random
 
 struct Position
     x::Float64
