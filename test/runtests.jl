@@ -3,7 +3,9 @@ ENV["ARK_RUNNING_TESTS"] = true
 
 if "--interop" in ARGS
     include("ext/runtests.jl")
-    @goto stop
+    begin 
+        @goto stop
+    end
 end
 
 using Test
@@ -42,6 +44,8 @@ include("test_linear_map.jl")
 include("test_graph.jl")
 include("test_quality.jl")
 
-@label stop
+begin
+    @label stop
+end
 
 ENV["ARK_RUNNING_TESTS"] = false
