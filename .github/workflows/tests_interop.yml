@@ -1,4 +1,4 @@
-name: Tests (interop)
+name: Tests (large world)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Tests (interop)
+    name: Tests (large world)
     runs-on: ubuntu-latest
     permissions: # required for caching
       actions: write
@@ -19,6 +19,7 @@ jobs:
         version:
           - 'lts'
           - '1'
+          - 'pre'
     steps:
     - name: Cancel ongoing test runs for previous commits
       uses: styfle/cancel-workflow-action@0.12.1
@@ -30,8 +31,6 @@ jobs:
       uses: ./.github/actions/setup-julia
       with:
         julia-version: ${{ matrix.version }}
-        project-file: './test/ext/Project.toml'
-    - name: Instantiate Project
-      run: julia --project=./test/ext -e 'using Pkg; Pkg.instantiate(); Pkg.develop(path=".")'
+        project-file: './Project.toml'
     - name: Run tests
-      run: julia --project=./test/ext test/ext/runtests.jl
+      run: julia run_tests.jl ./test/ext --interop
