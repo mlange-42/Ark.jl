@@ -1,4 +1,4 @@
-name: Tests (large world)
+name: Tests (interop)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Tests (large world)
+    name: Tests (interop)
     runs-on: ubuntu-latest
     permissions: # required for caching
       actions: write
