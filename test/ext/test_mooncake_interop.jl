@@ -45,7 +45,7 @@ end
         end
 
         k = sum(rand!([1.]))
-        return sum(pos.x + pos.y for pos in all_positions) + k / 10e10
+        return sum(pos.x + pos.y for pos in all_positions) + sum(rand!([1.0,])) / 10e10
     end
 
     backend = AutoMooncake()
