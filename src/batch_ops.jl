@@ -202,6 +202,27 @@ function _get_tables(
     return tables, any_relations
 end
 
+@generated function _get_archetypes(world::W, filter::F) where {W<:World,F<:Filter}
+    CS = W.parameters[1]
+    TS = F.parameters[2]
+    OPT = F.parameters[4]
+
+    comp_types = _to_types(TS.parameters)
+    optional_flags = OPT.parameters
+
+    required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
+    ids_tuple = tuple(required_ids...)
+
+    # TODO: skip this for cached filters
+    archetypes =
+        length(ids_tuple) == 0 ? :((world._archetypes, world._archetypes_hot)) :
+        :(_get_archetypes(world, $ids_tuple))
+
+    quote
+        return $archetypes
+    end
+end
+
 """
     remove_entities!([f::Function], world::World, filter::Filter)
 
@@ -243,28 +264,162 @@ function remove_entities!(fn::Fn, world::W, filter::F) where {Fn,W<:World,F<:Fil
     _remove_entities!(fn, world, filter, Val(true))
 end
 
+"""
+    set_relations!([f::Function], world::World, filter::Filter::Entity, relations::Tuple)
+
+Sets relation targets for the given components of all matching [entities](@ref Entity).
+Optionally runs a callback on the affected entities.
+
+# Example
+
+Setting relation targets:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,))
+set_relations!(world, filter, (ChildOf => parent2,))
+
+# output
+
+```
+
+Setting relation targets and running a callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,))
+set_relations!(world, filter, (ChildOf => parent2,)) do entities
+    # do something with the entities...
+end
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function set_relations!(
+    fn::Fn,
+    world::W,
+    filter::F,
+    relations::Tuple,
+) where {Fn,W<:World,F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _set_relations_batch!(fn, world, filter, rel_types, targets, Val(true))
+end
+
+@inline Base.@constprop :aggressive function set_relations!(
+    world::W,
+    filter::F,
+    relations::Tuple,
+) where {W<:World,F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _set_relations_batch!(world, filter, rel_types, targets, Val(false)) do _
+    end
+end
+
+@generated function _set_relations_batch!(
+    fn::Fn,
+    world::W,
+    filter::F,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+    ::HFN,
+) where {Fn,W<:World,F<:Filter,TR<:Tuple,HFN<:Val}
+    rel_types = _to_types(TR)
+
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+
+    rel_ids = tuple([_component_id(W.parameters[1], T) for T in rel_types]...)
+
+    has_fn = HFN == Val{true}
+    return quote
+        _check_locked(world)
+
+        l = _lock(world._lock)
+
+        arches, arches_hot = _get_archetypes(world, filter)
+        tables, _ = _get_tables(world, arches, arches_hot, filter)
+        batches = world._pool.batches
+
+        for table_id in tables
+            old_table = world._tables[table_id]
+            if isempty(old_table)
+                continue
+            end
+            # TODO: use a simplified data structure?
+            push!(
+                batches,
+                _BatchTable(old_table, world._archetypes[old_table.archetype], UInt32(1), UInt32(length(old_table))),
+            )
+        end
+        if !_is_cached(filter._filter) # Do not clear for cached filters!!!
+            resize!(tables, 0)
+        end
+
+        for batch in batches
+            _set_relations_table!(fn, world, batch, $rel_ids, targets, $has_fn)
+        end
+
+        resize!(batches, 0)
+
+        _unlock(world._lock, l)
+
+        return nothing
+    end
+end
+
+function _set_relations_table!(
+    fn::Fn,
+    world::W,
+    batch::_BatchTable,
+    relations::Tuple{Vararg{Int}},
+    targets::Tuple{Vararg{Entity}},
+    has_fn::Bool,
+) where {Fn,W<:World}
+    new_relations, changed, mask = _get_exchange_targets(world, batch.table, relations, targets)
+    if !changed
+        resize!(new_relations, 0)
+        return nothing
+    end
+
+    new_table, found = _get_table(world, batch.archetype, new_relations)
+    if !found
+        new_table_id = _create_table!(world, batch.archetype, copy(new_relations))
+        new_table = world._tables[new_table_id]
+    end
+    resize!(new_relations, 0)
+
+    if _has_observers(world._event_manager, OnRemoveRelations)
+        _fire_set_relations(world._event_manager, OnRemoveRelations, batch, mask)
+    end
+
+    start_idx = length(new_table) + 1
+    _move_entities!(world, batch.table.id, new_table.id, batch.end_idx)
+    if has_fn
+        fn(view(new_table.entities, start_idx:length(new_table)))
+    end
+
+    if _has_observers(world._event_manager, OnAddRelations)
+        _fire_set_relations(
+            world._event_manager,
+            OnAddRelations,
+            _BatchTable(
+                new_table, world._archetypes[new_table.archetype],
+                UInt32(start_idx), UInt32(length(new_table)),
+            ),
+            mask,
+        )
+    end
+end
+
 @generated function _remove_entities!(fn::Fn, world::W, filter::F, ::HFN) where {Fn,W<:World,F<:Filter,HFN<:Val}
     CS = W.parameters[1]
-    TS = F.parameters[2]
-    OPT = F.parameters[4]
-
-    comp_types = _to_types(TS.parameters)
-    optional_flags = OPT.parameters
-
-    required_ids = [_component_id(CS, comp_types[i]) for i in 1:length(comp_types) if optional_flags[i] === Val{false}]
-    ids_tuple = tuple(required_ids...)
-
-    # TODO: skit this for cached filters
-    archetypes =
-        length(ids_tuple) == 0 ? :((world._archetypes, world._archetypes_hot)) :
-        :(_get_archetypes(world, $ids_tuple))
-
     world_has_rel = _has_relations(CS)
     has_fn = HFN == Val{true}
     quote
         _check_locked(world)
 
-        arches, arches_hot = $archetypes
+        arches, arches_hot = _get_archetypes(world, filter)
         tables, any_relations = _get_tables(world, arches, arches_hot, filter)
 
         has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
