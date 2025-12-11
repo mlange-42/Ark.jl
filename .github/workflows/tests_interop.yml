@@ -19,7 +19,6 @@ jobs:
         version:
           - 'lts'
           - '1'
-          - 'pre'
     steps:
     - name: Cancel ongoing test runs for previous commits
       uses: styfle/cancel-workflow-action@0.12.1
@@ -34,7 +33,7 @@ jobs:
         project-file: './Project.toml'
     - name: Run tests
       run: julia run_tests.jl ./test/ext --interop
-    - uses: julia-actions/julia-processcoverage@v1
+      uses: julia-actions/julia-processcoverage@v1
           - uses: codecov/codecov-action@v5
             if: matrix.version == '1'
             with:
