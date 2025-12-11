@@ -41,3 +41,12 @@ jobs:
           name: coverage-interop-${{ matrix.version }}
           path: lcov.info
           if-no-files-found: ignore
+        uses: actions/download-artifact@v4
+        with:
+          path: coverage_artifacts
+        uses: codecov/codecov-action@v5
+          with:
+            directory: coverage_artifacts
+            token: ${{ secrets.CODECOV_TOKEN }}
+            fail_ci_if_error: true
+            verbose: true
