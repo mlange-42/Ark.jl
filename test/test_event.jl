@@ -965,6 +965,58 @@ end
     @test counter_rem == 1
 end
 
+@testset "Fire OnAddRelations/OnRemoveRelations batch" begin
+    world = World(Dummy, Position, Velocity, ChildOf, ChildOf2, ChildOf3)
+
+    counter_add = 0
+    counter_rem = 0
+    obs_add = observe!(world, OnAddRelations, (ChildOf,)) do entity
+        @test _is_locked(world._lock) == true
+        counter_add += 1
+    end
+    obs_rem = observe!(world, OnRemoveRelations, (ChildOf,)) do entity
+        @test _is_locked(world._lock) == true
+        counter_rem += 1
+    end
+    obs_add_2 = observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counter_add += 1
+    end
+    obs_rem_2 = observe!(world, OnRemoveRelations, (ChildOf2,)) do entity
+        counter_rem += 1
+    end
+
+    parent1 = new_entity!(world, ())
+    parent2 = new_entity!(world, ())
+    parent3 = new_entity!(world, ())
+
+    new_entities!(world, 10, (Position(1, 1), ChildOf()); relations=(ChildOf => parent1,))
+    new_entities!(world, 10, (Position(1, 1), ChildOf()); relations=(ChildOf => parent2,))
+    new_entities!(world, 10, (Position(1, 1), ChildOf()); relations=(ChildOf => parent3,))
+
+    @test counter_add == 30
+    @test counter_rem == 0
+
+    set_relations!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent2,)), (ChildOf => parent1,))
+
+    @test counter_add == 40
+    @test counter_rem == 10
+
+    set_relations!(world, Filter(world, (ChildOf,); relations=(ChildOf => parent2,)), (ChildOf => parent1,))
+
+    @test counter_add == 40
+    @test counter_rem == 10
+
+    set_relations!(world, Filter(world, (ChildOf,)), (ChildOf => parent2,))
+
+    @test counter_add == 70
+    @test counter_rem == 40
+
+    remove_entities!(world, Filter(world, ()))
+
+    @test counter_add == 70
+    @test counter_rem == 70
+end
+
 @testset "Observers combine" begin
     world = World(Dummy, Position, Velocity)
 

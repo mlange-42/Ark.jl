@@ -56,22 +56,22 @@ end
 
 function _move_component_data!(
     s::_ComponentStorage{C,A},
-    old_arch::UInt32,
-    new_arch::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
     row::UInt32,
 ) where {C,A<:AbstractArray}
     # TODO: this can probably be optimized for StructArray storage
     # by moving per component instead of unpacking/packing.
-    @inbounds old_vec = s.data[old_arch]
-    @inbounds new_vec = s.data[new_arch]
+    @inbounds old_vec = s.data[old_table]
+    @inbounds new_vec = s.data[new_table]
     @inbounds push!(new_vec, old_vec[row])
     _swap_remove!(old_vec, row)
 end
 
 @generated function _copy_component_data!(
     s::_ComponentStorage{C,A},
-    old_arch::UInt32,
-    new_arch::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
     old_row::UInt32,
     new_row::UInt32,
     ::CP,
@@ -79,8 +79,8 @@ end
     # TODO: this can probably be optimized for StructArray storage
     # by moving per component instead of unpacking/packing.
     exprs = []
-    push!(exprs, :(old_vec = s.data[old_arch]))
-    push!(exprs, :(new_vec = s.data[new_arch]))
+    push!(exprs, :(old_vec = s.data[old_table]))
+    push!(exprs, :(new_vec = s.data[new_table]))
 
     if CP === Val{:ref} || (isbitstype(C) && !ismutabletype(C))
         # no copy required for immutable isbits
@@ -102,16 +102,14 @@ end
     end
 end
 
-function _copy_component_data!(
+function _copy_component_data_to_end!(
     s::_ComponentStorage{C,A},
-    old_arch::UInt32,
-    new_arch::UInt32,
-    old_row::UInt32,
-    new_row::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
 ) where {C,A<:AbstractArray}
-    old_vec = s.data[old_arch]
-    new_vec = s.data[new_arch]
-    @inbounds new_vec[new_row] = old_vec[old_row]
+    old_vec = s.data[old_table]
+    new_vec = s.data[new_table]
+    @inbounds new_vec[(end-length(old_vec)+1):end] .= old_vec
     return nothing
 end
 

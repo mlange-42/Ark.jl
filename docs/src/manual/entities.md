@@ -111,7 +111,7 @@ which takes [Entities](@ref) as an argument:
 ```jldoctest; output = false
 filter = Filter(world, (Position, Velocity))
 remove_entities!(world, filter) do entities
-    # do something with the entities.
+    # do something with the entities...
 end
 
 # output

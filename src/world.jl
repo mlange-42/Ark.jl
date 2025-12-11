@@ -15,6 +15,7 @@ struct _WorldPool{M}
     relations::Vector{Pair{Int,Entity}}
     entities::Vector{Entity}
     tables::Vector{UInt32}
+    batches::Vector{_BatchTable{M}}
     mask::_MutableMask{M}
 end
 
@@ -23,6 +24,7 @@ function _WorldPool{M}() where {M}
         Vector{Pair{Int,Entity}}(),
         Vector{Entity}(),
         Vector{UInt32}(),
+        Vector{_BatchTable{M}}(),
         _MutableMask{M}(),
     )
 end
@@ -137,7 +139,7 @@ entity = new_entity!(world, (Position(0, 0), Velocity(1, 1)))
 
 # output
 
-Entity(4, 0)
+Entity(5, 0)
 ```
 
 Create an entity with components and relationships:
@@ -147,7 +149,7 @@ entity = new_entity!(world, (Position(0, 0), ChildOf()); relations=(ChildOf => p
 
 # output
 
-Entity(4, 0)
+Entity(5, 0)
 ```
 """
 Base.@constprop :aggressive function new_entity!(
@@ -207,7 +209,7 @@ entity1 = copy_entity!(world, entity)
 
 # output
 
-Entity(4, 0)
+Entity(5, 0)
 ```
 
 Copy an entity, adding and removing some components in the same operation:
@@ -220,7 +222,7 @@ entity2 = copy_entity!(world, entity;
 
 # output
 
-Entity(4, 0)
+Entity(5, 0)
 ```
 """
 @inline Base.@constprop :aggressive function copy_entity!(
@@ -387,7 +389,7 @@ end
 """
     get_relations(world::World, entity::Entity, comp_types::Tuple)
 
-Get the relation targets for components of an [`Entity`](@ref).
+Get the relation targets for components of an [Entity](@ref).
 Targets are returned as a tuple.
 
 # Example
@@ -400,7 +402,7 @@ parent, = get_relations(world, entity, (ChildOf,))
 (Entity(2, 0),)
 ```
 """
-@inline Base.@constprop :aggressive function get_relations(world::World, entity::Entity, comp_types::Tuple)
+@inline Base.@constprop :aggressive function get_relations(world::W, entity::Entity, comp_types::Tuple) where {W<:World}
     if !is_alive(world, entity)
         throw(ArgumentError("can't get relations of a dead entity"))
     end
@@ -410,7 +412,7 @@ end
 """
     set_relations!(world::World, entity::Entity, relations::Tuple)
 
-Sets relation targets for the given components of an [`Entity`](@ref).
+Sets relation targets for the given components of an [Entity](@ref).
 The entity must already have all these relationship components.
 
 # Example
@@ -422,7 +424,7 @@ set_relations!(world, entity, (ChildOf => parent,))
 
 ```
 """
-@inline Base.@constprop :aggressive function set_relations!(world::World, entity::Entity, relations::Tuple)
+@inline Base.@constprop :aggressive function set_relations!(world::W, entity::Entity, relations::Tuple) where {W<:World}
     if !is_alive(world, entity)
         throw(ArgumentError("can't set relation targets of a dead entity"))
     end
@@ -1353,13 +1355,16 @@ end
 
 function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32)
     _check_locked(world)
+    old_table = world._tables[old_table_index]
+    _move_entities!(world, old_table_index, table_index, UInt32(length(old_table.entities)))
+end
 
+function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32, num_entities::UInt32)
     old_table = world._tables[old_table_index]
     new_table = world._tables[table_index]
     archetype = world._archetypes[old_table.archetype]
 
     old_entities = length(new_table.entities)
-    num_entities = length(old_table.entities)
     total_entities = old_entities + num_entities
 
     resize!(new_table, total_entities)
@@ -1372,9 +1377,9 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         entity = old_table.entities[from]
         new_table.entities._data[to] = entity
         world._entities[entity._id] = _EntityIndex(new_table.id, to)
-        for comp in archetype.components
-            _copy_component_data!(world, comp, old_table_index, table_index, UInt32(from), UInt32(to))
-        end
+    end
+    for comp in archetype.components
+        _copy_component_data_to_end!(world, comp, old_table_index, table_index)
     end
 
     for comp in archetype.components
@@ -1643,11 +1648,11 @@ end
 end
 
 @inline function _set_relations!(
-    world::World,
+    world::W,
     entity::Entity,
     relations::Tuple{Vararg{Int}},
     targets::Tuple{Vararg{Entity}},
-)
+) where {W<:World}
     index = world._entities[entity._id]
     old_table = world._tables[index.table]
     archetype = world._archetypes[old_table.archetype]
@@ -1941,19 +1946,19 @@ end
 @generated function _move_component_data!(
     world::World{CS},
     comp::Int,
-    old_arch::UInt32,
-    new_arch::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
     row::UInt32,
 ) where CS
     _generate_component_switch(CS, :comp,
-        i -> :(_move_component_data!(world._storages.$i, old_arch, new_arch, row)))
+        i -> :(_move_component_data!(world._storages.$i, old_table, new_table, row)))
 end
 
 @generated function _copy_component_data!(
     world::World{CS},
     comp::Int,
-    old_arch::UInt32,
-    new_arch::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
     old_row::UInt32,
     new_row::UInt32,
     mode::CP,
@@ -1963,38 +1968,36 @@ end
         throw(ArgumentError(":$mode is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
     _generate_component_switch(CS, :comp,
-        i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row, mode)))
+        i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, new_row, mode)))
 end
 
-@generated function _copy_component_data!(
+@generated function _copy_component_data_to_end!(
     world::World{CS},
     comp::Int,
-    old_arch::UInt32,
-    new_arch::UInt32,
-    old_row::UInt32,
-    new_row::UInt32,
+    old_table::UInt32,
+    new_table::UInt32,
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
-        i -> :(_copy_component_data!(world._storages.$i, old_arch, new_arch, old_row, new_row)))
+        i -> :(_copy_component_data_to_end!(world._storages.$i, old_table, new_table)))
 end
 
 @generated function _clear_component_data!(
     world::World{CS},
     comp::Int,
-    arch::UInt32,
+    table::UInt32,
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
-        i -> :(_clear_column!(world._storages.$i, arch)))
+        i -> :(_clear_column!(world._storages.$i, table)))
 end
 
 @generated function _swap_remove_in_column_for_comp!(
     world::World{CS},
     comp::Int,
-    arch::UInt32,
+    table::UInt32,
     row::UInt32,
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
-        i -> :(_remove_component_data!(world._storages.$i, arch, row)))
+        i -> :(_remove_component_data!(world._storages.$i, table, row)))
 end
 
 function _check_locked(world::World)
