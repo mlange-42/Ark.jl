@@ -44,7 +44,8 @@ end
             append!(all_positions, positions)
         end
 
-        return sum(pos.x + pos.y for pos in all_positions) + sum(rand!(rand(10)))
+        k = sum(rand!([1.]))
+        return sum(pos.x + pos.y for pos in all_positions) + k - k
     end
 
     backend = AutoMooncake()
