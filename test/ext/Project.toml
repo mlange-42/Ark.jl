@@ -6,6 +6,5 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-Ark = "0.2"
 Mooncake = "0.4"
 DifferentiationInterface = "0.7"
