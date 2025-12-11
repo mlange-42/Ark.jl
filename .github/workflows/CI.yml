@@ -48,6 +48,6 @@ jobs:
         if: matrix.version == 'lts'
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-main-${{ matrix.version }}
+          name: coverage-interop-${{ matrix.version }}
           path: lcov.info
           if-no-files-found: ignore
