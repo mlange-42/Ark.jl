@@ -32,7 +32,7 @@ jobs:
         julia-version: ${{ matrix.version }}
         project-file: './Project.toml'
     - name: Run tests
-      run: julia run_tests.jl ./test/ext --interop
+      run: julia --project=./test/ext run_tests.jl ./test/ext --interop
     - uses: julia-actions/julia-processcoverage@v1
     - uses: codecov/codecov-action@v5
       if: matrix.version == '1'
