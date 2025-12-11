@@ -5,6 +5,7 @@ using Pkg
 
 if "--interop" in ARGS
     Pkg.activate("ext")
+    Pkg.instantiate()
     include("ext/runtests.jl")
 else
     using Test
