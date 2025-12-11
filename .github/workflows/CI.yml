@@ -48,15 +48,19 @@ jobs:
         if: matrix.version == 'lts'
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-interop-${{ matrix.version }}
+          name: coverage-main-${{ matrix.version }}
           path: lcov.info
           if-no-files-found: ignore
+      - name: Download all coverage artifacts
+        if: matrix.version == 'lts'
         uses: actions/download-artifact@v4
         with:
           path: coverage_artifacts
+      - name: Upload coverage to Codecov
+        if: matrix.version == 'lts'
         uses: codecov/codecov-action@v5
-          with:
-            directory: coverage_artifacts
-            token: ${{ secrets.CODECOV_TOKEN }}
-            fail_ci_if_error: true
-            verbose: true
+        with:
+          directory: coverage_artifacts
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
