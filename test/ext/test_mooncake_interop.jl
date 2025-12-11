@@ -1,8 +1,6 @@
 
-using Ark
-using Test
 using DifferentiationInterface
-using Enzyme
+using Mooncake
 
 struct Position
     x::Float64
@@ -14,7 +12,7 @@ struct Velocity
     dy::Float64
 end
 
-@testset "Compute gradients through Enzyme.jl" begin
+@testset "Compute gradients through Mooncake.jl" begin
     function run_world(args)
         alpha, beta = args
         world = World(Position, Velocity)
@@ -47,9 +45,9 @@ end
         return sum(pos.x + pos.y for pos in all_positions)
     end
 
-    backend = AutoEnzyme()
+    backend = AutoMooncake()
 
-    g = DifferentiationInterface.gradient(run_world, backend, (0.1, 0.5))
+    g = gradient(run_world, backend, (0.1, 0.5))
     d_alpha, d_beta = g
 
     @test 0.99 < (run_world((0.1 + 10e-5, 0.5)) - run_world((0.1, 0.5))) / (d_alpha * 10e-5) < 1.01
