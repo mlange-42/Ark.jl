@@ -18,6 +18,7 @@ end
         world = World(Position, Velocity)
 
         entities = Entity[]
+        sizehint!(entities, 1000)
         for i in 1:1000
             entity = new_entity!(world, (Position(i, i * 2),))
             push!(entities, entity)
@@ -42,7 +43,7 @@ end
             append!(all_positions, positions)
         end
 
-        return sum(pos.x + pos.y for pos in all_positions)
+        return sum(pos.x + pos.y for pos in all_positions) + sum(rand!(rand(10)))
     end
 
     backend = AutoMooncake()
