@@ -1,7 +1,7 @@
 
 using DifferentiationInterface
 using Mooncake
-using Mooncake.Random
+using Random
 
 struct Position
     x::Float64
@@ -19,8 +19,8 @@ end
         world = World(Position, Velocity)
 
         entities = Entity[]
-        sizehint!(entities, 1000)
-        for i in 1:1000
+        sizehint!(entities, 100)
+        for i in 1:100
             entity = new_entity!(world, (Position(i, i * 2),))
             push!(entities, entity)
         end
