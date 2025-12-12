@@ -61,9 +61,9 @@ Base.@constprop :aggressive function new_entities!(
     end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_defaults!(fn, world, UInt32(n),
+    return _new_entities!(fn, world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        rel_types, targets, Val(true))
+        rel_types, targets, Val(true), Val(true))
 end
 
 Base.@constprop :aggressive function new_entities!(
@@ -77,9 +77,9 @@ Base.@constprop :aggressive function new_entities!(
     end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_defaults!(world, UInt32(n),
+    return _new_entities!(world, UInt32(n),
         Val{typeof(defaults)}(), defaults,
-        rel_types, targets, Val(false)) do tuple
+        rel_types, targets, Val(true), Val(false)) do tuple
     end
 end
 
@@ -91,8 +91,8 @@ Base.@constprop :aggressive function new_entities!(
     if n == 0
         return
     end
-    return _new_entities_from_defaults!(world, UInt32(n),
-        Val{typeof(defaults)}(), defaults, (), (), Val(false)) do tuple
+    return _new_entities!(world, UInt32(n),
+        Val{typeof(defaults)}(), defaults, (), (), Val(true), Val(false)) do tuple
     end
 end
 
@@ -148,9 +148,9 @@ Base.@constprop :aggressive function new_entities!(
     end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities_from_types!(fn, world, UInt32(n),
-        ntuple(i -> Val(comp_types[i]), length(comp_types)),
-        rel_types, targets)
+    return _new_entities!(fn, world, UInt32(n),
+        ntuple(i -> Val(comp_types[i]), length(comp_types)), (),
+        rel_types, targets, Val(false), Val(true))
 end
 
 function _get_tables(
@@ -1027,17 +1027,18 @@ end
     end
 end
 
-@generated function _new_entities_from_defaults!(
+@generated function _new_entities!(
     fn::F,
     world::W,
     n::UInt32,
-    ::Val{TS},
+    ::TS,
     values::Tuple,
     ::TR,
     targets::Tuple{Vararg{Entity}},
+    ::DEF,
     ::HFN,
-) where {F,W<:World,TS<:Tuple,TR<:Tuple,HFN<:Val}
-    types = _to_types(TS.parameters)
+) where {F,W<:World,TS,TR<:Tuple,DEF<:Val,HFN<:Val}
+    types = _to_types(TS)
     rel_types = _to_types(TR)
 
     _check_no_duplicates(types)
@@ -1078,7 +1079,7 @@ end
     push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
     push!(exprs, :(table = world._tables[table_idx]))
 
-    if length(types) > 0
+    if length(types) > 0 && DEF === Val{true}
         body_exprs = Expr(:block)
         for i in 1:length(types)
             T = types[i]
@@ -1144,87 +1145,6 @@ end
             ),
         )
     end
-
-    return quote
-        @inbounds begin
-            $(Expr(:block, exprs...))
-        end
-    end
-end
-
-@generated function _new_entities_from_types!(
-    fn::F,
-    world::W,
-    n::UInt32,
-    ::TS,
-    ::TR,
-    targets::Tuple{Vararg{Entity}},
-) where {W<:World,TS<:Tuple,TR<:Tuple,F}
-    types = _to_types(TS)
-    rel_types = _to_types(TR)
-
-    _check_no_duplicates(types)
-    _check_no_duplicates(rel_types)
-    _check_relations(rel_types)
-    _check_is_subset(rel_types, types)
-
-    CS = W.parameters[1]
-    ids = tuple([_component_id(CS, T) for T in types]...)
-    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
-
-    num_ids = length(ids)
-    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
-
-    M = max(1, cld(length(CS.parameters), 64))
-    add_mask = _Mask{M}(ids...)
-    rem_mask = _Mask{M}()
-
-    world_has_rel = Val{_has_relations(CS)}()
-
-    exprs = []
-    push!(
-        exprs,
-        :(
-            table_idx = _find_or_create_table!(
-                world,
-                world._tables[1],
-                $ids,
-                (),
-                $rel_ids,
-                targets,
-                $add_mask,
-                $rem_mask,
-                $use_map,
-                $world_has_rel,
-            )[1]
-        ),
-    )
-    push!(exprs, :(indices = _create_entities!(world, table_idx, n)))
-    push!(exprs, :(table = world._tables[table_idx]))
-
-    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in types]...)
-    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
-    push!(exprs,
-        :(
-            begin
-                l = _lock(world._lock)
-                columns = _get_columns(world, $ts_val_expr, table, indices...)
-                fn(columns)
-
-                batch = _BatchTable(table, world._archetypes[table.archetype], indices...)
-                if _has_observers(world._event_manager, OnCreateEntity)
-                    _fire_create_entities(world._event_manager, batch)
-                end
-                if _has_relations(table) && _has_observers(world._event_manager, OnAddRelations)
-                    _fire_create_entities_relations(world._event_manager, batch)
-                end
-                _unlock(world._lock, l)
-                return nothing
-            end
-        ),
-    )
-
-    push!(exprs, Expr(:return, :batch))
 
     return quote
         @inbounds begin
