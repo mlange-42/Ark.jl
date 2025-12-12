@@ -1118,7 +1118,10 @@ end
     new_entities!(world, 10, (Position(1, 1), Altitude(100)))
     new_entities!(world, 10, (Position(1, 1), Velocity(1, 1)))
 
-    filter1 = Filter(world, (Velocity,))
+    # create empty table
+    remove_entity!(world, new_entity!(world, (Position(1, 1), Velocity(1, 1), Altitude(100))))
+
+    filter1 = Filter(world, (Velocity,); register=true) # register, to include empty tables.
     count = 0
     exchange_components!(world, filter1; add=(Altitude(101),), remove=(Velocity,)) do (entities, altitudes)
         @test length(entities) == 10
