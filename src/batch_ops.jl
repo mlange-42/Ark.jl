@@ -573,7 +573,7 @@ end
 
             push!(exprs, :($stor_sym = _get_storage(world, $T)))
             push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
-            push!(exprs, :(@inbounds fill!($col_sym[start_idx:end], $val_expr)))
+            push!(exprs, :(@inbounds fill!(view($col_sym, start_idx:length($col_sym)), $val_expr)))
         end
     end
 

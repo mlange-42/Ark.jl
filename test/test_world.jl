@@ -1107,16 +1107,60 @@ end
 end
 
 @testset "World exchange components batch" begin
-    world = World(Dummy, Position, Velocity, Altitude, Health)
+    world = World(
+        Dummy,
+        Position => StructArrayStorage,
+        Velocity,
+        Altitude,
+        Health => StructArrayStorage,
+    )
 
     new_entities!(world, 10, (Position(1, 1), Altitude(100)))
     new_entities!(world, 10, (Position(1, 1), Velocity(1, 1)))
 
-    filter = Filter(world, (Velocity,))
-    exchange_components!(world, filter; add=(Altitude(100),), remove=(Velocity,)) do (entities, altitudes)
+    filter1 = Filter(world, (Velocity,))
+    count = 0
+    exchange_components!(world, filter1; add=(Altitude(101),), remove=(Velocity,)) do (entities, altitudes)
         @test length(entities) == 10
         @test length(altitudes) == 10
+        for i in eachindex(entities, altitudes)
+            @test altitudes[i] == Altitude(101)
+            count += 1
+        end
     end
+    @test count == 10
+
+    filter2 = Filter(world, (Position,))
+    exchange_components!(world, filter2; add=(Health(101),), remove=(Position,))
+
+    query = Query(filter2)
+    @test count_entities(query) == 0
+    close!(query)
+
+    count = 0
+    for (entities, healths) in Query(world, (Health,))
+        for i in eachindex(entities, healths)
+            @test healths[i] == Health(101)
+            count += 1
+        end
+    end
+    @test count == 20
+
+    filter3 = Filter(world, (Altitude,))
+    exchange_components!(world, filter3; add=(Position,), remove=(Altitude,)) do (entities, position)
+        for i in eachindex(entities, positions)
+            positions[i] = Position(i, i)
+        end
+    end
+
+    count = 0
+    for (entities, positions) in Query(world, (Position,))
+        for i in eachindex(entities, positions)
+            @test positions[i] == Position(i, i)
+            count += 1
+        end
+    end
+    @test count == 10
 end
 
 """
