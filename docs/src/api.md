@@ -68,8 +68,8 @@ close!(::Query)
 Filter
 Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
 unregister!
-count_entities()
-length()
+count_entities
+length
 Entities
 @unpack
 unpack
