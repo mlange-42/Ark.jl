@@ -24,7 +24,7 @@ end
     )
 
 Creates a filter.
-Filters are similar to [queries]@ref Query), but can't be iterated directly.
+Filters are similar to [queries](@ref Query), but can't be iterated directly.
 They are a re-usable way to define query filtering criteria, and can be registered for faster, cached queries.
 Further, filters are used in [batch operations](@ref "Batch operations").
 
