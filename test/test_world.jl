@@ -1106,6 +1106,19 @@ end
     @test parents == (parent,)
 end
 
+@testset "World exchange components batch" begin
+    world = World(Dummy, Position, Velocity, Altitude, Health)
+
+    new_entities!(world, 10, (Position(1, 1), Altitude(100)))
+    new_entities!(world, 10, (Position(1, 1), Velocity(1, 1)))
+
+    filter = Filter(world, (Velocity,))
+    exchange_components!(world, filter; add=(Altitude(100),), remove=(Velocity,)) do (entities, altitudes)
+        @test length(entities) == 10
+        @test length(altitudes) == 10
+    end
+end
+
 """
 @static if RUN_JET
     @testset "World exchange component JET" begin

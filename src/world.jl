@@ -1362,13 +1362,14 @@ end
 function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32, num_entities::UInt32)
     old_table = world._tables[old_table_index]
     new_table = world._tables[table_index]
-    archetype = world._archetypes[old_table.archetype]
+    old_archetype = world._archetypes[old_table.archetype]
+    new_archetype = world._archetypes[new_table.archetype]
 
     old_entities = length(new_table.entities)
     total_entities = old_entities + num_entities
 
     resize!(new_table, total_entities)
-    for comp in archetype.components
+    for comp in new_archetype.components
         _ensure_column_size_for_comp!(world, comp, table_index, total_entities)
     end
 
@@ -1378,11 +1379,14 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         new_table.entities._data[to] = entity
         world._entities[entity._id] = _EntityIndex(new_table.id, to)
     end
-    for comp in archetype.components
+    for comp in new_archetype.components
+        if !_get_bit(new_archetype.node.mask, comp)
+            continue
+        end
         _copy_component_data_to_end!(world, comp, old_table_index, table_index)
     end
 
-    for comp in archetype.components
+    for comp in old_archetype.components
         _clear_component_data!(world, comp, old_table_index)
     end
 

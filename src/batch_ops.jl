@@ -317,7 +317,7 @@ end
 end
 
 @inline Base.@constprop :aggressive function exchange_components!(
-    fn::Fn.
+    fn::Fn,
     world::World,
     filter::F;
     add::Tuple=(),
@@ -327,15 +327,31 @@ end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
     return @inline _exchange_components!(
-        fn,
-        world,
-        filter,
-        Val{typeof(add)}(),
-        add,
+        fn, world, filter,
+        Val{typeof(add)}(), add,
         ntuple(i -> Val(remove[i]), length(remove)),
         rel_types, targets,
-        Val{true},
+        Val(true), Val(true),
     )
+end
+
+@inline Base.@constprop :aggressive function exchange_components!(
+    world::World,
+    filter::F;
+    add::Tuple=(),
+    remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(
+        world, filter,
+        Val{typeof(add)}(), add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+        rel_types, targets,
+        Val(true), Val(false),
+    ) do _
+    end
 end
 
 @generated function _set_relations_batch!(
@@ -445,7 +461,7 @@ end
     targets::Tuple{Vararg{Entity}},
     ::DEF,
     ::HFN,
-) where {FN,W<:World,F<:Filter,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
+) where {Fn,W<:World,F<:Filter,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
     add_types = _to_types(ATS.parameters)
     rem_types = _to_types(RTS)
     rel_types = _to_types(TR)
@@ -485,7 +501,8 @@ end
         end
 
         for batch in batches
-            _exchange_components_table!(fn, world, batch, $ATS, add, $RTS, $TR, targets, $DEF, $HFN)
+            _exchange_components_table!(fn, world, batch,
+                Val{$ATS}(), add, Val{$RTS}(), Val{$TR}(), targets, Val{$DEF}(), Val{$HFN}())
         end
 
         resize!(batches, 0)
@@ -499,14 +516,14 @@ end
 @generated function _exchange_components_table!(
     fn::Fn,
     world::W,
-    table::_BatchTable,
+    batch::_BatchTable,
     ::Val{ATS},
     add::Tuple,
-    ::RTS,
-    ::TR,
+    ::Val{RTS},
+    ::Val{TR},
     targets::Tuple{Vararg{Entity}},
-    ::DEF,
-    ::HFN,
+    ::Val{DEF},
+    ::Val{HFN},
 ) where {Fn,W<:World,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
     add_types = _to_types(ATS.parameters)
     rem_types = _to_types(RTS)
@@ -528,14 +545,12 @@ end
 
     world_has_rel = Val{_has_relations(CS)}()
 
-    push!(exprs, :(index = world._entities[entity._id]))
-    push!(exprs, :(old_table = world._tables[index.table]))
     push!(
         exprs,
         :(
             new_table_tuple =
                 _find_or_create_table!(
-                    world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
+                    world, batch.table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
                     $world_has_rel,
                 )
         ),
@@ -558,7 +573,7 @@ end
 
             push!(exprs, :($stor_sym = _get_storage(world, $T)))
             push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
-            push!(exprs, :(@inbounds fill!(col_sym[start_idx:end], $val_expr)))
+            push!(exprs, :(@inbounds fill!($col_sym[start_idx:end], $val_expr)))
         end
     end
 
@@ -570,10 +585,9 @@ end
             exprs,
             :(
                 begin
-                    l = _lock(world._lock)
-                    columns = _get_columns(world, $ts_val_expr, new_table, start_idx, length(table))
+                    columns =
+                        _get_columns(world, $ts_val_expr, new_table, UInt32(start_idx), UInt32(length(new_table)))
                     fn(columns)
-                    _unlock(world._lock, l)
                 end
             ),
         )
