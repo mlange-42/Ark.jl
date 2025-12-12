@@ -852,9 +852,9 @@ end
     if !new_arch_hot.has_relations && isempty(relations)
         if is_new
             @inbounds new_arch = world._archetypes[new_arch_index]
-            return _create_table!(world, new_arch, _empty_relations), false
+            return _create_table!(world, new_arch, _empty_relations), _has_relations(old_arch)
         end
-        return new_arch_hot.table, false
+        return new_arch_hot.table, _has_relations(old_arch)
     end
 
     @inbounds new_arch = world._archetypes[new_arch_index]
