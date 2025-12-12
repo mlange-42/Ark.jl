@@ -324,15 +324,27 @@ end
     remove::Tuple=(),
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 ) where {Fn,F<:Filter}
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return @inline _exchange_components!(
-        fn, world, filter,
-        Val{typeof(add)}(), add,
-        ntuple(i -> Val(remove[i]), length(remove)),
-        rel_types, targets,
-        Val(true), Val(true),
-    )
+    if add isa Tuple{Vararg{DataType}}
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            ntuple(i -> Val(add[i]), length(add)), (),
+            ntuple(i -> Val(remove[i]), length(remove)),
+            rel_types, targets,
+            Val(false), Val(true),
+        )
+    else
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            Val{typeof(add)}(), add,
+            ntuple(i -> Val(remove[i]), length(remove)),
+            rel_types, targets,
+            Val(true), Val(true),
+        )
+    end
 end
 
 @inline Base.@constprop :aggressive function exchange_components!(
@@ -454,15 +466,15 @@ end
     fn::Fn,
     world::W,
     filter::F,
-    ::Val{ATS},
+    ::ATS,
     add::Tuple,
     ::RTS,
     ::TR,
     targets::Tuple{Vararg{Entity}},
     ::DEF,
     ::HFN,
-) where {Fn,W<:World,F<:Filter,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
-    add_types = _to_types(ATS.parameters)
+) where {Fn,W<:World,F<:Filter,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
+    add_types = _to_types(ATS)
     rem_types = _to_types(RTS)
     rel_types = _to_types(TR)
 
@@ -517,15 +529,15 @@ end
     fn::Fn,
     world::W,
     batch::_BatchTable,
-    ::Val{ATS},
+    ::ATS,
     add::Tuple,
     ::Val{RTS},
     ::Val{TR},
     targets::Tuple{Vararg{Entity}},
     ::Val{DEF},
     ::Val{HFN},
-) where {Fn,W<:World,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
-    add_types = _to_types(ATS.parameters)
+) where {Fn,W<:World,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
+    add_types = _to_types(ATS)
     rem_types = _to_types(RTS)
     rel_types = _to_types(TR)
 

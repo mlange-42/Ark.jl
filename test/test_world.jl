@@ -1147,7 +1147,7 @@ end
     @test count == 20
 
     filter3 = Filter(world, (Altitude,))
-    exchange_components!(world, filter3; add=(Position,), remove=(Altitude,)) do (entities, position)
+    exchange_components!(world, filter3; add=(Position,), remove=(Altitude,)) do (entities, positions)
         for i in eachindex(entities, positions)
             positions[i] = Position(i, i)
         end
@@ -1160,7 +1160,7 @@ end
             count += 1
         end
     end
-    @test count == 10
+    @test count == 20
 end
 
 """
