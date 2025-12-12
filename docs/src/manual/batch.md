@@ -84,7 +84,7 @@ remove_entities!(world, filter)
 ```
 
 If something needs to be done with the entities to be removed, a callback can be used,
-which takes an [Entities](@ref) column as an argument:
+which takes an [Entities column](@ref Ark.Entities) as an argument:
 
 ```jldoctest; output = false
 filter = Filter(world, (Position, Velocity))
@@ -141,7 +141,7 @@ remove_components!(world, filter, (Velocity,))
 
 ```
 
-Note that the optional callback has only an [Entities](@ref) column as argument:
+Note that the optional callback has only an [Entities column](@ref Ark.Entities) as argument:
 
 ```jldoctest; output = false
 filter = Filter(world, (Velocity,))

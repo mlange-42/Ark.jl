@@ -368,7 +368,7 @@ end
 Removes components from all [entities](@ref Entity) matching the given [Filter](@ref).
 
 A callback/`do`-block can be run on the affected entities.
-It takes an [entities](@ref Entities) column as argument.
+It takes an [entities column](@ref Ark.Entities) as argument.
 
 # Arguments
 
