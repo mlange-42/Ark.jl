@@ -1,6 +1,7 @@
 
 ENV["ARK_RUNNING_TESTS"] = true
 
+using Pkg
 using Test
 using JET
 
@@ -36,5 +37,12 @@ include("test_vec_map.jl")
 include("test_linear_map.jl")
 include("test_graph.jl")
 include("test_quality.jl")
+
+if "CI" in keys(ENV) && VERSION < v"1.13" && isempty(VERSION.prerelease) && !("--large-world" in ARGS)
+    Pkg.activate("ext")
+    Pkg.instantiate()
+    Pkg.develop(path="..")
+    include("ext/runtests.jl")
+end
 
 ENV["ARK_RUNNING_TESTS"] = false

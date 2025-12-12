@@ -14,12 +14,13 @@
 - Adds cached/registered filters for faster query iteration with many archetypes (#378)
 - Adds batch entity removal (#396, #402)
 - Adds batch-setting entity relation targets (#406)
+- Makes Ark compatible with Mooncake (#405)
 
 ### Performance
 
 - Uses a hash table for some component transitions (#348)
 
-## Documentation
+### Documentation
 
 - Adds a chapter on Ark's architecture to the user manual (#391, #394)
 
