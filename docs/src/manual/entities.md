@@ -57,6 +57,8 @@ remove_entity!(world, entity)
 
 ```
 
+For removing many entities in batches, see chapter [Batch operations](@ref).
+
 ## Alive status
 
 Entities can be safely stored, e.g. in the [Components](@ref) of other entities to represent relationships. However, as they may have been removed from the world elsewhere,
