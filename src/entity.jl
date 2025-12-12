@@ -3,7 +3,7 @@
 
 [Entity](@ref Entities) identifier.
 
-Entities can be constructed using a [World](@ref) via [new_entity!](@ref).
+Entities can be constructed using a [World](@ref) via [new_entity!](@ref) and [new_entities!](@ref).
 
 Entities can be safely stored in [components](@ref Components) and [resources](@ref Resources).
 """
@@ -43,10 +43,9 @@ end
 """
     Entities
 
-Archetype column for entities.
-Can be iterated and indexed like a Vector.
+Archetype column for entities. Can be iterated and indexed like a Vector, but is read-only.
 
-Used in query iteration.
+Used in [query iteration](@ref Queries) and [batch operations](@ref "Batch operations") callbacks.
 """
 struct Entities <: AbstractVector{Entity}
     _data::Vector{Entity}
