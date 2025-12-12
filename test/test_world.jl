@@ -1070,7 +1070,7 @@ end
     close!(query)
 
     filter2 = Filter(world, (Altitude,))
-    remove_components!(world, filter2, (Altitude,)) do (entities,)
+    remove_components!(world, filter2, (Altitude,)) do entities
         @test length(entities) == 10
     end
 

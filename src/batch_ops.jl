@@ -384,7 +384,7 @@ end
             ntuple(i -> Val(add[i]), length(add)), (),
             (),
             rel_types, targets,
-            Val(false), Val(true),
+            Val(false), Val(true), Val(false),
         )
     else
         rel_types = ntuple(i -> Val(relations[i].first), length(relations))
@@ -394,7 +394,7 @@ end
             Val{typeof(add)}(), add,
             (),
             rel_types, targets,
-            Val(true), Val(true),
+            Val(true), Val(true), Val(false),
         )
     end
 end
@@ -412,7 +412,7 @@ end
         Val{typeof(add)}(), add,
         (),
         rel_types, targets,
-        Val(true), Val(false),
+        Val(true), Val(false), Val(false),
     ) do _
     end
 end
@@ -428,7 +428,7 @@ end
 Removes components from all [entities](@ref Entity) matching the given [Filter](@ref).
 
 A callback/`do`-block can be run on the affected entities.
-It takes a tuple `(entities,)` as argument.
+It takes an [entities](@ref Entities) column as argument.
 
 # Arguments
 
@@ -453,7 +453,7 @@ Removing components, using the optional callback:
 
 ```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
 filter = Filter(world, (Velocity,))
-remove_components!(world, filter, (Velocity,)) do (entities,)
+remove_components!(world, filter, (Velocity,)) do entities
     # do something with the entities...
 end
 
@@ -472,7 +472,7 @@ end
         Val{Tuple{}}(), (),
         ntuple(i -> Val(remove[i]), length(remove)),
         (), (),
-        Val(false), Val(true),
+        Val(false), Val(true), Val(true),
     )
 end
 
@@ -486,7 +486,7 @@ end
         Val{Tuple{}}(), (),
         ntuple(i -> Val(remove[i]), length(remove)),
         (), (),
-        Val(false), Val(false),
+        Val(false), Val(false), Val(true),
     ) do _
     end
 end
@@ -568,7 +568,7 @@ end
             ntuple(i -> Val(add[i]), length(add)), (),
             ntuple(i -> Val(remove[i]), length(remove)),
             rel_types, targets,
-            Val(false), Val(true),
+            Val(false), Val(true), Val(false),
         )
     else
         rel_types = ntuple(i -> Val(relations[i].first), length(relations))
@@ -578,7 +578,7 @@ end
             Val{typeof(add)}(), add,
             ntuple(i -> Val(remove[i]), length(remove)),
             rel_types, targets,
-            Val(true), Val(true),
+            Val(true), Val(true), Val(false),
         )
     end
 end
@@ -597,7 +597,7 @@ end
         Val{typeof(add)}(), add,
         ntuple(i -> Val(remove[i]), length(remove)),
         rel_types, targets,
-        Val(true), Val(false),
+        Val(true), Val(false), Val(false),
     ) do _
     end
 end
@@ -709,7 +709,8 @@ end
     targets::Tuple{Vararg{Entity}},
     ::DEF,
     ::HFN,
-) where {Fn,W<:World,F<:Filter,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
+    ::REM,
+) where {Fn,W<:World,F<:Filter,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val,REM<:Val}
     add_types = _to_types(ATS)
     rem_types = _to_types(RTS)
     rel_types = _to_types(TR)
@@ -750,7 +751,7 @@ end
 
         for batch in batches
             _exchange_components_table!(fn, world, batch,
-                Val{$ATS}(), add, Val{$RTS}(), Val{$TR}(), targets, Val{$DEF}(), Val{$HFN}())
+                Val{$ATS}(), add, Val{$RTS}(), Val{$TR}(), targets, Val{$DEF}(), Val{$HFN}(), Val{$REM}())
         end
 
         resize!(batches, 0)
@@ -772,7 +773,8 @@ end
     targets::Tuple{Vararg{Entity}},
     ::Val{DEF},
     ::Val{HFN},
-) where {Fn,W<:World,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
+    ::Val{REM},
+) where {Fn,W<:World,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val,REM<:Val}
     add_types = _to_types(ATS)
     rem_types = _to_types(RTS)
     rel_types = _to_types(TR)
@@ -858,16 +860,20 @@ end
     ts_val_expr = :(Val{$(types_tuple_type_expr)}())
 
     if HFN == Val{true}
-        push!(
-            exprs,
-            :(
-                begin
-                    columns =
-                        _get_columns(world, $ts_val_expr, new_table, UInt32(start_idx), UInt32(length(new_table)))
-                    fn(columns)
-                end
-            ),
-        )
+        if REM == Val{true}
+            push!(exprs, :(fn(view(new_table.entities, start_idx:length(new_table)))))
+        else
+            push!(
+                exprs,
+                :(
+                    begin
+                        columns =
+                            _get_columns(world, $ts_val_expr, new_table, UInt32(start_idx), UInt32(length(new_table)))
+                        fn(columns)
+                    end
+                ),
+            )
+        end
     end
 
     if !isempty(add_types)
