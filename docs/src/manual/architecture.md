@@ -123,14 +123,6 @@ essentially moving all of its component data.
 This operation typically costs &approx;20ns per involved component, plus some baseline cost.
 
 To reduce the number of archetype changes, it is recommended to add/remove/exchange multiple components at the same time
-rather than one after the other. Further, operations can be batched to manipulate many entities in a single command.
-
-```@meta
-# TODO: Remove this when batch operations are fully implemented.
-```
-
-!!! note
-
-    Batch operations are not fully implemented yet.
+rather than one after the other. Further, operations can be [batched](@ref "Batch operations") to manipulate many entities in a single command.
 
 For detailed benchmarks and performance metrics, refer to the [Benchmarks](@ref) chapter.
