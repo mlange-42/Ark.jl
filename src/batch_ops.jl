@@ -316,6 +316,28 @@ end
     end
 end
 
+@inline Base.@constprop :aggressive function exchange_components!(
+    fn::Fn.
+    world::World,
+    filter::F;
+    add::Tuple=(),
+    remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {Fn,F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(
+        fn,
+        world,
+        filter,
+        Val{typeof(add)}(),
+        add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+        rel_types, targets,
+        Val{true},
+    )
+end
+
 @generated function _set_relations_batch!(
     fn::Fn,
     world::W,
@@ -409,6 +431,162 @@ function _set_relations_table!(
             ),
             mask,
         )
+    end
+end
+
+@generated function _exchange_components!(
+    fn::Fn,
+    world::W,
+    filter::F,
+    ::Val{ATS},
+    add::Tuple,
+    ::RTS,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+    ::DEF,
+    ::HFN,
+) where {FN,W<:World,F<:Filter,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
+    add_types = _to_types(ATS.parameters)
+    rem_types = _to_types(RTS)
+    rel_types = _to_types(TR)
+
+    if isempty(add_types) && isempty(rem_types)
+        throw(ArgumentError("either components to add or to remove must be given for exchange_components!"))
+    end
+
+    _check_no_duplicates(add_types)
+    _check_no_duplicates(rem_types)
+    _check_if_intersect(add_types, rem_types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, add_types)
+
+    return quote
+        _check_locked(world)
+        l = _lock(world._lock)
+
+        arches, arches_hot = _get_archetypes(world, filter)
+        tables, _ = _get_tables(world, arches, arches_hot, filter)
+        batches = world._pool.batches
+
+        for table_id in tables
+            old_table = world._tables[table_id]
+            if isempty(old_table)
+                continue
+            end
+            # TODO: use a simplified data structure?
+            push!(
+                batches,
+                _BatchTable(old_table, world._archetypes[old_table.archetype], UInt32(1), UInt32(length(old_table))),
+            )
+        end
+        if !_is_cached(filter._filter) # Do not clear for cached filters!!!
+            resize!(tables, 0)
+        end
+
+        for batch in batches
+            _exchange_components_table!(fn, world, batch, $ATS, add, $RTS, $TR, targets, $DEF, $HFN)
+        end
+
+        resize!(batches, 0)
+
+        _unlock(world._lock, l)
+
+        return nothing
+    end
+end
+
+@generated function _exchange_components_table!(
+    fn::Fn,
+    world::W,
+    table::_BatchTable,
+    ::Val{ATS},
+    add::Tuple,
+    ::RTS,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+    ::DEF,
+    ::HFN,
+) where {Fn,W<:World,ATS<:Tuple,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val}
+    add_types = _to_types(ATS.parameters)
+    rem_types = _to_types(RTS)
+    rel_types = _to_types(TR)
+
+    exprs = []
+
+    CS = W.parameters[1]
+    add_ids = tuple([_component_id(CS, T) for T in add_types]...)
+    rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
+    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
+
+    num_ids = length(add_ids) + length(rem_ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
+
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(add_ids...)
+    rem_mask = _Mask{M}(rem_ids...)
+
+    world_has_rel = Val{_has_relations(CS)}()
+
+    push!(exprs, :(index = world._entities[entity._id]))
+    push!(exprs, :(old_table = world._tables[index.table]))
+    push!(
+        exprs,
+        :(
+            new_table_tuple =
+                _find_or_create_table!(
+                    world, old_table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
+                    $world_has_rel,
+                )
+        ),
+    )
+    push!(exprs, :(new_table_index = new_table_tuple[1]))
+    push!(exprs, :(relations_removed = new_table_tuple[2]))
+    push!(exprs, :(new_table = world._tables[new_table_index]))
+
+    # TODO: fire remove events
+
+    push!(exprs, :(start_idx = length(new_table) + 1))
+    push!(exprs, :(_move_entities!(world, batch.table.id, new_table.id, batch.end_idx)))
+
+    if DEF === Val{true}
+        for i in 1:length(add_types)
+            T = add_types[i]
+            stor_sym = Symbol("stor", i)
+            col_sym = Symbol("col", i)
+            val_expr = :(add.$i)
+
+            push!(exprs, :($stor_sym = _get_storage(world, $T)))
+            push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
+            push!(exprs, :(@inbounds fill!(col_sym[start_idx:end], $val_expr)))
+        end
+    end
+
+    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in add_types]...)
+    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
+
+    if HFN == Val{true}
+        push!(
+            exprs,
+            :(
+                begin
+                    l = _lock(world._lock)
+                    columns = _get_columns(world, $ts_val_expr, new_table, start_idx, length(table))
+                    fn(columns)
+                    _unlock(world._lock, l)
+                end
+            ),
+        )
+    end
+
+    # TODO: fire add events
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
     end
 end
 
