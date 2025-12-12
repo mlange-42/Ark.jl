@@ -55,7 +55,7 @@ get_relations
 set_relations!
 ```
 
-## [Queries](@id queries-api)
+## [Queries and Filters](@id queries-api)
 
 [Queries](@ref) are used to filter and process [Entities](@ref entities-api) with a
 certain set of [Components](@ref components-api).
@@ -65,11 +65,11 @@ Query
 Query(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
 Query(::Filter)
 close!(::Query)
-count_entities(::Query)
-length(::Query)
 Filter
 Filter(::World,::Tuple;::Tuple,::Tuple,::Tuple,::Bool)
 unregister!
+count_entities
+length
 Entities
 @unpack
 unpack

@@ -657,9 +657,7 @@ end
         set_relations!(world, filter2, (ChildOf => dead_parent,))
     )
 
-    query = Query(world, (ChildOf,))
-    @test count_entities(query) == 6
-    close!(query)
+    @test count_entities(Filter(world, (ChildOf,))) == 6
 end
 
 @testset "World copy_entity!" begin
@@ -1065,9 +1063,7 @@ end
     filter1 = Filter(world, (Health,))
     remove_components!(world, filter1, (Health,))
 
-    query = Query(filter1)
-    @test count_entities(query) == 0
-    close!(query)
+    @test count_entities(filter1) == 0
 
     filter2 = Filter(world, (Altitude,))
     remove_components!(world, filter2, (Altitude,)) do entities
@@ -1091,9 +1087,8 @@ end
         end
     end
 
-    query = Query(world, (Position, Velocity, Altitude, Health, LabelComponent))
-    @test count_entities(query) == 20
-    close!(query)
+    filter = Query(world, (Position, Velocity, Altitude, Health, LabelComponent))
+    @test count_entities(filter) == 20
 end
 
 @static if RUN_JET
@@ -1183,9 +1178,7 @@ end
     filter2 = Filter(world, (Position,))
     exchange_components!(world, filter2; add=(Health(101),), remove=(Position,))
 
-    query = Query(filter2)
-    @test count_entities(query) == 0
-    close!(query)
+    @test count_entities(filter2) == 0
 
     count = 0
     for (entities, healths) in Query(world, (Health,))
@@ -1330,9 +1323,7 @@ end
     @test count == 27
     @test count_rel == 21
 
-    query = Query(world, ())
-    @test count_entities(query) == 0
-    close!(query)
+    @test count_entities(Filter(world, ())) == 0
 end
 
 @testset "remove_entities! callback" begin

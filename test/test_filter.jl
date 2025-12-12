@@ -15,6 +15,22 @@
     @test length(f5._filter.tables) == 1
 end
 
+@testset "Filter length and count" begin
+    world = World(Dummy, Position, Velocity, Altitude, Health)
+
+    new_entities!(world, 10, (Position(0, 0),))
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0)))
+    new_entities!(world, 10, (Position(0, 0), Velocity(0, 0), Altitude(100)))
+
+    filter1 = Filter(world, (Position, Velocity))
+    @test length(filter1) == 2
+    @test count_entities(filter1) == 20
+
+    filter2 = Filter(world, (Position, Velocity); register=true)
+    @test length(filter2) == 2
+    @test count_entities(filter2) == 20
+end
+
 @testset "Filter show" begin
     world = World(
         Position,
