@@ -436,7 +436,7 @@ end
 """
     add_components!(world::World, entity::Entity, values::Tuple; relations::Tuple)
 
-Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
+Adds the given component values to an [Entity](@ref). Types are inferred from the values.
 
 # Example
 
@@ -464,7 +464,7 @@ end
 """
     remove_components!(world::World, entity::Entity, comp_types::Tuple)
 
-Removes the given components from an [`Entity`](@ref).
+Removes the given components from an [Entity](@ref).
 
 # Example
 
@@ -498,7 +498,7 @@ end
         relations::Tuple=(),
     )
 
-Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
+Adds and removes components on an [Entity](@ref). Types are inferred from the add values.
 
 # Example
 

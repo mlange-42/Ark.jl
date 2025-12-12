@@ -268,7 +268,7 @@ end
     set_relations!([f::Function], world::World, filter::Filter::Entity, relations::Tuple)
 
 Sets relation targets for the given components of all matching [entities](@ref Entity).
-Optionally runs a callback on the affected entities.
+Optionally runs a callback/`do`-block on the affected entities.
 
 # Example
 
@@ -316,6 +316,59 @@ end
     end
 end
 
+"""
+    add_components!(
+        [f::Function]
+        world::World,
+        filter::Filter,
+        add::Tuple=(),
+        relations::Tuple=(),
+    )
+
+Adds components to all [entities](@ref Entity) matching the given filter.
+
+Components can be added as types or as values.
+In the latter case, types are inferred from the add values.
+
+A callback/`do`-block can be run on the affected entities e.g. for individual initialization.
+It takes a tuple of `(entities, columns...)` as argument, with a column for each added component.
+The callback is mandatory if components are added as types.
+Note that components are not initialized/undef unless set in the callback in this case.
+
+# Arguments
+
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
+  - `world::World`: The `World` instance to use.
+  - `filter::Filter`: The filter to select entities.
+  - `add::Tuple`: A tuple of component to add. Either default values like `(Position(0, 0), Velocity(1, 1))`, or types like `(Position, Velocity)`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+
+# Examples
+
+Adding values, not using the callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+add_components!(world, filter, (Health(100),))
+
+# output
+
+```
+
+Adding as types, using the callback for initialization:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+add_components!(world, filter, (Health,)) do (entities, healths)
+    for i in eachindex(entities, healths)
+        healths[i] = Health(i * 2)
+    end
+end
+
+# output
+
+```
+"""
 @inline Base.@constprop :aggressive function add_components!(
     fn::Fn,
     world::World,
@@ -364,6 +417,50 @@ end
     end
 end
 
+"""
+    remove_components!(
+        [f::Function]
+        world::World,
+        filter::Filter,
+        remove::Tuple=(),
+    )
+
+Removes components from all [entities](@ref Entity) matching the given filter.
+
+A callback/`do`-block can be run on the affected entities.
+It takes a tuple `(entities,)` as argument.
+
+# Arguments
+
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
+  - `world::World`: The `World` instance to use.
+  - `filter::Filter`: The filter to select entities.
+  - `remove::Tuple`: A tuple of component types to remove, like `(Position, Velocity)`
+
+# Examples
+
+Removing components, not using the callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+remove_components!(world, filter, (Velocity,))
+
+# output
+
+```
+
+Removing components, using the optional callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+remove_components!(world, filter, (Velocity,)) do (entities,)
+    # do something with the entities...
+end
+
+# output
+
+```
+"""
 @inline Base.@constprop :aggressive function remove_components!(
     fn::Fn,
     world::World,
@@ -394,6 +491,67 @@ end
     end
 end
 
+"""
+    exchange_components!(
+        [f::Function]
+        world::World,
+        filter::Filter;
+        add::Tuple=(),
+        remove::Tuple=(),
+        relations::Tuple=(),
+    )
+
+Adds and removes components on all [entities](@ref Entity) matching the given filter.
+
+Components can be added as types or as values.
+In the latter case, types are inferred from the add values.
+
+A callback/`do`-block can be run on the affected entities e.g. for individual initialization.
+It takes a tuple of `(entities, columns...)` as argument, with a column for each added component.
+The callback is mandatory if components are added as types.
+Note that components are not initialized/undef unless set in the callback in this case.
+
+# Arguments
+
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
+  - `world::World`: The `World` instance to use.
+  - `filter::Filter`: The filter to select entities.
+  - `add::Tuple`: A tuple of component to add. Either default values like `(Position(0, 0), Velocity(1, 1))`, or types like `(Position, Velocity)`.
+  - `remove::Tuple`: A tuple of component types to remove, like `(Position, Velocity)`
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+
+# Examples
+
+Adding values, not using the callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+exchange_components!(world, filter;
+    add=(Health(100),),
+    remove=(Velocity,),
+)
+
+# output
+
+```
+
+Adding as types, using the callback for initialization:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+exchange_components!(world, filter;
+    add=(Health,),
+    remove=(Velocity,),
+) do (entities, healths)
+    for i in eachindex(entities, healths)
+        healths[i] = Health(i * 2)
+    end
+end
+
+# output
+
+```
+"""
 @inline Base.@constprop :aggressive function exchange_components!(
     fn::Fn,
     world::World,
