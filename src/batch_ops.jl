@@ -3,25 +3,26 @@
     new_entities!(
         [f::Function],
         world::World,
-        n::Int, 
-        defaults::Tuple;
+        n::Int,
+        components::Tuple;
         relations:Tuple=(),
     )::Union{Batch,Nothing}
 
-Creates the given number of [entities](@ref Entity), initialized with default values.
-Component types are inferred from the provided default values.
+Creates the given number of [entities](@ref Entity).
+Components can be given as types or as default values.
+In the latter case, types are inferred from the add values.
 
-The optional callback/`do` block can be used for initialization.
-It takes a tuple of `(entities, columns...)` as argument.
-
-See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creating entities from component types.
+A callback/`do`-block can be run on the newly created entities e.g. for individual initialization.
+It takes a tuple of `(entities, columns...)` as argument, with a column for each added component.
+The callback is mandatory if components are given as types.
+Note that components are not initialized/undef unless set in the callback in this case.
 
 # Arguments
 
   - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
   - `world::World`: The [World](@ref) instance to use.
   - `n::Int`: The number of entities to create.
-  - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
+  - `components::Tuple`: A tuple of component to add. Either default values like `(Position(0, 0), Velocity(1, 1))`, or types like `(Position, Velocity)`.
   - `relations::Tuple`: Relationship component type => target entity pairs.
   - `iterate::Bool`: Whether to return a batch for individual entity initialization.
 
@@ -35,92 +36,6 @@ new_entities!(world, 100, (Position(0, 0), Velocity(1, 1)))
 # output
 
 ```
-
-Create 100 entities from default values and iterate them:
-
-```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
-new_entities!(world, 100, (Position(0, 0), Velocity(1, 1))) do (entities, positions, velocities)
-    for i in eachindex(entities)
-        positions[i] = Position(rand(), rand())
-    end
-end
-
-# output
-
-```
-"""
-Base.@constprop :aggressive function new_entities!(
-    fn::F,
-    world::World,
-    n::Int,
-    defaults::Tuple;
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-) where {F}
-    if n == 0
-        return
-    end
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities!(fn, world, UInt32(n),
-        Val{typeof(defaults)}(), defaults,
-        rel_types, targets, Val(true), Val(true))
-end
-
-Base.@constprop :aggressive function new_entities!(
-    world::World,
-    n::Int,
-    defaults::Tuple;
-    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
-)
-    if n == 0
-        return
-    end
-    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
-    targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities!(world, UInt32(n),
-        Val{typeof(defaults)}(), defaults,
-        rel_types, targets, Val(true), Val(false)) do tuple
-    end
-end
-
-Base.@constprop :aggressive function new_entities!(
-    world::World,
-    n::Int,
-    defaults::Tuple{},
-)
-    if n == 0
-        return
-    end
-    return _new_entities!(world, UInt32(n),
-        Val{typeof(defaults)}(), defaults, (), (), Val(true), Val(false)) do tuple
-    end
-end
-
-"""
-    new_entities!(
-        f::Function,
-        world::World,
-        n::Int,
-        comp_types::Tuple;
-        relations:Tuple=(),
-    )::Batch
-
-Creates the given number of [entities](@ref Entity).
-
-The callback/`do` block should be used to initialize components.
-Note that components are not initialized/undef unless set in the callback.
-
-See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) for creating entities from default values.
-
-# Arguments
-
-  - `f::Function`: Callback for initialization, can be passed as a `do` block.
-  - `world::World`: The [World](@ref) instance to use.
-  - `n::Int`: The number of entities to create.
-  - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
-  - `relations::Tuple`: Relationship component type => target entity pairs.
-
-# Example
 
 Create 100 entities from component types and initialize them:
 
@@ -140,17 +55,42 @@ Base.@constprop :aggressive function new_entities!(
     fn::F,
     world::World,
     n::Int,
-    comp_types::Tuple{Vararg{DataType}};
+    components::Tuple;
     relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
 ) where {F}
     if n == 0
         return
     end
+    if components isa Tuple{Vararg{DataType}}
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return _new_entities!(fn, world, UInt32(n),
+            ntuple(i -> Val(components[i]), length(components)), (),
+            rel_types, targets, Val(false), Val(true))
+    else
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return _new_entities!(fn, world, UInt32(n),
+            Val{typeof(components)}(), components,
+            rel_types, targets, Val(true), Val(true))
+    end
+end
+
+Base.@constprop :aggressive function new_entities!(
+    world::World,
+    n::Int,
+    components::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+)
+    if n == 0
+        return
+    end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
-    return _new_entities!(fn, world, UInt32(n),
-        ntuple(i -> Val(comp_types[i]), length(comp_types)), (),
-        rel_types, targets, Val(false), Val(true))
+    return _new_entities!(world, UInt32(n),
+        Val{typeof(components)}(), components,
+        rel_types, targets, Val(true), Val(false)) do tuple
+    end
 end
 
 function _get_tables(
