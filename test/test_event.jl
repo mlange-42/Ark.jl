@@ -1122,6 +1122,35 @@ end
     @test counters == [10, 10]
 end
 
+@testset "Fire batch exchange with early out" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf, ChildOf2)
+
+    counters = Int[0, 0]
+    observe!(world, OnAddRelations, (ChildOf,); with=(Velocity,)) do entity
+        counters[1] += 1
+    end
+    observe!(world, OnAddRelations, (ChildOf,); with=(Altitude,)) do entity
+        counters[1] += 1
+    end
+    observe!(world, OnRemoveRelations, (ChildOf,); with=(Velocity,)) do entity
+        counters[2] += 1
+    end
+    observe!(world, OnRemoveRelations, (ChildOf,); with=(Altitude,)) do entity
+        counters[2] += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entities!(world, 10, (Position(0, 0),))
+    @test counters == [0, 0]
+
+    add_components!(world, Filter(world, (Position,)), (ChildOf(),); relations=(ChildOf => parent,))
+    @test counters == [0, 0]
+
+    remove_components!(world, Filter(world, (ChildOf,)), (ChildOf,))
+    @test counters == [0, 0]
+end
+
 @testset "Fire batch exchange without" begin
     world = World(Dummy, Position, Velocity, Altitude, ChildOf, ChildOf2)
 
