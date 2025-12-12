@@ -238,56 +238,6 @@ function Base.length(q::Q) where {Q<:Query}
     end
 end
 
-function _length(
-    world::W,
-    filter::_MaskFilter{M},
-    archetypes::Vector{_Archetype{M}},
-    archetypes_hot::Vector{_ArchetypeHot{M}},
-) where {W<:World,M}
-    count = 0
-    for i in eachindex(archetypes)
-        archetype_hot = @inbounds archetypes_hot[i]
-        if !_matches(filter, archetype_hot)
-            continue
-        end
-
-        if !archetype_hot.has_relations
-            table = @inbounds world._tables[Int(archetype_hot.table)]
-            if isempty(table.entities)
-                continue
-            end
-            count += 1
-            continue
-        end
-
-        archetype = @inbounds archetypes[i]
-        if isempty(archetype.tables)
-            continue
-        end
-
-        tables = _get_tables(world, archetype, filter.relations)
-        for table_id in tables
-            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            table = @inbounds world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(world._relations, table, filter.relations)
-                count += 1
-            end
-        end
-    end
-    count
-end
-
-function _length_registered(world::W, filter::_MaskFilter{M}) where {W<:World,M}
-    count = 0
-    for table_id in filter.tables.ids
-        table = @inbounds world._tables[table_id]
-        if !isempty(table.entities)
-            count += 1
-        end
-    end
-    return count
-end
-
 """
     count_entities(q::Query)
 
@@ -306,51 +256,6 @@ function count_entities(q::Q) where {Q<:Query}
     else
         return _count_entities(q._world, q._filter, q._archetypes, q._archetypes_hot)
     end
-end
-
-function _count_entities(
-    world::W,
-    filter::_MaskFilter{M},
-    archetypes::Vector{_Archetype{M}},
-    archetypes_hot::Vector{_ArchetypeHot{M}},
-) where {W<:World,M}
-    count = 0
-    for i in eachindex(archetypes)
-        archetype_hot = @inbounds archetypes_hot[i]
-        if !_matches(filter, archetype_hot)
-            continue
-        end
-
-        if !archetype_hot.has_relations
-            table = @inbounds world._tables[Int(archetype_hot.table)]
-            count += length(table.entities)
-            continue
-        end
-
-        archetype = @inbounds archetypes[i]
-        if isempty(archetype.tables)
-            continue
-        end
-
-        tables = _get_tables(world, archetype, filter.relations)
-        for table_id in tables
-            # TODO we can probably optimize here if exactly one relation in archetype and one queried.
-            table = @inbounds world._tables[Int(table_id)]
-            if !isempty(table.entities) && _matches(world._relations, table, filter.relations)
-                count += length(table.entities)
-            end
-        end
-    end
-    count
-end
-
-function _count_entities_registered(world::W, filter::_MaskFilter{M}) where {W<:World,M}
-    count = 0
-    for table_id in filter.tables.ids
-        table = @inbounds world._tables[table_id]
-        count += length(table.entities)
-    end
-    return count
 end
 
 """
