@@ -658,7 +658,7 @@ end
                     has_comp_obs = _has_observers(world._event_manager, OnRemoveComponents)
                     has_rel_obs = relations_removed && _has_observers(world._event_manager, OnRemoveRelations)
                     if has_comp_obs || has_rel_obs
-                        old_mask = world._archetypes_hot[old_table.archetype].mask
+                        old_mask = world._archetypes_hot[batch.table.archetype].mask
                         new_mask = world._archetypes_hot[new_table.archetype].mask
                         if has_comp_obs
                             _fire_remove(
@@ -720,8 +720,8 @@ end
                     has_comp_obs = _has_observers(world._event_manager, OnAddComponents)
                     has_rel_obs = $adds_relations && _has_observers(world._event_manager, OnAddRelations)
                     if has_comp_obs || has_rel_obs
-                        new_archetype = world._archetypes_hot[new_table.archetype]
-                        old_mask = world._archetypes_hot[old_table.archetype].mask
+                        new_archetype = world._archetypes[new_table.archetype]
+                        old_mask = world._archetypes_hot[batch.table.archetype].mask
                         batch_table = _BatchTable(
                             new_table, new_archetype,
                             UInt32(start_idx), UInt32(length(new_table)),
@@ -730,14 +730,14 @@ end
                             _fire_add(
                                 world._event_manager,
                                 OnAddComponents, batch_table,
-                                old_mask, new_archetype.mask,
+                                old_mask, new_archetype.node.mask,
                             )
                         end
-                        if _has_observers(world._event_manager, OnAddRelations)
+                        if has_rel_obs
                             _fire_add(
                                 world._event_manager,
                                 OnAddRelations, batch_table,
-                                old_mask, new_archetype.mask,
+                                old_mask, new_archetype.node.mask,
                             )
                         end
                     end
