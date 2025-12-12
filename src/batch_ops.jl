@@ -316,6 +316,84 @@ end
     end
 end
 
+@inline Base.@constprop :aggressive function add_components!(
+    fn::Fn,
+    world::World,
+    filter::F,
+    add::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {Fn,F<:Filter}
+    if add isa Tuple{Vararg{DataType}}
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            ntuple(i -> Val(add[i]), length(add)), (),
+            (),
+            rel_types, targets,
+            Val(false), Val(true),
+        )
+    else
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            Val{typeof(add)}(), add,
+            (),
+            rel_types, targets,
+            Val(true), Val(true),
+        )
+    end
+end
+
+@inline Base.@constprop :aggressive function add_components!(
+    world::World,
+    filter::F,
+    add::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(
+        world, filter,
+        Val{typeof(add)}(), add,
+        (),
+        rel_types, targets,
+        Val(true), Val(false),
+    ) do _
+    end
+end
+
+@inline Base.@constprop :aggressive function remove_components!(
+    fn::Fn,
+    world::World,
+    filter::F,
+    remove::Tuple,
+) where {Fn,F<:Filter}
+    return @inline _exchange_components!(
+        fn, world, filter,
+        Val{Tuple{}}(), (),
+        ntuple(i -> Val(remove[i]), length(remove)),
+        (), (),
+        Val(false), Val(true),
+    )
+end
+
+@inline Base.@constprop :aggressive function remove_components!(
+    world::World,
+    filter::F,
+    remove::Tuple,
+) where {F<:Filter}
+    return @inline _exchange_components!(
+        world, filter,
+        Val{Tuple{}}(), (),
+        ntuple(i -> Val(remove[i]), length(remove)),
+        (), (),
+        Val(false), Val(false),
+    ) do _
+    end
+end
+
 @inline Base.@constprop :aggressive function exchange_components!(
     fn::Fn,
     world::World,
