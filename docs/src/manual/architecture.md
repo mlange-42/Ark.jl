@@ -120,7 +120,7 @@ This structure enables blazing-fast traversal and component access during querie
 However, this optimization comes with a trade-off: Adding or removing components from an entity,
 as well as setting relationship targets, requires relocating it to a different archetype,
 essentially moving all of its component data.
-This operation typically costs &approx;20ns per involved component, plus some baseline cost.
+This operation typically costs ≈20ns per involved component, plus some baseline cost.
 
 To reduce the number of archetype changes, it is recommended to add/remove/exchange multiple components at the same time
 rather than one after the other. Further, operations can be [batched](@ref "Batch operations") to manipulate many entities in a single command.
