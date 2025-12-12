@@ -38,7 +38,7 @@ include("test_linear_map.jl")
 include("test_graph.jl")
 include("test_quality.jl")
 
-if "CI" in keys(ENV) && VERSION < v"1.13.0" && !("--large-world" in ARGS)
+if "CI" in keys(ENV) && VERSION <= v"1.12" && !("--large-world" in ARGS)
     Pkg.activate("ext")
     Pkg.instantiate()
     Pkg.develop(path="..")
