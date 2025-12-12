@@ -1049,6 +1049,53 @@ end
     )
 end
 
+@testset "World add/remove components batch" begin
+    world = World(
+        Dummy,
+        Position => StructArrayStorage,
+        Velocity,
+        Altitude,
+        Health,
+        LabelComponent,
+    )
+
+    new_entities!(world, 10, (Position(1, 1), Velocity(1, 1), Altitude(100)))
+    new_entities!(world, 10, (Position(1, 1), Velocity(1, 1), Health(100)))
+
+    filter1 = Filter(world, (Health,))
+    remove_components!(world, filter1, (Health,))
+
+    query = Query(filter1)
+    @test count_entities(query) == 0
+    close!(query)
+
+    filter2 = Filter(world, (Altitude,))
+    remove_components!(world, filter2, (Altitude,)) do (entities,)
+        @test length(entities) == 10
+    end
+
+    filter3 = Filter(world, (Velocity,))
+    add_components!(world, filter3, (Altitude(100),)) do (entities, altitudes)
+        @test length(entities) == 20
+        @test length(altitudes) == 20
+        for i in eachindex(entities, altitudes)
+            @test altitudes[i] == Altitude(100)
+        end
+    end
+
+    add_components!(world, filter3, (LabelComponent(),))
+
+    add_components!(world, filter3, (Health,)) do (entities, healths)
+        for i in eachindex(entities, healths)
+            healths[i] == Health(99)
+        end
+    end
+
+    query = Query(world, (Position, Velocity, Altitude, Health, LabelComponent))
+    @test count_entities(query) == 20
+    close!(query)
+end
+
 @static if RUN_JET
     @testset "World add/remove component JET" begin
         world = World(
