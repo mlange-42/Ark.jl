@@ -42,44 +42,9 @@ Entity(3, 0)
 
 Components can be added to and removed from the entity later. This is described in the [next chapter](@ref Components).
 
-## [Batch creation](@id batch-entities)
-
 Often, multiple entities with the same set of components are created at the same time.
-For that sake, Ark provides batch entity creation, which is much faster than creating entities one by one. There are different ways to create entities in batches:
-
-From **default component values** using [new_entities!](@ref). Here, we create 100 entities, all with the same `Position` and `Velocity`:
-
-```jldoctest; output = false
-new_entities!(world, 100, (
-    Position(100, 100),
-    Velocity(0, 0),
-))
-
-# output
-
-```
-
-This may be sufficient in some use cases, but most often we will use a second approach:
-
-From **component types** with subsequent manual initialization using [new_entities!](@ref) with a tuple of types:
-
-```jldoctest; output = false
-new_entities!(world, 100, (Position, Velocity)) do (entities, positions, velocities)
-    for i in eachindex(entities)
-        positions[i] = Position(i, i)
-        velocities[i] = Velocity(0, 0)
-    end
-end
-
-# output
-
-```
-
-Note that the tuple elements of the callback argument are entity and component lists
-that need to be iterated to access individual items.
-See also the chapter on [Queries](@ref), which use a similar nested loop structure.
-
-Note that with the second approach, all components of all entities should be set as they are otherwise uninitialized.
+For that sake, Ark provides batch entity creation, which is much faster than creating entities one by one.
+See chapter [Batch operations](@ref) for details.
 
 ## Removing entities
 
@@ -87,32 +52,6 @@ Removing an entity from the World is as simple as this, using [remove_entity!](@
 
 ```jldoctest; output = false
 remove_entity!(world, entity)
-
-# output
-
-```
-
-## Batch removal
-
-Similar to entity creation, entities can also be removed in batches with [remove_entities!](@ref).
-It takes a [Filter](@ref) instead of a single entity as argument:
-
-```jldoctest; output = false
-filter = Filter(world, (Position, Velocity))
-remove_entities!(world, filter)
-
-# output
-
-```
-
-If something needs to be done with the entities to be removed, a callback can be used,
-which takes [Entities](@ref) as an argument:
-
-```jldoctest; output = false
-filter = Filter(world, (Position, Velocity))
-remove_entities!(world, filter) do entities
-    # do something with the entities...
-end
 
 # output
 

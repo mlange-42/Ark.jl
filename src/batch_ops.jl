@@ -8,7 +8,7 @@
         relations:Tuple=(),
     )::Union{Batch,Nothing}
 
-Creates the given number of [`Entity`](@ref), initialized with default values.
+Creates the given number of [entities](@ref Entity), initialized with default values.
 Component types are inferred from the provided default values.
 
 The optional callback/`do` block can be used for initialization.
@@ -19,7 +19,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creati
 # Arguments
 
   - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
-  - `world::World`: The `World` instance to use.
+  - `world::World`: The [World](@ref) instance to use.
   - `n::Int`: The number of entities to create.
   - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
   - `relations::Tuple`: Relationship component type => target entity pairs.
@@ -105,7 +105,7 @@ end
         relations:Tuple=(),
     )::Batch
 
-Creates the given number of [`Entity`](@ref).
+Creates the given number of [entities](@ref Entity).
 
 The callback/`do` block should be used to initialize components.
 Note that components are not initialized/undef unless set in the callback.
@@ -115,7 +115,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
 # Arguments
 
   - `f::Function`: Callback for initialization, can be passed as a `do` block.
-  - `world::World`: The `World` instance to use.
+  - `world::World`: The [World](@ref) instance to use.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
   - `relations::Tuple`: Relationship component type => target entity pairs.
@@ -267,8 +267,8 @@ end
 """
     set_relations!([f::Function], world::World, filter::Filter::Entity, relations::Tuple)
 
-Sets relation targets for the given components of all matching [entities](@ref Entity).
-Optionally runs a callback on the affected entities.
+Sets relation targets for the given components of all [entities](@ref Entity) matching the given [Filter](@ref).
+Optionally runs a callback/`do`-block on the affected entities.
 
 # Example
 
@@ -313,6 +313,292 @@ end
     rel_types = ntuple(i -> Val(relations[i].first), length(relations))
     targets = ntuple(i -> relations[i].second, length(relations))
     return @inline _set_relations_batch!(world, filter, rel_types, targets, Val(false)) do _
+    end
+end
+
+"""
+    add_components!(
+        [f::Function]
+        world::World,
+        filter::Filter,
+        add::Tuple=(),
+        relations::Tuple=(),
+    )
+
+Adds components to all [entities](@ref Entity) matching the given [Filter](@ref).
+
+Components can be added as types or as values.
+In the latter case, types are inferred from the add values.
+
+A callback/`do`-block can be run on the affected entities e.g. for individual initialization.
+It takes a tuple of `(entities, columns...)` as argument, with a column for each added component.
+The callback is mandatory if components are added as types.
+Note that components are not initialized/undef unless set in the callback in this case.
+
+# Arguments
+
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
+  - `world::World`: The [World](@ref) instance to use.
+  - `filter::Filter`: The [Filter](@ref) to select entities.
+  - `add::Tuple`: A tuple of component to add. Either default values like `(Position(0, 0), Velocity(1, 1))`, or types like `(Position, Velocity)`.
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+
+# Examples
+
+Adding values, not using the callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+add_components!(world, filter, (Health(100),))
+
+# output
+
+```
+
+Adding as types, using the callback for initialization:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+add_components!(world, filter, (Health,)) do (entities, healths)
+    for i in eachindex(entities, healths)
+        healths[i] = Health(i * 2)
+    end
+end
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function add_components!(
+    fn::Fn,
+    world::World,
+    filter::F,
+    add::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {Fn,F<:Filter}
+    if add isa Tuple{Vararg{DataType}}
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            ntuple(i -> Val(add[i]), length(add)), (),
+            (),
+            rel_types, targets,
+            Val(false), Val(true), Val(false),
+        )
+    else
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            Val{typeof(add)}(), add,
+            (),
+            rel_types, targets,
+            Val(true), Val(true), Val(false),
+        )
+    end
+end
+
+@inline Base.@constprop :aggressive function add_components!(
+    world::World,
+    filter::F,
+    add::Tuple;
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(
+        world, filter,
+        Val{typeof(add)}(), add,
+        (),
+        rel_types, targets,
+        Val(true), Val(false), Val(false),
+    ) do _
+    end
+end
+
+"""
+    remove_components!(
+        [f::Function]
+        world::World,
+        filter::Filter,
+        remove::Tuple=(),
+    )
+
+Removes components from all [entities](@ref Entity) matching the given [Filter](@ref).
+
+A callback/`do`-block can be run on the affected entities.
+It takes an [entities](@ref Entities) column as argument.
+
+# Arguments
+
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
+  - `world::World`: The [World](@ref) instance to use.
+  - `filter::Filter`: The [Filter](@ref) to select entities.
+  - `remove::Tuple`: A tuple of component types to remove, like `(Position, Velocity)`
+
+# Examples
+
+Removing components, not using the callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+remove_components!(world, filter, (Velocity,))
+
+# output
+
+```
+
+Removing components, using the optional callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+remove_components!(world, filter, (Velocity,)) do entities
+    # do something with the entities...
+end
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function remove_components!(
+    fn::Fn,
+    world::World,
+    filter::F,
+    remove::Tuple,
+) where {Fn,F<:Filter}
+    return @inline _exchange_components!(
+        fn, world, filter,
+        Val{Tuple{}}(), (),
+        ntuple(i -> Val(remove[i]), length(remove)),
+        (), (),
+        Val(false), Val(true), Val(true),
+    )
+end
+
+@inline Base.@constprop :aggressive function remove_components!(
+    world::World,
+    filter::F,
+    remove::Tuple,
+) where {F<:Filter}
+    return @inline _exchange_components!(
+        world, filter,
+        Val{Tuple{}}(), (),
+        ntuple(i -> Val(remove[i]), length(remove)),
+        (), (),
+        Val(false), Val(false), Val(true),
+    ) do _
+    end
+end
+
+"""
+    exchange_components!(
+        [f::Function]
+        world::World,
+        filter::Filter;
+        add::Tuple=(),
+        remove::Tuple=(),
+        relations::Tuple=(),
+    )
+
+Adds and removes components on all [entities](@ref Entity) matching the given [Filter](@ref).
+
+Components can be added as types or as values.
+In the latter case, types are inferred from the add values.
+
+A callback/`do`-block can be run on the affected entities e.g. for individual initialization.
+It takes a tuple of `(entities, columns...)` as argument, with a column for each added component.
+The callback is mandatory if components are added as types.
+Note that components are not initialized/undef unless set in the callback in this case.
+
+# Arguments
+
+  - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
+  - `world::World`: The [World](@ref) instance to use.
+  - `filter::Filter`: The [Filter](@ref) to select entities.
+  - `add::Tuple`: A tuple of component to add. Either default values like `(Position(0, 0), Velocity(1, 1))`, or types like `(Position, Velocity)`.
+  - `remove::Tuple`: A tuple of component types to remove, like `(Position, Velocity)`
+  - `relations::Tuple`: Relationship component type => target entity pairs.
+
+# Examples
+
+Adding values, not using the callback:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+exchange_components!(world, filter;
+    add=(Health(100),),
+    remove=(Velocity,),
+)
+
+# output
+
+```
+
+Adding as types, using the callback for initialization:
+
+```jldoctest; setup = :(using Ark; include(string(dirname(pathof(Ark)), "/docs.jl"))), output = false
+filter = Filter(world, (Velocity,))
+exchange_components!(world, filter;
+    add=(Health,),
+    remove=(Velocity,),
+) do (entities, healths)
+    for i in eachindex(entities, healths)
+        healths[i] = Health(i * 2)
+    end
+end
+
+# output
+
+```
+"""
+@inline Base.@constprop :aggressive function exchange_components!(
+    fn::Fn,
+    world::World,
+    filter::F;
+    add::Tuple=(),
+    remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {Fn,F<:Filter}
+    if add isa Tuple{Vararg{DataType}}
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            ntuple(i -> Val(add[i]), length(add)), (),
+            ntuple(i -> Val(remove[i]), length(remove)),
+            rel_types, targets,
+            Val(false), Val(true), Val(false),
+        )
+    else
+        rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+        targets = ntuple(i -> relations[i].second, length(relations))
+        return @inline _exchange_components!(
+            fn, world, filter,
+            Val{typeof(add)}(), add,
+            ntuple(i -> Val(remove[i]), length(remove)),
+            rel_types, targets,
+            Val(true), Val(true), Val(false),
+        )
+    end
+end
+
+@inline Base.@constprop :aggressive function exchange_components!(
+    world::World,
+    filter::F;
+    add::Tuple=(),
+    remove::Tuple=(),
+    relations::Tuple{Vararg{Pair{DataType,Entity}}}=(),
+) where {F<:Filter}
+    rel_types = ntuple(i -> Val(relations[i].first), length(relations))
+    targets = ntuple(i -> relations[i].second, length(relations))
+    return @inline _exchange_components!(
+        world, filter,
+        Val{typeof(add)}(), add,
+        ntuple(i -> Val(remove[i]), length(remove)),
+        rel_types, targets,
+        Val(true), Val(false), Val(false),
+    ) do _
     end
 end
 
@@ -409,6 +695,227 @@ function _set_relations_table!(
             ),
             mask,
         )
+    end
+end
+
+@generated function _exchange_components!(
+    fn::Fn,
+    world::W,
+    filter::F,
+    ::ATS,
+    add::Tuple,
+    ::RTS,
+    ::TR,
+    targets::Tuple{Vararg{Entity}},
+    ::DEF,
+    ::HFN,
+    ::REM,
+) where {Fn,W<:World,F<:Filter,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val,REM<:Val}
+    add_types = _to_types(ATS)
+    rem_types = _to_types(RTS)
+    rel_types = _to_types(TR)
+
+    if isempty(add_types) && isempty(rem_types)
+        throw(ArgumentError("either components to add or to remove must be given for exchange_components!"))
+    end
+
+    _check_no_duplicates(add_types)
+    _check_no_duplicates(rem_types)
+    _check_if_intersect(add_types, rem_types)
+    _check_no_duplicates(rel_types)
+    _check_relations(rel_types)
+    _check_is_subset(rel_types, add_types)
+
+    return quote
+        _check_locked(world)
+        l = _lock(world._lock)
+
+        arches, arches_hot = _get_archetypes(world, filter)
+        tables, _ = _get_tables(world, arches, arches_hot, filter)
+        batches = world._pool.batches
+
+        for table_id in tables
+            old_table = world._tables[table_id]
+            if isempty(old_table)
+                continue
+            end
+            # TODO: use a simplified data structure?
+            push!(
+                batches,
+                _BatchTable(old_table, world._archetypes[old_table.archetype], UInt32(1), UInt32(length(old_table))),
+            )
+        end
+        if !_is_cached(filter._filter) # Do not clear for cached filters!!!
+            resize!(tables, 0)
+        end
+
+        for batch in batches
+            _exchange_components_table!(fn, world, batch,
+                Val{$ATS}(), add, Val{$RTS}(), Val{$TR}(), targets, Val{$DEF}(), Val{$HFN}(), Val{$REM}())
+        end
+
+        resize!(batches, 0)
+
+        _unlock(world._lock, l)
+
+        return nothing
+    end
+end
+
+@generated function _exchange_components_table!(
+    fn::Fn,
+    world::W,
+    batch::_BatchTable,
+    ::ATS,
+    add::Tuple,
+    ::Val{RTS},
+    ::Val{TR},
+    targets::Tuple{Vararg{Entity}},
+    ::Val{DEF},
+    ::Val{HFN},
+    ::Val{REM},
+) where {Fn,W<:World,ATS,RTS<:Tuple,TR<:Tuple,DEF<:Val,HFN<:Val,REM<:Val}
+    add_types = _to_types(ATS)
+    rem_types = _to_types(RTS)
+    rel_types = _to_types(TR)
+
+    exprs = []
+
+    CS = W.parameters[1]
+    add_ids = tuple([_component_id(CS, T) for T in add_types]...)
+    rem_ids = tuple([_component_id(CS, T) for T in rem_types]...)
+    rel_ids = tuple([_component_id(CS, T) for T in rel_types]...)
+
+    num_ids = length(add_ids) + length(rem_ids)
+    use_map = num_ids >= 4 ? _UseMap() : _NoUseMap()
+
+    M = max(1, cld(length(CS.parameters), 64))
+    add_mask = _Mask{M}(add_ids...)
+    rem_mask = _Mask{M}(rem_ids...)
+
+    world_has_rel = Val{_has_relations(CS)}()
+    adds_relations = !isempty(rel_types)
+
+    push!(
+        exprs,
+        :(
+            new_table_tuple =
+                _find_or_create_table!(
+                    world, batch.table, $add_ids, $rem_ids, $rel_ids, targets, $add_mask, $rem_mask, $use_map,
+                    $world_has_rel,
+                )
+        ),
+    )
+    push!(exprs, :(new_table_index = new_table_tuple[1]))
+    push!(exprs, :(relations_removed = new_table_tuple[2]))
+    push!(exprs, :(new_table = world._tables[new_table_index]))
+
+    if length(rem_types) > 0
+        push!(
+            exprs,
+            :(
+                begin
+                    has_comp_obs = _has_observers(world._event_manager, OnRemoveComponents)
+                    has_rel_obs = relations_removed && _has_observers(world._event_manager, OnRemoveRelations)
+                    if has_comp_obs || has_rel_obs
+                        old_mask = world._archetypes_hot[batch.table.archetype].mask
+                        new_mask = world._archetypes_hot[new_table.archetype].mask
+                        if has_comp_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveComponents, batch,
+                                old_mask, new_mask,
+                            )
+                        end
+                        if has_rel_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveRelations, batch,
+                                old_mask, new_mask,
+                            )
+                        end
+                    end
+                end
+            ),
+        )
+    end
+
+    push!(exprs, :(start_idx = length(new_table) + 1))
+    push!(exprs, :(_move_entities!(world, batch.table.id, new_table.id, batch.end_idx)))
+
+    if DEF === Val{true}
+        for i in 1:length(add_types)
+            T = add_types[i]
+            stor_sym = Symbol("stor", i)
+            col_sym = Symbol("col", i)
+            val_expr = :(add.$i)
+
+            push!(exprs, :($stor_sym = _get_storage(world, $T)))
+            push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
+            push!(exprs, :(@inbounds fill!(view($col_sym, start_idx:length($col_sym)), $val_expr)))
+        end
+    end
+
+    types_tuple_type_expr = Expr(:curly, :Tuple, [:($T) for T in add_types]...)
+    ts_val_expr = :(Val{$(types_tuple_type_expr)}())
+
+    if HFN == Val{true}
+        if REM == Val{true}
+            push!(exprs, :(fn(view(new_table.entities, start_idx:length(new_table)))))
+        else
+            push!(
+                exprs,
+                :(
+                    begin
+                        columns =
+                            _get_columns(world, $ts_val_expr, new_table, UInt32(start_idx), UInt32(length(new_table)))
+                        fn(columns)
+                    end
+                ),
+            )
+        end
+    end
+
+    if !isempty(add_types)
+        push!(
+            exprs,
+            :(
+                begin
+                    has_comp_obs = _has_observers(world._event_manager, OnAddComponents)
+                    has_rel_obs = $adds_relations && _has_observers(world._event_manager, OnAddRelations)
+                    if has_comp_obs || has_rel_obs
+                        new_archetype = world._archetypes[new_table.archetype]
+                        old_mask = world._archetypes_hot[batch.table.archetype].mask
+                        batch_table = _BatchTable(
+                            new_table, new_archetype,
+                            UInt32(start_idx), UInt32(length(new_table)),
+                        )
+                        if has_comp_obs
+                            _fire_add(
+                                world._event_manager,
+                                OnAddComponents, batch_table,
+                                old_mask, new_archetype.node.mask,
+                            )
+                        end
+                        if has_rel_obs
+                            _fire_add(
+                                world._event_manager,
+                                OnAddRelations, batch_table,
+                                old_mask, new_archetype.node.mask,
+                            )
+                        end
+                    end
+                end
+            ),
+        )
+    end
+
+    push!(exprs, Expr(:return, :nothing))
+
+    return quote
+        @inbounds begin
+            $(Expr(:block, exprs...))
+        end
     end
 end
 

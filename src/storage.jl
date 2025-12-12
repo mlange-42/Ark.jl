@@ -79,8 +79,8 @@ end
     # TODO: this can probably be optimized for StructArray storage
     # by moving per component instead of unpacking/packing.
     exprs = []
-    push!(exprs, :(old_vec = s.data[old_table]))
-    push!(exprs, :(new_vec = s.data[new_table]))
+    push!(exprs, :(@inbounds old_vec = s.data[old_table]))
+    push!(exprs, :(@inbounds new_vec = s.data[new_table]))
 
     if CP === Val{:ref} || (isbitstype(C) && !ismutabletype(C))
         # no copy required for immutable isbits
@@ -107,8 +107,8 @@ function _copy_component_data_to_end!(
     old_table::UInt32,
     new_table::UInt32,
 ) where {C,A<:AbstractArray}
-    old_vec = s.data[old_table]
-    new_vec = s.data[new_table]
+    @inbounds old_vec = s.data[old_table]
+    @inbounds new_vec = s.data[new_table]
     @inbounds new_vec[(end-length(old_vec)+1):end] .= old_vec
     return nothing
 end

@@ -152,29 +152,7 @@ parent_entity, = get_relations(world, entity, (ChildOf,))
 
 Note that [get_relations](@ref) always returns a tuple of entities.
 
-## Setting relations in batches
-
-As with other operations, relation targets can be set in batches using [set_relations!](@ref) combined with a [Filter](@ref):
-
-```jldoctest; output=false
-filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,))
-set_relations!(world, filter, (ChildOf => parent2,))
-
-# output
-
-```
-
-If necessary, the affected entities can be processed using a callback function:
-
-```jldoctest; output=false
-filter = Filter(world, (ChildOf,); relations=(ChildOf => parent,))
-set_relations!(world, filter, (ChildOf => parent2,)) do entities
-    # do something with the entities...
-end
-
-# output
-
-```
+As with other operations, relation targets can be set in batches. See chapter [Batch operations](@ref) for details.
 
 ## Querying relations
 

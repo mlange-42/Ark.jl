@@ -13,6 +13,14 @@ end
     return [x.parameters[1] for x in TS.parameters]
 end
 
+@inline function _to_types(::Type{Val{TS}})::Vector{DataType} where {TS<:Tuple}
+    return [x <: Val ? x.parameters[1] : x for x in TS.parameters]
+end
+
+@inline function _to_types(::Type{Val{V}})::Vector{DataType} where {V<:Val}
+    return _to_types(V)
+end
+
 @inline function _to_types(vec::Core.SimpleVector)::Vector{DataType}
     return collect(vec)
 end

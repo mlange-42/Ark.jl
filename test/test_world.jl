@@ -1049,6 +1049,53 @@ end
     )
 end
 
+@testset "World add/remove components batch" begin
+    world = World(
+        Dummy,
+        Position => StructArrayStorage,
+        Velocity,
+        Altitude,
+        Health,
+        LabelComponent,
+    )
+
+    new_entities!(world, 10, (Position(1, 1), Velocity(1, 1), Altitude(100)))
+    new_entities!(world, 10, (Position(1, 1), Velocity(1, 1), Health(100)))
+
+    filter1 = Filter(world, (Health,))
+    remove_components!(world, filter1, (Health,))
+
+    query = Query(filter1)
+    @test count_entities(query) == 0
+    close!(query)
+
+    filter2 = Filter(world, (Altitude,))
+    remove_components!(world, filter2, (Altitude,)) do entities
+        @test length(entities) == 10
+    end
+
+    filter3 = Filter(world, (Velocity,))
+    add_components!(world, filter3, (Altitude(100),)) do (entities, altitudes)
+        @test length(entities) == 20
+        @test length(altitudes) == 20
+        for i in eachindex(entities, altitudes)
+            @test altitudes[i] == Altitude(100)
+        end
+    end
+
+    add_components!(world, filter3, (LabelComponent(),))
+
+    add_components!(world, filter3, (Health,)) do (entities, healths)
+        for i in eachindex(entities, healths)
+            healths[i] == Health(99)
+        end
+    end
+
+    query = Query(world, (Position, Velocity, Altitude, Health, LabelComponent))
+    @test count_entities(query) == 20
+    close!(query)
+end
+
 @static if RUN_JET
     @testset "World add/remove component JET" begin
         world = World(
@@ -1104,6 +1151,66 @@ end
 
     parents = get_relations(world, e1, (ChildOf,))
     @test parents == (parent,)
+end
+
+@testset "World exchange components batch" begin
+    world = World(
+        Dummy,
+        Position => StructArrayStorage,
+        Velocity,
+        Altitude,
+        Health => StructArrayStorage,
+    )
+
+    new_entities!(world, 10, (Position(1, 1), Altitude(100)))
+    new_entities!(world, 10, (Position(1, 1), Velocity(1, 1)))
+
+    # create empty table
+    remove_entity!(world, new_entity!(world, (Position(1, 1), Velocity(1, 1), Altitude(100))))
+
+    filter1 = Filter(world, (Velocity,); register=true) # register, to include empty tables.
+    count = 0
+    exchange_components!(world, filter1; add=(Altitude(101),), remove=(Velocity,)) do (entities, altitudes)
+        @test length(entities) == 10
+        @test length(altitudes) == 10
+        for i in eachindex(entities, altitudes)
+            @test altitudes[i] == Altitude(101)
+            count += 1
+        end
+    end
+    @test count == 10
+
+    filter2 = Filter(world, (Position,))
+    exchange_components!(world, filter2; add=(Health(101),), remove=(Position,))
+
+    query = Query(filter2)
+    @test count_entities(query) == 0
+    close!(query)
+
+    count = 0
+    for (entities, healths) in Query(world, (Health,))
+        for i in eachindex(entities, healths)
+            @test healths[i] == Health(101)
+            count += 1
+        end
+    end
+    @test count == 20
+
+    filter3 = Filter(world, (Altitude,))
+    exchange_components!(world, filter3; add=(Position,), remove=(Altitude,)) do (entities, positions)
+        for i in eachindex(entities, positions)
+            positions[i] = Position(i, i)
+        end
+    end
+
+    count = 0
+    for (entities, positions) in Query(world, (Position,))
+        for i in eachindex(entities, positions)
+            @test positions[i] == Position(i, i)
+            count += 1
+        end
+    end
+    @test count == 20
 end
 
 """

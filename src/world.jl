@@ -2,7 +2,7 @@
 """
     const zero_entity::Entity
 
-The reserved zero [`Entity`](@ref) value.
+The reserved zero [Entity](@ref) value.
 Can be used to represent "no entity"/"nil".
 """
 const zero_entity::Entity = _new_entity(1, 0)
@@ -65,7 +65,7 @@ end
         allow_mutable::Bool=false,
     )
 
-Creates a new, empty [`World`](@ref) for the given component types.
+Creates a new, empty [World](@ref) for the given component types.
 
 All component types that will be used with the world must be specified.
 This allows Ark to use Julia's compile-time method generation to achieve the best performance.
@@ -121,7 +121,7 @@ end
 """
     new_entity!(world::World, values::Tuple; relations::Tuple=())::Entity
 
-Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
+Creates a new [Entity](@ref) with the given component values. Types are inferred from the values.
 
 # Arguments
 
@@ -187,7 +187,7 @@ end
         mode=:copy,
     )
 
-Copies an [`Entity`](@ref), optionally adding and/or removing components.
+Copies an [Entity](@ref), optionally adding and/or removing components.
 
 Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
 
@@ -253,7 +253,7 @@ end
 """
     remove_entity!(world::World, entity::Entity)
 
-Removes an [`Entity`](@ref) from the [`World`](@ref).
+Removes an [Entity](@ref) from the [World](@ref).
 
 # Example
 
@@ -321,7 +321,7 @@ end
 """
     get_components(world::World, entity::Entity, comp_types::Tuple)
 
-Get the given components for an [`Entity`](@ref).
+Get the given components for an [Entity](@ref).
 Components are returned as a tuple.
 
 # Example
@@ -344,7 +344,7 @@ end
 """
     has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
 
-Returns whether an [`Entity`](@ref) has all given components.
+Returns whether an [Entity](@ref) has all given components.
 
 # Example
 
@@ -367,7 +367,7 @@ end
 """
     set_components!(world::World, entity::Entity, values::Tuple)
 
-Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
+Sets the given component values for an [Entity](@ref). Types are inferred from the values.
 The entity must already have all these components.
 
 # Example
@@ -436,7 +436,7 @@ end
 """
     add_components!(world::World, entity::Entity, values::Tuple; relations::Tuple)
 
-Adds the given component values to an [`Entity`](@ref). Types are inferred from the values.
+Adds the given component values to an [Entity](@ref). Types are inferred from the values.
 
 # Example
 
@@ -464,7 +464,7 @@ end
 """
     remove_components!(world::World, entity::Entity, comp_types::Tuple)
 
-Removes the given components from an [`Entity`](@ref).
+Removes the given components from an [Entity](@ref).
 
 # Example
 
@@ -498,7 +498,7 @@ end
         relations::Tuple=(),
     )
 
-Adds and removes components on an [`Entity`](@ref). Types are inferred from the add values.
+Adds and removes components on an [Entity](@ref). Types are inferred from the add values.
 
 # Example
 
@@ -590,7 +590,7 @@ end
 """
     is_alive(world::World, entity::Entity)::Bool
 
-Returns whether an [`Entity`](@ref) is alive.
+Returns whether an [Entity](@ref) is alive.
 """
 function is_alive(world::World, entity::Entity)::Bool
     return _is_alive(world._entity_pool, entity)
@@ -1362,13 +1362,14 @@ end
 function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32, num_entities::UInt32)
     old_table = world._tables[old_table_index]
     new_table = world._tables[table_index]
-    archetype = world._archetypes[old_table.archetype]
+    old_archetype = world._archetypes[old_table.archetype]
+    new_archetype = world._archetypes[new_table.archetype]
 
     old_entities = length(new_table.entities)
     total_entities = old_entities + num_entities
 
     resize!(new_table, total_entities)
-    for comp in archetype.components
+    for comp in new_archetype.components
         _ensure_column_size_for_comp!(world, comp, table_index, total_entities)
     end
 
@@ -1378,11 +1379,10 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         new_table.entities._data[to] = entity
         world._entities[entity._id] = _EntityIndex(new_table.id, to)
     end
-    for comp in archetype.components
-        _copy_component_data_to_end!(world, comp, old_table_index, table_index)
-    end
-
-    for comp in archetype.components
+    for comp in old_archetype.components
+        if _get_bit(new_archetype.node.mask, comp)
+            _copy_component_data_to_end!(world, comp, old_table_index, table_index)
+        end
         _clear_component_data!(world, comp, old_table_index)
     end
 
