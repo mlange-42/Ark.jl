@@ -17,7 +17,7 @@ end
 """
     is_zero(entity::Entity)::Bool
 
-Returns whether an [`Entity`](@ref) is the reserved [zero_entity](@ref).
+Returns whether an [Entity](@ref) is the reserved [zero_entity](@ref).
 """
 function is_zero(entity::Entity)::Bool
     return entity._id == 1

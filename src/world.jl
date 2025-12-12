@@ -2,7 +2,7 @@
 """
     const zero_entity::Entity
 
-The reserved zero [`Entity`](@ref) value.
+The reserved zero [Entity](@ref) value.
 Can be used to represent "no entity"/"nil".
 """
 const zero_entity::Entity = _new_entity(1, 0)
@@ -65,7 +65,7 @@ end
         allow_mutable::Bool=false,
     )
 
-Creates a new, empty [`World`](@ref) for the given component types.
+Creates a new, empty [World](@ref) for the given component types.
 
 All component types that will be used with the world must be specified.
 This allows Ark to use Julia's compile-time method generation to achieve the best performance.
@@ -121,7 +121,7 @@ end
 """
     new_entity!(world::World, values::Tuple; relations::Tuple=())::Entity
 
-Creates a new [`Entity`](@ref) with the given component values. Types are inferred from the values.
+Creates a new [Entity](@ref) with the given component values. Types are inferred from the values.
 
 # Arguments
 
@@ -187,7 +187,7 @@ end
         mode=:copy,
     )
 
-Copies an [`Entity`](@ref), optionally adding and/or removing components.
+Copies an [Entity](@ref), optionally adding and/or removing components.
 
 Mutable and non-isbits components are shallow copied by default. This can be changed with the `mode` argument.
 
@@ -253,7 +253,7 @@ end
 """
     remove_entity!(world::World, entity::Entity)
 
-Removes an [`Entity`](@ref) from the [`World`](@ref).
+Removes an [Entity](@ref) from the [World](@ref).
 
 # Example
 
@@ -321,7 +321,7 @@ end
 """
     get_components(world::World, entity::Entity, comp_types::Tuple)
 
-Get the given components for an [`Entity`](@ref).
+Get the given components for an [Entity](@ref).
 Components are returned as a tuple.
 
 # Example
@@ -344,7 +344,7 @@ end
 """
     has_components(world::World, entity::Entity, comp_types::Tuple)::Bool
 
-Returns whether an [`Entity`](@ref) has all given components.
+Returns whether an [Entity](@ref) has all given components.
 
 # Example
 
@@ -367,7 +367,7 @@ end
 """
     set_components!(world::World, entity::Entity, values::Tuple)
 
-Sets the given component values for an [`Entity`](@ref). Types are inferred from the values.
+Sets the given component values for an [Entity](@ref). Types are inferred from the values.
 The entity must already have all these components.
 
 # Example
@@ -590,7 +590,7 @@ end
 """
     is_alive(world::World, entity::Entity)::Bool
 
-Returns whether an [`Entity`](@ref) is alive.
+Returns whether an [Entity](@ref) is alive.
 """
 function is_alive(world::World, entity::Entity)::Bool
     return _is_alive(world._entity_pool, entity)

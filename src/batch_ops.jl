@@ -8,7 +8,7 @@
         relations:Tuple=(),
     )::Union{Batch,Nothing}
 
-Creates the given number of [`Entity`](@ref), initialized with default values.
+Creates the given number of [entities](@ref Entity), initialized with default values.
 Component types are inferred from the provided default values.
 
 The optional callback/`do` block can be used for initialization.
@@ -19,7 +19,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple)) for creati
 # Arguments
 
   - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
-  - `world::World`: The `World` instance to use.
+  - `world::World`: The [World](@ref) instance to use.
   - `n::Int`: The number of entities to create.
   - `defaults::Tuple`: A tuple of default values for initialization, like `(Position(0, 0), Velocity(1, 1))`.
   - `relations::Tuple`: Relationship component type => target entity pairs.
@@ -105,7 +105,7 @@ end
         relations:Tuple=(),
     )::Batch
 
-Creates the given number of [`Entity`](@ref).
+Creates the given number of [entities](@ref Entity).
 
 The callback/`do` block should be used to initialize components.
 Note that components are not initialized/undef unless set in the callback.
@@ -115,7 +115,7 @@ See also [new_entities!](@ref new_entities!(::World, ::Int, ::Tuple; ::Bool)) fo
 # Arguments
 
   - `f::Function`: Callback for initialization, can be passed as a `do` block.
-  - `world::World`: The `World` instance to use.
+  - `world::World`: The [World](@ref) instance to use.
   - `n::Int`: The number of entities to create.
   - `comp_types::Tuple`: Component types for the new entities, like `(Position, Velocity)`.
   - `relations::Tuple`: Relationship component type => target entity pairs.
@@ -267,7 +267,7 @@ end
 """
     set_relations!([f::Function], world::World, filter::Filter::Entity, relations::Tuple)
 
-Sets relation targets for the given components of all matching [entities](@ref Entity).
+Sets relation targets for the given components of all [entities](@ref Entity) matching the given [Filter](@ref).
 Optionally runs a callback/`do`-block on the affected entities.
 
 # Example
@@ -325,7 +325,7 @@ end
         relations::Tuple=(),
     )
 
-Adds components to all [entities](@ref Entity) matching the given filter.
+Adds components to all [entities](@ref Entity) matching the given [Filter](@ref).
 
 Components can be added as types or as values.
 In the latter case, types are inferred from the add values.
@@ -338,8 +338,8 @@ Note that components are not initialized/undef unless set in the callback in thi
 # Arguments
 
   - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
-  - `world::World`: The `World` instance to use.
-  - `filter::Filter`: The filter to select entities.
+  - `world::World`: The [World](@ref) instance to use.
+  - `filter::Filter`: The [Filter](@ref) to select entities.
   - `add::Tuple`: A tuple of component to add. Either default values like `(Position(0, 0), Velocity(1, 1))`, or types like `(Position, Velocity)`.
   - `relations::Tuple`: Relationship component type => target entity pairs.
 
@@ -425,7 +425,7 @@ end
         remove::Tuple=(),
     )
 
-Removes components from all [entities](@ref Entity) matching the given filter.
+Removes components from all [entities](@ref Entity) matching the given [Filter](@ref).
 
 A callback/`do`-block can be run on the affected entities.
 It takes a tuple `(entities,)` as argument.
@@ -433,8 +433,8 @@ It takes a tuple `(entities,)` as argument.
 # Arguments
 
   - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
-  - `world::World`: The `World` instance to use.
-  - `filter::Filter`: The filter to select entities.
+  - `world::World`: The [World](@ref) instance to use.
+  - `filter::Filter`: The [Filter](@ref) to select entities.
   - `remove::Tuple`: A tuple of component types to remove, like `(Position, Velocity)`
 
 # Examples
@@ -501,7 +501,7 @@ end
         relations::Tuple=(),
     )
 
-Adds and removes components on all [entities](@ref Entity) matching the given filter.
+Adds and removes components on all [entities](@ref Entity) matching the given [Filter](@ref).
 
 Components can be added as types or as values.
 In the latter case, types are inferred from the add values.
@@ -514,8 +514,8 @@ Note that components are not initialized/undef unless set in the callback in thi
 # Arguments
 
   - `f::Function`: Optional callback for initialization, can be passed as a `do` block.
-  - `world::World`: The `World` instance to use.
-  - `filter::Filter`: The filter to select entities.
+  - `world::World`: The [World](@ref) instance to use.
+  - `filter::Filter`: The [Filter](@ref) to select entities.
   - `add::Tuple`: A tuple of component to add. Either default values like `(Position(0, 0), Velocity(1, 1))`, or types like `(Position, Velocity)`.
   - `remove::Tuple`: A tuple of component types to remove, like `(Position, Velocity)`
   - `relations::Tuple`: Relationship component type => target entity pairs.
