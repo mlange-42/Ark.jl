@@ -1070,6 +1070,87 @@ end
     @test counters == [10, 10, 10, 10]
 end
 
+@testset "Fire batch exchange early out" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf, ChildOf2)
+
+    counters = Int[0, 0]
+    observe!(world, OnAddRelations, (ChildOf2,)) do entity
+        counters[1] += 1
+    end
+    observe!(world, OnRemoveRelations, (ChildOf2,)) do entity
+        counters[2] += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entities!(world, 10, (Position(0, 0),))
+    @test counters == [0, 0]
+
+    add_components!(world, Filter(world, (Position,)), (ChildOf(),); relations=(ChildOf => parent,))
+    @test counters == [0, 0]
+
+    remove_components!(world, Filter(world, (ChildOf,)), (ChildOf,))
+    @test counters == [0, 0]
+end
+
+@testset "Fire batch exchange with" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf, ChildOf2)
+
+    counters = Int[0, 0]
+    observe!(world, OnAddRelations, (ChildOf,); with=(Position,)) do entity
+        counters[1] += 1
+    end
+    observe!(world, OnAddRelations, (ChildOf,); with=(Velocity,)) do entity
+        counters[1] += 1
+    end
+    observe!(world, OnRemoveRelations, (ChildOf,); with=(Position,)) do entity
+        counters[2] += 1
+    end
+    observe!(world, OnRemoveRelations, (ChildOf,); with=(Velocity,)) do entity
+        counters[2] += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entities!(world, 10, (Position(0, 0),))
+    @test counters == [0, 0]
+
+    add_components!(world, Filter(world, (Position,)), (ChildOf(),); relations=(ChildOf => parent,))
+    @test counters == [10, 0]
+
+    remove_components!(world, Filter(world, (ChildOf,)), (ChildOf,))
+    @test counters == [10, 10]
+end
+
+@testset "Fire batch exchange without" begin
+    world = World(Dummy, Position, Velocity, Altitude, ChildOf, ChildOf2)
+
+    counters = Int[0, 0]
+    observe!(world, OnAddRelations, (ChildOf,); without=(Position,)) do entity
+        counters[1] += 1
+    end
+    observe!(world, OnAddRelations, (ChildOf,); without=(Velocity,)) do entity
+        counters[1] += 1
+    end
+    observe!(world, OnRemoveRelations, (ChildOf,); without=(Position,)) do entity
+        counters[2] += 1
+    end
+    observe!(world, OnRemoveRelations, (ChildOf,); without=(Velocity,)) do entity
+        counters[2] += 1
+    end
+
+    parent = new_entity!(world, ())
+
+    new_entities!(world, 10, (Position(0, 0),))
+    @test counters == [0, 0]
+
+    add_components!(world, Filter(world, (Position,)), (ChildOf(),); relations=(ChildOf => parent,))
+    @test counters == [10, 0]
+
+    remove_components!(world, Filter(world, (ChildOf,)), (ChildOf,))
+    @test counters == [10, 10]
+end
+
 @testset "Observers combine" begin
     world = World(Dummy, Position, Velocity)
 
