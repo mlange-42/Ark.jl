@@ -31,7 +31,7 @@ It is a port of the Go ECS [Ark](https://github.com/mlange-42/ark).
 - [Entity relationships](@ref) as a first-class feature.
 - [Storage mode](@ref component-storages) per component for ergonomics and SIMD.
 - Extensible [event system](@ref "Event system") with filtering and custom event types.
-- Blazing fast [batch entity creation](@ref batch-entities).
+- Fast [batch operations](@ref "Batch operations") for mass manipulation.
 - No [systems](@ref Systems). Just [queries](@ref Queries). Use your own structure.
 - Minimal [dependencies](https://github.com/mlange-42/Ark.jl/blob/main/Project.toml), 100% [test coverage](https://app.codecov.io/github/mlange-42/ark.jl).
 
@@ -56,6 +56,7 @@ without the need for deep software engineering expertise.
 - [Systems](@ref)
 - [Resources](@ref)
 - [Entity relationships](@ref)
+- [Batch operations](@ref)
 - [Event system](@ref)
 - [Architecture](@ref)
 

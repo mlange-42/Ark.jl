@@ -31,6 +31,7 @@ makedocs(;
             "manual/systems.md",
             "manual/resources.md",
             "manual/relations.md",
+            "manual/batch.md",
             "manual/events.md",
             "manual/architecture.md"
         ],

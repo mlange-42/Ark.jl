@@ -95,6 +95,10 @@ exchange_components!(world, entity;
 
 ```
 
+For manipulating entities in batches, [add_components!](@ref), [remove_components!](@ref) and [exchange_components!](@ref)
+come with versions that take a filter instead of a single entity as argument.
+See chapter [Batch operations](@ref) for details.
+
 ## [Component storages](@id component-storages)
 
 Components are stored in [archetypes](@ref Architecture),
