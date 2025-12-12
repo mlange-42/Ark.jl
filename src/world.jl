@@ -1379,14 +1379,10 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         new_table.entities._data[to] = entity
         world._entities[entity._id] = _EntityIndex(new_table.id, to)
     end
-    for comp in new_archetype.components
-        if !_get_bit(new_archetype.node.mask, comp)
-            continue
-        end
-        _copy_component_data_to_end!(world, comp, old_table_index, table_index)
-    end
-
     for comp in old_archetype.components
+        if _get_bit(new_archetype.node.mask, comp)
+            _copy_component_data_to_end!(world, comp, old_table_index, table_index)
+        end
         _clear_component_data!(world, comp, old_table_index)
     end
 
