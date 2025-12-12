@@ -6,7 +6,7 @@
         n::Int,
         components::Tuple;
         relations:Tuple=(),
-    )::Union{Batch,Nothing}
+    )
 
 Creates the given number of [entities](@ref Entity).
 Components can be given as types or as default values.
