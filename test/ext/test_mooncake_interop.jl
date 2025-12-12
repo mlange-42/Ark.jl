@@ -3,16 +3,6 @@ using DifferentiationInterface
 using Mooncake
 using Random
 
-struct Position
-    x::Float64
-    y::Float64
-end
-
-struct Velocity
-    dx::Float64
-    dy::Float64
-end
-
 @testset "Compute gradients through Mooncake.jl" begin
     function run_world(args)
         alpha, beta = args
