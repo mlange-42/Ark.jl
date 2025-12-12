@@ -35,19 +35,19 @@ jobs:
         run: julia --project=. run_tests.jl --interop
       - uses: julia-actions/julia-processcoverage@v1
       - name: Archive coverage artifacts
-        if: matrix.version == 'lts'
+        if: matrix.version == '1'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-interop-${{ matrix.version }}
           path: lcov.info
           if-no-files-found: ignore
       - name: Download all coverage artifacts
-        if: matrix.version == 'lts'
+        if: matrix.version == '1'
         uses: actions/download-artifact@v4
         with:
           path: coverage_artifacts
       - name: Upload coverage to Codecov
-        if: matrix.version == 'lts'
+        if: matrix.version == '1'
         uses: codecov/codecov-action@v5
         with:
           directory: coverage_artifacts
