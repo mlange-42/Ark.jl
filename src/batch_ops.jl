@@ -634,6 +634,7 @@ end
     rem_mask = _Mask{M}(rem_ids...)
 
     world_has_rel = Val{_has_relations(CS)}()
+    adds_relations = !isempty(rel_types)
 
     push!(
         exprs,
@@ -649,7 +650,35 @@ end
     push!(exprs, :(relations_removed = new_table_tuple[2]))
     push!(exprs, :(new_table = world._tables[new_table_index]))
 
-    # TODO: fire remove events
+    if length(rem_types) > 0
+        push!(
+            exprs,
+            :(
+                begin
+                    has_comp_obs = _has_observers(world._event_manager, OnRemoveComponents)
+                    has_rel_obs = relations_removed && _has_observers(world._event_manager, OnRemoveRelations)
+                    if has_comp_obs || has_rel_obs
+                        old_mask = world._archetypes_hot[old_table.archetype].mask
+                        new_mask = world._archetypes_hot[new_table.archetype].mask
+                        if has_comp_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveComponents, batch,
+                                old_mask, new_mask,
+                            )
+                        end
+                        if has_rel_obs
+                            _fire_remove(
+                                world._event_manager,
+                                OnRemoveRelations, batch,
+                                old_mask, new_mask,
+                            )
+                        end
+                    end
+                end
+            ),
+        )
+    end
 
     push!(exprs, :(start_idx = length(new_table) + 1))
     push!(exprs, :(_move_entities!(world, batch.table.id, new_table.id, batch.end_idx)))
@@ -683,7 +712,39 @@ end
         )
     end
 
-    # TODO: fire add events
+    if !isempty(add_types)
+        push!(
+            exprs,
+            :(
+                begin
+                    has_comp_obs = _has_observers(world._event_manager, OnAddComponents)
+                    has_rel_obs = $adds_relations && _has_observers(world._event_manager, OnAddRelations)
+                    if has_comp_obs || has_rel_obs
+                        new_archetype = world._archetypes_hot[new_table.archetype]
+                        old_mask = world._archetypes_hot[old_table.archetype].mask
+                        batch_table = _BatchTable(
+                            new_table, new_archetype,
+                            UInt32(start_idx), UInt32(length(new_table)),
+                        )
+                        if has_comp_obs
+                            _fire_add(
+                                world._event_manager,
+                                OnAddComponents, batch_table,
+                                old_mask, new_archetype.mask,
+                            )
+                        end
+                        if _has_observers(world._event_manager, OnAddRelations)
+                            _fire_add(
+                                world._event_manager,
+                                OnAddRelations, batch_table,
+                                old_mask, new_archetype.mask,
+                            )
+                        end
+                    end
+                end
+            ),
+        )
+    end
 
     push!(exprs, Expr(:return, :nothing))
 

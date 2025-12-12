@@ -395,6 +395,44 @@ function _fire_add(
     return found
 end
 
+function _fire_add(
+    m::_EventManager{W,M},
+    event::EventType,
+    table::_BatchTable,
+    old_mask::_Mask{M},
+    new_mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    evt = event._id
+    observers = m.observers[evt]
+    if length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps &&
+           (!_contains_any(comps, new_mask) || _contains_all(old_mask, comps))
+            return
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, old_mask)
+            return
+        end
+    end
+    for o in observers
+        if o._has_comps && (!_contains_all(new_mask, o._comps) || _contains_any(old_mask, o._comps))
+            continue
+        end
+        if o._has_with && !_contains_all(old_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(old_mask, o._without)
+            continue
+        end
+        entities = table.table.entities._data
+        for i in table.start_idx:table.end_idx
+            o._fn(entities[i])
+        end
+    end
+    return nothing
+end
+
 function _fire_remove(
     m::_EventManager{W,M},
     event::EventType,
@@ -431,6 +469,44 @@ function _fire_remove(
         found = true
     end
     return found
+end
+
+function _fire_remove(
+    m::_EventManager{W,M},
+    event::EventType,
+    table::_BatchTable,
+    old_mask::_Mask{M},
+    new_mask::_Mask{M},
+) where {W<:_AbstractWorld,M}
+    evt = event._id
+    observers = m.observers[evt]
+    if length(observers) > 1
+        comps, any_no_comps = m.comps[evt]
+        if !any_no_comps &&
+           (!_contains_any(comps, old_mask) || _contains_all(new_mask, comps))
+            return
+        end
+        with, any_no_with = m.with[evt]
+        if !any_no_with && !_contains_any(with, old_mask)
+            return
+        end
+    end
+    for o in observers
+        if o._has_comps && (!_contains_all(old_mask, o._comps) || _contains_any(new_mask, o._comps))
+            continue
+        end
+        if o._has_with && !_contains_all(old_mask, o._with)
+            continue
+        end
+        if o._has_without && _contains_any(old_mask, o._without)
+            continue
+        end
+        entities = table.table.entities._data
+        for i in table.start_idx:table.end_idx
+            o._fn(entities[i])
+        end
+    end
+    return nothing
 end
 
 function _fire_set_relations(
