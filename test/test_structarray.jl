@@ -4,15 +4,15 @@
 
     @test isa(a.x, Vector{Float64})
     @test isa(a.y, Vector{Float64})
-    @test isa(a._components.x, Vector{Float64})
-    @test isa(a._components.y, Vector{Float64})
+    @test isa(getfield(a, :_components).x, Vector{Float64})
+    @test isa(getfield(a, :_components).y, Vector{Float64})
 
     push!(a, Position(1, 2))
 
     @test length(a) == 1
     @test size(a) == (1,)
-    @test length(a._components.x) == 1
-    @test length(a._components.y) == 1
+    @test length(getfield(a, :_components).x) == 1
+    @test length(getfield(a, :_components).y) == 1
     @test a[1] == Position(1, 2)
 
     a[1] = Position(3, 4)
@@ -77,7 +77,7 @@ end
 @testset "StructArray unwrap" begin
     a = _StructArray(Position)
 
-    x, y = a._components
+    x, y = getfield(a, :_components)
     @test isa(x, Vector{Float64})
     @test isa(y, Vector{Float64})
 end

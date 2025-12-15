@@ -75,15 +75,17 @@ end
     names = fieldnames(A.parameters[1])
     exprs_push_remove = Expr[]
     for name in names
-        push!(exprs_push_remove, :(@inbounds push!(new_vec._components.$name, old_vec._components.$name[row])))
-        push!(exprs_push_remove, :(_swap_remove!(old_vec._components.$name, row)))
+        push!(exprs_push_remove, :(@inbounds push!(new_vec_comp.$name, old_vec_comp.$name[row])))
+        push!(exprs_push_remove, :(_swap_remove!(old_vec_comp.$name, row)))
     end
     quote
         @inbounds old_vec = s.data[old_table]
         @inbounds new_vec = s.data[new_table]
+        old_vec_comp = getfield(old_vec, :_components)
+        new_vec_comp = getfield(new_vec, :_components)
         $(exprs_push_remove...)
-        new_vec._length += 1
-        old_vec._length -= 1
+        setfield!(new_vec, :_length, getfield(new_vec, :_length) + 1)
+        setfield!(old_vec, :_length, getfield(old_vec, :_length) - 1)
     end
 end
 
@@ -145,12 +147,12 @@ end
     names = fieldnames(A.parameters[1])
     exprs_remove = Expr[]
     for name in names
-        push!(exprs_remove, :(_swap_remove!(col._components.$name, row)))
+        push!(exprs_remove, :(_swap_remove!(getfield(col, :_components).$name, row)))
     end
     quote
         @inbounds col = s.data[arch]
         $(exprs_remove...)
-        col._length -= 1
+        setfield!(col, :_length, getfield(col, :_length) - 1)
     end
 end
 
