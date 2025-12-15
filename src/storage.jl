@@ -135,6 +135,22 @@ function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::U
     _swap_remove!(col, row)
 end
 
+@generated function _remove_component_data!(
+    s::_ComponentStorage{C,A},
+    arch::UInt32,
+    row::UInt32,
+) where {C,A<:_StructArray}
+    names = fieldnames(A.parameters[1])
+    exprs_remove = Expr[]
+    for name in names
+        push!(exprs_remove, :(_swap_remove!(col._components.$name, row)))
+    end
+    quote
+        @inbounds col = s.data[arch]
+        $(exprs_remove...)
+    end
+end
+
 struct _ComponentRelations
     archetypes::Vector{Int} # Relation index per archetype
     targets::Vector{Entity} # Target entity ID per table
