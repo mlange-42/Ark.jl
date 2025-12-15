@@ -289,3 +289,13 @@ macro unpack(expr)
     new_rhs = Expr(:tuple, rhs_exprs...)
     return Expr(:(=), esc(lhs), esc(new_rhs))
 end
+
+@generated function _push_no_unpack!(dest::_StructArray{C}, src::_StructArray{C}, idx::Int) where {C}
+    names = fieldnames(C)
+    push_exprs = [
+        :(push!(dest._components.$name, @inbounds src._components.$name[idx])) for name in names
+    ]
+    inc_length = :(dest._length += 1)
+    return Expr(:block, push_exprs..., inc_length, :(dest))
+end
+
