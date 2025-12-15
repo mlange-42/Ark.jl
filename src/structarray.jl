@@ -76,7 +76,7 @@ end
     push_exprs = [
         :(push!(getfield(sa, :_components).$name, c.$name)) for name in names
     ]
-    inc_length = :(setfield!(sa, :_length, getfield(sa, :_length)+1))
+    inc_length = :(setfield!(sa, :_length, getfield(sa, :_length) + 1))
     return Expr(:block, push_exprs..., inc_length, :(sa))
 end
 
@@ -85,7 +85,7 @@ end
     pop_exprs = [
         :(pop!(getfield(sa, :_components).$name)) for name in names
     ]
-    dec_length = :(setfield!(sa, :_length, getfield(sa, :_length)-1))
+    dec_length = :(setfield!(sa, :_length, getfield(sa, :_length) - 1))
     return Expr(:block, pop_exprs..., dec_length, :(sa))
 end
 
