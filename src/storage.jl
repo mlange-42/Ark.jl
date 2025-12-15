@@ -52,6 +52,7 @@ function _ensure_column_size!(storage::_ComponentStorage{C,A}, arch::UInt32, nee
     if length(col) < needed
         resize!(col, needed)
     end
+    return
 end
 
 function _move_component_data!(
