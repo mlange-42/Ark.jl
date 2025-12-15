@@ -1,7 +1,6 @@
 
-mutable struct _StructArray{C,CS<:NamedTuple,N} <: AbstractArray{C,1}
-    const _components::CS
-    _length::Int
+struct _StructArray{C,CS<:NamedTuple,N} <: AbstractArray{C,1}
+    _components::CS
 end
 
 function _StructArray(tp::Type{C}) where {C}
@@ -12,12 +11,13 @@ end
     names = fieldnames(C)
     types = fieldtypes(C)
     num_fields = length(types)
+    num_fields == 0 && error("StructArray storage not allowed for components without fields")
 
     nt_type = :(NamedTuple{($(map(QuoteNode, names)...),),Tuple{$(map(t -> :(Vector{$t}), types)...)}})
     kv_exprs = [:($name = Vector{$t}()) for (name, t) in zip(names, types)]
 
     return quote
-        _StructArray{C,$nt_type,$num_fields}((; $(kv_exprs...)), 0)
+        _StructArray{C,$nt_type,$num_fields}((; $(kv_exprs...)))
     end
 end
 
@@ -25,6 +25,7 @@ end
     names = fieldnames(C)
     types = fieldtypes(C)
     num_fields = length(types)
+    num_fields == 0 && error("StructArray storage not allowed for components without fields")
 
     nt_type = :(NamedTuple{($(map(QuoteNode, names)...),),Tuple{$(map(t -> :(Vector{$t}), types)...)}})
 
@@ -59,8 +60,7 @@ end
     resize_exprs = [
         :(resize!(getfield(sa, :_components).$name, n)) for name in names
     ]
-    inc_length = :(setfield!(sa, :_length, n))
-    return Expr(:block, resize_exprs..., inc_length, :(sa))
+    return Expr(:block, resize_exprs..., :(sa))
 end
 
 @generated function Base.sizehint!(sa::_StructArray{C}, n::Integer) where {C}
@@ -76,8 +76,7 @@ end
     push_exprs = [
         :(push!(getfield(sa, :_components).$name, c.$name)) for name in names
     ]
-    inc_length = :(setfield!(sa, :_length, getfield(sa, :_length) + 1))
-    return Expr(:block, push_exprs..., inc_length, :(sa))
+    return Expr(:block, push_exprs..., :(sa))
 end
 
 @generated function Base.pop!(sa::_StructArray{C}) where {C}
@@ -85,8 +84,7 @@ end
     pop_exprs = [
         :(pop!(getfield(sa, :_components).$name)) for name in names
     ]
-    dec_length = :(setfield!(sa, :_length, getfield(sa, :_length) - 1))
-    return Expr(:block, pop_exprs..., dec_length, :(sa))
+    return Expr(:block, pop_exprs..., :(sa))
 end
 
 @generated function Base.fill!(sa::_StructArray{C}, value::C) where {C}
@@ -134,18 +132,18 @@ Base.@propagate_inbounds @generated function Base.setindex!(sa::_StructArray{C},
 end
 
 Base.@propagate_inbounds function Base.iterate(sa::_StructArray{C}) where {C}
-    getfield(sa, :_length) == 0 && return nothing
+    length(sa) == 0 && return nothing
     return sa[1], 2
 end
 
 Base.@propagate_inbounds function Base.iterate(sa::_StructArray{C}, i::Int) where {C}
-    i > getfield(sa, :_length) && return nothing
+    i > length(sa) && return nothing
     return sa[i], i + 1
 end
 
-Base.length(sa::_StructArray) = getfield(sa, :_length)
-Base.size(sa::_StructArray) = (getfield(sa, :_length),)
-Base.eachindex(sa::_StructArray) = 1:getfield(sa, :_length)
+Base.length(sa::_StructArray) = length(first(getfield(sa, :_components)))
+Base.size(sa::_StructArray) = (length(sa),)
+Base.eachindex(sa::_StructArray) = 1:length(sa)
 Base.eltype(::Type{<:_StructArray{C}}) where {C} = C
 Base.IndexStyle(::Type{<:_StructArray}) = IndexLinear()
 
@@ -155,7 +153,7 @@ function Base.firstindex(sa::_StructArray)
     return 1
 end
 
-Base.lastindex(sa::_StructArray) = getfield(sa, :_length)
+Base.lastindex(sa::_StructArray) = length(sa)
 
 struct StructArrayView{C,CS<:NamedTuple,I} <: AbstractArray{C,1}
     _components::CS

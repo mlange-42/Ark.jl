@@ -67,11 +67,10 @@ end
 end
 
 @testset "StructArray no fields" begin
-    a = _StructArray(LabelComponent)
-
-    push!(a, LabelComponent())
-    @test length(a) == 1
-    a[1] = LabelComponent()
+    @test_throws(
+        "StructArray storage not allowed for components without fields",
+        _StructArray(LabelComponent)
+    )
 end
 
 @testset "StructArray unwrap" begin
