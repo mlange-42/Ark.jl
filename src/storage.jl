@@ -84,8 +84,6 @@ end
         old_vec_comp = getfield(old_vec, :_components)
         new_vec_comp = getfield(new_vec, :_components)
         $(exprs_push_remove...)
-        setfield!(new_vec, :_length, getfield(new_vec, :_length) + 1)
-        setfield!(old_vec, :_length, getfield(old_vec, :_length) - 1)
     end
 end
 
@@ -152,7 +150,6 @@ end
     quote
         @inbounds col = s.data[arch]
         $(exprs_remove...)
-        setfield!(col, :_length, getfield(col, :_length) - 1)
     end
 end
 
