@@ -73,15 +73,28 @@ end
     row::UInt32,
 ) where {C,A<:_StructArray}
     names = fieldnames(A.parameters[1])
-    exprs_push_remove = Expr[]
+    exprs_push = Expr[]
     for name in names
-        push!(exprs_push_remove, :(@inbounds push!(new_vec._components.$name, old_vec._components.$name[row])))
-        push!(exprs_push_remove, :(_swap_remove!(old_vec._components.$name, row)))
+        push!(exprs_push, :(@inbounds push!(new_vec._components.$name, old_vec._components.$name[row])))
+    end
+    exprs_remove = Expr[]
+    exprs_swapped = [:(@inbounds old_vec._components.$name[row] = old_vec._components.$name[last_index]) for name in names]
+    push!(exprs_remove, :(if swapped
+        $(exprs_swapped...)
+    end))
+    for name in names
+        push!(exprs_remove, :(pop!(old_vec._components.$name)))
     end
     quote
         @inbounds old_vec = s.data[old_table]
         @inbounds new_vec = s.data[new_table]
-        $(exprs_push_remove...)
+        $(exprs_push...)
+        new_vec._length += 1
+        last_index = length(old_vec)
+        swapped = row != last_index
+        $(exprs_remove...)
+        old_vec._length -= 1
+        nothing
     end
 end
 
