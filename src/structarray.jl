@@ -94,6 +94,15 @@ end
     return Expr(:block, pop_exprs..., dec_length, :(sa))
 end
 
+@generated function _pop_return_el!(sa::_StructArray{C}) where {C}
+    names = fieldnames(C)
+    pop_exprs = [
+        :($(name) = pop!(sa._components.$name)) for name in names
+    ]
+    dec_length = :(sa._length -= 1)
+    return Expr(:block, dec_length, Expr(:new, C, pop_exprs...))
+end
+
 @generated function Base.fill!(sa::_StructArray{C}, value::C) where {C}
     names = fieldnames(C)
     fill_exprs = [
@@ -289,13 +298,3 @@ macro unpack(expr)
     new_rhs = Expr(:tuple, rhs_exprs...)
     return Expr(:(=), esc(lhs), esc(new_rhs))
 end
-
-@generated function _push_no_unpack!(dest::_StructArray{C}, src::_StructArray{C}, idx::Int) where {C}
-    names = fieldnames(C)
-    push_exprs = [
-        :(push!(dest._components.$name, @inbounds src._components.$name[idx])) for name in names
-    ]
-    inc_length = :(dest._length += 1)
-    return Expr(:block, push_exprs..., inc_length, :(dest))
-end
-

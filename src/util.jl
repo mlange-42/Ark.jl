@@ -9,6 +9,17 @@ function _swap_remove!(v::AbstractArray, i::UInt32)::Bool
     return swapped
 end
 
+function _swap_remove_return_el!(v::AbstractArray, i::UInt32)
+    last_index = length(v)
+    swapped = i != last_index
+    if swapped
+        @inbounds v[i], v[last_index] = v[last_index], v[i]
+    end
+    return _pop_return_el!(v)
+end
+
+_pop_return_el!(v::AbstractArray) = pop!(v)
+
 @inline function _to_types(::Type{TS})::Vector{DataType} where {TS<:Tuple}
     return [x.parameters[1] for x in TS.parameters]
 end
