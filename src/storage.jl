@@ -82,6 +82,8 @@ end
         @inbounds old_vec = s.data[old_table]
         @inbounds new_vec = s.data[new_table]
         $(exprs_push_remove...)
+        new_vec._length += 1
+        old_vec._length -= 1
     end
 end
 
@@ -133,6 +135,23 @@ end
 function _remove_component_data!(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
     @inbounds col = s.data[arch]
     _swap_remove!(col, row)
+end
+
+@generated function _remove_component_data!(
+    s::_ComponentStorage{C,A},
+    arch::UInt32,
+    row::UInt32,
+) where {C,A<:_StructArray}
+    names = fieldnames(A.parameters[1])
+    exprs_remove = Expr[]
+    for name in names
+        push!(exprs_remove, :(_swap_remove!(col._components.$name, row)))
+    end
+    quote
+        @inbounds col = s.data[arch]
+        $(exprs_remove...)
+        col._length -= 1
+    end
 end
 
 struct _ComponentRelations
