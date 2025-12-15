@@ -82,6 +82,8 @@ end
         @inbounds old_vec = s.data[old_table]
         @inbounds new_vec = s.data[new_table]
         $(exprs_push_remove...)
+        new_vec._length += 1
+        old_vec._length -= 1
     end
 end
 
@@ -148,6 +150,7 @@ end
     quote
         @inbounds col = s.data[arch]
         $(exprs_remove...)
+        col._length -= 1
     end
 end
 
