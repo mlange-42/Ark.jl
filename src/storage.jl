@@ -60,12 +60,29 @@ function _move_component_data!(
     new_table::UInt32,
     row::UInt32,
 ) where {C,A<:AbstractArray}
-    # TODO: this can probably be optimized for StructArray storage
-    # by moving per component instead of unpacking/packing.
     @inbounds old_vec = s.data[old_table]
     @inbounds new_vec = s.data[new_table]
     @inbounds push!(new_vec, old_vec[row])
     _swap_remove!(old_vec, row)
+end
+
+@generated function _move_component_data!(
+    s::_ComponentStorage{C,A},
+    old_table::UInt32,
+    new_table::UInt32,
+    row::UInt32,
+) where {C,A<:_StructArray}
+    names = fieldnames(A.parameters[1])
+    exprs_push_remove = Expr[]
+    for name in names
+        push!(exprs_push_remove, :(@inbounds push!(new_vec._components.$name, old_vec._components.$name[row])))
+        push!(exprs_push_remove, :(_swap_remove!(old_vec._components.$name, row)))
+    end
+    quote
+        @inbounds old_vec = s.data[old_table]
+        @inbounds new_vec = s.data[new_table]
+        $(exprs_push_remove...)
+    end
 end
 
 @generated function _copy_component_data!(
