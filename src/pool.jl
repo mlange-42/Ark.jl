@@ -55,7 +55,6 @@ function _reset!(p::_EntityPool)
 end
 
 mutable struct _BitPool
-    const bits::
     const bits::MVector{64,Int}
     length::Int
     next::Int
