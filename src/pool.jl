@@ -55,14 +55,15 @@ function _reset!(p::_EntityPool)
 end
 
 mutable struct _BitPool
-    const bits::Vector{Int}
+    const bits::
+    const bits::MVector{64,Int}
     length::Int
     next::Int
     available::Int
 end
 
 function _BitPool()
-    return _BitPool(zeros(Int, 64), 0, 0, 0)
+    return _BitPool((@MVector zeros(Int, 64)), 0, 0, 0)
 end
 
 function _get_bit(p::_BitPool)::Int
