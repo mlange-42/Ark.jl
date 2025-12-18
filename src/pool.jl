@@ -71,7 +71,7 @@ function _get_bit(p::_BitPool)::Int
         )
     end
     b = trailing_zeros(~bits)
-    p.bits |= bits + 1
+    p.bits |= bits + UInt64(1)
     return b + 1
 end
 
