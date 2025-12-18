@@ -72,7 +72,7 @@ function _get_bit(p::_BitPool)::Int
         return _get_new_bit(p)
     end
     curr = p.next
-    p.next = p.bits[p.next]
+    p.next = p.bits[curr]
     p.bits[curr] = curr
 
     p.available -= 1
