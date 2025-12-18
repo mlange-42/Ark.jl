@@ -59,7 +59,8 @@ function _BitPool()
 end
 
 function _get_bit(p::_BitPool)::Int
-    if p.bits == typemax(UInt64)
+    bits = p.bits
+    if bits == typemax(UInt64)
         throw(
             InvalidStateException(
                 string("run out of the maximum of 64 bits. ",
@@ -69,8 +70,8 @@ function _get_bit(p::_BitPool)::Int
             ),
         )
     end
-    b = trailing_zeros(~p.bits)
-    p.bits |= UInt64(1) << b
+    b = trailing_zeros(~bits)
+    p.bits |= bits + 1
     return b + 1
 end
 
