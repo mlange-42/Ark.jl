@@ -55,32 +55,15 @@ function _reset!(p::_EntityPool)
 end
 
 mutable struct _BitPool
-    const bits::Memory{Int}
-    length::Int
-    next::Int
-    available::Int
+    bits::UInt64
 end
 
 function _BitPool()
-    bits = Memory{Int}(undef, 64)
-    bits[1:end] .= 0
-    return _BitPool(bits, 0, 0, 0)
+    return _BitPool(0)
 end
 
 function _get_bit(p::_BitPool)::Int
-    if p.available == 0
-        return _get_new_bit(p)
-    end
-    curr = p.next
-    p.next = p.bits[curr]
-    p.bits[curr] = curr
-
-    p.available -= 1
-    return curr
-end
-
-function _get_new_bit(p::_BitPool)::Int
-    if p.length >= 64
+    if p.bits == typemax(UInt64)
         throw(
             InvalidStateException(
                 string("run out of the maximum of 64 bits. ",
@@ -90,22 +73,16 @@ function _get_new_bit(p::_BitPool)::Int
             ),
         )
     end
-    b = p.length + 1
-    p.bits[p.length+1] = b
-    p.length += 1
-    return b
+    b = trailing_zeros(~p.bits)
+    p.bits |= UInt64(1) << b
+    return b + 1
 end
 
 function _recycle(p::_BitPool, b::Int)
-    temp = p.next
-    p.next = b
-    p.bits[b] = temp
-    p.available += 1
+    p.bits &= ~(UInt64(1) << (b - 1))
     return nothing
 end
 
 function _reset!(p::_BitPool)
-    p.next = 0
-    p.length = 0
-    p.available = 0
+    p.bits = 0
 end
