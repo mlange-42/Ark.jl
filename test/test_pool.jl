@@ -34,7 +34,7 @@ end
     @test count_ones(pool.bits) == 3
 
     # Fill up to 64 bits
-    for _ in 1:(64-pool.length)
+    for _ in 1:(64-count_ones(pool.bits))
         _get_bit(pool)
     end
     @test count_ones(pool.bits) == 64
