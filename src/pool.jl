@@ -18,8 +18,8 @@ function _get_entity(p::_EntityPool)::Entity
     end
     curr = p.next
     temp = p.entities[curr]
-    p.next = temp._id
 
+    p.next = temp._id
     entity = Entity(curr % UInt32, temp._gen)
     p.entities[curr] = entity
 
