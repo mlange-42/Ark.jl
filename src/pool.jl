@@ -48,7 +48,6 @@ end
 function _reset!(p::_EntityPool)
     resize!(p.entities, 1)
     p.next = 0
-    p.available = 0
 end
 
 mutable struct _BitPool
