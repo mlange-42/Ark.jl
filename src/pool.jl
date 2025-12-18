@@ -2,18 +2,17 @@
 mutable struct _EntityPool
     const entities::Vector{Entity}
     next::Int
-    available::Int
 end
 
 function _EntityPool(cap::UInt32)
     v = [_new_entity(UInt32(0), typemax(UInt32))]
     sizehint!(v, cap)
 
-    return _EntityPool(v, 0, 0)
+    return _EntityPool(v, 0)
 end
 
 function _get_entity(p::_EntityPool)::Entity
-    if p.available == 0
+    if p.next == 0
         return _get_new_entity(p)
     end
     curr = p.next
@@ -23,7 +22,6 @@ function _get_entity(p::_EntityPool)::Entity
     entity = Entity(curr % UInt32, temp._gen)
     p.entities[curr] = entity
 
-    p.available -= 1
     return entity
 end
 
@@ -40,7 +38,6 @@ function _recycle(p::_EntityPool, e::Entity)
     temp = p.next
     p.next = e._id
     p.entities[e._id] = _new_entity(temp % UInt32, e._gen + UInt32(1))
-    p.available += 1
     return nothing
 end
 
@@ -51,36 +48,19 @@ end
 function _reset!(p::_EntityPool)
     resize!(p.entities, 1)
     p.next = 0
-    p.available = 0
 end
 
 mutable struct _BitPool
-    const bits::Memory{Int}
-    length::Int
-    next::Int
-    available::Int
+    bits::UInt64
 end
 
 function _BitPool()
-    bits = Memory{Int}(undef, 64)
-    bits[1:end] .= 0
-    return _BitPool(bits, 0, 0, 0)
+    return _BitPool(0)
 end
 
 function _get_bit(p::_BitPool)::Int
-    if p.available == 0
-        return _get_new_bit(p)
-    end
-    curr = p.next
-    p.next = p.bits[curr]
-    p.bits[curr] = curr
-
-    p.available -= 1
-    return curr
-end
-
-function _get_new_bit(p::_BitPool)::Int
-    if p.length >= 64
+    bits = p.bits
+    if bits == typemax(UInt64)
         throw(
             InvalidStateException(
                 string("run out of the maximum of 64 bits. ",
@@ -90,22 +70,16 @@ function _get_new_bit(p::_BitPool)::Int
             ),
         )
     end
-    b = p.length + 1
-    p.bits[p.length+1] = b
-    p.length += 1
-    return b
+    b = trailing_zeros(~bits)
+    p.bits |= bits + UInt64(1)
+    return b + 1
 end
 
 function _recycle(p::_BitPool, b::Int)
-    temp = p.next
-    p.next = b
-    p.bits[b] = temp
-    p.available += 1
+    p.bits &= ~(UInt64(1) << (b - 1))
     return nothing
 end
 
 function _reset!(p::_BitPool)
-    p.next = 0
-    p.length = 0
-    p.available = 0
+    p.bits = 0
 end

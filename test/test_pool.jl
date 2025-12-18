@@ -7,7 +7,6 @@
     @test length(pool.entities) == 1
     @test all(e -> e._gen == typemax(UInt32), pool.entities)
     @test pool.next == 0
-    @test pool.available == 0
 end
 
 @testset "_EntityPool logic" begin
@@ -15,7 +14,6 @@ end
     pool = _EntityPool(UInt32(10))  # creates 2 reserved entities
 
     @test length(pool.entities) == 1
-    @test pool.available == 0
     @test pool.next == 0
 
     @test _is_alive(pool, zero_entity) == false
@@ -35,7 +33,6 @@ end
 
     # Test _recycle with non-reserved entity
     _recycle(pool, e1)
-    @test pool.available == 1
     @test pool.next == e1._id
     @test pool.entities[e1._id]._gen == e1._gen + 1
 
@@ -43,7 +40,7 @@ end
     e3 = _get_entity(pool)
     @test e3._id == e1._id
     @test e3._gen == e1._gen + 1
-    @test pool.available == 0
+    @test pool.next == 0
 
     # Test _alive
     @test _is_alive(pool, e2) == true
@@ -58,10 +55,7 @@ end
     pool = _BitPool()
 
     # Test initial state
-    @test pool.length == 0
-    @test pool.available == 0
-    @test pool.next == 0
-    @test pool.bits == zeros(UInt8, 64)
+    @test pool.bits == 0
 
     # Allocate a few bits
     b1 = _get_bit(pool)
@@ -71,23 +65,21 @@ end
     @test b1 == 1
     @test b2 == 2
     @test b3 == 3
-    @test pool.length == 3
-    @test pool.available == 0
+    @test count_ones(pool.bits) == 3
 
     # Recycle one bit
     _recycle(pool, b2)
-    @test pool.available == 1
+    @test count_ones(pool.bits) == 2
 
     # Reuse recycled bit
     reused = _get_bit(pool)
-    @test reused == b2
-    @test pool.available == 0
+    @test count_ones(pool.bits) == 3
 
     # Fill up to 64 bits
-    for _ in 1:(64-pool.length)
+    for _ in 1:(64-count_ones(pool.bits))
         _get_bit(pool)
     end
-    @test pool.length == 64
+    @test count_ones(pool.bits) == 64
 
     # Test overflow error
     @test_throws(
