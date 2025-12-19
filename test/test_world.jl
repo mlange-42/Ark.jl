@@ -998,6 +998,7 @@ end
     @test_throws("ArgumentError: can't check components of a dead entity",
         has_components(world, zero_entity, (Position, Velocity)))
 
+@testset "Issue #430" begin
     world = World(Position, Velocity)
 
     entity1 = new_entity!(world, (Position(1.0, 2.0), Velocity(3.0, 4.0)))
