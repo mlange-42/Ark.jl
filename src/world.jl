@@ -1333,10 +1333,11 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
     for comp in old_archetype.components
-        if !_get_bit(new_archetype.node.mask, comp)
-            continue
+        if _get_bit(new_archetype.node.mask, comp)
+            _move_component_data!(world, comp, index.table, table_index, index.row)
+        else
+            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
         end
-        _move_component_data!(world, comp, index.table, table_index, index.row)
     end
 
     # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype

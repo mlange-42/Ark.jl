@@ -999,6 +999,36 @@ end
         has_components(world, zero_entity, (Position, Velocity)))
 end
 
+@testset "Issue #430" begin
+    world = World(Position, Velocity)
+
+    entity1 = new_entity!(world, (Position(1.0, 2.0), Velocity(3.0, 4.0)))
+    entity2 = new_entity!(world, (Position(5.0, 6.0), Velocity(7.0, 8.0)))
+
+    @test get_components(world, entity1, (Position, Velocity)) == (Position(1.0, 2.0), Velocity(3.0, 4.0))
+    @test get_components(world, entity2, (Position, Velocity)) == (Position(5.0, 6.0), Velocity(7.0, 8.0))
+
+    remove_components!(world, entity1, (Position,))
+
+    @test get_components(world, entity1, (Velocity,)) == (Velocity(3.0, 4.0),)
+    @test get_components(world, entity2, (Position, Velocity)) == (Position(5.0, 6.0), Velocity(7.0, 8.0))
+
+    remove_components!(world, entity1, (Velocity,))
+
+    @test get_components(world, entity1, ()) == ()
+    @test get_components(world, entity2, (Position, Velocity)) == (Position(5.0, 6.0), Velocity(7.0, 8.0))
+
+    remove_components!(world, entity2, (Position,))
+
+    @test get_components(world, entity1, ()) == ()
+    @test get_components(world, entity2, (Velocity,)) == (Velocity(7.0, 8.0),)
+
+    remove_components!(world, entity2, (Velocity,))
+
+    @test get_components(world, entity1, ()) == ()
+    @test get_components(world, entity2, ()) == ()
+end
+
 @testset "World add/remove components with relations" begin
     world = World(
         Dummy,
