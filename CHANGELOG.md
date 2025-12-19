@@ -25,6 +25,10 @@
 
 - Adds a chapter on Ark's architecture to the user manual (#391, #394)
 
+### Bugfixes
+
+- Fixes missing swaps in archetypes when removing components (#432, fixes #430)
+
 ## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
 
 ### Breaking changes
