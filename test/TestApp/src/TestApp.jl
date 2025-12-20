@@ -1,7 +1,15 @@
 module TestApp
 
+using Ark
+
+include("components.jl")
+include("query.jl")
+
 function julia_main()::Cint
-    return 0 # if things finished successfully
+    println("test_query")
+    test_query()
+
+    return 0
 end
 
 end
