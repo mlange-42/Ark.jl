@@ -1,0 +1,39 @@
+name: Tests (compile)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests (compile)
+    runs-on: ubuntu-latest
+    permissions: # required for caching
+      actions: write
+      contents: read
+    steps:
+    - name: Cancel ongoing test runs for previous commits
+      uses: styfle/cancel-workflow-action@0.12.1
+      with:
+        access_token: ${{ github.token }}
+    - name: Checkout code
+      uses: actions/checkout@v6
+    - name: Set up Julia
+      uses: ./.github/actions/setup-julia
+      with:
+        julia-version: 1
+        project-file: './test/TestApp/Project.toml'
+    - name: Instantiate project
+      run: |
+        cd test/TestApp
+        julia --color=yes --project=. -e 'using Pkg; Pkg.develop(path="../.."); Pkg.instantiate()'
+    - name: Build app
+      run: |
+        cd test
+        julia --color=yes -e 'using Pkg; Pkg.add("PackageCompiler"); using PackageCompiler; create_app("TestApp", "TestAppCompiled", filter_stdlibs=true)'
+    - name: Run app
+      run: |
+        cd test/TestAppCompiled/bin
+        ./TestApp
