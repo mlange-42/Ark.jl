@@ -32,7 +32,7 @@ jobs:
     - name: Build app
       run: |
         cd test
-        julia --color=yes -e 'using Pkg; Pkg.add("PackageCompiler"); using PackageCompiler; create_app("TestApp", "TestAppCompiled", filter_stdlibs=true)'
+        julia --color=yes --threads=auto -e 'using Pkg; Pkg.add("PackageCompiler"); using PackageCompiler; create_app("TestApp", "TestAppCompiled", filter_stdlibs=true)'
     - name: Run app
       run: |
         cd test/TestAppCompiled/bin
