@@ -55,7 +55,7 @@ set_relations!
 
 ## [Storages](@id storage-api)
 
-[Storages](@ref) defines the modes and data structures for the containers of
+[Storages](@ref) define the modes and data structures for the containers of
 [Components](@ref). The default ones are [VectorStorage](@ref) and [StructArrayStorage](@ref),
 but new modes can be defined implementing the [Storage Interface](@ref new-component-storages).
 

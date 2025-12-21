@@ -185,4 +185,8 @@ world = World(
     Position => WrappedStorage,
     Velocity => StructArrayStorage,
 )
+
+# output
+
+World(entities=0, comp_types=(Position, Velocity))
 ```
