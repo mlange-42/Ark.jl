@@ -17,10 +17,15 @@ struct ChildOf <: Relationship end
 """
 abstract type Relationship end
 
+"""
+    AbstractStorage
+
+Abstract Type all storage modes must be subtype of.
+"""
 abstract type AbstractStorage end
 
 """
-    StructArrayStorage
+    StructArrayStorage <: AbstractStorage
 
 Marks component types for using StructArray-like [storage mode](@ref component-storages) in the world constructor.
 
@@ -44,7 +49,7 @@ World(entities=0, comp_types=(Position, Velocity))
 struct StructArrayStorage <: AbstractStorage end
 
 """
-    VectorStorage
+    VectorStorage <: AbstractStorage
 
 Marks component types for using Vector [storage mode](@ref component-storages) in the world constructor.
 As this is the default storage mode if the storage type is not specified.

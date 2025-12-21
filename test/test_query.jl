@@ -420,7 +420,7 @@ end
 
     @inferred Tuple{
         Entities,
-        FieldViews.FieldViewable{Position,1,<:AbstractVector{Position}},
+        FieldViews.FieldViewable{Position,1,storage_type(DefaultStorage, Position)},
         Ark.StructArrayView{
             Velocity,
             @NamedTuple{
@@ -429,10 +429,10 @@ end
             },
             UnitRange{Int64},
         },
-        SubArray{Int64,1,<:AbstractVector{Int64},Tuple{Base.Slice{Base.OneTo{Int64}}},true},
-        Union{Nothing,FieldViews.FieldViewable{NoIsBits,1,<:AbstractVector{NoIsBits}}},
-        Union{Nothing,FieldViews.FieldViewable{Altitude,1,<:AbstractVector{Altitude}}},
-        Union{Nothing,SubArray{Float64,1,<:AbstractVector{Float64},Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
+        SubArray{Int64,1,storage_type(DefaultStorage, Int64),Tuple{Base.Slice{Base.OneTo{Int64}}},true},
+        Union{Nothing,FieldViews.FieldViewable{NoIsBits,1,storage_type(DefaultStorage, NoIsBits)}},
+        Union{Nothing,FieldViews.FieldViewable{Altitude,1,storage_type(DefaultStorage, Altitude)}},
+        Union{Nothing,SubArray{Float64,1,storage_type(DefaultStorage, Float64),Tuple{Base.Slice{Base.OneTo{Int64}}},true}},
     } Base.eltype(typeof(query))
 
     expected_type = Base.eltype(typeof(query))

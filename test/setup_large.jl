@@ -21,13 +21,8 @@ Base.setindex!(w::WrappedVector, v, i::Integer) = setindex!(w.v, v, i)
 Base.resize!(w::WrappedVector, i::Integer) = resize!(w.v, i)
 Base.sizehint!(w::WrappedVector, i::Integer) = sizehint!(w.v, i)
 Base.pop!(w::WrappedVector) = pop!(w.v)
-Base.IndexStyle(::Type{<:WrappedVector}) = IndexLinear()
 
 struct WrappedStorage <: AbstractStorage end
-
-function Ark.new_storage(::Type{WrappedStorage}, ::Type{C}) where {C}
-    WrappedVector{C}(Vector{C}())
-end
 
 function Ark.storage_type(::Type{WrappedStorage}, ::Type{C}) where {C}
     WrappedVector{C}
@@ -39,3 +34,4 @@ const fake_storage = [WrappedStorage for i in 1:300]
 const N_fake = 300
 const offset_ID = 255
 const M_mask = 5
+const DefaultStorage = WrappedStorage

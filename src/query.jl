@@ -333,10 +333,11 @@ Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
     for i in 1:N
         T = comp_types[i]
 
+        ST = :(storage_type($(storage_modes[i]), $T))
         base_view = if fieldcount(comp_types[i]) == 0
-            :(SubArray{$T,1,storage_type($(storage_modes[i]), $T),Tuple{Base.Slice{Base.OneTo{Int}}},true})
+            :(SubArray{$T,1,$ST,Tuple{Base.Slice{Base.OneTo{Int}}},IndexStyle($ST)==IndexLinear()})
         elseif storage_modes[i] != StructArrayStorage
-            :(_FieldsViewable_type(storage_type($(storage_modes[i]), $T)))
+            :(_FieldsViewable_type($ST))
         else
             :(_StructArrayView_type($T, UnitRange{Int}))
         end
@@ -345,7 +346,9 @@ Base.IteratorSize(::Type{<:Query}) = Base.SizeUnknown()
         push!(result_types, opt_flag ? :(Union{Nothing,$base_view}) : :($base_view))
     end
 
-    return quote Tuple{$(result_types...)} end
+    return quote
+        Tuple{$(result_types...)}
+    end
 end
 
 function Base.show(io::IO, query::Query{W,CT,SM,EX}) where {W<:World,CT<:Tuple,SM<:Tuple,EX<:Val}

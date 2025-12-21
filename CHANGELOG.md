@@ -15,6 +15,7 @@
 - Adds batch entity removal (#396, #402)
 - Adds batch-setting entity relation targets (#406)
 - Adds batched versions of adding, removing and exchanging components (#408)
+- Adds support for user-defined storage types (#437)
 - Makes Ark compatible with Mooncake (#405)
 
 ### Performance

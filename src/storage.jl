@@ -3,13 +3,23 @@ struct _ComponentStorage{C,A<:AbstractArray{C,1}}
     data::Vector{A}
 end
 
-function new_storage(::Type{VectorStorage}, ::Type{C}) where {C}
-    Vector{C}()
+"""
+    new_storage(ModeType, ComponentType)
+
+Returns a new empty instance of the storage type.
+"""
+function new_storage(::Type{S}, ::Type{C}) where {S<:AbstractStorage,C}
+    storage_type(S, C)()
 end
 function new_storage(::Type{StructArrayStorage}, ::Type{C}) where {C}
     _StructArray(C)
 end
 
+"""
+    storage_type(ModeType, ComponentType)
+
+Returns the storage type of the input mode.
+"""
 function storage_type(::Type{VectorStorage}, ::Type{C}) where {C}
     Vector{C}
 end
