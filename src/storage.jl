@@ -3,12 +3,18 @@ struct _ComponentStorage{C,A<:AbstractArray{C,1}}
     data::Vector{A}
 end
 
-function _new_vector_storage(::Type{C}) where {C}
-    _ComponentStorage{C,Vector{C}}([Vector{C}()])
+function new_storage(::Type{VectorStorage}, ::Type{C}) where {C}
+    Vector{C}()
+end
+function new_storage(::Type{StructArrayStorage}, ::Type{C}) where {C}
+    _StructArray(C)
 end
 
-function _new_struct_array_storage(::Type{C}) where {C}
-    _ComponentStorage{C,_StructArray_type(C)}([_StructArray(C)])
+function storage_type(::Type{VectorStorage}, ::Type{C}) where {C}
+    Vector{C}
+end
+function storage_type(::Type{StructArrayStorage}, ::Type{C}) where {C}
+    _StructArray_type(C)
 end
 
 function _get_component(s::_ComponentStorage{C,A}, arch::UInt32, row::UInt32) where {C,A<:AbstractArray}
@@ -34,7 +40,7 @@ end
         end
     else
         return quote
-            push!(storage.data, Vector{C}())
+            push!(storage.data, A())
         end
     end
 end

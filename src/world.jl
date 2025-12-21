@@ -700,10 +700,10 @@ end
                 ArgumentError("can't use $(nameof(T)) as component as it is not a concrete type"),
             )
         end
-        if !(mode <: StructArrayStorage || mode <: VectorStorage)
+        if !(mode <: AbstractStorage)
             throw(
                 ArgumentError(
-                    "$(nameof(mode)) is not a valid storage mode, must be StructArrayStorage or VectorStorage",
+                    "$(nameof(mode)) is not a valid storage mode, must be a subtype of AbstractStorage",
                 ),
             )
         end
@@ -738,13 +738,8 @@ end
     for i in 1:length(types)
         T = types[i]
         mode = storage_val_types[i]
-        if mode <: StructArrayStorage
-            storage_types[i] = :(_ComponentStorage{$T,_StructArray_type($T)})
-            storage_exprs[i] = :(_new_struct_array_storage($T))
-        else
-            storage_types[i] = :(_ComponentStorage{$T,Vector{$T}})
-            storage_exprs[i] = :(_new_vector_storage($T))
-        end
+        storage_types[i] = :(_ComponentStorage{$T, storage_type($mode, $T)})
+        storage_exprs[i] = :(_ComponentStorage{$T, storage_type($mode, $T)}([new_storage($mode, $T)]))
     end
 
     # Final type and value tuples

@@ -17,6 +17,8 @@ struct ChildOf <: Relationship end
 """
 abstract type Relationship end
 
+abstract type AbstractStorage end
+
 """
     StructArrayStorage
 
@@ -39,7 +41,7 @@ world = World(
 World(entities=0, comp_types=(Position, Velocity))
 ```
 """
-abstract type StructArrayStorage end
+struct StructArrayStorage <: AbstractStorage end
 
 """
     VectorStorage
@@ -62,4 +64,4 @@ world = World(
 World(entities=0, comp_types=(Position, Velocity))
 ```
 """
-abstract type VectorStorage end
+struct VectorStorage <: AbstractStorage end

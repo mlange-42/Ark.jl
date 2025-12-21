@@ -57,6 +57,7 @@ export OnAddRelations, OnRemoveRelations
 export Observer, observe!, emit_event!
 export unpack, @unpack
 
-export StructArrayStorage, VectorStorage, Relationship
+export AbstractStorage, StructArrayStorage, VectorStorage, Relationship
+export new_storage, storage_type
 
 end
