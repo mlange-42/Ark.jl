@@ -45,7 +45,7 @@ function benchmark_iterate_structarray(args, n::Int)
     return sum
 end
 
-SUITE["benchmark_iterate_structarray n=1000"] =
+SUITE["benchmark_iterateStructArray n=1000"] =
     @be setup_iterate_structarray(1000) benchmark_iterate_structarray(_, 1000) seconds = SECONDS
 
 function setup_iterate_structarray_view(n::Int)

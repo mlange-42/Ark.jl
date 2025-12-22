@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- Storage modes wrap the storage types instead of using unrelated types (#437)
 - Batch entity creation uses a callback/`do`-block instead of an iterator (#400)
 
 ### Features

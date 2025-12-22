@@ -103,27 +103,27 @@ See chapter [Batch operations](@ref) for details.
 
 Components are stored in [archetypes](@ref Architecture),
 with the values for each component type stored in a separate array-like column.
-For these columns, Ark offers two storage modes by default:
+For these columns, Ark offers two storage types by default:
 
 - **Vector storage** stores component objects in a simple vector per column. This is the default.
 
 - **StructArray storage** stores components in an SoA data structure similar to  
   [StructArrays](https://github.com/JuliaArrays/StructArrays.jl).  
   This allows access to field vectors in [queries](@ref Queries), enabling SIMD-accelerated,  
-  vectorized operations and increased cache-friendliness if not all of the component's fields are used.  
+  vectorized operations and increased cache-friendliness if not all of the component's fields are used.
   StructArray storage has some limitations:  
   - Not allowed for mutable components.
   - Not allowed for components without fields, like labels and primitives.
   - ≈10-20% runtime overhead for component operations and entity creation.
   - Slower component access with [get_components](@ref) and [set_components!](@ref).
 
-The storage mode can be selected per component type by using [StructArrayStorage](@ref) or [VectorStorage](@ref) during world construction.
+The storage mode can be selected per component type by using `Storage{StructArray}` or `Storage{Vector}` during world construction.
 
 
 ```jldoctest; output = false
 world = World(
-    Position => VectorStorage,
-    Velocity => StructArrayStorage,
+    Position => Storage{Vector},
+    Velocity => Storage{StructArray},
 )
 
 # output
@@ -131,12 +131,12 @@ world = World(
 World(entities=0, comp_types=(Position, Velocity))
 ```
 
-The default is `VectorStorage` if no storage mode is specified:
+The default is `Storage{Vector}` if no storage mode is specified:
 
 ```jldoctest; output = false
 world = World(
     Position,
-    Velocity => StructArrayStorage,
+    Velocity => Storage{StructArray},
 )
 
 # output
@@ -146,27 +146,13 @@ World(entities=0, comp_types=(Position, Velocity))
 
 ## [User-defined component storages](@id new-component-storages)
 
-New storage modes can be created by the user. To do so a new mode
-which is a subtype of [AbstractStorage](@ref) must be defined. The required methods are:
-
-| Required method         | Brief description                                                                        |
-|:----------------------- |:---------------------------------------------------------------------------------------- |
-| [`Ark.storage_type(ModeType, ComponentType)`](@ref) | Returns the storage type of the input mode |
-
-The optional methods are:
-
-| Method                                  | When should this method be defined?                                         | Default definition | Brief description |
-|:--- |:--- |:--- |:--- |
-| [`Ark.new_storage(ModeType, ComponentType)`](@ref)   | If default is not appropriate                                               | `storage_type(ModeType, ComponentType)()` | Returns a new empty instance of the storage type |
-
-
-The new storage must be a one-indexed subtype of `AbstractVector` and must implement its required interface as long as some optional methods. A complete example of a custom type is this one:
+New storage modes can be created by the user. The new storage must be a one-indexed subtype of `AbstractVector` and must implement its required interface as long as some optional methods. A complete example of a custom type is this one:
 
 ```jldoctest; output = false
-struct WrappedVector{T} <: AbstractVector{T}
-    v::Vector{T}
+struct WrappedVector{C} <: AbstractVector{C}
+    v::Vector{C}
 end
-WrappedVector{T}() where T = WrappedVector{T}(Vector{T}())
+WrappedVector{C}() where C = WrappedVector{C}(Vector{C}())
 
 Base.size(w::WrappedVector) = size(w.v)
 Base.getindex(w::WrappedVector, i::Integer) = getindex(w.v, i)
@@ -175,18 +161,14 @@ Base.resize!(w::WrappedVector, i::Integer) = resize!(w.v, i)
 Base.sizehint!(w::WrappedVector, i::Integer) = sizehint!(w.v, i)
 Base.pop!(w::WrappedVector) = pop!(w.v)
 
-struct WrappedStorage <: AbstractStorage end
-
-function Ark.storage_type(::Type{WrappedStorage}, ::Type{C}) where {C}
-    WrappedVector{C}
-end
-
 world = World(
-    Position => WrappedStorage,
-    Velocity => StructArrayStorage,
+    Position => Storage{WrappedVector},
+    Velocity => Storage{StructArray},
 )
 
 # output
 
 World(entities=0, comp_types=(Position, Velocity))
 ```
+
+All the methods in the example need to be defined, as long as the empty constructor.

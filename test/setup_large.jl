@@ -1,7 +1,7 @@
 
 function Ark.World(comp_types::Union{Type,Pair{<:Type,<:Type}}...; initial_capacity::Int=128, allow_mutable=false)
     types = map(arg -> arg isa Type ? arg : arg.first, comp_types)
-    storages = map(arg -> arg isa Type ? WrappedStorage : arg.second, comp_types)
+    storages = map(arg -> arg isa Type ? Storage{WrappedVector} : arg.second, comp_types)
     Ark._World_from_types(
         Val{Tuple{fake_types[1:255]...,types...,fake_types[256:300]...}}(),
         Val{Tuple{fake_storage[1:255]...,storages...,fake_storage[256:300]...}}(),
@@ -22,16 +22,10 @@ Base.resize!(w::WrappedVector, i::Integer) = resize!(w.v, i)
 Base.sizehint!(w::WrappedVector, i::Integer) = sizehint!(w.v, i)
 Base.pop!(w::WrappedVector) = pop!(w.v)
 
-struct WrappedStorage <: AbstractStorage end
-
-function Ark.storage_type(::Type{WrappedStorage}, ::Type{C}) where {C}
-    WrappedVector{C}
-end
-
 struct FakeComp{N} end
 const fake_types = [FakeComp{i} for i in 1:300]
-const fake_storage = [WrappedStorage for i in 1:300]
+const fake_storage = [Storage{WrappedVector} for i in 1:300]
 const N_fake = 300
 const offset_ID = 255
 const M_mask = 5
-const DefaultStorage = WrappedStorage
+const DefaultStorage = Storage{WrappedVector}
