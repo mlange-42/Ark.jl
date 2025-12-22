@@ -1,6 +1,6 @@
 # Changelog
 
-## [[unpublished]](https://github.com/mlange-42/Ark.jl/compare/v0.2.0...main)
+## [[unpublished]](https://github.com/ark-ecs/Ark.jl/compare/v0.2.0...main)
 
 ### Breaking changes
 
@@ -29,7 +29,7 @@
 
 - Fixes missing swaps in archetypes when removing components (#432, fixes #430)
 
-## [[v0.2.0]](https://github.com/mlange-42/Ark.jl/compare/v0.1.1...v0.2.0)
+## [[v0.2.0]](https://github.com/ark-ecs/Ark.jl/compare/v0.1.1...v0.2.0)
 
 ### Breaking changes
 
@@ -69,12 +69,12 @@
 - Checks for duplicate components on query construction (#255)
 - Improves string representations of all exposed types (#275)
 
-## [[v0.1.1]](https://github.com/mlange-42/Ark.jl/compare/v0.1.0...v0.1.1)
+## [[v0.1.1]](https://github.com/ark-ecs/Ark.jl/compare/v0.1.0...v0.1.1)
 
 ### Bugfixes
 
 - Fix broken archetype pre-selection in queries (#301)
 
-## [[v0.1.0]](https://github.com/mlange-42/Ark.jl/tree/v0.1.0)
+## [[v0.1.0]](https://github.com/ark-ecs/Ark.jl/tree/v0.1.0)
 
 Initial release of Ark.jl.
