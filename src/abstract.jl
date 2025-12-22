@@ -21,7 +21,7 @@ abstract type Relationship end
     Storage{T}
 
 Marks component types for using `T` as a [storage](@ref component-storages) in the
-world costructor. The default storages supported by `Ark` are `Vector` and `StructArray`.
+world constructor. The default storages supported by `Ark` are `Vector` and `StructArray`.
 
 If, during world construction, the storage mode is not specified, it defaults to `Storage{Vector}`.
 

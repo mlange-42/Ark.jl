@@ -146,7 +146,7 @@ World(entities=0, comp_types=(Position, Velocity))
 
 ## [User-defined component storages](@id new-component-storages)
 
-New storage modes can be created by the user. The new storage must be a one-indexed subtype of `AbstractVector` and must implement its required interface as long as some optional methods. A complete example of a custom type is this one:
+New storage modes can be created by the user. The new storage must be a one-indexed subtype of `AbstractVector` and must implement its required interface along with some optional methods. A complete example of a custom type is this one:
 
 ```jldoctest; output = false
 struct WrappedVector{C} <: AbstractVector{C}
