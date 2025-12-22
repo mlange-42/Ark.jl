@@ -171,4 +171,4 @@ world = World(
 World(entities=0, comp_types=(Position, Velocity))
 ```
 
-All the methods in the example need to be defined, as long as the empty constructor.
+All the methods in the example need to be defined, along with the empty constructor.
