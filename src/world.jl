@@ -1247,7 +1247,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table]))
-        push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
+        push!(exprs, :(push!($col_sym, $val_expr)))
     end
 
     push!(exprs, Expr(:return, Expr(:tuple, :entity, :table)))
@@ -1270,10 +1270,6 @@ end
         archetype = world._archetypes[table.archetype]
 
         index = _add_entity!(table, entity)
-
-        for comp in archetype.components
-            _ensure_column_size_for_comp!(world, comp, table_index, index)
-        end
 
         if entity._id > length(world._entities)
             push!(world._entities, _EntityIndex(table_index, UInt32(index)))
@@ -1484,7 +1480,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
-        push!(exprs, :(@inbounds $col_sym[new_row] = $val_expr))
+        push!(exprs, :(@inbounds push!($col_sym, $val_expr)))
     end
 
     push!(exprs, :(
