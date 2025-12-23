@@ -1247,7 +1247,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[table]))
-        push!(exprs, :(@inbounds $col_sym[index] = $val_expr))
+        push!(exprs, :(push!($col_sym, $val_expr)))
     end
 
     push!(exprs, Expr(:return, Expr(:tuple, :entity, :table)))
@@ -1270,10 +1270,6 @@ end
         archetype = world._archetypes[table.archetype]
 
         index = _add_entity!(table, entity)
-
-        for comp in archetype.components
-            _ensure_column_size_for_comp!(world, comp, table_index, index)
-        end
 
         if entity._id > length(world._entities)
             push!(world._entities, _EntityIndex(table_index, UInt32(index)))
@@ -1340,11 +1336,6 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
         end
     end
 
-    # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
-    for comp in new_archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, new_row)
-    end
-
     if swapped
         swap_entity = old_table.entities[index.row]
         world._entities[swap_entity._id] = index
@@ -1400,7 +1391,7 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     archetype = world._archetypes[table.archetype]
 
     for comp in archetype.components
-        _copy_component_data!(world, comp, index.table, index.table, index.row, UInt32(new_row), mode)
+        _copy_component_data!(world, comp, index.table, index.table, index.row, mode)
     end
 
     world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
@@ -1476,7 +1467,7 @@ end
                 if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
-                _copy_component_data!(world, comp, index.table, new_table_index, index.row, UInt32(new_row), mode)
+                _copy_component_data!(world, comp, index.table, new_table_index, index.row, mode)
             end
         ),
     )
@@ -1489,7 +1480,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
-        push!(exprs, :(@inbounds $col_sym[new_row] = $val_expr))
+        push!(exprs, :(@inbounds push!($col_sym, $val_expr)))
     end
 
     push!(exprs, :(
@@ -1683,7 +1674,7 @@ end
     end
 
     resize!(new_relations, 0)
-    _ = _move_entity!(world, entity, new_table.id)
+    _move_entity!(world, entity, new_table.id)
 
     if _has_observers(world._event_manager, OnAddRelations)
         _fire_set_relations(
@@ -1788,7 +1779,6 @@ end
     end
 
     push!(exprs, :(row = _move_entity!(world, entity, new_table_index)))
-
     for i in 1:length(add_types)
         T = add_types[i]
         stor_sym = Symbol("stor", i)
@@ -1797,7 +1787,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
-        push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
+        push!(exprs, :(push!($col_sym, $val_expr)))
     end
 
     if !isempty(add_types)
@@ -1961,7 +1951,6 @@ end
     old_table::UInt32,
     new_table::UInt32,
     old_row::UInt32,
-    new_row::UInt32,
     mode::CP,
 ) where {CS<:Tuple,CP<:Val}
     if !(CP in [Val{:ref}, Val{:copy}, Val{:deepcopy}])
@@ -1969,7 +1958,7 @@ end
         throw(ArgumentError(":$mode is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
     _generate_component_switch(CS, :comp,
-        i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, new_row, mode)))
+        i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, mode)))
 end
 
 @generated function _copy_component_data_to_end!(

@@ -121,7 +121,7 @@ end
     table1 = _find_or_create_table!(
         world,
         world._tables[1],
-        (1,),
+        (offset_ID + 1,),
         (),
         (),
         (),
@@ -137,7 +137,7 @@ end
     table2 = _find_or_create_table!(
         world,
         world._tables[1],
-        (1, 2),
+        (offset_ID + 1, offset_ID + 2),
         (),
         (),
         (),
@@ -153,7 +153,7 @@ end
     table3 = _find_or_create_table!(
         world,
         world._tables[1],
-        (1,),
+        (offset_ID + 1,),
         (),
         (),
         (),
@@ -166,7 +166,11 @@ end
     @test length(world._tables) == 3
 
     entity, _ = _create_entity!(world, table1[1])
+    push!(_get_storage(world, Position).data[table1[1]], Position(0, 0))
+    push!(_get_storage(world, Velocity).data[table1[1]], Velocity(0, 0))
     _move_entity!(world, entity, table2[1])
+    push!(_get_storage(world, Position).data[table2[1]], Position(0, 0))
+    push!(_get_storage(world, Velocity).data[table2[1]], Velocity(0, 0))
     remove_entity!(world, entity)
 end
 
@@ -320,12 +324,16 @@ end
     @test table_index == (2, false)
 
     entity, index = _create_entity!(world, table_index[1])
+    push!(_get_storage(world, Position).data[table_index[1]], Position(0, 0))
+    push!(_get_storage(world, Velocity).data[table_index[1]], Velocity(0, 0))
     @test entity == _new_entity(2, 0)
     @test index == 1
     @test world._entities == [_EntityIndex(typemax(UInt32), 0), _EntityIndex(table_index[1], UInt32(1))]
 
     remove_entity!(world, entity)
     entity, index = _create_entity!(world, table_index[1])
+    push!(_get_storage(world, Position).data[table_index[1]], Position(0, 0))
+    push!(_get_storage(world, Velocity).data[table_index[1]], Velocity(0, 0))
     @test entity == _new_entity(2, 1)
 
     pos_storage = _get_storage(world, Position)
