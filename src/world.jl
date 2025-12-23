@@ -1340,11 +1340,6 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
         end
     end
 
-    # Ensure columns in the new archetype have capacity to hold new_row for components of new_archetype
-    for comp in new_archetype.components
-        _ensure_column_size_for_comp!(world, comp, table_index, new_row)
-    end
-
     if swapped
         swap_entity = old_table.entities[index.row]
         world._entities[swap_entity._id] = index
@@ -1683,7 +1678,7 @@ end
     end
 
     resize!(new_relations, 0)
-    _ = _move_entity!(world, entity, new_table.id)
+    _move_entity!(world, entity, new_table.id)
 
     if _has_observers(world._event_manager, OnAddRelations)
         _fire_set_relations(
@@ -1788,7 +1783,6 @@ end
     end
 
     push!(exprs, :(row = _move_entity!(world, entity, new_table_index)))
-
     for i in 1:length(add_types)
         T = add_types[i]
         stor_sym = Symbol("stor", i)
@@ -1797,7 +1791,7 @@ end
 
         push!(exprs, :($stor_sym = _get_storage(world, $T)))
         push!(exprs, :(@inbounds $col_sym = $stor_sym.data[new_table_index]))
-        push!(exprs, :(@inbounds $col_sym[row] = $val_expr))
+        push!(exprs, :(push!($col_sym, $val_expr)))
     end
 
     if !isempty(add_types)
