@@ -1391,7 +1391,7 @@ function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
     archetype = world._archetypes[table.archetype]
 
     for comp in archetype.components
-        _copy_component_data!(world, comp, index.table, index.table, index.row, UInt32(new_row), mode)
+        _copy_component_data!(world, comp, index.table, index.table, index.row, mode)
     end
 
     world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
@@ -1467,7 +1467,7 @@ end
                 if !_get_bit(new_archetype.mask, comp)
                     continue
                 end
-                _copy_component_data!(world, comp, index.table, new_table_index, index.row, UInt32(new_row), mode)
+                _copy_component_data!(world, comp, index.table, new_table_index, index.row, mode)
             end
         ),
     )
@@ -1951,7 +1951,6 @@ end
     old_table::UInt32,
     new_table::UInt32,
     old_row::UInt32,
-    new_row::UInt32,
     mode::CP,
 ) where {CS<:Tuple,CP<:Val}
     if !(CP in [Val{:ref}, Val{:copy}, Val{:deepcopy}])
@@ -1959,7 +1958,7 @@ end
         throw(ArgumentError(":$mode is not a valid copy mode, must be :ref, :copy or :deepcopy"))
     end
     _generate_component_switch(CS, :comp,
-        i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, new_row, mode)))
+        i -> :(_copy_component_data!(world._storages.$i, old_table, new_table, old_row, mode)))
 end
 
 @generated function _copy_component_data_to_end!(

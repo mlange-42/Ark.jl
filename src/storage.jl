@@ -93,7 +93,6 @@ end
     old_table::UInt32,
     new_table::UInt32,
     old_row::UInt32,
-    new_row::UInt32,
     ::CP,
 ) where {C,A<:AbstractArray,CP<:Val}
     # TODO: this can probably be optimized for StructArray storage
