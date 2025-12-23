@@ -167,6 +167,8 @@ end
 
     entity, _ = _create_entity!(world, table1[1])
     _move_entity!(world, entity, table2[1])
+    push!(_get_storage(world, Position).data[table2[1]], Position(0, 0))
+    push!(_get_storage(world, Velocity).data[table2[1]], Velocity(0, 0))
     remove_entity!(world, entity)
 end
 
