@@ -1330,9 +1330,9 @@ end
     # Move component data only for components present in old_archetype that are also present in new_archetype
     for comp in old_archetype.components
         if _get_bit(new_archetype.node.mask, comp)
-            @noinline _move_component_data!(world, comp, index.table, table_index, index.row)
+            @inline _move_component_data!(world, comp, index.table, table_index, index.row)
         else
-            @noinline _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
+            @inline _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
         end
     end
 
