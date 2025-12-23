@@ -121,7 +121,7 @@ end
     table1 = _find_or_create_table!(
         world,
         world._tables[1],
-        (1,),
+        (offset_ID + 1,),
         (),
         (),
         (),
@@ -137,7 +137,7 @@ end
     table2 = _find_or_create_table!(
         world,
         world._tables[1],
-        (1, 2),
+        (offset_ID + 1, offset_ID + 2),
         (),
         (),
         (),
@@ -153,7 +153,7 @@ end
     table3 = _find_or_create_table!(
         world,
         world._tables[1],
-        (1,),
+        (offset_ID + 1,),
         (),
         (),
         (),
