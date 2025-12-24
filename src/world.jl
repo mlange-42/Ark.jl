@@ -1329,11 +1329,8 @@ function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
 
     # Move component data only for components present in old_archetype that are also present in new_archetype
     for comp in old_archetype.components
-        if _get_bit(new_archetype.node.mask, comp)
-            _move_component_data!(world, comp, index.table, table_index, index.row)
-        else
-            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
-        end
+        tomove = _get_bit(new_archetype.node.mask, comp)
+        _move_or_swap_remove_in_column_for_comp!(world, comp, index.table, table_index, index.row, tomove)
     end
 
     if swapped
@@ -1934,17 +1931,6 @@ end
         i -> :(_ensure_column_size!(world._storages.$i, arch, needed)))
 end
 
-@generated function _move_component_data!(
-    world::World{CS},
-    comp::Int,
-    old_table::UInt32,
-    new_table::UInt32,
-    row::UInt32,
-) where CS
-    _generate_component_switch(CS, :comp,
-        i -> :(_move_component_data!(world._storages.$i, old_table, new_table, row)))
-end
-
 @generated function _copy_component_data!(
     world::World{CS},
     comp::Int,
@@ -1988,6 +1974,24 @@ end
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
         i -> :(_remove_component_data!(world._storages.$i, table, row)))
+end
+
+@generated function _move_or_swap_remove_in_column_for_comp!(
+    world::World{CS},
+    comp::Int,
+    old_table::UInt32,
+    new_table::UInt32,
+    row::UInt32,
+    tomove::Bool,
+) where {CS<:Tuple}
+    _generate_component_switch(CS, :comp,
+        i -> :(
+            if tomove
+                _move_component_data!(world._storages.$i, old_table, new_table, row)
+            else
+                _remove_component_data!(world._storages.$i, old_table, row)
+            end
+        ))
 end
 
 function _check_locked(world::World)
