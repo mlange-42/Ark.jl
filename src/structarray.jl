@@ -141,6 +141,7 @@ Base.@propagate_inbounds function Base.iterate(sa::_StructArray{C}, i::Int) wher
     return sa[i], i + 1
 end
 
+Base.empty!(sa::_StructArray) = resize!(sa, 0)
 Base.length(sa::_StructArray) = length(first(getfield(sa, :_components)))
 Base.size(sa::_StructArray) = (length(sa),)
 Base.eachindex(sa::_StructArray) = 1:length(sa)

@@ -666,7 +666,7 @@ function reset!(world::W) where {W<:World}
     _reset!(world._cache)
 
     for table in world._tables
-        resize!(table, 0)
+        empty!(table)
         _clear!(table.filters)
         archetype = world._archetypes[table.archetype]
         for comp in archetype.components
@@ -933,7 +933,7 @@ function _find_or_create_table!(
 
     if found
         if requires_free
-            resize!(all_relations, 0)
+            empty!(all_relations)
         end
         return new_table.id, relation_removed
     end
@@ -949,7 +949,7 @@ function _find_or_create_table!(
         new_table_id = _create_table!(world, new_arch, copy(all_relations))
     end
     if requires_free
-        resize!(all_relations, 0)
+        empty!(all_relations)
     end
 
     return new_table_id, relation_removed
@@ -1182,13 +1182,13 @@ function _cleanup_archetypes(world::World, entity::Entity)
                     new_table_id = _create_table!(world, archetype, copy(new_relations))
                     new_table = world._tables[new_table_id]
                 end
-                resize!(new_relations, 0)
+                empty!(new_relations)
 
                 _move_entities!(world, table.id, new_table.id)
             end
             _free_table!(archetype, table)
             _remove_table!(world._cache, table)
-            resize!(relations, 0)
+            empty!(relations)
         end
         _remove_target!(archetype, entity)
     end
@@ -1394,7 +1394,7 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
         _clear_component_data!(world, comp, old_table_index)
     end
 
-    resize!(old_table, 0)
+    empty!(old_table)
     return nothing
 end
 
@@ -1673,7 +1673,7 @@ end
     archetype = world._archetypes[old_table.archetype]
     new_relations, changed, mask = _get_exchange_targets(world, old_table, relations, targets)
     if !changed
-        resize!(new_relations, 0)
+        empty!(new_relations)
         return nothing
     end
 
@@ -1696,7 +1696,7 @@ end
         _unlock(world._lock, l)
     end
 
-    resize!(new_relations, 0)
+    empty!(new_relations)
     _move_entity!(world, entity, new_table.id)
 
     if _has_observers(world._event_manager, OnAddRelations)
