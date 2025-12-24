@@ -44,7 +44,7 @@ function _activate_column!(storage::_ComponentStorage{C,A}, arch::Int, cap::Int)
 end
 
 function _clear_column!(storage::_ComponentStorage{C,A}, arch::UInt32) where {C,A<:AbstractArray}
-    resize!(storage.data[arch], 0)
+    empty!(storage.data[arch])
 end
 
 function _ensure_column_size!(storage::_ComponentStorage{C,A}, arch::UInt32, needed::Int) where {C,A<:AbstractArray}
