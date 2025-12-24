@@ -266,6 +266,7 @@ remove_entity!(world, entity)
 """
 @generated function remove_entity!(world::W, entity::Entity) where {W<:World}
     CS = W.parameters[1]
+    inline_jtable = length(CS.parameters) <= 10
     world_has_rel = _has_relations(CS)
     quote
         if !is_alive(world, entity)
@@ -294,7 +295,11 @@ remove_entity!(world, entity)
 
         # Only operate on storages for components present in this archetype
         for comp in archetype.components
-            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
+            $(
+                inline_jtable ?
+                :(@inline _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)) :
+                :(_swap_remove_in_column_for_comp!(world, comp, index.table, index.row))
+            )
         end
 
         if swapped
@@ -1315,31 +1320,38 @@ end
     end
 end
 
-function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
-    _check_locked(world)
+@generated function _move_entity!(world::W, entity::Entity, table_index::UInt32)::Int where {W<:World}
+    inline_jtable = length(W.parameters[1].parameters) <= 10
+    quote
+        _check_locked(world)
 
-    index = world._entities[entity._id]
-    old_table = world._tables[index.table]
-    new_table = world._tables[table_index]
-    old_archetype = world._archetypes[old_table.archetype]
-    new_archetype = world._archetypes[new_table.archetype]
+        index = world._entities[entity._id]
+        old_table = world._tables[index.table]
+        new_table = world._tables[table_index]
+        old_archetype = world._archetypes[old_table.archetype]
+        new_archetype = world._archetypes[new_table.archetype]
 
-    new_row = _add_entity!(new_table, entity)
-    swapped = _swap_remove!(old_table.entities._data, index.row)
+        new_row = _add_entity!(new_table, entity)
+        swapped = _swap_remove!(old_table.entities._data, index.row)
 
-    # Move component data only for components present in old_archetype that are also present in new_archetype
-    for comp in old_archetype.components
-        tomove = _get_bit(new_archetype.node.mask, comp)
-        _move_or_swap_remove_in_column_for_comp!(world, comp, index.table, table_index, index.row, tomove)
+        # Move component data only for components present in old_archetype that are also present in new_archetype
+        for comp in old_archetype.components
+            tomove = _get_bit(new_archetype.node.mask, comp)
+            $(
+                inline_jtable ?
+                :(@inline _move_or_swap_remove_in_column_for_comp!(world, comp, index.table, table_index, index.row, tomove)) :
+                :(_move_or_swap_remove_in_column_for_comp!(world, comp, index.table, table_index, index.row, tomove))
+            )
+        end
+
+        if swapped
+            swap_entity = old_table.entities[index.row]
+            world._entities[swap_entity._id] = index
+        end
+
+        world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
+        return new_row
     end
-
-    if swapped
-        swap_entity = old_table.entities[index.row]
-        world._entities[swap_entity._id] = index
-    end
-
-    world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
-    return new_row
 end
 
 function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32)
@@ -1379,27 +1391,34 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
     return nothing
 end
 
-function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
-    _check_locked(world)
+@generated function _copy_entity!(world::W, entity::Entity, mode::Val)::Entity where {W<:World}
+    inline_jtable = length(W.parameters[1].parameters) <= 10
+    quote
+        _check_locked(world)
 
-    index = world._entities[entity._id]
-    new_entity, new_row = _create_entity!(world, index.table)
-    table = world._tables[index.table]
-    archetype = world._archetypes[table.archetype]
+        index = world._entities[entity._id]
+        new_entity, new_row = _create_entity!(world, index.table)
+        table = world._tables[index.table]
+        archetype = world._archetypes[table.archetype]
 
-    for comp in archetype.components
-        _copy_component_data!(world, comp, index.table, index.table, index.row, mode)
+        for comp in archetype.components
+            $(
+                inline_jtable ?
+                :(@inline _copy_component_data!(world, comp, index.table, index.table, index.row, mode)) :
+                :(_copy_component_data!(world, comp, index.table, index.table, index.row, mode))
+            )
+        end
+
+        world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
+
+        if _has_observers(world._event_manager, OnCreateEntity)
+            _fire_create_entity(world._event_manager, new_entity, archetype.node.mask)
+        end
+        if _has_relations(archetype) && _has_observers(world._event_manager, OnAddRelations)
+            _fire_create_entity_relations(world._event_manager, new_entity, archetype.node.mask)
+        end
+        return new_entity
     end
-
-    world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
-
-    if _has_observers(world._event_manager, OnCreateEntity)
-        _fire_create_entity(world._event_manager, new_entity, archetype.node.mask)
-    end
-    if _has_relations(archetype) && _has_observers(world._event_manager, OnAddRelations)
-        _fire_create_entity_relations(world._event_manager, new_entity, archetype.node.mask)
-    end
-    return new_entity
 end
 
 @generated function _copy_entity!(
