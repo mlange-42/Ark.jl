@@ -266,7 +266,7 @@ remove_entity!(world, entity)
 """
 @generated function remove_entity!(world::W, entity::Entity) where {W<:World}
     CS = W.parameters[1]
-    inline_jtable = length(CS.parameters[1].parameters) <= 10
+    inline_jtable = length(CS.parameters) <= 10
     world_has_rel = _has_relations(CS)
     quote
         if !is_alive(world, entity)
@@ -1321,7 +1321,7 @@ end
 end
 
 @generated function _move_entity!(world::W, entity::Entity, table_index::UInt32)::Int where {W<:World}
-    inline_jtable = length(W.parameters[1].parameters[1].parameters) <= 10
+    inline_jtable = length(W.parameters[1].parameters) <= 10
     quote
         _check_locked(world)
 
@@ -1399,7 +1399,7 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
 end
 
 @generated function _copy_entity!(world::W, entity::Entity, mode::Val)::Entity where {W<:World}
-    inline_jtable = length(W.parameters[1].parameters[1].parameters) <= 10
+    inline_jtable = length(W.parameters[1].parameters) <= 10
     quote
         _check_locked(world)
 
