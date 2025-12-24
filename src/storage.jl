@@ -67,6 +67,21 @@ function _move_component_data!(
     _swap_remove!(old_vec, row)
 end
 
+function _move_or_swap_remove_in_column!(
+    s::_ComponentStorage{C,A},
+    old_table::UInt32,
+    new_table::UInt32,
+    row::UInt32,
+    tomove::Bool,
+) where {C,A<:AbstractArray}
+    @inbounds old_vec = s.data[old_table]
+    if tomove
+        @inbounds new_vec = s.data[new_table]
+        @inbounds push!(new_vec, old_vec[row])
+    end
+    _swap_remove!(old_vec, row)
+end
+
 @generated function _move_component_data!(
     s::_ComponentStorage{C,A},
     old_table::UInt32,
