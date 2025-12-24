@@ -1406,7 +1406,7 @@ end
         archetype = world._archetypes[table.archetype]
 
         for comp in archetype.components
-            ($inline_jtable ?
+            $(inline_jtable ?
                 :(@inline _copy_component_data!(world, comp, index.table, index.table, index.row, mode)) :
                 :(_copy_component_data!(world, comp, index.table, index.table, index.row, mode))
             )
