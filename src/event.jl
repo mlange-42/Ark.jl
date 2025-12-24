@@ -141,8 +141,8 @@ function _EventManager{W,M}() where {W<:_AbstractWorld,M}
     len = typemax(UInt8)
     _EventManager{W,M}(
         [Vector{Observer{W,M}}() for _ in 1:len],
-        Memory([(_Mask{M}(), false) for _ in 1:len]),
-        Memory([(_Mask{M}(), false) for _ in 1:len]),
+        Memory{Tuple{_Mask{M},Bool}}([(_Mask{M}(), false) for _ in 1:len]),
+        Memory{Tuple{_Mask{M},Bool}}([(_Mask{M}(), false) for _ in 1:len]),
         0, 0,
     )
 end
