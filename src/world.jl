@@ -2005,11 +2005,7 @@ end
 ) where {CS<:Tuple}
     _generate_component_switch(CS, :comp,
         i -> :(
-            if tomove
-                _move_component_data!(world._storages.$i, old_table, new_table, row)
-            else
-                _remove_component_data!(world._storages.$i, old_table, row)
-            end
+            _move_or_swap_remove_in_column!(world._storages.$i, old_table, new_table, row, tomove)
         ))
 end
 
