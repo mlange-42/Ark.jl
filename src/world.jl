@@ -266,6 +266,7 @@ remove_entity!(world, entity)
 """
 @generated function remove_entity!(world::W, entity::Entity) where {W<:World}
     CS = W.parameters[1]
+    inline_jtable = length(CS.parameters[1].parameters) <= 10
     world_has_rel = _has_relations(CS)
     quote
         if !is_alive(world, entity)
@@ -294,7 +295,10 @@ remove_entity!(world, entity)
 
         # Only operate on storages for components present in this archetype
         for comp in archetype.components
-            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
+            $(inline_jtable ?
+                :(@inline _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)) :
+                :(_swap_remove_in_column_for_comp!(world, comp, index.table, index.row))
+            )
         end
 
         if swapped
@@ -1315,34 +1319,43 @@ end
     end
 end
 
-function _move_entity!(world::World, entity::Entity, table_index::UInt32)::Int
-    _check_locked(world)
+@generated function _move_entity!(world::W, entity::Entity, table_index::UInt32)::Int where {W<:World}
+    inline_jtable = length(W.parameters[1].parameters[1].parameters) <= 10
+    quote
+        _check_locked(world)
 
-    index = world._entities[entity._id]
-    old_table = world._tables[index.table]
-    new_table = world._tables[table_index]
-    old_archetype = world._archetypes[old_table.archetype]
-    new_archetype = world._archetypes[new_table.archetype]
+        index = world._entities[entity._id]
+        old_table = world._tables[index.table]
+        new_table = world._tables[table_index]
+        old_archetype = world._archetypes[old_table.archetype]
+        new_archetype = world._archetypes[new_table.archetype]
 
-    new_row = _add_entity!(new_table, entity)
-    swapped = _swap_remove!(old_table.entities._data, index.row)
+        new_row = _add_entity!(new_table, entity)
+        swapped = _swap_remove!(old_table.entities._data, index.row)
 
-    # Move component data only for components present in old_archetype that are also present in new_archetype
-    for comp in old_archetype.components
-        if _get_bit(new_archetype.node.mask, comp)
-            _move_component_data!(world, comp, index.table, table_index, index.row)
-        else
-            _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)
+        # Move component data only for components present in old_archetype that are also present in new_archetype
+        for comp in old_archetype.components
+            if _get_bit(new_archetype.node.mask, comp)
+                $(inline_jtable ? 
+                    :(@inline _move_component_data!(world, comp, index.table, table_index, index.row)) :
+                    :(_move_component_data!(world, comp, index.table, table_index, index.row))
+                )
+            else
+                $(inline_jtable ? 
+                    :(@inline _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)) :
+                    :(_swap_remove_in_column_for_comp!(world, comp, index.table, index.row))
+                )
+            end
         end
-    end
 
-    if swapped
-        swap_entity = old_table.entities[index.row]
-        world._entities[swap_entity._id] = index
-    end
+        if swapped
+            swap_entity = old_table.entities[index.row]
+            world._entities[swap_entity._id] = index
+        end
 
-    world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
-    return new_row
+        world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
+        return new_row
+    end 
 end
 
 function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32)
