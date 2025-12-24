@@ -1395,27 +1395,33 @@ function _move_entities!(world::World, old_table_index::UInt32, table_index::UIn
     return nothing
 end
 
-function _copy_entity!(world::World, entity::Entity, mode::Val)::Entity
-    _check_locked(world)
+@generated function _copy_entity!(world::W, entity::Entity, mode::Val)::Entity where {W<:World}
+    inline_jtable = length(W.parameters[1].parameters[1].parameters) <= 10
+    quote
+        _check_locked(world)
 
-    index = world._entities[entity._id]
-    new_entity, new_row = _create_entity!(world, index.table)
-    table = world._tables[index.table]
-    archetype = world._archetypes[table.archetype]
+        index = world._entities[entity._id]
+        new_entity, new_row = _create_entity!(world, index.table)
+        table = world._tables[index.table]
+        archetype = world._archetypes[table.archetype]
 
-    for comp in archetype.components
-        _copy_component_data!(world, comp, index.table, index.table, index.row, mode)
+        for comp in archetype.components
+            ($inline_jtable ?
+                :(@inline _copy_component_data!(world, comp, index.table, index.table, index.row, mode)) :
+                :(_copy_component_data!(world, comp, index.table, index.table, index.row, mode))
+            )
+        end
+
+        world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
+
+        if _has_observers(world._event_manager, OnCreateEntity)
+            _fire_create_entity(world._event_manager, new_entity, archetype.node.mask)
+        end
+        if _has_relations(archetype) && _has_observers(world._event_manager, OnAddRelations)
+            _fire_create_entity_relations(world._event_manager, new_entity, archetype.node.mask)
+        end
+        return new_entity
     end
-
-    world._entities[new_entity._id] = _EntityIndex(index.table, UInt32(new_row))
-
-    if _has_observers(world._event_manager, OnCreateEntity)
-        _fire_create_entity(world._event_manager, new_entity, archetype.node.mask)
-    end
-    if _has_relations(archetype) && _has_observers(world._event_manager, OnAddRelations)
-        _fire_create_entity_relations(world._event_manager, new_entity, archetype.node.mask)
-    end
-    return new_entity
 end
 
 @generated function _copy_entity!(
