@@ -11,7 +11,7 @@ end
 @testset "World creation 2" begin
     world = World(
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
         Altitude,
         ChildOf,
     )
@@ -24,12 +24,12 @@ end
         "ArgumentError: Component type Health not found in the World",
         _component_id(params, Health))
 
-    @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
-    @test isa(_get_storage(world, Position).data[1], Vector{Position})
+    @test isa(_get_storage(world, Position), _ComponentStorage{Position,_storage_type(DefaultStorage, Position)})
+    @test isa(_get_storage(world, Position).data[1], _storage_type(DefaultStorage, Position))
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
-    @test isa(_get_storage(world, Velocity).data[1], _StructArray{Velocity})
-    @test isa(_get_storage(world, Altitude), _ComponentStorage{Altitude,Vector{Altitude}})
-    @test isa(_get_storage(world, Altitude).data[1], Vector{Altitude})
+    @test isa(_get_storage(world, Velocity).data[1], _StructArray_type(Velocity))
+    @test isa(_get_storage(world, Altitude), _ComponentStorage{Altitude,_storage_type(DefaultStorage, Altitude)})
+    @test isa(_get_storage(world, Altitude).data[1], _storage_type(DefaultStorage, Altitude))
 
     @test length(_get_relations_storage(world, Position).archetypes) == 0
     @test length(_get_relations_storage(world, Position).targets) == 0
@@ -60,10 +60,10 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
     )
 
-    @test isa(_get_storage(world, Position), _ComponentStorage{Position,Vector{Position}})
+    @test isa(_get_storage(world, Position), _ComponentStorage{Position,_storage_type(DefaultStorage, Position)})
     @test isa(_get_storage(world, Velocity), _ComponentStorage{Velocity,_StructArray_type(Velocity)})
 end
 
@@ -73,7 +73,7 @@ end
         # TODO: type instability here. Add benchmarks for world creation.
         @test_opt World(
             Position,
-            Velocity => StructArrayStorage,
+            Velocity => Storage{StructArray},
         )
     end
 end
@@ -85,20 +85,20 @@ end
         World(Position, Velocity, Velocity))
 
     @test_throws(
-        "ArgumentError: can't use VectorStorage as component as it is not a concrete type",
-        World(Position, Velocity, VectorStorage))
+        "ArgumentError: can't use Relationship as component as it is not a concrete type",
+        World(Position, Velocity, Relationship))
 
     @test_throws(
-        "ArgumentError: Health is not a valid storage mode, must be StructArrayStorage or VectorStorage",
+        "ArgumentError: Health is not a valid storage mode, must be Storage{T<:AbstractVector}",
         World(Position, Velocity, Altitude => Health))
 
     @test_throws(
-        "ArgumentError: can't use StructArrayStorage for Int64 because it has no fields",
-        World(Int64 => StructArrayStorage))
+        "ArgumentError: can't use Storage{StructArray} for Int64 because it has no fields",
+        World(Int64 => Storage{StructArray}))
 
     @test_throws(
-        "ArgumentError: can't use StructArrayStorage for LabelComponent because it has no fields",
-        World(LabelComponent => StructArrayStorage))
+        "ArgumentError: can't use Storage{StructArray} for LabelComponent because it has no fields",
+        World(LabelComponent => Storage{StructArray}))
 end
 
 @testset "World creation large" begin
@@ -183,7 +183,7 @@ end
     @test isa(id_int, Int)
     @test world._registry.types[id_int] == Int
     @test length(world._storages) == N_fake + 2
-    @test world._storages[id_int] isa _ComponentStorage{Int,Vector{Int}}
+    @test world._storages[id_int] isa _ComponentStorage{Int,_storage_type(DefaultStorage,Int)}
     @test length(world._storages[id_int].data) == 1
 
     # Register Position component
@@ -191,7 +191,7 @@ end
     @test isa(id_pos, Int)
     @test world._registry.types[id_pos] == Position
     @test length(world._storages) == N_fake + 2
-    @test world._storages[id_pos] isa _ComponentStorage{Position,Vector{Position}}
+    @test world._storages[id_pos] isa _ComponentStorage{Position,_storage_type(DefaultStorage,Position)}
     @test length(world._storages[id_pos].data) == 1
 
     # Re-register Int component (should not add new storage)
@@ -208,7 +208,7 @@ end
     _ = World(Position, MutableComponent; allow_mutable=true)
 
     @test_throws("ArgumentError: Component type MutableComponent must be immutable because it uses StructArray storage",
-        World(Position, MutableComponent => StructArrayStorage))
+        World(Position, MutableComponent => Storage{StructArray}))
 end
 
 @testset "_get_storage Tests" begin
@@ -216,11 +216,11 @@ end
     params = typeof(world).parameters[1]
 
     storage1 = _get_storage(world, Int)
-    @test storage1 isa _ComponentStorage{Int,Vector{Int}}
+    @test storage1 isa _ComponentStorage{Int,_storage_type(DefaultStorage, Int)}
 
     id = _component_id(params, Int)
     storage2 = _get_storage(world, Int)
-    @test storage2 isa _ComponentStorage{Int,Vector{Int}}
+    @test storage2 isa _ComponentStorage{Int,_storage_type(DefaultStorage, Int)}
 
     @test storage1 === storage2
 
@@ -298,8 +298,8 @@ end
     pos_storage = _get_storage(world, Position)
     vel_storage = _get_storage(world, Velocity)
 
-    @test isa(pos_storage, _ComponentStorage{Position,Vector{Position}})
-    @test isa(vel_storage, _ComponentStorage{Velocity,Vector{Velocity}})
+    @test isa(pos_storage, _ComponentStorage{Position,_storage_type(DefaultStorage, Position)})
+    @test isa(vel_storage, _ComponentStorage{Velocity,_storage_type(DefaultStorage, Velocity)})
     @test length(pos_storage.data) == 3
     @test length(vel_storage.data) == 3
 end
@@ -347,7 +347,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
     )
 
     e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
@@ -378,7 +378,7 @@ end
     @testset "World get/set components JET" begin
         world = World(
             Position,
-            Velocity => StructArrayStorage,
+            Velocity => Storage{StructArray},
         )
         e1 = new_entity!(world, (Position(1, 2), Velocity(3, 4)))
 
@@ -391,7 +391,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
     )
 
     entity = new_entity!(world, ())
@@ -421,7 +421,7 @@ end
     @testset "World new_entity! JET" begin
         world = World(
             Position,
-            Velocity => StructArrayStorage,
+            Velocity => Storage{StructArray},
         )
 
         using FunctionWrappers
@@ -441,7 +441,7 @@ end
         Dummy,
         Position,
         ChildOf,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
     )
 
     parent1 = new_entity!(world, ())
@@ -672,7 +672,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
         ChildOf,
     )
 
@@ -714,7 +714,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
         Altitude,
         ChildOf,
     )
@@ -750,7 +750,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
         NoIsBits,
         MutableComponent,
         MutableNoIsBits;
@@ -803,7 +803,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
         Altitude,
     )
 
@@ -850,7 +850,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
         Altitude,
     )
 
@@ -870,7 +870,7 @@ end
         @test length(pos_col) == 100
         @test length(vel_col) == 100
         @test pos_col isa FieldViewable
-        @test vel_col isa StructArrayView
+        @test vel_col isa _StructArrayView
         for i in eachindex(ent)
             @test is_alive(world, ent[i]) == true
             @test pos_col[i] == Position(99, 99)
@@ -948,7 +948,7 @@ end
     @testset "World new_entities! JET" begin
         world = World(
             Position,
-            Velocity => StructArrayStorage,
+            Velocity => Storage{StructArray},
         )
         using FunctionWrappers
         excluded = Set([
@@ -967,7 +967,7 @@ end
     world = World(
         Dummy,
         Position,
-        Velocity => StructArrayStorage,
+        Velocity => Storage{StructArray},
         Altitude,
         Health,
     )
@@ -1088,7 +1088,7 @@ end
 @testset "World add/remove components batch" begin
     world = World(
         Dummy,
-        Position => StructArrayStorage,
+        Position => Storage{StructArray},
         Velocity,
         Altitude,
         Health,
@@ -1134,7 +1134,7 @@ end
         world = World(
             Dummy,
             Position,
-            Velocity => StructArrayStorage,
+            Velocity => Storage{StructArray},
         )
         using FunctionWrappers
         excluded = Set([
@@ -1189,10 +1189,10 @@ end
 @testset "World exchange components batch" begin
     world = World(
         Dummy,
-        Position => StructArrayStorage,
+        Position => Storage{StructArray},
         Velocity,
         Altitude,
-        Health => StructArrayStorage,
+        Health => Storage{StructArray},
     )
 
     new_entities!(world, 10, (Position(1, 1), Altitude(100)))
