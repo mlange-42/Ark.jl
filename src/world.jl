@@ -295,7 +295,8 @@ remove_entity!(world, entity)
 
         # Only operate on storages for components present in this archetype
         for comp in archetype.components
-            $(inline_jtable ?
+            $(
+                inline_jtable ?
                 :(@inline _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)) :
                 :(_swap_remove_in_column_for_comp!(world, comp, index.table, index.row))
             )
@@ -1336,12 +1337,14 @@ end
         # Move component data only for components present in old_archetype that are also present in new_archetype
         for comp in old_archetype.components
             if _get_bit(new_archetype.node.mask, comp)
-                $(inline_jtable ? 
+                $(
+                    inline_jtable ?
                     :(@inline _move_component_data!(world, comp, index.table, table_index, index.row)) :
                     :(_move_component_data!(world, comp, index.table, table_index, index.row))
                 )
             else
-                $(inline_jtable ? 
+                $(
+                    inline_jtable ?
                     :(@inline _swap_remove_in_column_for_comp!(world, comp, index.table, index.row)) :
                     :(_swap_remove_in_column_for_comp!(world, comp, index.table, index.row))
                 )
@@ -1355,7 +1358,7 @@ end
 
         world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
         return new_row
-    end 
+    end
 end
 
 function _move_entities!(world::World, old_table_index::UInt32, table_index::UInt32)
@@ -1406,7 +1409,8 @@ end
         archetype = world._archetypes[table.archetype]
 
         for comp in archetype.components
-            $(inline_jtable ?
+            $(
+                inline_jtable ?
                 :(@inline _copy_component_data!(world, comp, index.table, index.table, index.row, mode)) :
                 :(_copy_component_data!(world, comp, index.table, index.table, index.row, mode))
             )
