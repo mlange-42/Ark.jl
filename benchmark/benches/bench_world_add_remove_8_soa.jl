@@ -41,6 +41,8 @@ function benchmark_world_add_remove_8_soa(args, n)
             (CompN{1}(0, 0), CompN{2}(0, 0), CompN{3}(0, 0), CompN{4}(0, 0),
                 CompN{5}(0, 0), CompN{6}(0, 0), CompN{7}(0, 0), CompN{8}(0, 0)),
         )
+    end
+    for e in entities
         remove_components!(
             world,
             e,
