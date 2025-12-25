@@ -15,14 +15,13 @@ end
 mutable struct _Graph{M}
     const mask::_MutableMask{M}
     const nodes::_Linear_Map{_Mask{M},_GraphNode{M}}
-    last_mask::_Mask{M}
     last_node::_GraphNode{M}
 end
 
 function _Graph{M}() where M
     m = _Mask{M}()
     node = _GraphNode(m, UInt32(1))
-    g = _Graph{M}(_MutableMask{M}(), _Linear_Map{_Mask{M},_GraphNode{M}}(), m, node)
+    g = _Graph{M}(_MutableMask{M}(), _Linear_Map{_Mask{M},_GraphNode{M}}(), node)
     get!(() -> node, g.nodes, m)
     return g
 end
@@ -45,11 +44,10 @@ end
 @inline function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_UseMap)
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    if new_mask.bits == g.last_mask.bits
+    if new_mask.bits == g.last_node.mask.bits
         return g.last_node
     end
     node = get(() -> _find_or_create_path(g, start, add, remove), g.nodes, new_mask)
-    g.last_mask = new_mask
     g.last_node = node
     return node
 end
@@ -57,11 +55,10 @@ end
 @inline function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_NoUseMap)
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    if new_mask.bits == g.last_mask.bits
+    if new_mask.bits == g.last_node.mask.bits
         return g.last_node
     end
     node = _find_or_create_path(g, start, add, remove)
-    g.last_mask = new_mask
     g.last_node = node
     return node
 end
