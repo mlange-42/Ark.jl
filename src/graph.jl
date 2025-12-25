@@ -12,16 +12,16 @@ function _GraphNode(mask::_Mask{M}, archetype::UInt32) where M
     _GraphNode{M}(mask, _VecMap{_GraphNode{M},M}(), Base.RefValue{UInt32}(archetype))
 end
 
-struct _Graph{M}
-    mask::_MutableMask{M}
-    nodes::_Linear_Map{_Mask{M},_GraphNode{M}}
-    last_node::Base.RefValue{Tuple{_Mask{M},_GraphNode{M}}}
+mutable struct _Graph{M}
+    const mask::_MutableMask{M}
+    const nodes::_Linear_Map{_Mask{M},_GraphNode{M}}
+    last_node::Tuple{_Mask{M},_GraphNode{M}}
 end
 
 function _Graph{M}() where M
     m = _Mask{M}()
     node = _GraphNode(m, UInt32(1))
-    g = _Graph{M}(_MutableMask{M}(), _Linear_Map{_Mask{M},_GraphNode{M}}(), Ref((m, node)))
+    g = _Graph{M}(_MutableMask{M}(), _Linear_Map{_Mask{M},_GraphNode{M}}(), (m, node))
     get!(() -> node, g.nodes, m)
     return g
 end
@@ -41,26 +41,26 @@ function _find_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remov
     _search_node(g, start, add, remove, add_mask, rem_mask, use_map)
 end
 
-function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
+@inline function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_UseMap)
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    if new_mask == g.last_node[][1]
-        return g.last_node[][2]
+    if new_mask == g.last_node[1]
+        return g.last_node[2]
     else
         node = get(() -> _find_or_create_path(g, start, add, remove), g.nodes, new_mask)
-        g.last_node[] = (new_mask, node)
+        g.last_node = (new_mask, node)
         return node
     end
 end
 
-function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
+@inline function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_NoUseMap)
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    if new_mask == g.last_node[][1]
-        return g.last_node[][2]
+    if new_mask == g.last_node[1]
+        return g.last_node[2]
     else
         node = _find_or_create_path(g, start, add, remove)
-        g.last_node[] = (new_mask, node)
+        g.last_node = (new_mask, node)
         return node
     end
 end
