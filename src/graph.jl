@@ -15,12 +15,14 @@ end
 struct _Graph{M}
     mask::_MutableMask{M}
     nodes::_Linear_Map{_Mask{M},_GraphNode{M}}
+    last_node::Base.RefValue{Tuple{_Mask{M},_GraphNode{M}}}
 end
 
 function _Graph{M}() where M
-    g = _Graph{M}(_MutableMask{M}(), _Linear_Map{_Mask{M},_GraphNode{M}}())
     m = _Mask{M}()
-    get!(() -> _GraphNode(m, UInt32(1)), g.nodes, m)
+    node = _GraphNode(m, UInt32(1))
+    g = _Graph{M}(_MutableMask{M}(), _Linear_Map{_Mask{M},_GraphNode{M}}(), Ref((m, node)))
+    get!(() -> node, g.nodes, m)
     return g
 end
 
@@ -42,12 +44,25 @@ end
 function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_UseMap)
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    get(() -> _find_or_create_path(g, start, add, remove), g.nodes, new_mask)
+    if new_mask == g.last_node[][1]
+        return g.last_node[][2]
+    else
+        node = get(() -> _find_or_create_path(g, start, add, remove), g.nodes, new_mask)
+        g.last_node[] = (new_mask, node)
+        return node
+    end
 end
 
 function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_NoUseMap)
-    _find_or_create_path(g, start, add, remove)
+    new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
+    if new_mask == g.last_node[][1]
+        return g.last_node[][2]
+    else
+        node = _find_or_create_path(g, start, add, remove)
+        g.last_node[] = (new_mask, node)
+        return node
+    end
 end
 
 function _find_or_create_path(g, start, add, remove)
