@@ -39,7 +39,7 @@ See the constructor [World](@ref World(::Union{Type,Pair}...; ::Int, ::Bool)) fo
 """
 mutable struct World{CS<:Tuple,CT<:Tuple,ST<:Tuple,N,M} <: _AbstractWorld
     const _entities::Vector{_EntityIndex}
-    const _targets::BitVector
+    const _targets::Vector{Bool}
     const _storages::CS
     const _relations::Vector{_ComponentRelations}
     const _archetypes::Vector{_Archetype{M}}
@@ -773,7 +773,7 @@ end
         graph = _Graph{$(M)}()
         index = _EntityIndex[_EntityIndex(typemax(UInt32), 0)]
         sizehint!(index, initial_capacity)
-        targets = BitVector((false,))
+        targets = Bool[false]
         sizehint!(targets, initial_capacity)
 
         node = graph.nodes[$start_mask]
