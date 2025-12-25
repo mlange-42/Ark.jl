@@ -44,7 +44,7 @@ end
 @inline function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_UseMap)
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    if new_mask == g.last_node[1]
+    if new_mask.bits == g.last_node[1].bits
         return g.last_node[2]
     else
         node = get(() -> _find_or_create_path(g, start, add, remove), g.nodes, new_mask)
@@ -56,7 +56,7 @@ end
 @inline function _search_node(g::_Graph, start::_GraphNode, add::Tuple{Vararg{Int}}, remove::Tuple{Vararg{Int}},
     add_mask::_Mask, rem_mask::_Mask, use_map::_NoUseMap)
     new_mask = _clear_bits(_or(add_mask, start.mask), rem_mask)
-    if new_mask == g.last_node[1]
+    if new_mask.bits == g.last_node[1].bits
         return g.last_node[2]
     else
         node = _find_or_create_path(g, start, add, remove)
