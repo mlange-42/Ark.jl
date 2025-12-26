@@ -1,28 +1,22 @@
-
 mutable struct _EntityPool
     const entities::Vector{Entity}
-    next::Int
+    const free_ids::Vector{UInt32}
 end
 
 function _EntityPool(cap::UInt32)
     v = [_new_entity(UInt32(0), typemax(UInt32))]
     sizehint!(v, cap)
-
-    return _EntityPool(v, 0)
+    free_ids = Vector{UInt32}()
+    sizehint!(free_ids, cap)
+    return _EntityPool(v, free_ids)
 end
 
 function _get_entity(p::_EntityPool)::Entity
-    if p.next == 0
-        return _get_new_entity(p)
+    if !isempty(p.free_ids)
+        id = pop!(p.free_ids)
+        return @inbounds p.entities[id]
     end
-    curr = p.next
-    temp = p.entities[curr]
-
-    p.next = temp._id
-    entity = Entity(curr % UInt32, temp._gen)
-    p.entities[curr] = entity
-
-    return entity
+    return _get_new_entity(p)
 end
 
 function _get_new_entity(p::_EntityPool)::Entity
@@ -35,9 +29,8 @@ function _recycle(p::_EntityPool, e::Entity)
     if e._id < 2
         throw(ArgumentError("can't recycle the reserved zero entity"))
     end
-    temp = p.next
-    p.next = e._id
-    p.entities[e._id] = _new_entity(temp % UInt32, e._gen + UInt32(1))
+    @inbounds p.entities[e._id] = Entity(e._id, e._gen + UInt32(1))    
+    push!(p.free_ids, e._id)
     return nothing
 end
 
@@ -47,7 +40,7 @@ end
 
 function _reset!(p::_EntityPool)
     resize!(p.entities, 1)
-    p.next = 0
+    empty!(p.free_ids)
 end
 
 mutable struct _BitPool
