@@ -141,7 +141,7 @@ end
         (),
         (),
         (),
-        _Mask{M_mask}(1),
+        _Mask{M_mask}(1, 2),
         _Mask{M_mask}(),
         _NoUseMap(),
         Val(false),
