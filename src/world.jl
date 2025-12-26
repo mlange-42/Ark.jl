@@ -339,8 +339,8 @@ pos, vel = get_components(world, entity, (Position, Velocity))
 (Position(0.0, 0.0), Velocity(0.0, 0.0))
 ```
 """
-@inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple)
-    if !is_alive(world, entity)
+Base.@propagate_inbounds @inline Base.@constprop :aggressive function get_components(world::World, entity::Entity, comp_types::Tuple)
+    @boundscheck if !is_alive(world, entity)
         throw(ArgumentError("can't get components of a dead entity"))
     end
     return @inline _get_components(world, entity, ntuple(i -> Val(comp_types[i]), length(comp_types)))
@@ -384,8 +384,8 @@ set_components!(world, entity, (Position(0, 0), Velocity(1, 1)))
 
 ```
 """
-@inline Base.@constprop :aggressive function set_components!(world::World, entity::Entity, values::Tuple)
-    if !is_alive(world, entity)
+Base.@propagate_inbounds @inline Base.@constprop :aggressive function set_components!(world::World, entity::Entity, values::Tuple)
+    @boundscheck if !is_alive(world, entity)
         throw(ArgumentError("can't set components of a dead entity"))
     end
     return @inline _set_components!(world, entity, Val{typeof(values)}(), values)
@@ -1526,7 +1526,7 @@ end
     end
 end
 
-@generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
+Base.@propagate_inbounds @generated function _get_components(world::World, entity::Entity, ::TS) where {TS<:Tuple}
     types = _to_types(TS)
     if length(types) == 0
         return :(())
@@ -1581,7 +1581,7 @@ end
     end
 end
 
-@generated function _set_components!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS<:Tuple}
+Base.@propagate_inbounds @generated function _set_components!(world::World, entity::Entity, ::Val{TS}, values::Tuple) where {TS<:Tuple}
     types = TS.parameters
     exprs = [:(@inbounds idx = world._entities[entity._id])]
 
