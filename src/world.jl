@@ -1241,7 +1241,6 @@ end
     )
     push!(exprs, :(tmp = _create_entity!(world, table)))
     push!(exprs, :(entity = tmp[1]))
-    push!(exprs, :(index = tmp[2]))
 
     # Set each component
     for i in 1:length(types)
@@ -1357,7 +1356,7 @@ end
         end
 
         world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
-        return new_row
+        return nothing
     end
 end
 
@@ -1481,7 +1480,6 @@ end
 
     push!(exprs, :(entity_and_row = _create_entity!(world, new_table_index)))
     push!(exprs, :(new_entity = entity_and_row[1]))
-    push!(exprs, :(new_row = entity_and_row[2]))
 
     push!(
         exprs,
