@@ -13,7 +13,7 @@ function setup_world_remove_entities_5(n::Int)
         end
     end
 
-    filter = Filter(world, (Position, Velocity, CompA, CompB, CompC,))
+    filter = Filter(world, (Position, Velocity, CompA, CompB, CompC))
 
     return (world, filter)
 end
