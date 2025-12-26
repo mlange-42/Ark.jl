@@ -1,6 +1,6 @@
-mutable struct _EntityPool
-    const entities::Vector{Entity}
-    const free_ids::Vector{UInt32}
+struct _EntityPool
+    entities::Vector{Entity}
+    free_ids::Vector{UInt32}
 end
 
 function _EntityPool(cap::UInt32)
