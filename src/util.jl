@@ -2,11 +2,9 @@
 @inline function _swap_remove!(v::AbstractArray, i::UInt32)::Bool
     last_index = length(v)
     swapped = i != last_index
-    if swapped
-        @inbounds v[i] = v[last_index]
-    end
+    @inbounds v[i] = v[last_index]
     pop!(v)
-    return swapped
+    return i != last_index
 end
 
 @inline function _to_types(::Type{TS})::Vector{DataType} where {TS<:Tuple}
