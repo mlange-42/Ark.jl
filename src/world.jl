@@ -1325,8 +1325,6 @@ end
         _check_locked(world)
 
         index = world._entities[entity._id]
-        old_table = world._tables[index.table]
-        new_table = world._tables[table_index]
         old_archetype = world._archetypes[old_table.archetype]
         new_archetype = world._archetypes[new_table.archetype]
 
