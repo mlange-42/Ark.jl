@@ -1319,7 +1319,7 @@ end
     end
 end
 
-@inline @generated function _move_entity!(world::W, entity::Entity, table_index::UInt32)::Int where {W<:World}
+@inline @generated function _move_entity!(world::W, entity::Entity, old_table::_Table, new_table::_Table, table_index::UInt32)::Int where {W<:World}
     inline_jtable = length(W.parameters[1].parameters) <= 10
     quote
         _check_locked(world)
@@ -1695,7 +1695,7 @@ end
     end
 
     empty!(new_relations)
-    _move_entity!(world, entity, new_table.id)
+    _move_entity!(world, entity, old_table, new_table, new_table.id)
 
     if _has_observers(world._event_manager, OnAddRelations)
         _fire_set_relations(
@@ -1764,10 +1764,10 @@ end
         ),
     )
     push!(exprs, :(new_table_index = new_table_tuple[1]))
-    push!(exprs, :(relations_removed = new_table_tuple[2]))
     push!(exprs, :(new_table = world._tables[new_table_index]))
 
     if length(rem_types) > 0
+        push!(exprs, :(relations_removed = new_table_tuple[2]))
         push!(
             exprs,
             :(
@@ -1799,7 +1799,7 @@ end
         )
     end
 
-    push!(exprs, :(row = _move_entity!(world, entity, new_table_index)))
+    push!(exprs, :(row = _move_entity!(world, entity, old_table, new_table, new_table_index)))
     for i in 1:length(add_types)
         T = add_types[i]
         stor_sym = Symbol("stor", i)
