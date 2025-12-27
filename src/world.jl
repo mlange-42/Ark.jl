@@ -274,9 +274,9 @@ remove_entity!(world, entity)
         end
         _check_locked(world)
 
-        index = world._entities[entity._id]
-        table = world._tables[index.table]
-        archetype = world._archetypes[table.archetype]
+        @inbounds index = world._entities[entity._id]
+        @inbounds table = world._tables[index.table]
+        @inbounds archetype = world._archetypes[table.archetype]
 
         has_entity_obs = _has_observers(world._event_manager, OnRemoveEntity)
         has_rel_obs = _has_relations(archetype) && _has_observers(world._event_manager, OnRemoveRelations)
@@ -303,8 +303,8 @@ remove_entity!(world, entity)
         end
 
         if swapped
-            swap_entity = table.entities[index.row]
-            world._entities[swap_entity._id] = index
+            @inbounds swap_entity = table.entities[index.row]
+            @inbounds world._entities[swap_entity._id] = index
         end
 
         _recycle(world._entity_pool, entity)
@@ -1270,8 +1270,8 @@ end
         _check_locked(world)
 
         entity = _get_entity(world._entity_pool)
-        table = world._tables[table_index]
-        archetype = world._archetypes[table.archetype]
+        @inbounds table = world._tables[table_index]
+        @inbounds archetype = world._archetypes[table.archetype]
 
         index = _add_entity!(table, entity)
 
