@@ -1335,14 +1335,14 @@ end
         swapped = _swap_remove!(old_table.entities._data, index.row)
 
         if swapped
-            swap_entity = old_table.entities[index.row]
-            world._entities[swap_entity._id] = index
+            @inbounds swap_entity = old_table.entities[index.row]
+            @inbounds world._entities[swap_entity._id] = index
         end
 
-        world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
+        @inbounds world._entities[entity._id] = _EntityIndex(table_index, UInt32(new_row))
 
-        old_archetype = world._archetypes[old_table.archetype]
-        new_archetype = world._archetypes[new_table.archetype]
+        @inbounds old_archetype = world._archetypes[old_table.archetype]
+        @inbounds new_archetype = world._archetypes[new_table.archetype]
 
         # Move component data only for components present in old_archetype that are also present in new_archetype
         for comp in old_archetype.components
@@ -1756,8 +1756,8 @@ end
 
     world_has_rel = Val{_has_relations(CS)}()
 
-    push!(exprs, :(index = world._entities[entity._id]))
-    push!(exprs, :(old_table = world._tables[index.table]))
+    push!(exprs, :(@inbounds index = world._entities[entity._id]))
+    push!(exprs, :(@inbounds old_table = world._tables[index.table]))
     push!(
         exprs,
         :(
@@ -1769,7 +1769,7 @@ end
         ),
     )
     push!(exprs, :(new_table_index = new_table_tuple[1]))
-    push!(exprs, :(new_table = world._tables[new_table_index]))
+    push!(exprs, :(@inbounds new_table = world._tables[new_table_index]))
 
     if length(rem_types) > 0
         push!(exprs, :(relations_removed = new_table_tuple[2]))
