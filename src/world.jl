@@ -1319,12 +1319,20 @@ end
     end
 end
 
-@inline @generated function _move_entity!(world::W, entity::Entity, old_table::_Table, new_table::_Table, table_index::UInt32)::Int where {W<:World}
+@inline @generated function _move_entity!(
+    world::W,
+    entity::Entity,
+    old_table::_Table,
+    new_table::_Table,
+    table_index::UInt32,
+)::Int where {W<:World}
     inline_jtable = length(W.parameters[1].parameters) <= 10
     quote
         _check_locked(world)
 
         index = world._entities[entity._id]
+        old_table = world._tables[index.table]
+        new_table = world._tables[table_index]
         old_archetype = world._archetypes[old_table.archetype]
         new_archetype = world._archetypes[new_table.archetype]
 
